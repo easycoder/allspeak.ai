@@ -28,7 +28,7 @@
     set the style of MapPanel to `width:100%;flex:1`
     
     create Map in  MapPanel
-	put `YOUR_GOOGLE_MAPS_API_KEY` into Key
+	put `*****************************************` into Key
 	set the key of Map to Key
 	set the latitude of Map to Latitude
 	set the longitude of Map to Longitude
