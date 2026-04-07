@@ -50,7 +50,7 @@ const AllSpeak_REST = {
 				if (compiler.nextIsSymbol(true)) {
 					const targetRecord = compiler.getSymbolRecord();
 					if (targetRecord.keyword === `variable`) {
-						if (compiler.nextTokenIs(`from`)) {
+						if (compiler.nextIsWord(`from`)) {
 							const url = compiler.getNextValue();
 							let fixup = compiler.getPc();
 							compiler.addCommand({
@@ -62,7 +62,7 @@ const AllSpeak_REST = {
 								url,
 								onError: null
 							});
-							if (compiler.tokenIs(`or`)) {
+							if (compiler.isWord(`or`)) {
 								compiler.next();
 								compiler.getCommandAt(fixup).onError = compiler.getPc() + 1;
 								compiler.completeHandler();
@@ -74,11 +74,11 @@ const AllSpeak_REST = {
 				break;
 			case `post`:
 				let value = null;
-				if (compiler.nextTokenIs(`to`)) {
+				if (compiler.nextIsWord(`to`)) {
 					compiler.next();
 				} else {
 					value = compiler.getValue();
-					if (compiler.tokenIs(`to`)) {
+					if (compiler.isWord(`to`)) {
 						compiler.next();
 					} else {
 						break;
@@ -90,16 +90,16 @@ const AllSpeak_REST = {
 				}
 				let target = null;
 				const args = {};
-				while (compiler.tokenIs(`with`)) {
+				while (compiler.isWord(`with`)) {
 					const argName = compiler.nextToken();
-					if (compiler.nextTokenIs(`as`)) {
+					if (compiler.nextIsWord(`as`)) {
 						const argValue = compiler.getNextValue();
 						args[argName] = argValue;
 					} else {
 						break;
 					}
 				}
-				if (compiler.tokenIs(`giving`)) {
+				if (compiler.isWord(`giving`)) {
 					if (compiler.nextIsSymbol()) {
 						const targetRecord = compiler.getSymbolRecord();
 						if (targetRecord.isVHolder) {
@@ -122,7 +122,7 @@ const AllSpeak_REST = {
 					onError: compiler.getPc() + 2
 				});
 				onError = null;
-				if (compiler.tokenIs(`or`)) {
+				if (compiler.isWord(`or`)) {
 					compiler.next();
 					// onError = compiler.getPc() + 1;
 					compiler.completeHandler();
@@ -237,24 +237,59 @@ const AllSpeak_REST = {
 		}
 	},
 
-	getHandler: (name) => {
-		switch (name) {
-		case `get`:
-			return AllSpeak_REST.Get;
-		case `post`:
-			return AllSpeak_REST.Post;
-		case `rest`:
-			return AllSpeak_REST.Rest;
-		default:
-			return null;
+	_compileHandlers: null,
+
+	_buildCompileHandlers: function() {
+		const lang = AllSpeak_Language;
+		const opcodeMap = this.getOpcodeMap();
+		const handlers = {};
+		if (lang.pack) {
+			const opcodes = lang.pack.opcodes;
+			for (const opcode in opcodes) {
+				const handler = opcodeMap[opcode];
+				if (handler) {
+					const keywords = opcodes[opcode].keyword.split(`|`);
+					for (const kw of keywords) {
+						if (!handlers[kw]) {
+							handlers[kw] = handler;
+						}
+					}
+				}
+			}
 		}
+		this._compileHandlers = handlers;
+	},
+
+	getHandler: function(name) {
+		if (!this._compileHandlers) {
+			this._buildCompileHandlers();
+		}
+		return this._compileHandlers[name] || null;
+	},
+
+	opcodeMap: null,
+
+	getOpcodeMap: function() {
+		if (this.opcodeMap) return this.opcodeMap;
+		this.opcodeMap = {
+			REST_GET: this.Get,
+			REST_POST: this.Post,
+			REST_PATH: this.Rest
+		};
+		return this.opcodeMap;
 	},
 
 	run: (program) => {
 		const command = program[program.pc];
-		const handler = AllSpeak_REST.getHandler(command.keyword);
+		let handler;
+		if (command.opcode) {
+			handler = AllSpeak_REST.getOpcodeMap()[command.opcode];
+		}
 		if (!handler) {
-			program.runtimeError(command.lino, `Unknown keyword '${command.keyword}' in 'rest' package`);
+			handler = AllSpeak_REST.getHandler(command.keyword);
+		}
+		if (!handler) {
+			program.runtimeError(command.lino, `Unknown command '${command.opcode || command.keyword}' in 'rest' package`);
 		}
 		return handler.run(program);
 	},

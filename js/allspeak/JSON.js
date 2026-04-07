@@ -24,7 +24,7 @@ const AllSpeak_JSON = {
 
 	// Helper to add or-handling after a json command
 	addOrHandling: (compiler, pc) => {
-		if (compiler.tokenIs(`or`)) {
+		if (compiler.isWord(`or`)) {
 			compiler.next();
 			compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 			compiler.completeHandler();
@@ -35,7 +35,7 @@ const AllSpeak_JSON = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			const request = compiler.nextToken();
+			const request = AllSpeak_Language.reverseWord(compiler.nextToken());
 			let item;
 			switch (request) {
 			case `set`:
@@ -43,9 +43,9 @@ const AllSpeak_JSON = {
 				if (compiler.isSymbol()) {
 					const targetRecord = compiler.getSymbolRecord();
 					if (targetRecord.keyword === `variable`) {
-						if (compiler.nextTokenIs(`to`)) {
+						if (compiler.nextIsWord(`to`)) {
 							const type = compiler.nextToken();
-							if (`["array","object"]`.includes(type)) {
+							if ([`array`, `object`].includes(AllSpeak_Language.reverseWord(type))) {
 								compiler.next();
 								compiler.addCommand({
 									domain: `json`,
@@ -53,19 +53,19 @@ const AllSpeak_JSON = {
 									lino,
 									request: `setVariable`,
 									target: targetRecord.name,
-									type
+									type: AllSpeak_Language.reverseWord(type)
 								});
 								return true;
 							}
 						}
 					} else if (targetRecord.keyword === `select`) {
-						if (compiler.nextTokenIs(`from`)) {
+						if (compiler.nextIsWord(`from`)) {
 							compiler.next();
 							if (compiler.isSymbol()) {
 								const sourceRecord = compiler.getSymbolRecord();
 								if (sourceRecord.keyword === `variable`) {
 									var display = null;
-									if (compiler.nextTokenIs(`as`)) {
+									if (compiler.nextIsWord(`as`)) {
 										display = compiler.getNextValue();
 									}
 									const pc = compiler.getPc();
@@ -110,9 +110,9 @@ const AllSpeak_JSON = {
 				}
 				break;
 			case `parse`:
-				if (compiler.nextTokenIs(`url`)) {
+				if (compiler.nextIsWord(`url`)) {
 					const source = compiler.getNextValue();
-					if (compiler.tokenIs(`as`)) {
+					if (compiler.isWord(`as`)) {
 						if (compiler.nextIsSymbol()) {
 							const targetRecord = compiler.getSymbolRecord();
 							if (targetRecord.keyword === `variable`) {
@@ -135,7 +135,7 @@ const AllSpeak_JSON = {
 				const what = compiler.nextToken();
 				if ([`property`, `element`].includes(what)) {
 					const value = compiler.getNextValue();
-					if ([`from`, `of`].includes(compiler.getToken())) {
+					if ([AllSpeak_Language.word(`from`), AllSpeak_Language.word(`of`)].includes(compiler.getToken())) {
 						if (compiler.nextIsSymbol()) {
 							const targetRecord = compiler.getSymbolRecord();
 							if (targetRecord.keyword === `variable`) {
@@ -160,9 +160,9 @@ const AllSpeak_JSON = {
 				break;
 			case `rename`:
 				const oldName = compiler.getNextValue();
-				if (compiler.tokenIs(`to`)) {
+				if (compiler.isWord(`to`)) {
 					const newName = compiler.getNextValue();
-					if (compiler.tokenIs(`in`)) {
+					if (compiler.isWord(`in`)) {
 						if (compiler.nextIsSymbol()) {
 							const targetRecord = compiler.getSymbolRecord();
 							if (targetRecord.keyword === `variable`) {
@@ -187,7 +187,7 @@ const AllSpeak_JSON = {
 				break;
 			case `add`:
 				item = compiler.getNextValue();
-				if (compiler.tokenIs(`to`)) {
+				if (compiler.isWord(`to`)) {
 					if (compiler.nextIsSymbol()) {
 						const targetRecord = compiler.getSymbolRecord();
 						if (targetRecord.keyword === `variable`) {
@@ -211,10 +211,10 @@ const AllSpeak_JSON = {
 			case `split`:
 				item = compiler.getNextValue();
 				let on = `\n`;
-				if (compiler.tokenIs(`on`)) {
+				if (compiler.isWord(`on`)) {
 					on = compiler.getNextValue();
 				}
-				if ([`giving`, `into`].includes(compiler.getToken())) {
+				if ([AllSpeak_Language.word(`giving`), AllSpeak_Language.word(`into`)].includes(compiler.getToken())) {
 					if (compiler.nextIsSymbol()) {
 						const targetRecord = compiler.getSymbolRecord();
 						if (targetRecord.keyword === `variable`) {
@@ -234,13 +234,13 @@ const AllSpeak_JSON = {
 				}
 				break;
 			case `replace`:
-				if (compiler.nextTokenIs(`element`)) {
+				if (compiler.nextIsWord(`element`)) {
 					const index = compiler.getNextValue();
-					if (compiler.tokenIs(`of`)) {
+					if (compiler.isWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const targetRecord = compiler.getSymbolRecord();
 							if (targetRecord.keyword === `variable`) {
-								if ([`by`, `with`].includes(compiler.nextToken())) {
+								if ([AllSpeak_Language.word(`by`), AllSpeak_Language.word(`with`)].includes(compiler.nextToken())) {
 									const value = compiler.getNextValue();
 									const pc = compiler.getPc();
 									compiler.addCommand({
@@ -529,20 +529,32 @@ const AllSpeak_JSON = {
 		}
 	},
 
-	getHandler: (name) => {
-		switch (name) {
-		case `json`:
-			return AllSpeak_JSON.Json;
-		default:
-			return null;
+	getHandler: function(name) {
+		// JSON domain has one compile keyword: 'json' (language-aware)
+		if (name === AllSpeak_Language.word(`json`)) {
+			return this.Json;
 		}
+		return null;
+	},
+
+	opcodeMap: {
+		JSON_SET_VAR: `Json`, JSON_SET_LIST: `Json`, JSON_PARSE: `Json`,
+		JSON_FORMAT: `Json`, JSON_SORT: `Json`, JSON_SHUFFLE: `Json`,
+		JSON_DELETE: `Json`, JSON_RENAME: `Json`, JSON_ADD: `Json`,
+		JSON_SPLIT: `Json`, JSON_REPLACE: `Json`
 	},
 
 	run: (program) => {
 		const command = program[program.pc];
-		const handler = AllSpeak_JSON.getHandler(command.keyword);
+		let handler;
+		if (command.opcode && AllSpeak_JSON.opcodeMap[command.opcode]) {
+			handler = AllSpeak_JSON[AllSpeak_JSON.opcodeMap[command.opcode]];
+		}
 		if (!handler) {
-			program.runtimeError(command.lino, `Unknown keyword '${command.keyword}' in 'json' package`);
+			handler = AllSpeak_JSON.getHandler(command.keyword);
+		}
+		if (!handler) {
+			program.runtimeError(command.lino, `Unknown command '${command.opcode || command.keyword}' in 'json' package`);
 		}
 		return handler.run(program);
 	},
@@ -550,13 +562,13 @@ const AllSpeak_JSON = {
 	value: {
 
 		compile: (compiler) => {
-			if (compiler.tokenIs(`the`)) {
+			if (compiler.isWord(`the`)) {
 				compiler.next();
 			}
-			if (compiler.tokenIs(`json`)) {
-				const type = compiler.nextToken();
+			if (compiler.isWord(`json`)) {
+				const type = AllSpeak_Language.reverseWord(compiler.nextToken());
 				if ([`size`, `count`].includes(type)) {
-					compiler.skip(`of`);
+					compiler.skipWord(`of`);
 					if (compiler.isSymbol()) {
 						const target = compiler.getSymbolRecord();
 						compiler.next();
@@ -570,11 +582,11 @@ const AllSpeak_JSON = {
 					}
 				} else if (type === `keys`) {
 					let sorted = true;
-					if (compiler.nextTokenIs(`unsorted`)) {
+					if (compiler.nextIsWord(`unsorted`)) {
 						sorted = false;
 						compiler.next();
 					}
-					if (compiler.tokenIs(`of`)) {
+					if (compiler.isWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const target = compiler.getSymbolRecord();
 							compiler.next();
@@ -589,9 +601,9 @@ const AllSpeak_JSON = {
 						}
 					}
 				} else if (type === `index`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						const item = compiler.getNextValue();
-						if (compiler.tokenIs(`in`)) {
+						if (compiler.isWord(`in`)) {
 							const list = compiler.getNextValue();
 							return {
 								domain: `json`,

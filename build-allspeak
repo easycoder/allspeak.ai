@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "Copy the various files"
-cd ~/dev/allspeak/allspeak.github.io
+cd ~/dev/allspeak
 rm -rf dist/*
 mkdir dist/plugins
 mkdir -p dist/vendor/showdown
@@ -61,8 +61,8 @@ else
 fi
 
 echo "Merge into a single file"
-cat js/allspeak/Core.js js/allspeak/Browser.js js/allspeak/MarkdownRenderer.js js/allspeak/Webson.js js/allspeak/JSON.js js/allspeak/MQTT.js js/allspeak/REST.js js/allspeak/Compare.js js/allspeak/Condition.js js/allspeak/Value.js js/allspeak/Run.js js/allspeak/Compile.js js/allspeak/Main.js js/allspeak/AllSpeak.js > dist/allspeak.js
+cat js/allspeak/Core.js js/allspeak/Browser.js js/allspeak/MarkdownRenderer.js js/allspeak/Webson.js js/allspeak/JSON.js js/allspeak/MQTT.js js/allspeak/REST.js js/allspeak/Compare.js js/allspeak/Condition.js js/allspeak/Value.js js/allspeak/Run.js js/allspeak/Opcodes.js js/allspeak/Language.js js/allspeak/LanguagePack_en.js js/allspeak/Compile.js js/allspeak/Main.js js/allspeak/AllSpeak.js > dist/allspeak.js
 
 echo "Minimise with closure"
-npx google-closure-compiler --js=dist/allspeak.js --js_output_file=dist/allspeak-min.js --language_in ECMASCRIPT_2018
+npx google-closure-compiler --js=dist/allspeak.js --js_output_file=dist/allspeak-min.js --language_in ECMASCRIPT_2021
 echo "Closure finished"

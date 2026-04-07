@@ -981,21 +981,35 @@ const AllSpeak_MQTT = {
 
     /////////////////////////////////////////////////////////////////////////////
     // Dispatcher - routes keywords to handlers
-    getHandler: (name) => {
-        switch (name) {
-            case 'init':
-                return AllSpeak_MQTT.Init;
-            case 'mqtt':
-                return AllSpeak_MQTT.MQTT;
-            case 'on':
-                return AllSpeak_MQTT.On;
-            case 'send':
-                return AllSpeak_MQTT.Send;
-            case 'topic':
-                return AllSpeak_MQTT.Topic;
-            default:
-                return null;
+    _compileHandlers: null,
+
+    _buildCompileHandlers: function() {
+        const opcodeMap = this.getOpcodeMap();
+        const handlers = {};
+        if (AllSpeak_Language.pack) {
+            const opcodes = AllSpeak_Language.pack.opcodes;
+            for (const opcode in opcodes) {
+                const handler = opcodeMap[opcode];
+                if (handler) {
+                    const keywords = opcodes[opcode].keyword.split('|');
+                    for (const kw of keywords) {
+                        if (!handlers[kw]) {
+                            handlers[kw] = handler;
+                        }
+                    }
+                }
+            }
         }
+        // MQTT 'init' is used at compile time but aliases to MQTT handler
+        handlers['init'] = this.Init;
+        this._compileHandlers = handlers;
+    },
+
+    getHandler: function(name) {
+        if (!this._compileHandlers) {
+            this._buildCompileHandlers();
+        }
+        return this._compileHandlers[name] || null;
     },
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1013,12 +1027,31 @@ const AllSpeak_MQTT = {
 
     /////////////////////////////////////////////////////////////////////////////
     // Main run handler
+    opcodeMap: null,
+
+    getOpcodeMap: function() {
+        if (this.opcodeMap) return this.opcodeMap;
+        this.opcodeMap = {
+            MQTT_INIT: this.MQTT,
+            MQTT_SUBSCRIBE: this.Topic,
+            MQTT_SEND: this.Send,
+            MQTT_ON_CONNECT: this.On,
+            MQTT_ON_MESSAGE: this.On
+        };
+        return this.opcodeMap;
+    },
+
     run: (program) => {
         const command = program[program.pc];
-        const handler = AllSpeak_MQTT.getHandler(command.keyword);
-
+        let handler;
+        if (command.opcode) {
+            handler = AllSpeak_MQTT.getOpcodeMap()[command.opcode];
+        }
         if (!handler) {
-            program.runtimeError(command.lino, `Unknown keyword '${command.keyword}' in 'mqtt' package`);
+            handler = AllSpeak_MQTT.getHandler(command.keyword);
+        }
+        if (!handler) {
+            program.runtimeError(command.lino, `Unknown command '${command.opcode || command.keyword}' in 'mqtt' package`);
         }
 
         return handler.run(program);

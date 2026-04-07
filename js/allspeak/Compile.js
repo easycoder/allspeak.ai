@@ -64,6 +64,31 @@ const AllSpeak_Compiler = {
 		return this.tokenIs(token);
 	},
 
+	// Language-aware token checks: look up canonical name in the active language pack.
+	// Use these instead of tokenIs('into') etc. — write isWord('into') instead.
+	// Supports multiple forms (e.g. isWord('the') matches 'il', 'lo', 'la', 'gli', 'le').
+	isWord: function(canonical) {
+		if (this.index >= this.tokens.length) {
+			return false;
+		}
+		return AllSpeak_Language.matchesWord(this.tokens[this.index].token, canonical);
+	},
+
+	nextIsWord: function(canonical) {
+		this.next();
+		return this.isWord(canonical);
+	},
+
+	skipWord: function(canonical) {
+		if (this.index >= this.tokens.length) {
+			return null;
+		}
+		this.next();
+		if (this.isWord(canonical)) {
+			this.next();
+		}
+	},
+
 	skip: function(token) {
 		if (this.index >= this.tokens.length) {
 			return null;
@@ -158,6 +183,11 @@ const AllSpeak_Compiler = {
 
 	addCommand: function(item) {
 		item.pc = this.program.length;
+		// Stamp the canonical opcode
+		const opcode = AllSpeak_Opcodes.resolve(item);
+		if (opcode) {
+			item.opcode = opcode;
+		}
 		this.program.push(item);
 	},
 
@@ -299,7 +329,7 @@ const AllSpeak_Compiler = {
 		while (this.index < this.tokens.length) {
 			const token = this.tokens[this.index];
 			const keyword = token.token;
-			if (keyword === `else`) {
+			if (keyword === AllSpeak_Language.word(`else`)) {
 				return this.program;
 			}
 			this.compileOne();

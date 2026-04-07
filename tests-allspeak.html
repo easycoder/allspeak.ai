@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AllSpeak JS Comprehensive Tests</title>
+  <script type='text/javascript' src='dist/allspeak.js'></script>
+  <style>
+    body { font-family: monospace; margin: 20px; background: #1a1a2e; color: #e0e0e0; }
+    h1 { color: #00d4ff; }
+    #output { border: 1px solid #333; padding: 10px; margin-top: 10px; background: #16213e; }
+    .pass { color: #00cc66; }
+    .fail { color: #ff4444; font-weight: bold; }
+    .info { color: #aaaacc; }
+    #summary { margin-top: 15px; padding: 10px; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>AllSpeak JS — Comprehensive Test Suite</h1>
+  <div id="output"></div>
+  <div id="summary"></div>
+
+  <pre id="allspeak-script" style="display:none">
+! AllSpeak JS Comprehensive Test Suite
+
+  script Tests
+
+  variable Passes
+  variable Fails
+  variable Test
+  variable Expected
+  variable Got
+  variable A
+  variable B
+  variable C
+  variable N
+  variable M
+  variable X
+  variable Y
+  variable Z
+  variable Items
+  variable Data
+  variable Temp
+
+  put 0 into Passes
+  put 0 into Fails
+
+  log `--- Section 1: Variable assignment and put ---`
+
+! Test: put string into variable
+  put `put string` into Test
+  put `hello` into A
+  put `hello` into Expected
+  put A into Got
+  if A is `hello`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: put number into variable
+  put `put number` into Test
+  put 42 into A
+  put 42 into Expected
+  put A into Got
+  if A is 42
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: put empty into variable
+  put `put empty` into Test
+  put empty into A
+  put `` into Expected
+  put A into Got
+  if A is ``
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 2: Arithmetic ---`
+
+! Test: add to giving
+  put `add to giving` into Test
+  put 6 into A
+  put 20 into B
+  add A to B giving C
+  put 26 into Expected
+  put C into Got
+  if C is 26
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: add to (in-place)
+  put `add to (in-place)` into Test
+  put 10 into A
+  add 5 to A
+  put 15 into Expected
+  put A into Got
+  if A is 15
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: take from giving
+  put `take from giving` into Test
+  put 30 into A
+  take 7 from A giving B
+  put 23 into Expected
+  put B into Got
+  if B is 23
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: take from (in-place)
+  put `take from (in-place)` into Test
+  put 30 into A
+  take 7 from A
+  put 23 into Expected
+  put A into Got
+  if A is 23
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: multiply by giving
+  put `multiply by giving` into Test
+  put 6 into A
+  put 7 into B
+  multiply A by B giving C
+  put 42 into Expected
+  put C into Got
+  if C is 42
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: multiply in-place
+  put `multiply in-place` into Test
+  put 6 into A
+  multiply A by 7
+  put 42 into Expected
+  put A into Got
+  if A is 42
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: divide by giving
+  put `divide by giving` into Test
+  put 100 into A
+  divide A by 4 giving B
+  put 25 into Expected
+  put B into Got
+  if B is 25
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: divide in-place
+  put `divide in-place` into Test
+  put 100 into A
+  divide A by 4
+  put 25 into Expected
+  put A into Got
+  if A is 25
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: modulo
+  put `modulo` into Test
+  put 17 into A
+  put A modulo 5 into A
+  put 2 into Expected
+  put A into Got
+  if A is 2
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: negate
+  put `negate` into Test
+  put 42 into A
+  negate A
+  put -42 into Expected
+  put A into Got
+  if A is -42
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: add 1 (increment equivalent)
+  put `add 1` into Test
+  put 9 into A
+  add 1 to A
+  put 10 into Expected
+  put A into Got
+  if A is 10
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: take 1 (decrement equivalent)
+  put `take 1` into Test
+  put 10 into A
+  take 1 from A
+  put 9 into Expected
+  put A into Got
+  if A is 9
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 3: String concatenation ---`
+
+! Test: cat strings
+  put `cat strings` into Test
+  put `hello` cat ` ` cat `world` into A
+  put `hello world` into Expected
+  put A into Got
+  if A is `hello world`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: cat number to string
+  put `cat number to string` into Test
+  put `value=` cat 42 into A
+  put `value=42` into Expected
+  put A into Got
+  if A is `value=42`
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 4: String operations ---`
+
+! Test: the length of
+  put `the length of` into Test
+  put `hello` into A
+  put the length of A into B
+  put 5 into Expected
+  put B into Got
+  if B is 5
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: left N of
+  put `left N of` into Test
+  put `The quick brown fox` into A
+  put left 9 of A into B
+  put `The quick` into Expected
+  put B into Got
+  if B is `The quick`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: right N of
+  put `right N of` into Test
+  put `The quick brown fox` into A
+  put right 3 of A into B
+  put `fox` into Expected
+  put B into Got
+  if B is `fox`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: from N of
+  put `from N of` into Test
+  put `The quick brown fox` into A
+  put from 10 of A into B
+  put `brown fox` into Expected
+  put B into Got
+  if B is `brown fox`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: from N to M of
+  put `from N to M of` into Test
+  put `This is some text` into A
+  put from 8 to 12 of A into B
+  put `some` into Expected
+  put B into Got
+  if B is `some`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: character N of
+  put `character N of` into Test
+  put `abcdef` into A
+  put character 2 of A into B
+  put `c` into Expected
+  put B into Got
+  if B is `c`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: position of
+  put `position of` into Test
+  put `The quick brown fox` into A
+  put the position of `brown` in A into B
+  put 10 into Expected
+  put B into Got
+  if B is 10
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: position of the last
+  put `position of the last` into Test
+  put `abcabc` into A
+  put the position of the last `a` in A into B
+  put 3 into Expected
+  put B into Got
+  if B is 3
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: lowercase
+  put `lowercase` into Test
+  put lowercase `HELLO` into A
+  put `hello` into Expected
+  put A into Got
+  if A is `hello`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: trim
+  put `trim` into Test
+  put trim `  hello  ` into A
+  put `hello` into Expected
+  put A into Got
+  if A is `hello`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: reverse
+  put `reverse` into Test
+  put reverse `abcde` into A
+  put `edcba` into Expected
+  put A into Got
+  if A is `edcba`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: replace
+  put `replace` into Test
+  put `hello world` into A
+  replace `world` with `there` in A
+  put `hello there` into Expected
+  put A into Got
+  if A is `hello there`
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 5: Comparisons ---`
+
+! Test: is equal (numbers)
+  put `is equal` into Test
+  put 42 into A
+  put 42 into Expected
+  put A into Got
+  if A is 42
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is not equal
+  put `is not equal` into Test
+  put 42 into A
+  put `not 43` into Expected
+  put A into Got
+  if A is not 43
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is greater than
+  put `is greater than` into Test
+  put `52 > 51` into Expected
+  put `true` into Got
+  if 52 is greater than 51
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is less than
+  put `is less than` into Test
+  put `50 < 51` into Expected
+  put `true` into Got
+  if 50 is less than 51
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is not greater than (boundary)
+  put `not greater than (boundary)` into Test
+  put `52 not > 52` into Expected
+  put `true` into Got
+  if 52 is not greater than 52
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is not less than (boundary)
+  put `not less than (boundary)` into Test
+  put `52 not < 52` into Expected
+  put `true` into Got
+  if 52 is not less than 52
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 6: String conditions ---`
+
+! Test: includes
+  put `includes` into Test
+  put `hello world` into A
+  put `should include 'world'` into Expected
+  put A into Got
+  if A includes `world`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: starts with
+  put `starts with` into Test
+  put `hello world` into A
+  put `should start with 'hello'` into Expected
+  put A into Got
+  if A starts with `hello`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: ends with
+  put `ends with` into Test
+  put `hello world` into A
+  put `should end with 'world'` into Expected
+  put A into Got
+  if A ends with `world`
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 7: Type checks ---`
+
+! Test: is numeric (true)
+  put `is numeric (true)` into Test
+  put 42 into A
+  put `numeric` into Expected
+  put A into Got
+  if A is numeric
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is numeric (false for string)
+  put `is not numeric` into Test
+  put `hello` into A
+  put `not numeric` into Expected
+  put A into Got
+  if A is not numeric
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is even
+  put `is even` into Test
+  put 8 into A
+  put `8 is even` into Expected
+  put A into Got
+  if A is even
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is odd
+  put `is odd` into Test
+  put 7 into A
+  put `7 is odd` into Expected
+  put A into Got
+  if A is odd
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 8: Boolean operations ---`
+
+! Test: set (boolean true)
+  put `set (boolean true)` into Test
+  put `true` into Expected
+  set A
+  put A into Got
+  if A
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: clear (boolean false)
+  put `clear (boolean false)` into Test
+  put `false` into Expected
+  clear A
+  put A into Got
+  if not A
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: toggle (false to true)
+  put `toggle false to true` into Test
+  put `true` into Expected
+  clear A
+  toggle A
+  put A into Got
+  if A
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: toggle (true to false)
+  put `toggle true to false` into Test
+  put `false` into Expected
+  set A
+  toggle A
+  put A into Got
+  if not A
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 9: Compound conditions (AND / OR) ---`
+
+! Test: AND (both true)
+  put `AND (both true)` into Test
+  put 5 into A
+  put 10 into B
+  put `true` into Expected
+  put `true` into Got
+  if A is less than B and B is greater than 0
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: AND (one false)
+  put `AND (one false)` into Test
+  put 5 into A
+  put `false` into Expected
+  put `false` into Got
+  if A is less than 10 and A is greater than 10
+    gosub to Fail
+  else
+    gosub to Pass
+
+! Test: OR (one true)
+  put `OR (one true)` into Test
+  put 5 into A
+  put `true` into Expected
+  put `true` into Got
+  if A is less than 0 or A is greater than 0
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: OR (both false)
+  put `OR (both false)` into Test
+  put 5 into A
+  put `false` into Expected
+  put `false` into Got
+  if A is greater than 100 or A is less than 0
+    gosub to Fail
+  else
+    gosub to Pass
+
+  log `--- Section 10: While loop ---`
+
+! Test: while loop counts correctly
+  put `while loop count` into Test
+  put 0 into N
+  put 0 into A
+  while N is less than 10
+  begin
+    add 1 to A
+    add 1 to N
+  end
+  put 10 into Expected
+  put A into Got
+  if A is 10
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: while loop with continue
+  put `while with continue` into Test
+  put 0 into N
+  put 0 into A
+  while N is less than 10
+  begin
+    add 1 to N
+    if N is even continue
+    add 1 to A
+  end
+  put 5 into Expected
+  put A into Got
+  if A is 5
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 11: Go to / Labels ---`
+
+! Test: go to label
+  put `go to label` into Test
+  put `reached` into Expected
+  put `reached` into Got
+  go to TestGoto
+AfterGoto:
+  gosub to Pass
+  go to AfterGotoTests
+TestGoto:
+  go to AfterGoto
+  gosub to Fail
+AfterGotoTests:
+
+  log `--- Section 12: Gosub / Return ---`
+
+! Test: gosub and return
+  put `gosub and return` into Test
+  put 0 into A
+  gosub to AddTen
+  put 10 into Expected
+  put A into Got
+  if A is 10
+    gosub to Pass
+  else
+    gosub to Fail
+  go to AfterSubroutines
+
+AddTen:
+  add 10 to A
+  return
+
+AfterSubroutines:
+
+  log `--- Section 13: Arrays (indexed variables) ---`
+
+! Test: set elements and index
+  put `set elements and index` into Test
+  set the elements of Items to 5
+  put 0 into N
+  while N is less than 5
+  begin
+    index Items to N
+    put N into Items
+    add 1 to N
+  end
+  index Items to 3
+  put 3 into Expected
+  put Items into Got
+  if Items is 3
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: the elements of
+  put `the elements of` into Test
+  put the elements of Items into A
+  put 5 into Expected
+  put A into Got
+  if A is 5
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: the index of
+  put `the index of` into Test
+  index Items to 2
+  put the index of Items into A
+  put 2 into Expected
+  put A into Got
+  if A is 2
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 14: JSON objects ---`
+
+! Test: set to object, set property, read property
+  put `set/read property` into Test
+  set Data to object
+  set property `name` of Data to `Alice`
+  set property `age` of Data to 30
+  put property `name` of Data into A
+  put `Alice` into Expected
+  put A into Got
+  if A is `Alice`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: read numeric property
+  put `read numeric property` into Test
+  put property `age` of Data into A
+  put 30 into Expected
+  put A into Got
+  if A is 30
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 15: JSON arrays ---`
+
+! Test: set to array
+  put `json add and count` into Test
+  set Items to array
+  json add `red` to Items
+  json add `green` to Items
+  json add `blue` to Items
+  put json count of Items into A
+  put 3 into Expected
+  put A into Got
+  if A is 3
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: element of (JSON array access)
+  put `element of (JSON array)` into Test
+  put element 1 of Items into A
+  put `green` into Expected
+  put A into Got
+  if A is `green`
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 16: Split ---`
+
+! Test: split on delimiter
+  put `split on delimiter` into Test
+  split `one,two,three` on `,` into Items
+  put the elements of Items into A
+  put 3 into Expected
+  put A into Got
+  if A is 3
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: split element access
+  put `split element access` into Test
+  index Items to 1
+  put `two` into Expected
+  put Items into Got
+  if Items is `two`
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 17: Stack (push / pop) ---`
+
+! Test: push and pop
+  put `push and pop` into Test
+  put 55 into A
+  push A
+  put 99 into A
+  pop A
+  put 55 into Expected
+  put A into Got
+  if A is 55
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: push multiple and pop order
+  put `push/pop order` into Test
+  put 1 into A
+  push A
+  put 2 into A
+  push A
+  put 3 into A
+  push A
+  pop A
+  put 3 into Expected
+  put A into Got
+  if A is 3
+  begin
+    pop A
+    if A is 2
+    begin
+      pop A
+      put 1 into Expected
+      put A into Got
+      if A is 1
+        gosub to Pass
+      else
+        gosub to Fail
+    end
+    else
+    begin
+      put 2 into Expected
+      put A into Got
+      gosub to Fail
+    end
+  end
+  else
+    gosub to Fail
+
+  log `--- Section 18: Encode / Decode ---`
+
+! Test: default (ec) encode and decode
+  put `ec encode/decode` into Test
+  put `Hello "World"` into A
+  encode A
+  decode A
+  put `Hello "World"` into Expected
+  put A into Got
+  if A is `Hello "World"`
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: url encode and decode
+  put `url encode/decode` into Test
+  set the encoding to `url`
+  put `hello world&more` into A
+  encode A
+  put A into B
+  decode A
+  put `hello world&more` into Expected
+  put A into Got
+  if A is `hello world&more`
+    gosub to Pass
+  else
+    gosub to Fail
+  set the encoding to `ec`
+
+  log `--- Section 19: Hash ---`
+
+! Test: hash produces consistent output
+  put `hash consistency` into Test
+  put hash `Graham` into A
+  put hash `Graham` into B
+  put A into Expected
+  put B into Got
+  if A is B
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 20: Special values ---`
+
+! Test: newline
+  put `newline` into Test
+  put `a` cat newline cat `b` into A
+  put 3 into Expected
+  put the length of A into Got
+  if the length of A is 3
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: empty
+  put `empty` into Test
+  put empty into A
+  put `` into Expected
+  put A into Got
+  if A is ``
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: true and false
+  put `true` into Test
+  put `true` into Expected
+  put true into A
+  put A into Got
+  if A
+    gosub to Pass
+  else
+    gosub to Fail
+  put `false` into Test
+  put `false` into Expected
+  put false into A
+  put A into Got
+  if not A
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: now returns a number
+  put `now is numeric` into Test
+  put now into A
+  put `numeric` into Expected
+  put A into Got
+  if A is numeric
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: random
+  put `random < 100` into Test
+  put random 100 into A
+  put `< 100` into Expected
+  put A into Got
+  if A is less than 100
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: uuid is 36 chars
+  put `uuid length` into Test
+  put uuid into A
+  put 36 into Expected
+  put the length of A into Got
+  if Got is 36
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 21: Fork ---`
+
+! Test: fork runs concurrently
+  put `fork` into Test
+  put 1 into Expected
+  put 0 into X
+  fork to Concurrent
+  wait 1
+  put X into Got
+  if X is 1
+    gosub to Pass
+  else
+    gosub to Fail
+  go to AfterFork
+
+Concurrent:
+  put 1 into X
+  stop
+
+AfterFork:
+
+  log `--- Section 22: Trig functions ---`
+
+! Test: cos
+  put `cos 0` into Test
+  put cos 0 radius 100 into A
+  put 100 into Expected
+  put A into Got
+  if A is 100
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: sin 0 is 0
+  put `sin 0` into Test
+  put sin 0 radius 100 into A
+  put 0 into Expected
+  put A into Got
+  if A is 0
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 23: Date/time values ---`
+
+! Test: year returns a 4-digit number
+  put `year > 2024` into Test
+  put year into A
+  put `> 2024` into Expected
+  put A into Got
+  if A is greater than 2024
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: millisecond is numeric
+  put `millisecond is numeric` into Test
+  put millisecond into A
+  put `numeric` into Expected
+  put A into Got
+  if A is numeric
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 24: Field extraction ---`
+
+! Test: field of delimited string
+  put `field delimited` into Test
+  put `one:two:three:four` into A
+  put field 2 of A delimited by `:` into B
+  put `three` into Expected
+  put B into Got
+  if B is `three`
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 25: JSON keys ---`
+
+! Test: json keys of object
+  put `json keys` into Test
+  set Data to object
+  set property `x` of Data to 1
+  set property `y` of Data to 2
+  set property `z` of Data to 3
+  put json keys of Data into A
+  put `includes x` into Expected
+  put A into Got
+  if A includes `x`
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 26: Backtick special value ---`
+
+! Test: backtick value
+  put `backtick` into Test
+  put backtick into A
+  put backtick into Expected
+  put A into Got
+  if A is backtick
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 27: Nested if/else ---`
+
+! Test: nested if/else
+  put `nested if/else` into Test
+  put 15 into A
+  put `10 < 15 < 20` into Expected
+  put A into Got
+  if A is greater than 10
+  begin
+    if A is less than 20
+      gosub to Pass
+    else
+      gosub to Fail
+  end
+  else
+    gosub to Fail
+
+  log `--- Section 28: While without begin/end ---`
+
+! Test: single-statement while
+  put `while without begin/end` into Test
+  put 0 into N
+  while N is less than 5
+    add 1 to N
+  put 5 into Expected
+  put N into Got
+  if N is 5
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `--- Section 29: Mixed types ---`
+
+! Test: numeric string comparison
+  put `numeric string comparison` into Test
+  put `42` into A
+  put 42 into Expected
+  put A into Got
+  if A is 42
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is an array
+  put `is an array` into Test
+  set Items to array
+  json add 1 to Items
+  put `array` into Expected
+  put Items into Got
+  if Items is an array
+    gosub to Pass
+  else
+    gosub to Fail
+
+! Test: is an object
+  put `is an object` into Test
+  set Data to object
+  set property `a` of Data to 1
+  put `object` into Expected
+  put Data into Got
+  if Data is an object
+    gosub to Pass
+  else
+    gosub to Fail
+
+  log `========================================`
+  log `RESULTS: ` cat Passes cat ` passed, ` cat Fails cat ` failed`
+  log `========================================`
+
+  exit
+
+Pass:
+  add 1 to Passes
+  return
+
+Fail:
+  add 1 to Fails
+  log `  FAIL [` cat Test cat `] expected: ` cat Expected cat ` got: ` cat Got
+  return
+
+  </pre>
+
+  <script>
+    const output = document.getElementById('output');
+    const summary = document.getElementById('summary');
+
+    const origWrite = AllSpeak.writeToDebugConsole;
+    AllSpeak.writeToDebugConsole = function(message) {
+      if (origWrite) origWrite(message);
+      const line = document.createElement('div');
+      if (message.startsWith('---')) {
+        line.className = 'info';
+        line.style.marginTop = '10px';
+        line.style.fontWeight = 'bold';
+      } else if (message.startsWith('  FAIL')) {
+        line.className = 'fail';
+      } else if (message.startsWith('RESULTS:')) {
+        line.className = message.includes('0 failed') ? 'pass' : 'fail';
+        line.style.fontSize = '1.3em';
+        summary.appendChild(line.cloneNode(false));
+        summary.lastChild.textContent = message;
+        summary.lastChild.className = line.className;
+      } else if (message.startsWith('===')) {
+        line.className = 'info';
+      } else {
+        line.className = 'info';
+      }
+      line.textContent = message;
+      output.appendChild(line);
+    };
+
+    // AllSpeak auto-starts via window.onload = AllSpeak_Startup
+  </script>
+</body>
+</html>

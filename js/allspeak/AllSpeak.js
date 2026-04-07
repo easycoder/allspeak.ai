@@ -7,6 +7,10 @@ function AllSpeak_Startup() {
 	AllSpeak.writeStartupTrace(`${Date.now() - AllSpeak.timestamp} ms: Start AllSpeak`);
 	AllSpeak.timestamp = Date.now();
 	AllSpeak.scripts = {};
+	// Initialize the language pack (default: English, unless one is already loaded)
+	if (!AllSpeak_Language.pack && typeof AllSpeak_LanguagePack_en !== `undefined`) {
+		AllSpeak_Language.init(AllSpeak_LanguagePack_en);
+	}
 	window.AllSpeak = AllSpeak;
 	const script = document.getElementById(`allspeak-script`);
 	if (script) {

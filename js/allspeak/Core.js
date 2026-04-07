@@ -14,14 +14,14 @@ const AllSpeak_Core = {
 			} catch (err) {
 				return false;
 			}
-			if (compiler.tokenIs(`to`)) {
+			if (compiler.isWord(`to`)) {
 				compiler.next();
 				// Check if a value holder is next
 				if (compiler.isSymbol()) {
 					const symbol = compiler.getSymbol();
 					const variable = compiler.getCommandAt(symbol.pc);
 					if (variable.isVHolder) {
-						if (compiler.peek() === `giving`) {
+						if (compiler.peek() === AllSpeak_Language.word(`giving`)) {
 							// This variable must be treated as a second value
 							const value2 = compiler.getValue();
 							compiler.next();
@@ -53,7 +53,7 @@ const AllSpeak_Core = {
 				} else {
 					// Here we have 2 values so 'giving' must come next
 					const value2 = compiler.getValue();
-					if (compiler.tokenIs(`giving`)) {
+					if (compiler.isWord(`giving`)) {
 						compiler.next();
 						const target = compiler.getToken();
 						compiler.next();
@@ -116,7 +116,7 @@ const AllSpeak_Core = {
 			if (compiler.isSymbol()) {
 				const alias = compiler.getToken();
 				compiler.next();
-				if (compiler.tokenIs(`to`)) {
+				if (compiler.isWord(`to`)) {
 					compiler.next();
 					if (compiler.isSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
@@ -158,7 +158,7 @@ const AllSpeak_Core = {
 		compile: compiler => {
 			const lino = compiler.getLino();
 			const value = compiler.getNextValue();
-			if (compiler.tokenIs(`to`)) {
+			if (compiler.isWord(`to`)) {
 				if (compiler.nextIsSymbol()) {
 					const symbolRecord = compiler.getSymbolRecord();
 					if (symbolRecord.isVHolder) {
@@ -172,7 +172,7 @@ const AllSpeak_Core = {
 							select: symbolRecord.name,
 							onError: 0
 						});
-						if (compiler.tokenIs(`or`)) {
+						if (compiler.isWord(`or`)) {
 							compiler.next();
 							compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 							compiler.completeHandler();
@@ -216,7 +216,7 @@ const AllSpeak_Core = {
 
 		compile: compiler => {
 			compiler.next();
-			compiler.compileFromHere([`end`]);
+			compiler.compileFromHere([AllSpeak_Language.word(`end`)]);
 			return true;
 		},
 
@@ -319,7 +319,7 @@ const AllSpeak_Core = {
 
 		compile: compiler => {
 			const lino = compiler.getLino();
-			if (compiler.nextTokenIs(`program`)) {
+			if (compiler.nextIsWord(`program`)) {
 				compiler.next();
 				if ([`item`, `pc`].includes(compiler.getToken())) {
 					const item = compiler.getNextValue();
@@ -338,7 +338,7 @@ const AllSpeak_Core = {
 					item: `program`
 				});
 				return true;
-			} else if (compiler.tokenIs(`symbols`)) {
+			} else if (compiler.isWord(`symbols`)) {
 				compiler.next();
 				compiler.addCommand({
 					domain: `core`,
@@ -347,7 +347,7 @@ const AllSpeak_Core = {
 					item: `symbols`
 				});
 				return true;
-			} else if (compiler.tokenIs(`symbol`)) {
+			} else if (compiler.isWord(`symbol`)) {
 				const name = compiler.nextToken();
 				compiler.next();
 				compiler.addCommand({
@@ -460,13 +460,13 @@ const AllSpeak_Core = {
 			} catch (err) {
 				return false;
 			}
-			if (compiler.tokenIs(`by`)) {
+			if (compiler.isWord(`by`)) {
 				compiler.next();
 			}
 			// The next item is always a value
 			const value2 = compiler.getValue();
 			// If we now have 'giving' then the target follows
-			if (compiler.tokenIs(`giving`)) {
+			if (compiler.isWord(`giving`)) {
 				compiler.next();
 				// Get the target
 				if (compiler.isSymbol()) {
@@ -686,7 +686,7 @@ const AllSpeak_Core = {
 			const lino = compiler.getLino();
 			if (compiler.nextIsSymbol()) {
 				const arrayRecord = compiler.getSymbolRecord();
-				if (compiler.nextTokenIs(`with`)) {
+				if (compiler.nextIsWord(`with`)) {
 					const func = compiler.nextToken();
 					compiler.next();
 					const pc = compiler.getPc();
@@ -698,7 +698,7 @@ const AllSpeak_Core = {
 						func,
 						onError: 0
 					});
-					if (compiler.tokenIs(`or`)) {
+					if (compiler.isWord(`or`)) {
 						compiler.next();
 						compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 						compiler.completeHandler();
@@ -739,7 +739,7 @@ const AllSpeak_Core = {
 		compile: compiler => {
 			const lino = compiler.getLino();
 			compiler.next();
-			if (compiler.nextTokenIs(`to`)) {
+			if (compiler.nextIsWord(`to`)) {
 				compiler.next();
 			}
 			const label = compiler.getToken();
@@ -769,7 +769,7 @@ const AllSpeak_Core = {
 
 		compile: compiler => {
 			const lino = compiler.getLino();
-			if (compiler.nextTokenIs(`to`)) {
+			if (compiler.nextIsWord(`to`)) {
 				compiler.next();
 			}
 			const label = compiler.getToken();
@@ -803,7 +803,7 @@ const AllSpeak_Core = {
 
 		compile: compiler => {
 			const lino = compiler.getLino();
-			if (compiler.nextTokenIs(`to`)) {
+			if (compiler.nextIsWord(`to`)) {
 				compiler.next();
 			}
 			const label = compiler.getToken();
@@ -847,7 +847,7 @@ const AllSpeak_Core = {
 				compiler.getCommandAt(pc).else = compiler.getPc();
 				return true;
 			}
-			if (compiler.tokenIs(`else`)) {
+			if (compiler.isWord(`else`)) {
 				const goto = compiler.getPc();
 				// Add a 'goto' to skip the 'else'
 				compiler.addCommand({
@@ -905,14 +905,14 @@ const AllSpeak_Core = {
 							newRecord.program = symbolRecord.program.script;
 						}
 						newRecord.imported = true;
-						if (!compiler.tokenIs(`and`)) {
+						if (!compiler.isWord(`and`)) {
 							break;
 						}
 					} else {
 						throw new Error(`Mismatched import variable type for '${symbolRecord.name}'`);
 					}
 				}
-				if (compiler.tokenIs(`and`)) {
+				if (compiler.isWord(`and`)) {
 					throw new Error(`Imports do not match exports`);
 				}
 			} else {
@@ -934,7 +934,7 @@ const AllSpeak_Core = {
 			// get the variable
 			if (compiler.nextIsSymbol(true)) {
 				const symbol = compiler.getToken();
-				if (compiler.nextTokenIs(`to`)) {
+				if (compiler.nextIsWord(`to`)) {
 					// get the value
 					const value = compiler.getNextValue();
 					const pc = compiler.getPc();
@@ -946,7 +946,7 @@ const AllSpeak_Core = {
 						value,
 						onError: 0
 					});
-					if (compiler.tokenIs(`or`)) {
+					if (compiler.isWord(`or`)) {
 						compiler.next();
 						compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 						compiler.completeHandler();
@@ -1026,13 +1026,13 @@ const AllSpeak_Core = {
 			} catch (err) {
 				return false;
 			}
-			if (compiler.tokenIs(`by`)) {
+			if (compiler.isWord(`by`)) {
 				compiler.next();
 			}
 			// The next item is always a value
 			const value2 = compiler.getValue();
 			// If we now have 'giving' then the target follows
-			if (compiler.tokenIs(`giving`)) {
+			if (compiler.isWord(`giving`)) {
 				compiler.next();
 				// Get the target
 				if (compiler.isSymbol()) {
@@ -1139,7 +1139,7 @@ const AllSpeak_Core = {
 
 		compile: compiler => {
 			const lino = compiler.getLino();
-			if (compiler.nextTokenIs(`cache`)) {
+			if (compiler.nextIsWord(`cache`)) {
 				compiler.next();
 				compiler.addCommand({
 					domain: `core`,
@@ -1316,7 +1316,7 @@ const AllSpeak_Core = {
 			const lino = compiler.getLino();
 			// Get the value
 			const value = compiler.getNextValue();
-			if (compiler.tokenIs(`into`)) {
+			if (compiler.isWord(`into`)) {
 				if (compiler.nextIsSymbol()) {
 					const target = compiler.getToken();
 					compiler.next();
@@ -1382,9 +1382,9 @@ const AllSpeak_Core = {
 		compile: compiler => {
 			const lino = compiler.getLino();
 			const original = compiler.getNextValue();
-			if (compiler.tokenIs(`with`)) {
+			if (compiler.isWord(`with`)) {
 				const replacement = compiler.getNextValue();
-				if (compiler.tokenIs(`in`)) {
+				if (compiler.isWord(`in`)) {
 					if (compiler.nextIsSymbol()) {
 						const targetRecord = compiler.getSymbolRecord();
 						if (targetRecord.isVHolder) {
@@ -1486,20 +1486,20 @@ const AllSpeak_Core = {
 			const lino = compiler.getLino();
 			const script = compiler.getNextValue();
 			const imports = [];
-			if (compiler.tokenIs(`with`)) {
+			if (compiler.isWord(`with`)) {
 				while (true) {
 					if (compiler.nextIsSymbol(true)) {
 						const symbolRecord = compiler.getSymbolRecord();
 						imports.push(symbolRecord.name);
 						compiler.next();
-						if (!compiler.tokenIs(`and`)) {
+						if (!compiler.isWord(`and`)) {
 							break;
 						}
 					}
 				}
 			}
 			let module;
-			if (compiler.tokenIs(`as`)) {
+			if (compiler.isWord(`as`)) {
 				if (compiler.nextIsSymbol(true)) {
 					const moduleRecord = compiler.getSymbolRecord();
 					// moduleRecord.program = program.script;
@@ -1511,7 +1511,7 @@ const AllSpeak_Core = {
 				}
 			}
 			let nowait = false;
-			if (compiler.tokenIs(`nowait`)) {
+			if (compiler.isWord(`nowait`)) {
 				compiler.next();
 				nowait = true;
 			}
@@ -1527,7 +1527,7 @@ const AllSpeak_Core = {
 				then: 0
 			});
 			// Get the 'then' code, if any
-			if (compiler.tokenIs(`then`)) {
+			if (compiler.isWord(`then`)) {
 				const goto = compiler.getPc();
 				// Add a 'goto' to skip the 'then'
 				compiler.addCommand({
@@ -1611,10 +1611,10 @@ const AllSpeak_Core = {
 		compile: compiler => {
 			const lino = compiler.getLino();
 			let message = ``;
-			if (!compiler.nextTokenIs(`to`)) {
+			if (!compiler.nextIsWord(`to`)) {
 				message = compiler.getValue();
 			}
-			if (compiler.tokenIs(`to`)) {
+			if (compiler.isWord(`to`)) {
 				let recipient;
 				let replyVar = null;
 				compiler.next();
@@ -1631,13 +1631,13 @@ const AllSpeak_Core = {
 				} else {
 					return false;
 				}
-				if (compiler.tokenIs(`and`)) {
+				if (compiler.isWord(`and`)) {
 					compiler.next();
-					if (!compiler.tokenIs(`assign`)) return false;
+					if (!compiler.isWord(`assign`)) return false;
 					compiler.next();
-					if (!compiler.tokenIs(`reply`)) return false;
+					if (!compiler.isWord(`reply`)) return false;
 					compiler.next();
-					if (!compiler.tokenIs(`to`)) return false;
+					if (!compiler.isWord(`to`)) return false;
 					if (!compiler.nextIsSymbol()) return false;
 					replyVar = compiler.getSymbolRecord().name;
 					compiler.next();
@@ -1729,9 +1729,9 @@ const AllSpeak_Core = {
 				if (!targetRecord.isVHolder) {
 					return false;
 				}
-				if (compiler.nextTokenIs(`to`)) {
+				if (compiler.nextIsWord(`to`)) {
 					const token = compiler.nextToken();
-					if ([`array`, `object`].includes(token)) {
+					if ([`array`, `object`].includes(AllSpeak_Language.reverseWord(token))) {
 						compiler.next();
 						compiler.addCommand({
 							domain: `core`,
@@ -1739,7 +1739,7 @@ const AllSpeak_Core = {
 							lino,
 							request: `setVarTo`,
 							target: targetRecord.name,
-							type: token
+							type: AllSpeak_Language.reverseWord(token)
 						});
 						return true;
 					}
@@ -1786,7 +1786,7 @@ const AllSpeak_Core = {
 				});
 				return true;
 			}
-			switch (compiler.getToken()) {
+			switch (AllSpeak_Language.reverseWord(compiler.getToken())) {
 			case `ready`:
 				compiler.next();
 				compiler.addCommand({
@@ -1798,11 +1798,11 @@ const AllSpeak_Core = {
 				return true;
 			case `element`:
 				const index = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const targetRecord = compiler.getSymbolRecord();
 						if (targetRecord.keyword === `variable`) {
-							if (compiler.nextTokenIs(`to`)) {
+							if (compiler.nextIsWord(`to`)) {
 								const value = compiler.getNextValue();
 								compiler.addCommand({
 									domain: `core`,
@@ -1821,11 +1821,11 @@ const AllSpeak_Core = {
 				break;
 			case `property`:
 				name = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const targetRecord = compiler.getSymbolRecord();
 						if (targetRecord.keyword === `variable`) {
-							if (compiler.nextTokenIs(`to`)) {
+							if (compiler.nextIsWord(`to`)) {
 								const value = compiler.getNextValue();
 								compiler.addCommand({
 									domain: `core`,
@@ -1844,10 +1844,10 @@ const AllSpeak_Core = {
 				break;
 			case `arg`:
 				name = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const targetRecord = compiler.getSymbolRecord();
-						if (compiler.nextTokenIs(`to`)) {
+						if (compiler.nextIsWord(`to`)) {
 							const value = compiler.getNextValue();
 							compiler.addCommand({
 								domain: `core`,
@@ -1863,20 +1863,20 @@ const AllSpeak_Core = {
 					}
 				}
 			}
-			if (compiler.tokenIs(`the`)) {
+			if (compiler.isWord(`the`)) {
 				compiler.next();
 			}
-			switch (compiler.getToken()) {
+			switch (AllSpeak_Language.reverseWord(compiler.getToken())) {
 			case `elements`:
 				compiler.next();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					compiler.next();
 					if (!compiler.isSymbol()) {
 						throw new Error(`Unknown variable '${compiler.getToken()}'`);
 					}
 					const symbol = compiler.getToken();
 					compiler.next();
-					if (compiler.tokenIs(`to`)) {
+					if (compiler.isWord(`to`)) {
 						compiler.next();
 						// get the value
 						const value = compiler.getValue();
@@ -1893,7 +1893,7 @@ const AllSpeak_Core = {
 				}
 				break;
 			case `encoding`:
-				if (compiler.nextTokenIs(`to`)) {
+				if (compiler.nextIsWord(`to`)) {
 					const encoding = compiler.getNextValue();
 					compiler.addCommand({
 						domain: `core`,
@@ -1907,11 +1907,11 @@ const AllSpeak_Core = {
 				compiler.addWarning(`Unknown encoding option`);
 				break;
 			case `payload`:
-				if (compiler.nextTokenIs(`of`)) {
+				if (compiler.nextIsWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const callbackRecord = compiler.getSymbolRecord();
 						if (callbackRecord.keyword === `callback`) {
-							if (compiler.nextTokenIs(`to`)) {
+							if (compiler.nextIsWord(`to`)) {
 								const payload = compiler.getNextValue();
 								compiler.addCommand({
 									domain: `core`,
@@ -2049,7 +2049,7 @@ const AllSpeak_Core = {
 			const lino = compiler.getLino();
 			if (compiler.nextIsSymbol()) {
 				const arrayRecord = compiler.getSymbolRecord();
-				if (compiler.nextTokenIs(`with`)) {
+				if (compiler.nextIsWord(`with`)) {
 					const func = compiler.nextToken();
 					compiler.next();
 					const pc = compiler.getPc();
@@ -2061,7 +2061,7 @@ const AllSpeak_Core = {
 						func,
 						onError: 0
 					});
-					if (compiler.tokenIs(`or`)) {
+					if (compiler.isWord(`or`)) {
 						compiler.next();
 						compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 						compiler.completeHandler();
@@ -2112,10 +2112,10 @@ const AllSpeak_Core = {
 				numeric: false,
 				content: `\n`
 			};
-			if (compiler.tokenIs(`on`) || compiler.tokenIs(`by`)) {
+			if (compiler.isWord(`on`) || compiler.isWord(`by`)) {
 				on = compiler.getNextValue();
 			}
-			if ([`giving`, `into`].includes(compiler.getToken())) {
+			if ([AllSpeak_Language.word(`giving`), AllSpeak_Language.word(`into`)].includes(compiler.getToken())) {
 				if (compiler.nextIsSymbol()) {
 					targetRecord = compiler.getSymbolRecord();
 					compiler.next();
@@ -2214,13 +2214,13 @@ const AllSpeak_Core = {
 			} catch (err) {
 				return false;
 			}
-			if (compiler.tokenIs(`from`)) {
+			if (compiler.isWord(`from`)) {
 				compiler.next();
 				if (compiler.isSymbol()) {
 					const symbol = compiler.getSymbol();
 					const variable = compiler.getCommandAt(symbol.pc);
 					if (variable.isVHolder) {
-						if (compiler.peek() === `giving`) {
+						if (compiler.peek() === AllSpeak_Language.word(`giving`)) {
 							// This variable must be treated as a second value
 							const value2 = compiler.getValue();
 							compiler.next();
@@ -2253,7 +2253,7 @@ const AllSpeak_Core = {
 				} else {
 					// Here we have 2 values so 'giving' must come next
 					const value2 = compiler.getValue();
-					if (compiler.tokenIs(`giving`)) {
+					if (compiler.isWord(`giving`)) {
 						compiler.next();
 						const target = compiler.getToken();
 						compiler.next();
@@ -2370,9 +2370,9 @@ const AllSpeak_Core = {
 				handlerPC: 0
 			});
 			// Compile the try body up to 'or'
-			compiler.compileFromHere([`or`]);
+			compiler.compileFromHere([AllSpeak_Language.word(`or`)]);
 			// Expect 'handle' after 'or'
-			if (!compiler.tokenIs(`handle`)) {
+			if (!compiler.isWord(`handle`)) {
 				throw new Error(`Expected 'handle' after 'or' in try block`);
 			}
 			compiler.next();
@@ -2387,7 +2387,7 @@ const AllSpeak_Core = {
 			// Fix up the try command's handlerPC
 			compiler.getCommandAt(tryPC).handlerPC = compiler.getPc();
 			// Compile the handler body up to 'end'
-			compiler.compileFromHere([`end`]);
+			compiler.compileFromHere([AllSpeak_Language.word(`end`)]);
 			// Add the endTry command
 			const endPC = compiler.getPc();
 			compiler.addCommand({
@@ -2539,135 +2539,150 @@ const AllSpeak_Core = {
 		}
 	},
 
-	getHandler: (name) => {
-		switch (name) {
-		case `add`:
-			return AllSpeak_Core.Add;
-		case `alias`:
-			return AllSpeak_Core.Alias;
-		case `append`:
-			return AllSpeak_Core.Append;
-		case `begin`:
-			return AllSpeak_Core.Begin;
-		case `callback`:
-			return AllSpeak_Core.Callback;
-		case `clear`:
-			return AllSpeak_Core.Clear;
-		case `close`:
-			return AllSpeak_Core.Close;
-		case `continue`:
-			return AllSpeak_Core.Continue;
-		case `debug`:
-			return AllSpeak_Core.Debug;
-		case `decode`:
-			return AllSpeak_Core.Decode;
-		case `divide`:
-			return AllSpeak_Core.Divide;
-		case `dummy`:
-			return AllSpeak_Core.Dummy;
-		case `encode`:
-			return AllSpeak_Core.Encode;
-		case `end`:
-			return AllSpeak_Core.End;
-		case `every`:
-			return AllSpeak_Core.Every;
-		case `exit`:
-			return AllSpeak_Core.Exit;
-		case `filter`:
-			return AllSpeak_Core.Filter;
-		case `fork`:
-			return AllSpeak_Core.Fork;
-		case `go`:
-			return AllSpeak_Core.Go;
-		case `gosub`:
-			return AllSpeak_Core.Gosub;
-		case `goto`:
-			return AllSpeak_Core.Go;
-		case `if`:
-			return AllSpeak_Core.If;
-		case `import`:
-			return AllSpeak_Core.Import;
-		case `index`:
-			return AllSpeak_Core.Index;
-		case `log`:
-			return AllSpeak_Core.Log;
-		case `module`:
-			return AllSpeak_Core.Module;
-		case `multiply`:
-			return AllSpeak_Core.Multiply;
-		case `negate`:
-			return AllSpeak_Core.Negate;
-		case `no`:
-			return AllSpeak_Core.No;
-		case `on`:
-			return AllSpeak_Core.On;
-		case `pop`:
-			return AllSpeak_Core.Pop;
-		case `print`:
-			return AllSpeak_Core.Print;
-		case `push`:
-			return AllSpeak_Core.Push;
-		case `put`:
-			return AllSpeak_Core.Put;
-		case `replace`:
-			return AllSpeak_Core.Replace;
-		case `require`:
-			return AllSpeak_Core.Require;
-		case `return`:
-			return AllSpeak_Core.Return;
-		case `run`:
-			return AllSpeak_Core.Run;
-		case `sanitize`:
-			return AllSpeak_Core.Sanitize;
-		case `script`:
-			return AllSpeak_Core.Script;
-		case `send`:
-			return AllSpeak_Core.Send;
-		case `set`:
-			return AllSpeak_Core.Set;
-		case `sort`:
-			return AllSpeak_Core.Sort;
-		case `split`:
-			return AllSpeak_Core.Split;
-		case `stop`:
-			return AllSpeak_Core.Stop;
-		case `subtract`:
-		case `take`:
-			return AllSpeak_Core.Take;
-		case `test`:
-			return AllSpeak-Core.Test;
-		case `toggle`:
-			return AllSpeak_Core.Toggle;
-		case `try`:
-			return AllSpeak_Core.Try;
-		case `endTry`:
-			return AllSpeak_Core.EndTry;
-		case `variable`:
-			return AllSpeak_Core.Variable;
-		case `wait`:
-			return AllSpeak_Core.Wait;
-		case `while`:
-			return AllSpeak_Core.While;
-		default:
-			return false;
+	// Compile-time keyword → handler map, built from the language pack.
+	_compileHandlers: null,
+
+	_buildCompileHandlers: function() {
+		const lang = AllSpeak_Language;
+		// Map each opcode's language-specific keyword to its compile handler.
+		// Multiple opcodes may share a keyword (e.g. all SET_* → Set handler).
+		const opcodeToHandler = this.getOpcodeMap();
+		const handlers = {};
+		if (lang.pack) {
+			const opcodes = lang.pack.opcodes;
+			for (const opcode in opcodes) {
+				const handler = opcodeToHandler[opcode];
+				if (handler) {
+					const keywords = opcodes[opcode].keyword.split(`|`);
+					for (const kw of keywords) {
+						if (!handlers[kw]) {
+							handlers[kw] = handler;
+						}
+					}
+				}
+			}
 		}
+		// Add compile-only handlers not represented by runtime opcodes.
+		// These compile to other commands or set compiler flags.
+		handlers[lang.word(`begin`)] = this.Begin;
+		handlers[lang.word(`end`)] = this.End;
+		handlers[lang.word(`script`)] = this.Script;
+		handlers[`log`] = this.Log;           // compiles to PRINT with log flag
+		handlers[`release`] = this.Release;   // compiles to SET_READY
+		handlers[`continue`] = this.Continue; // sets compiler flag
+		handlers[`no`] = this.No;             // no cache directive
+		handlers[`test`] = this.Test;
+		handlers[`goto`] = this.Go;           // alias for go
+		handlers[`subtract`] = this.Take;     // alias for take
+		handlers[`endTry`] = this.EndTry;     // internal
+		this._compileHandlers = handlers;
+	},
+
+	getHandler: function(name) {
+		if (!this._compileHandlers) {
+			this._buildCompileHandlers();
+		}
+		return this._compileHandlers[name] || false;
+	},
+
+	opcodeMap: null,
+
+	getOpcodeMap: function() {
+		if (this.opcodeMap) return this.opcodeMap;
+		this.opcodeMap = {
+			ADD: this.Add,
+			SUBTRACT: this.Take,
+			MULTIPLY: this.Multiply,
+			DIVIDE: this.Divide,
+			NEGATE: this.Negate,
+			PUT: this.Put,
+			SET_VAR_TYPE: this.Set,
+			SET_ARRAY: this.Set,
+			SET_BOOLEAN: this.Set,
+			SET_READY: this.Set,
+			SET_ELEMENT_VALUE: this.Set,
+			SET_PROPERTY: this.Set,
+			SET_ARG: this.Set,
+			SET_ELEMENTS: this.Set,
+			SET_ENCODING: this.Set,
+			SET_PAYLOAD: this.Set,
+			APPEND: this.Append,
+			PUSH: this.Push,
+			POP: this.Pop,
+			CLEAR: this.Clear,
+			REPLACE: this.Replace,
+			SORT: this.Sort,
+			SPLIT: this.Split,
+			FILTER: this.Filter,
+			INDEX: this.Index,
+			IF: this.If,
+			WHILE: this.While,
+			GOTO: this.Go,
+			GOSUB: this.Gosub,
+			RETURN: this.Return,
+			FORK: this.Fork,
+			EXIT: this.Exit,
+			STOP: this.Stop,
+			WAIT: this.Wait,
+			EVERY: this.Every,
+			TRY: this.Try,
+			END_TRY: this.EndTry,
+			CONTINUE: this.Continue,
+			TOGGLE: this.Toggle,
+			DECLARE_VARIABLE: this.Variable,
+			DECLARE_MODULE: this.Module,
+			DECLARE_SYMBOL: this.Variable,
+			DECLARE_CALLBACK: this.Callback,
+			DECLARE_ALIAS: this.Alias,
+			ENCODE: this.Encode,
+			DECODE: this.Decode,
+			SANITIZE: this.Sanitize,
+			PRINT: this.Print,
+			LOG: this.Print,
+			SEND_MESSAGE: this.Send,
+			ON_CLOSE: this.On,
+			ON_MESSAGE: this.On,
+			ON_ERROR: this.On,
+			ON_CALLBACK: this.On,
+			DEBUG_PROGRAM: this.Debug,
+			DEBUG_SYMBOLS: this.Debug,
+			DEBUG_SYMBOL: this.Debug,
+			DEBUG_STEP: this.Debug,
+			DEBUG_STOP: this.Debug,
+			RUN_MODULE: this.Run,
+			REQUIRE: this.Require,
+			IMPORT: this.Import,
+			CLOSE_MODULE: this.Close,
+			DUMMY: this.Dummy,
+			NO_CACHE: this.No,
+			TEST: this.Test,
+			BEGIN: this.Begin,
+			END: this.End,
+			SCRIPT: this.Script
+		};
+		return this.opcodeMap;
 	},
 
 	run: program => {
-		// Look up the appropriate handler and call it
-		// If it's not there throw an error
 		const command = program[program.pc];
-		const handler = AllSpeak_Core.getHandler(command.keyword);
+		// Dispatch by opcode if available, fall back to keyword
+		let handler;
+		if (command.opcode) {
+			handler = AllSpeak_Core.getOpcodeMap()[command.opcode];
+		}
+		if (!handler) {
+			handler = AllSpeak_Core.getHandler(command.keyword);
+		}
 		if (!handler) {
 			program.runtimeError(command.lino,
-				`Unknown keyword '${command.keyword}' in 'core' package`);
+				`Unknown command '${command.opcode || command.keyword}' in 'core' package`);
 		}
 		return handler.run(program);
 	},
 
 	isNegate: (compiler) => {
 		const token = compiler.getToken();
-		if (token === `not`) {
+		if (token === AllSpeak_Language.word(`not`)) {
 			compiler.next();
 			return true;
 		}
@@ -2689,7 +2704,7 @@ const AllSpeak_Core = {
 						name
 					};
 				case `variable`:
-					const type = compiler.nextToken();
+					const type = AllSpeak_Language.reverseWord(compiler.nextToken());
 					if ([`format`, `modulo`].includes(type)) {
 						const value = compiler.getNextValue();
 						return {
@@ -2708,12 +2723,12 @@ const AllSpeak_Core = {
 				return null;
 			}
 			
-			if (compiler.tokenIs(`the`)) {
+			if (compiler.isWord(`the`)) {
 				compiler.next();
 			}
 
 			var token = compiler.getToken();
-			if (token === `true`) {
+			if (token === AllSpeak_Language.word(`true`)) {
 				compiler.next();
 				return {
 					domain: `core`,
@@ -2721,7 +2736,7 @@ const AllSpeak_Core = {
 					content: true
 				};
 			}
-			if (token === `false`) {
+			if (token === AllSpeak_Language.word(`false`)) {
 				compiler.next();
 				return {
 					domain: `core`,
@@ -2729,7 +2744,7 @@ const AllSpeak_Core = {
 					content: false
 				};
 			}
-			if (token === `random`) {
+			if (token === AllSpeak_Language.word(`random`)) {
 				compiler.next();
 				const range = compiler.getValue();
 				return {
@@ -2738,7 +2753,7 @@ const AllSpeak_Core = {
 					range
 				};
 			}
-			if (token === `cos`) {
+			if (token === AllSpeak_Language.word(`cos`)) {
 				compiler.next();
 				const angle_c = compiler.getValue();
 				compiler.skip(`radius`);
@@ -2750,7 +2765,7 @@ const AllSpeak_Core = {
 					radius_c
 				};
 			}
-			if (token === `sin`) {
+			if (token === AllSpeak_Language.word(`sin`)) {
 				compiler.next();
 				const angle_s = compiler.getValue();
 				compiler.skip(`radius`);
@@ -2762,7 +2777,7 @@ const AllSpeak_Core = {
 					radius_s
 				};
 			}
-			if (token === `tan`) {
+			if (token === AllSpeak_Language.word(`tan`)) {
 				compiler.next();
 				const angle_t = compiler.getValue();
 				compiler.skip(`radius`);
@@ -2774,7 +2789,7 @@ const AllSpeak_Core = {
 					radius_t
 				};
 			}
-			if (token === `acos`) {
+			if (token === AllSpeak_Language.word(`acos`)) {
 				compiler.next();
 				const dy = compiler.getValue();
 				const dx = compiler.getValue();
@@ -2785,7 +2800,7 @@ const AllSpeak_Core = {
 					dx
 				};
 			}
-			if (token === `asin`) {
+			if (token === AllSpeak_Language.word(`asin`)) {
 				compiler.next();
 				const dy = compiler.getValue();
 				const dx = compiler.getValue();
@@ -2796,7 +2811,7 @@ const AllSpeak_Core = {
 					dx
 				};
 			}
-			if (token === `atan`) {
+			if (token === AllSpeak_Language.word(`atan`)) {
 				compiler.next();
 				const dy = compiler.getValue();
 				const dx = compiler.getValue();
@@ -2807,14 +2822,14 @@ const AllSpeak_Core = {
 					dx
 				};
 			}
-			if ([`now`, `timestamp`, `today`, `newline`, `backtick`, `break`, `empty`, `uuid`].includes(token)) {
+			if ([`now`, `timestamp`, `today`, `newline`, `backtick`, `break`, `empty`, `uuid`].includes(AllSpeak_Language.reverseWord(token))) {
 				compiler.next();
 				return {
 					domain: `core`,
 					type: token
 				};
 			}
-			if (token === `date`) {
+			if (token === AllSpeak_Language.word(`date`)) {
 				const value = compiler.getNextValue();
 				return {
 					domain: `core`,
@@ -2822,7 +2837,7 @@ const AllSpeak_Core = {
 					value
 				};
 			}
-			if ([`encode`, `decode`, `lowercase`, `hash`, `reverse`, `trim`].includes(token)) {
+			if ([`encode`, `decode`, `lowercase`, `hash`, `reverse`, `trim`].includes(AllSpeak_Language.reverseWord(token))) {
 				compiler.next();
 				const value = compiler.getValue();
 				return {
@@ -2831,12 +2846,12 @@ const AllSpeak_Core = {
 					value
 				};
 			}
-			if (token === `field`) {
+			if (token === AllSpeak_Language.word(`field`)) {
 				const index = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					const value = compiler.getNextValue();
-					if (compiler.tokenIs(`delimited`)) {
-						if (compiler.nextTokenIs(`by`)) {
+					if (compiler.isWord(`delimited`)) {
+						if (compiler.nextIsWord(`by`)) {
 							const delimiter = compiler.getNextValue();
 							return {
 								domain: `core`,
@@ -2850,9 +2865,9 @@ const AllSpeak_Core = {
 				}
 				return null;
 			}
-			if (token === `element`) {
+			if (token === AllSpeak_Language.word(`element`)) {
 				const element = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
 						compiler.next();
@@ -2868,9 +2883,9 @@ const AllSpeak_Core = {
 				}
 				return null;
 			}
-			if (token === `item`) {
+			if (token === AllSpeak_Language.word(`item`)) {
 				const item = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
 						compiler.next();
@@ -2886,9 +2901,9 @@ const AllSpeak_Core = {
 				}
 				return null;
 			}
-			if (token === `property`) {
+			if (token === AllSpeak_Language.word(`property`)) {
 				const property = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
 						compiler.next();
@@ -2904,9 +2919,9 @@ const AllSpeak_Core = {
 				}
 				return null;
 			}
-			if (token === `arg`) {
+			if (token === AllSpeak_Language.word(`arg`)) {
 				const value = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const target = compiler.getSymbolRecord();
 						compiler.next();
@@ -2922,7 +2937,7 @@ const AllSpeak_Core = {
 			if ([`character`, `char`].includes(token)) {
 				let index = compiler.getNextValue();
 				compiler.next();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					let value = compiler.getNextValue();
 					return {
 						domain: `core`,
@@ -2932,10 +2947,10 @@ const AllSpeak_Core = {
 					};
 				}
 			}
-			const type = compiler.getToken();
+			const type = AllSpeak_Language.reverseWord(compiler.getToken());
 			switch (type) {
 			case `elements`:
-				if ([`of`, `in`].includes(compiler.nextToken())) {
+				if ([AllSpeak_Language.word(`of`), AllSpeak_Language.word(`in`)].includes(compiler.nextToken())) {
 					if (compiler.nextIsSymbol()) {
 						const name = compiler.getToken();
 						compiler.next();
@@ -2948,9 +2963,9 @@ const AllSpeak_Core = {
 				}
 				break;
 			case `index`:
-				if (compiler.nextTokenIs(`of`)) {
+				if (compiler.nextIsWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
-						if (compiler.peek() === `in`) {
+						if (compiler.peek() === AllSpeak_Language.word(`in`)) {
 							const value1 = compiler.getValue();
 							const value2 = compiler.getNextValue();
 							return {
@@ -2970,7 +2985,7 @@ const AllSpeak_Core = {
 						}
 					} else {
 						const value1 = compiler.getValue();
-						if (compiler.tokenIs(`in`)) {
+						if (compiler.isWord(`in`)) {
 							const value2 = compiler.getNextValue();
 							return {
 								domain: `core`,
@@ -2983,7 +2998,7 @@ const AllSpeak_Core = {
 				}
 				break;
 			case `value`:
-				if (compiler.nextTokenIs(`of`)) {
+				if (compiler.nextIsWord(`of`)) {
 					compiler.next();
 					const value = compiler.getValue();
 					return {
@@ -2994,7 +3009,7 @@ const AllSpeak_Core = {
 				}
 				break;
 			case `length`:
-				if (compiler.nextTokenIs(`of`)) {
+				if (compiler.nextIsWord(`of`)) {
 					compiler.next();
 					const value = compiler.getValue();
 					return {
@@ -3008,7 +3023,7 @@ const AllSpeak_Core = {
 			case `right`:
 				try {
 					const count = compiler.getNextValue();
-					if (compiler.tokenIs(`of`)) {
+					if (compiler.isWord(`of`)) {
 						const value = compiler.getNextValue();
 						return {
 							domain: `core`,
@@ -3023,8 +3038,8 @@ const AllSpeak_Core = {
 				break;
 			case `from`:
 				const from = compiler.getNextValue();
-				const to = compiler.tokenIs(`to`) ? compiler.getNextValue() : null;
-				if (compiler.tokenIs(`of`)) {
+				const to = compiler.isWord(`to`) ? compiler.getNextValue() : null;
+				if (compiler.isWord(`of`)) {
 					const value = compiler.getNextValue();
 					return {
 						domain: `core`,
@@ -3037,20 +3052,20 @@ const AllSpeak_Core = {
 				break;
 			case `position`:
 				let nocase = false;
-				if (compiler.nextTokenIs(`nocase`)) {
+				if (compiler.nextIsWord(`nocase`)) {
 					nocase = true;
 					compiler.next();
 				}
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					var last = false;
-					if (compiler.nextTokenIs(`the`)) {
-						if (compiler.nextTokenIs(`last`)) {
+					if (compiler.nextIsWord(`the`)) {
+						if (compiler.nextIsWord(`last`)) {
 							compiler.next();
 							last = true;
 						}
 					}
 					const needle = compiler.getValue();
-					if (compiler.tokenIs(`in`)) {
+					if (compiler.isWord(`in`)) {
 						const haystack = compiler.getNextValue();
 						return {
 							domain: `core`,
@@ -3064,7 +3079,7 @@ const AllSpeak_Core = {
 				}
 				break;
 			case `payload`:
-				if (compiler.nextTokenIs(`of`)) {
+				if (compiler.nextIsWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const callbackRecord = compiler.getSymbolRecord();
 						if (callbackRecord.keyword === `callback`) {
@@ -3090,7 +3105,7 @@ const AllSpeak_Core = {
 			case `error`:
 				compiler.next();
 				// Accept both 'the error' and 'the error message'
-				if (compiler.tokenIs(`message`)) {
+				if (compiler.isWord(`message`)) {
 					compiler.next();
 				}
 				return {
@@ -3102,7 +3117,7 @@ const AllSpeak_Core = {
 			case `minute`:
 			case `second`:
 				var timestamp = null;
-				if (compiler.nextTokenIs(`of`)) {
+				if (compiler.nextIsWord(`of`)) {
 					timestamp = compiler.getNextValue();
 				}
 				return {
@@ -3112,9 +3127,9 @@ const AllSpeak_Core = {
 				}
 			case `day`:
 			case `month`:
-				if (compiler.nextTokenIs(`number`)) {
+				if (compiler.nextIsWord(`number`)) {
 					var timestamp = null;
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						timestamp = compiler.getNextValue();
 					}
 					return {
@@ -3124,7 +3139,7 @@ const AllSpeak_Core = {
 					};
 				} else {
 					var timestamp = null;
-					if (compiler.tokenIs(`of`)) {
+					if (compiler.isWord(`of`)) {
 						timestamp = compiler.getNextValue();
 					}
 					return {
@@ -3659,13 +3674,13 @@ const AllSpeak_Core = {
 			if (compiler.isSymbol()) {
 				const symbolRecord = compiler.getSymbolRecord();
 				if (symbolRecord.keyword === `module`) {
-					if (compiler.nextTokenIs(`is`)) {
+					if (compiler.nextIsWord(`is`)) {
 						let sense = true;
-						if (compiler.nextTokenIs(`not`)) {
+						if (compiler.nextIsWord(`not`)) {
 							compiler.next();
 							sense = false;
 						}
-						if (compiler.tokenIs(`running`)) {
+						if (compiler.isWord(`running`)) {
 							compiler.next();
 							return {
 								domain: `core`,
@@ -3678,7 +3693,7 @@ const AllSpeak_Core = {
 					return null;
 				}
 			}
-			if (compiler.tokenIs(`tracing`)) {
+			if (compiler.isWord(`tracing`)) {
 				compiler.next();
 				return {
 					domain: `core`,
@@ -3686,8 +3701,8 @@ const AllSpeak_Core = {
 					sense: true
 				};
 			}
-			if (compiler.tokenIs(`not`)) {
-				if (compiler.peek() === `tracing`) {
+			if (compiler.isWord(`not`)) {
+				if (compiler.peek() === AllSpeak_Language.word(`tracing`)) {
 					compiler.next(2);
 					return {
 						domain: `core`,
@@ -3705,7 +3720,7 @@ const AllSpeak_Core = {
 			try {
 				const value1 = compiler.getValue();
 				const token = compiler.getToken();
-				if (token === `includes`) {
+				if (token === AllSpeak_Language.word(`includes`)) {
 					const value2 = compiler.getNextValue();
 					return {
 						domain: `core`,
@@ -3714,8 +3729,8 @@ const AllSpeak_Core = {
 						value2
 					};
 				}
-				if (token === `starts`) {
-					if (compiler.nextTokenIs(`with`)) {
+				if (token === AllSpeak_Language.word(`starts`)) {
+					if (compiler.nextIsWord(`with`)) {
 						compiler.next();
 						const value2 = compiler.getValue();
 						return {
@@ -3727,8 +3742,8 @@ const AllSpeak_Core = {
 					}
 					return null;
 				}
-				if (token === `ends`) {
-					if (compiler.nextTokenIs(`with`)) {
+				if (token === AllSpeak_Language.word(`ends`)) {
+					if (compiler.nextIsWord(`with`)) {
 						compiler.next();
 						const value2 = compiler.getValue();
 						return {
@@ -3740,10 +3755,10 @@ const AllSpeak_Core = {
 					}
 					return null;
 				}
-				if (token === `is`) {
+				if (token === AllSpeak_Language.word(`is`)) {
 					compiler.next();
 					const negate = AllSpeak_Core.isNegate(compiler);
-					const test = compiler.getToken();
+					const test = AllSpeak_Language.reverseWord(compiler.getToken());
 					switch (test) {
 					case `numeric`:
 						compiler.next();
@@ -3768,7 +3783,7 @@ const AllSpeak_Core = {
 							value1
 						};
 					case `greater`:
-						if (compiler.nextTokenIs(`than`)) {
+						if (compiler.nextIsWord(`than`)) {
 							compiler.next();
 							const value2 = compiler.getValue();
 							return {
@@ -3781,7 +3796,7 @@ const AllSpeak_Core = {
 						}
 						return null;
 					case `less`:
-						if (compiler.nextTokenIs(`than`)) {
+						if (compiler.nextIsWord(`than`)) {
 							compiler.next();
 							const value2 = compiler.getValue();
 							return {
@@ -3794,7 +3809,7 @@ const AllSpeak_Core = {
 						}
 						return null;
 					case `an`:
-						switch (compiler.nextToken()) {
+						switch (AllSpeak_Language.reverseWord(compiler.nextToken())) {
 							case `array`:
 								compiler.next();
 								return {
@@ -3844,7 +3859,7 @@ const AllSpeak_Core = {
 			if (!left) {
 				return null;
 			}
-			while (compiler.tokenIs(`and`)) {
+			while (compiler.isWord(`and`)) {
 				compiler.next();
 				const right = AllSpeak_Core.condition.parseConditionTerm(compiler);
 				if (!right) {
@@ -3867,7 +3882,7 @@ const AllSpeak_Core = {
 			if (!left) {
 				return null;
 			}
-			while (compiler.tokenIs(`or`)) {
+			while (compiler.isWord(`or`)) {
 				compiler.next();
 				const right = AllSpeak_Core.condition.parseAndExpression(compiler);
 				if (!right) {

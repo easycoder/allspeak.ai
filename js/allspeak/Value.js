@@ -9,7 +9,7 @@ const AllSpeak_Value = {
 		}
 
 		// Check for a boolean
-		if (token === `true`) {
+		if (token === AllSpeak_Language.word(`true`)) {
 			compiler.next();
 			return {
 				type: `boolean`,
@@ -17,7 +17,7 @@ const AllSpeak_Value = {
 			};
 		}
 
-		if (token === `false`) {
+		if (token === AllSpeak_Language.word(`false`)) {
 			compiler.next();
 			return {
 				type: `boolean`,
@@ -53,9 +53,9 @@ const AllSpeak_Value = {
 		}
 
 		// Character extraction: char N of Value / character N of Value
-		if ([`char`, `character`].includes(token)) {
+		if ([`char`, `character`].includes(AllSpeak_Language.reverseWord(token))) {
 			const index = compiler.getNextValue();
-			if (compiler.tokenIs(`of`)) {
+			if (compiler.isWord(`of`)) {
 				const value = compiler.getNextValue();
 				return {
 					domain: `core`,
@@ -86,13 +86,13 @@ const AllSpeak_Value = {
 			throw new Error(`Undefined value: '${token}'`);
 		}
 
-		if (compiler.getToken() === `cat`) {
+		if (compiler.getToken() === AllSpeak_Language.word(`cat`)) {
 			const value = {
 				type: `cat`,
 				numeric: false,
 				parts: [item]
 			};
-			while (compiler.tokenIs(`cat`)) {
+			while (compiler.isWord(`cat`)) {
 				compiler.next();
                 item = AllSpeak_Value.getItem(compiler);
                 if (!item) {

@@ -1,0 +1,1726 @@
+{
+  "meta": {
+    "version": "0.1.0",
+    "description": "Canonical opcode table for AllSpeak. Each entry represents one language-neutral meaning. Language packs map surface syntax to these opcodes; the runtime executes only these opcodes.",
+    "domains": [
+      "core",
+      "browser",
+      "json",
+      "rest",
+      "mqtt"
+    ]
+  },
+  "opcodes": {
+    "ADD": {
+      "domain": "core",
+      "category": "arithmetic",
+      "description": "Add a value to a variable",
+      "current": {
+        "keyword": "add"
+      },
+      "params": [
+        "value1",
+        "value2?",
+        "target"
+      ]
+    },
+    "ALERT": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Show a browser alert dialog",
+      "current": {
+        "keyword": "alert"
+      },
+      "params": [
+        "value"
+      ]
+    },
+    "APPEND": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Append a value to a variable (string concatenation or array append)",
+      "current": {
+        "keyword": "append"
+      },
+      "params": [
+        "value",
+        "target",
+        "onError?"
+      ]
+    },
+    "ATTACH_ELEMENT": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Attach a variable to an existing DOM element by CSS ID",
+      "current": {
+        "keyword": "attach"
+      },
+      "params": [
+        "type",
+        "symbol",
+        "cssId",
+        "onError?"
+      ]
+    },
+    "CLEAR": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Clear a variable's value",
+      "current": {
+        "keyword": "clear"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "CLEAR_ELEMENT": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Clear the content of a DOM element, the body, or all styles",
+      "current": {
+        "keyword": "clear"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "CLICK_ELEMENT": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Programmatically click an element",
+      "current": {
+        "keyword": "click"
+      },
+      "params": [
+        "target"
+      ]
+    },
+    "CONTINUE": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Continue to next loop iteration",
+      "current": {
+        "keyword": "continue"
+      },
+      "params": []
+    },
+    "CONVERT": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Convert a variable's content between formats (print/html)",
+      "current": {
+        "keyword": "convert"
+      },
+      "params": [
+        "name",
+        "mode"
+      ]
+    },
+    "COPY_TO_CLIPBOARD": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Copy an input element's content to clipboard",
+      "current": {
+        "keyword": "copy"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "CREATE_ELEMENT": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Create a new DOM element and append to parent",
+      "current": {
+        "keyword": "create"
+      },
+      "params": [
+        "name",
+        "type",
+        "parent",
+        "onError?"
+      ]
+    },
+    "DEBUG_PROGRAM": {
+      "domain": "core",
+      "category": "debug",
+      "description": "Dump full program state",
+      "current": {
+        "keyword": "debug",
+        "item": "program"
+      },
+      "params": []
+    },
+    "DEBUG_STEP": {
+      "domain": "core",
+      "category": "debug",
+      "description": "Enable single-step execution",
+      "current": {
+        "keyword": "debug",
+        "item": "step"
+      },
+      "params": []
+    },
+    "DEBUG_STOP": {
+      "domain": "core",
+      "category": "debug",
+      "description": "Stop debugging",
+      "current": {
+        "keyword": "debug",
+        "item": "stop"
+      },
+      "params": []
+    },
+    "DEBUG_SYMBOL": {
+      "domain": "core",
+      "category": "debug",
+      "description": "Dump a single symbol's value",
+      "current": {
+        "keyword": "debug",
+        "item": "symbol"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "DEBUG_SYMBOLS": {
+      "domain": "core",
+      "category": "debug",
+      "description": "Dump all symbol values",
+      "current": {
+        "keyword": "debug",
+        "item": "symbols"
+      },
+      "params": []
+    },
+    "DECLARE_ALIAS": {
+      "domain": "core",
+      "category": "declaration",
+      "description": "Create an alias for an existing symbol",
+      "current": {
+        "keyword": "alias"
+      },
+      "params": [
+        "alias",
+        "symbol"
+      ]
+    },
+    "DECLARE_CALLBACK": {
+      "domain": "core",
+      "category": "declaration",
+      "description": "Declare a callback variable",
+      "current": {
+        "keyword": "callback"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "DECLARE_ELEMENT": {
+      "domain": "browser",
+      "category": "declaration",
+      "description": "Declare a DOM element variable of a given type",
+      "current": {
+        "keyword": "div|span|button|input|textarea|select|option|a|p|pre|h1|h2|h3|h4|h5|h6|img|image|canvas|table|tr|td|th|ul|li|form|fieldset|legend|label|blockquote|hr|section|file|audioclip|progress"
+      },
+      "params": [
+        "name",
+        "elementType"
+      ]
+    },
+    "DECLARE_MODULE": {
+      "domain": "core",
+      "category": "declaration",
+      "description": "Declare a module variable",
+      "current": {
+        "keyword": "module"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "DECLARE_SYMBOL": {
+      "domain": "core",
+      "category": "declaration",
+      "description": "Declare a symbol (flag/boolean)",
+      "current": {
+        "keyword": "symbol"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "DECLARE_VARIABLE": {
+      "domain": "core",
+      "category": "declaration",
+      "description": "Declare a named variable",
+      "current": {
+        "keyword": "variable"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "DECODE": {
+      "domain": "core",
+      "category": "text",
+      "description": "Decode a URL-encoded or HTML-encoded value",
+      "current": {
+        "keyword": "decode"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "DISABLE_ELEMENT": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Disable a form element",
+      "current": {
+        "keyword": "disable"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "DIVIDE": {
+      "domain": "core",
+      "category": "arithmetic",
+      "description": "Divide a variable by a value",
+      "current": {
+        "keyword": "divide"
+      },
+      "params": [
+        "value1",
+        "value2",
+        "target"
+      ]
+    },
+    "DUMMY": {
+      "domain": "core",
+      "category": "module",
+      "description": "No-op placeholder command",
+      "current": {
+        "keyword": "dummy"
+      },
+      "params": []
+    },
+    "ENABLE_ELEMENT": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Enable a form element",
+      "current": {
+        "keyword": "enable"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "ENCODE": {
+      "domain": "core",
+      "category": "text",
+      "description": "URL-encode or HTML-encode a variable's value",
+      "current": {
+        "keyword": "encode"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "END_TRY": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "End error-handling block",
+      "current": {
+        "keyword": "endTry"
+      },
+      "params": []
+    },
+    "EVERY": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Repeat block at timed interval",
+      "current": {
+        "keyword": "every"
+      },
+      "params": [
+        "rate",
+        "multiplier"
+      ]
+    },
+    "EXIT": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Terminate script execution",
+      "current": {
+        "keyword": "exit"
+      },
+      "params": []
+    },
+    "FILTER": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Filter an array with a test function",
+      "current": {
+        "keyword": "filter"
+      },
+      "params": [
+        "array",
+        "func",
+        "onError?"
+      ]
+    },
+    "FOCUS_ELEMENT": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Set focus to an element",
+      "current": {
+        "keyword": "focus"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "FORK": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Start parallel execution at label",
+      "current": {
+        "keyword": "fork"
+      },
+      "params": [
+        "label"
+      ]
+    },
+    "FULLSCREEN": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Enter or exit fullscreen mode",
+      "current": {
+        "keyword": "request"
+      },
+      "params": [
+        "option"
+      ]
+    },
+    "GET_FORM": {
+      "domain": "browser",
+      "category": "storage",
+      "description": "Get all values from a form as JSON",
+      "current": {
+        "keyword": "get",
+        "action": "getForm"
+      },
+      "params": [
+        "form",
+        "target"
+      ]
+    },
+    "GET_OPTION": {
+      "domain": "browser",
+      "category": "storage",
+      "description": "Get the selected value of a select element",
+      "current": {
+        "keyword": "get",
+        "action": "getOption"
+      },
+      "params": [
+        "select",
+        "target"
+      ]
+    },
+    "GET_STORAGE": {
+      "domain": "browser",
+      "category": "storage",
+      "description": "Retrieve a value from browser local storage",
+      "current": {
+        "keyword": "get",
+        "action": "getStorage"
+      },
+      "params": [
+        "key",
+        "target"
+      ]
+    },
+    "GOSUB": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Jump to label, saving return address",
+      "current": {
+        "keyword": "gosub"
+      },
+      "params": [
+        "label"
+      ]
+    },
+    "GOTO": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Unconditional jump to label",
+      "current": {
+        "keyword": "goto"
+      },
+      "params": [
+        "label"
+      ]
+    },
+    "HIGHLIGHT_ELEMENT": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Highlight an element visually",
+      "current": {
+        "keyword": "highlight"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "HISTORY_BACK": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Go back in browser history",
+      "current": {
+        "keyword": "history",
+        "type": "back"
+      },
+      "params": []
+    },
+    "HISTORY_FORWARD": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Go forward in browser history",
+      "current": {
+        "keyword": "history",
+        "type": "forward"
+      },
+      "params": []
+    },
+    "HISTORY_PUSH": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Push a new history state",
+      "current": {
+        "keyword": "history",
+        "type": "push"
+      },
+      "params": [
+        "url",
+        "state?",
+        "title?"
+      ]
+    },
+    "HISTORY_REPLACE": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Replace current history entry",
+      "current": {
+        "keyword": "history",
+        "type": "replace"
+      },
+      "params": [
+        "url",
+        "state?",
+        "title?"
+      ]
+    },
+    "HISTORY_SET": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Set/replace current history state",
+      "current": {
+        "keyword": "history",
+        "type": "set"
+      },
+      "params": [
+        "url",
+        "state?",
+        "title?"
+      ]
+    },
+    "IF": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Conditional branch — evaluate condition, skip to else/end if false",
+      "current": {
+        "keyword": "if"
+      },
+      "params": [
+        "condition",
+        "elsePC"
+      ]
+    },
+    "IMPORT": {
+      "domain": "core",
+      "category": "module",
+      "description": "Import symbols from a module",
+      "current": {
+        "keyword": "import"
+      },
+      "params": []
+    },
+    "INDEX": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Set the current index of an array variable",
+      "current": {
+        "keyword": "index"
+      },
+      "params": [
+        "symbol",
+        "value",
+        "onError?"
+      ]
+    },
+    "JSON_ADD": {
+      "domain": "json",
+      "category": "json",
+      "description": "Add a property or element to a JSON structure",
+      "current": {
+        "keyword": "json",
+        "request": "add"
+      },
+      "params": [
+        "target",
+        "key?",
+        "value"
+      ]
+    },
+    "JSON_DELETE": {
+      "domain": "json",
+      "category": "json",
+      "description": "Delete a property or element from a JSON structure",
+      "current": {
+        "keyword": "json",
+        "request": "delete"
+      },
+      "params": [
+        "target",
+        "what",
+        "key?"
+      ]
+    },
+    "JSON_FORMAT": {
+      "domain": "json",
+      "category": "json",
+      "description": "Format a JSON object as an indented string",
+      "current": {
+        "keyword": "json",
+        "request": "format"
+      },
+      "params": [
+        "target"
+      ]
+    },
+    "JSON_PARSE": {
+      "domain": "json",
+      "category": "json",
+      "description": "Parse a JSON string into an object",
+      "current": {
+        "keyword": "json",
+        "request": "parse"
+      },
+      "params": [
+        "target"
+      ]
+    },
+    "JSON_RENAME": {
+      "domain": "json",
+      "category": "json",
+      "description": "Rename a property in a JSON object",
+      "current": {
+        "keyword": "json",
+        "request": "rename"
+      },
+      "params": [
+        "target",
+        "oldName",
+        "newName"
+      ]
+    },
+    "JSON_REPLACE": {
+      "domain": "json",
+      "category": "json",
+      "description": "Replace a value in a JSON structure",
+      "current": {
+        "keyword": "json",
+        "request": "replace"
+      },
+      "params": [
+        "target",
+        "original",
+        "replacement"
+      ]
+    },
+    "JSON_SET_LIST": {
+      "domain": "json",
+      "category": "json",
+      "description": "Set a list variable from a JSON array",
+      "current": {
+        "keyword": "json",
+        "request": "setList"
+      },
+      "params": [
+        "target",
+        "source"
+      ]
+    },
+    "JSON_SET_VAR": {
+      "domain": "json",
+      "category": "json",
+      "description": "Set a variable from a JSON source",
+      "current": {
+        "keyword": "json",
+        "request": "setVariable"
+      },
+      "params": [
+        "target",
+        "source"
+      ]
+    },
+    "JSON_SHUFFLE": {
+      "domain": "json",
+      "category": "json",
+      "description": "Randomly shuffle a JSON array",
+      "current": {
+        "keyword": "json",
+        "request": "shuffle"
+      },
+      "params": [
+        "target"
+      ]
+    },
+    "JSON_SORT": {
+      "domain": "json",
+      "category": "json",
+      "description": "Sort a JSON array",
+      "current": {
+        "keyword": "json",
+        "request": "sort"
+      },
+      "params": [
+        "target",
+        "key?"
+      ]
+    },
+    "JSON_SPLIT": {
+      "domain": "json",
+      "category": "json",
+      "description": "Split a JSON string into an array",
+      "current": {
+        "keyword": "json",
+        "request": "split"
+      },
+      "params": [
+        "target",
+        "delimiter"
+      ]
+    },
+    "LIST_STORAGE": {
+      "domain": "browser",
+      "category": "storage",
+      "description": "List all local storage keys",
+      "current": {
+        "keyword": "get",
+        "action": "listStorage"
+      },
+      "params": [
+        "target"
+      ]
+    },
+    "LOG": {
+      "domain": "core",
+      "category": "io",
+      "description": "Log a value to the console",
+      "current": {
+        "keyword": "print",
+        "flag": "log=true"
+      },
+      "params": [
+        "value"
+      ]
+    },
+    "MAIL": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Open a mailto link",
+      "current": {
+        "keyword": "mail"
+      },
+      "params": [
+        "to",
+        "subject?",
+        "body?"
+      ]
+    },
+    "MQTT_INIT": {
+      "domain": "mqtt",
+      "category": "mqtt",
+      "description": "Initialize MQTT connection",
+      "current": {
+        "keyword": "init"
+      },
+      "params": [
+        "url"
+      ]
+    },
+    "MQTT_ON_CONNECT": {
+      "domain": "mqtt",
+      "category": "mqtt",
+      "description": "Register handler for MQTT connection event",
+      "current": {
+        "keyword": "on",
+        "action": "connect"
+      },
+      "params": []
+    },
+    "MQTT_ON_MESSAGE": {
+      "domain": "mqtt",
+      "category": "mqtt",
+      "description": "Register handler for incoming MQTT message",
+      "current": {
+        "keyword": "on",
+        "action": "message"
+      },
+      "params": []
+    },
+    "MQTT_SEND": {
+      "domain": "mqtt",
+      "category": "mqtt",
+      "description": "Publish a message to an MQTT topic",
+      "current": {
+        "keyword": "send"
+      },
+      "params": [
+        "topic",
+        "message"
+      ]
+    },
+    "MQTT_SUBSCRIBE": {
+      "domain": "mqtt",
+      "category": "mqtt",
+      "description": "Subscribe to an MQTT topic",
+      "current": {
+        "keyword": "topic"
+      },
+      "params": [
+        "topic"
+      ]
+    },
+    "MULTIPLY": {
+      "domain": "core",
+      "category": "arithmetic",
+      "description": "Multiply a variable by a value",
+      "current": {
+        "keyword": "multiply"
+      },
+      "params": [
+        "value1?",
+        "value2",
+        "target"
+      ]
+    },
+    "NAVIGATE": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Navigate to a URL",
+      "current": {
+        "keyword": "location"
+      },
+      "params": [
+        "location",
+        "newWindow?"
+      ]
+    },
+    "NEGATE": {
+      "domain": "core",
+      "category": "arithmetic",
+      "description": "Negate a numeric variable",
+      "current": {
+        "keyword": "negate"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "ON_BROWSER_BACK": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for browser back button",
+      "current": {
+        "keyword": "on",
+        "action": "browserBack"
+      },
+      "params": []
+    },
+    "ON_CALLBACK": {
+      "domain": "core",
+      "category": "io",
+      "description": "Register handler for a named callback",
+      "current": {
+        "keyword": "on",
+        "action": "<callback_name>"
+      },
+      "params": [
+        "callbackName"
+      ]
+    },
+    "ON_CHANGE": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for element value change",
+      "current": {
+        "keyword": "on",
+        "action": "change"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "ON_CLICK": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for element click",
+      "current": {
+        "keyword": "on",
+        "action": "click"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "ON_CLICK_DOCUMENT": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for click anywhere on document",
+      "current": {
+        "keyword": "on",
+        "action": "clickDocument"
+      },
+      "params": []
+    },
+    "ON_CLOSE": {
+      "domain": "core",
+      "category": "io",
+      "description": "Register handler for module close event",
+      "current": {
+        "keyword": "on",
+        "action": "close"
+      },
+      "params": []
+    },
+    "ON_DRAG": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for drag event",
+      "current": {
+        "keyword": "on",
+        "action": "drag"
+      },
+      "params": []
+    },
+    "ON_DROP": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for drop event",
+      "current": {
+        "keyword": "on",
+        "action": "drop"
+      },
+      "params": []
+    },
+    "ON_ERROR": {
+      "domain": "core",
+      "category": "io",
+      "description": "Register handler for error event",
+      "current": {
+        "keyword": "on",
+        "action": "error"
+      },
+      "params": []
+    },
+    "ON_KEY": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for key press",
+      "current": {
+        "keyword": "on",
+        "action": "key"
+      },
+      "params": []
+    },
+    "ON_LEAVE": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for mouse leaving an element",
+      "current": {
+        "keyword": "on",
+        "action": "leave"
+      },
+      "params": []
+    },
+    "ON_MESSAGE": {
+      "domain": "core",
+      "category": "io",
+      "description": "Register handler for incoming message",
+      "current": {
+        "keyword": "on",
+        "action": "message"
+      },
+      "params": []
+    },
+    "ON_PICK": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for file picker selection",
+      "current": {
+        "keyword": "on",
+        "action": "pick"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "ON_RESUME": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for page resume/visibility",
+      "current": {
+        "keyword": "on",
+        "action": "resume"
+      },
+      "params": []
+    },
+    "ON_SWIPE": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for swipe gesture",
+      "current": {
+        "keyword": "on",
+        "action": "swipe"
+      },
+      "params": [
+        "direction"
+      ]
+    },
+    "ON_WINDOW_RESIZE": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for window resize",
+      "current": {
+        "keyword": "on",
+        "action": "windowResize"
+      },
+      "params": []
+    },
+    "PLAY_AUDIO": {
+      "domain": "browser",
+      "category": "media",
+      "description": "Play an audio clip",
+      "current": {
+        "keyword": "play"
+      },
+      "params": [
+        "target"
+      ]
+    },
+    "POP": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Pop a value from an array stack",
+      "current": {
+        "keyword": "pop"
+      },
+      "params": [
+        "target"
+      ]
+    },
+    "PRINT": {
+      "domain": "core",
+      "category": "io",
+      "description": "Print a value to standard output",
+      "current": {
+        "keyword": "print"
+      },
+      "params": [
+        "value"
+      ]
+    },
+    "PUSH": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Push a value onto an array stack",
+      "current": {
+        "keyword": "push"
+      },
+      "params": [
+        "value"
+      ]
+    },
+    "PUT": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Assign a value to a variable",
+      "current": {
+        "keyword": "put"
+      },
+      "params": [
+        "value",
+        "target"
+      ]
+    },
+    "PUT_STORAGE": {
+      "domain": "browser",
+      "category": "storage",
+      "description": "Store a value in browser local storage",
+      "current": {
+        "keyword": "put"
+      },
+      "params": [
+        "value",
+        "key"
+      ]
+    },
+    "REMOVE_ATTRIBUTE": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Remove an attribute from a DOM element",
+      "current": {
+        "keyword": "remove",
+        "subType": "removeAttribute"
+      },
+      "params": [
+        "target",
+        "attribute"
+      ]
+    },
+    "REMOVE_ELEMENT": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Remove a DOM element",
+      "current": {
+        "keyword": "remove",
+        "subType": "removeElement"
+      },
+      "params": [
+        "element"
+      ]
+    },
+    "REMOVE_STORAGE": {
+      "domain": "browser",
+      "category": "storage",
+      "description": "Remove an item from local storage",
+      "current": {
+        "keyword": "remove",
+        "subType": "removeStorage"
+      },
+      "params": [
+        "key"
+      ]
+    },
+    "RENDER": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Render a Webson template into a parent element",
+      "current": {
+        "keyword": "render"
+      },
+      "params": [
+        "parent",
+        "script"
+      ]
+    },
+    "REPLACE": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Replace occurrences of one string with another",
+      "current": {
+        "keyword": "replace"
+      },
+      "params": [
+        "original",
+        "replacement",
+        "target"
+      ]
+    },
+    "REQUIRE": {
+      "domain": "core",
+      "category": "module",
+      "description": "Load an external CSS or JS resource",
+      "current": {
+        "keyword": "require"
+      },
+      "params": [
+        "type",
+        "url"
+      ]
+    },
+    "REST_GET": {
+      "domain": "rest",
+      "category": "rest",
+      "description": "Make an HTTP GET request",
+      "current": {
+        "keyword": "get"
+      },
+      "params": [
+        "url",
+        "target",
+        "onError?"
+      ]
+    },
+    "REST_PATH": {
+      "domain": "rest",
+      "category": "rest",
+      "description": "Set the base REST API path",
+      "current": {
+        "keyword": "rest"
+      },
+      "params": [
+        "path"
+      ]
+    },
+    "REST_POST": {
+      "domain": "rest",
+      "category": "rest",
+      "description": "Make an HTTP POST request",
+      "current": {
+        "keyword": "post"
+      },
+      "params": [
+        "url",
+        "body",
+        "target",
+        "onError?"
+      ]
+    },
+    "RETURN": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Return from gosub",
+      "current": {
+        "keyword": "return"
+      },
+      "params": []
+    },
+    "RUN_MODULE": {
+      "domain": "core",
+      "category": "module",
+      "description": "Load and run a script module",
+      "current": {
+        "keyword": "run"
+      },
+      "params": [
+        "script",
+        "imports?",
+        "module?",
+        "nowait?",
+        "thenPC?"
+      ]
+    },
+    "SANITIZE": {
+      "domain": "core",
+      "category": "text",
+      "description": "Sanitize a variable's value (strip dangerous content)",
+      "current": {
+        "keyword": "sanitize"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "SCROLL": {
+      "domain": "browser",
+      "category": "navigation",
+      "description": "Scroll to a position or element",
+      "current": {
+        "keyword": "scroll"
+      },
+      "params": [
+        "name?",
+        "to?"
+      ]
+    },
+    "SEND_MESSAGE": {
+      "domain": "core",
+      "category": "io",
+      "description": "Send a message to another module",
+      "current": {
+        "keyword": "send"
+      },
+      "params": [
+        "message",
+        "recipient",
+        "replyVar?"
+      ]
+    },
+    "SET_ARG": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Set a named argument in a callback payload",
+      "current": {
+        "keyword": "set",
+        "subType": "setArg"
+      },
+      "params": [
+        "target",
+        "name",
+        "value"
+      ]
+    },
+    "SET_ARRAY": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Set a variable to an array value",
+      "current": {
+        "keyword": "set",
+        "subType": "setArray"
+      },
+      "params": [
+        "target",
+        "value"
+      ]
+    },
+    "SET_ATTRIBUTE": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set a named attribute on an element",
+      "current": {
+        "keyword": "set",
+        "subType": "setAttribute"
+      },
+      "params": [
+        "symbolName",
+        "attributeName",
+        "attributeValue"
+      ]
+    },
+    "SET_ATTRIBUTES": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set multiple attributes on an element from a JSON object",
+      "current": {
+        "keyword": "set",
+        "subType": "setAttributes"
+      },
+      "params": [
+        "symbolName",
+        "attributes"
+      ]
+    },
+    "SET_BODY_STYLE": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set a CSS style on the document body",
+      "current": {
+        "keyword": "set",
+        "subType": "setBodyStyle"
+      },
+      "params": [
+        "styleName",
+        "styleValue"
+      ]
+    },
+    "SET_BOOLEAN": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Set a symbol/flag to true",
+      "current": {
+        "keyword": "set",
+        "subType": "setBoolean"
+      },
+      "params": [
+        "target"
+      ]
+    },
+    "SET_CLASS": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the CSS class of an element",
+      "current": {
+        "keyword": "set",
+        "subType": "setClass"
+      },
+      "params": [
+        "symbolName",
+        "value"
+      ]
+    },
+    "SET_CONTENT": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the inner content of an element from a value",
+      "current": {
+        "keyword": "set",
+        "subType": "setContent"
+      },
+      "params": [
+        "target",
+        "value"
+      ]
+    },
+    "SET_CONTENT_VAR": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the inner content of an element from another element",
+      "current": {
+        "keyword": "set",
+        "subType": "setContentVar"
+      },
+      "params": [
+        "target",
+        "source"
+      ]
+    },
+    "SET_DEFAULT": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the default value of an input element",
+      "current": {
+        "keyword": "set",
+        "subType": "setDefault"
+      },
+      "params": [
+        "name",
+        "value"
+      ]
+    },
+    "SET_ELEMENTS": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Replace all elements of an array",
+      "current": {
+        "keyword": "set",
+        "subType": "setElements"
+      },
+      "params": [
+        "symbol",
+        "value"
+      ]
+    },
+    "SET_ELEMENT_VALUE": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Set an element of an array by index",
+      "current": {
+        "keyword": "set",
+        "subType": "setElement"
+      },
+      "params": [
+        "target",
+        "index",
+        "value"
+      ]
+    },
+    "SET_ENCODING": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Set the text encoding mode",
+      "current": {
+        "keyword": "set",
+        "subType": "encoding"
+      },
+      "params": [
+        "encoding"
+      ]
+    },
+    "SET_HEAD_STYLE": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Add a style rule to the document head",
+      "current": {
+        "keyword": "set",
+        "subType": "setHeadStyle"
+      },
+      "params": [
+        "styleName",
+        "styleValue"
+      ]
+    },
+    "SET_ID": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the DOM ID of an element",
+      "current": {
+        "keyword": "set",
+        "subType": "setId"
+      },
+      "params": [
+        "symbolName",
+        "value"
+      ]
+    },
+    "SET_PAYLOAD": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Set the payload of a callback",
+      "current": {
+        "keyword": "set",
+        "subType": "setPayload"
+      },
+      "params": [
+        "callback",
+        "payload"
+      ]
+    },
+    "SET_PROPERTY": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Set a named property of a JSON object",
+      "current": {
+        "keyword": "set",
+        "subType": "setProperty"
+      },
+      "params": [
+        "target",
+        "name",
+        "value"
+      ]
+    },
+    "SET_READY": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Signal that the script/module is ready",
+      "current": {
+        "keyword": "set",
+        "subType": "setReady"
+      },
+      "params": []
+    },
+    "SET_SELECT": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Populate a select element with options",
+      "current": {
+        "keyword": "set",
+        "subType": "setSelect"
+      },
+      "params": [
+        "select",
+        "source",
+        "display?"
+      ]
+    },
+    "SET_SIZE": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the size attribute of an element",
+      "current": {
+        "keyword": "set",
+        "subType": "setSize"
+      },
+      "params": [
+        "symbolName",
+        "value"
+      ]
+    },
+    "SET_STYLE": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set a single CSS style property on an element",
+      "current": {
+        "keyword": "set",
+        "subType": "setStyle"
+      },
+      "params": [
+        "symbolName",
+        "styleName",
+        "styleValue"
+      ]
+    },
+    "SET_STYLES": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set multiple CSS styles on an element at once",
+      "current": {
+        "keyword": "set",
+        "subType": "setStyles"
+      },
+      "params": [
+        "symbolName",
+        "styleValue"
+      ]
+    },
+    "SET_TEXT": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the text content of an element",
+      "current": {
+        "keyword": "set",
+        "subType": "setText"
+      },
+      "params": [
+        "symbolName",
+        "value"
+      ]
+    },
+    "SET_TITLE": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the page title",
+      "current": {
+        "keyword": "set",
+        "subType": "setTitle"
+      },
+      "params": [
+        "value"
+      ]
+    },
+    "SET_TRACER_ROWS": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set the number of rows in the tracer display",
+      "current": {
+        "keyword": "set",
+        "subType": "setTracerRows"
+      },
+      "params": [
+        "value"
+      ]
+    },
+    "SET_VAR_TYPE": {
+      "domain": "core",
+      "category": "assignment",
+      "description": "Set a variable to a new empty array or object",
+      "current": {
+        "keyword": "set",
+        "subType": "setVarTo"
+      },
+      "params": [
+        "target",
+        "type"
+      ]
+    },
+    "SORT": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Sort an array with a comparison function",
+      "current": {
+        "keyword": "sort"
+      },
+      "params": [
+        "array",
+        "func",
+        "onError?"
+      ]
+    },
+    "SPLIT": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Split a string into an array on a delimiter",
+      "current": {
+        "keyword": "split"
+      },
+      "params": [
+        "item",
+        "on",
+        "target"
+      ]
+    },
+    "STOP": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Stop current or named module",
+      "current": {
+        "keyword": "stop"
+      },
+      "params": [
+        "name?",
+        "nextPC?"
+      ]
+    },
+    "SUBTRACT": {
+      "domain": "core",
+      "category": "arithmetic",
+      "description": "Subtract a value from a variable",
+      "current": {
+        "keyword": "take"
+      },
+      "params": [
+        "value1",
+        "value2?",
+        "target"
+      ]
+    },
+    "TOGGLE": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Toggle a boolean and branch",
+      "current": {
+        "keyword": "toggle"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
+    "TRACE_RUN": {
+      "domain": "browser",
+      "category": "debug",
+      "description": "Run the tracer for current state",
+      "current": {
+        "keyword": "trace",
+        "variant": "run"
+      },
+      "params": []
+    },
+    "TRACE_SETUP": {
+      "domain": "browser",
+      "category": "debug",
+      "description": "Set up variable tracing display",
+      "current": {
+        "keyword": "trace",
+        "variant": "setup"
+      },
+      "params": [
+        "variables",
+        "alignment?"
+      ]
+    },
+    "TRY": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Begin error-handling block",
+      "current": {
+        "keyword": "try"
+      },
+      "params": [
+        "handlerPC"
+      ]
+    },
+    "UPLOAD_FILE": {
+      "domain": "browser",
+      "category": "media",
+      "description": "Upload a file to the server",
+      "current": {
+        "keyword": "upload"
+      },
+      "params": [
+        "file",
+        "path",
+        "progress?",
+        "status?"
+      ]
+    },
+    "WAIT": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Pause execution for a duration",
+      "current": {
+        "keyword": "wait"
+      },
+      "params": [
+        "value",
+        "multiplier"
+      ]
+    },
+    "WHILE": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Conditional loop — evaluate condition, repeat block while true",
+      "current": {
+        "keyword": "while"
+      },
+      "params": [
+        "condition"
+      ]
+    }
+  }
+}

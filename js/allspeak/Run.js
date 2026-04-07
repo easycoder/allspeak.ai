@@ -84,8 +84,9 @@ const AllSpeak_Run = {
 					}
 					catch (e) {
 					}
+					const cmd = program[program.pc];
 					AllSpeak.writeToDebugConsole(`${program.script}: Line ${lino}: `
-					+ `${domain}:${program[program.pc].keyword} - ${line}`);
+					+ `${domain}:${cmd.opcode || cmd.keyword} - ${line}`);
 				}
 				const handler = program.domain[domain];
 				if (!handler) {

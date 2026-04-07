@@ -103,9 +103,9 @@ const AllSpeak_Browser = {
 				case `tr`:
 				case `ul`:
 					compiler.next();
-					if (compiler.tokenIs(`to`)) {
+					if (compiler.isWord(`to`)) {
 						let cssId = null;
-						if (compiler.nextTokenIs(`body`)) {
+						if (compiler.nextIsWord(`body`)) {
 							if (type=== `div`) {
 								cssId = `body`;
 								compiler.next();
@@ -115,7 +115,7 @@ const AllSpeak_Browser = {
 						}
 						else cssId = compiler.getValue();
 						let onError = 0;
-						if (compiler.tokenIs(`or`)) {
+						if (compiler.isWord(`or`)) {
 							compiler.next();
 							onError = compiler.getPc() + 1;
 							compiler.completeHandler();
@@ -403,12 +403,12 @@ const AllSpeak_Browser = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			if (compiler.nextTokenIs(`whitespace`)) {
-				if (compiler.nextTokenIs(`in`)) {
+			if (compiler.nextIsWord(`whitespace`)) {
+				if (compiler.nextIsWord(`in`)) {
 					if (compiler.nextIsSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
 						if (symbolRecord.isVHolder) {
-							if (compiler.nextTokenIs(`to`)) {
+							if (compiler.nextIsWord(`to`)) {
 								const mode = compiler.nextToken();
 								compiler.next();
 								compiler.addCommand({
@@ -484,7 +484,7 @@ const AllSpeak_Browser = {
 				const symbolRecord = compiler.getSymbolRecord();
 				const keyword = symbolRecord.keyword;
 				if (keyword === `audioclip`) {
-					if (compiler.nextTokenIs(`from`)) {
+					if (compiler.nextIsWord(`from`)) {
 						const value = compiler.getNextValue();
 						compiler.addCommand({
 							domain: `browser`,
@@ -533,8 +533,8 @@ const AllSpeak_Browser = {
 					`textarea`,
 					`ul`
 				].includes(keyword)) {
-					if (compiler.nextTokenIs(`in`)) {
-						if (compiler.nextTokenIs(`body`)) {
+					if (compiler.nextIsWord(`in`)) {
+						if (compiler.nextIsWord(`body`)) {
 							compiler.next();
 							compiler.addCommand({
 								domain: `browser`,
@@ -557,7 +557,7 @@ const AllSpeak_Browser = {
 								parent: parentRecord.name,
 								onError: 0
 							});
-							if (compiler.tokenIs(`or`)) {
+							if (compiler.isWord(`or`)) {
 								compiler.next();
 								compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 								compiler.completeHandler();
@@ -788,9 +788,9 @@ const AllSpeak_Browser = {
 			if (compiler.nextIsSymbol()) {
 				const target = compiler.getToken();
 				let targetRecord = compiler.getSymbolRecord();
-				if (compiler.nextTokenIs(`from`)) {
-					if (compiler.nextTokenIs(`storage`)) {
-						if (compiler.nextTokenIs(`as`)) {
+				if (compiler.nextIsWord(`from`)) {
+					if (compiler.nextIsWord(`storage`)) {
+						if (compiler.nextIsWord(`as`)) {
 							const key = compiler.getNextValue();
 							compiler.addCommand({
 								domain: `browser`,
@@ -1174,7 +1174,7 @@ const AllSpeak_Browser = {
 		compile: (compiler) => {
 			const lino = compiler.getLino();
 			let newWindow = false;
-			if (compiler.nextTokenIs(`new`)) {
+			if (compiler.nextIsWord(`new`)) {
 				newWindow = true;
 				compiler.next();
 			}
@@ -1205,13 +1205,13 @@ const AllSpeak_Browser = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			if (compiler.nextTokenIs(`to`)) {
+			if (compiler.nextIsWord(`to`)) {
 				const to = compiler.getNextValue();
 				let subject = ``;
 				let body = ``;
-				if (compiler.tokenIs(`subject`)) {
+				if (compiler.isWord(`subject`)) {
 					subject = compiler.getNextValue();
-					if (compiler.tokenIs(`body`) || compiler.tokenIs(`message`)) {
+					if (compiler.isWord(`body`) || compiler.isWord(`message`)) {
 						compiler.next();
 						body = compiler.getValue();
 					}
@@ -1266,7 +1266,7 @@ const AllSpeak_Browser = {
 				}
 				break;
 			case `click`:
-				if (compiler.nextTokenIs(`document`)) {
+				if (compiler.nextIsWord(`document`)) {
 					compiler.next();
 					compiler.addCommand({
 						domain: `browser`,
@@ -1303,7 +1303,7 @@ const AllSpeak_Browser = {
 				});
 				return compiler.completeHandler();
 			case `window`:
-				if (compiler.nextTokenIs(`resize`)) {
+				if (compiler.nextIsWord(`resize`)) {
 					compiler.next();
 					compiler.addCommand({
 						domain: `browser`,
@@ -1316,7 +1316,7 @@ const AllSpeak_Browser = {
 				return false;
 			case `browser`:
 			case `restore`:
-				if (action === `browser` && !compiler.nextTokenIs(`back`)) {
+				if (action === `browser` && !compiler.nextIsWord(`back`)) {
 					return false;
 				}
 				compiler.next();
@@ -1746,9 +1746,9 @@ const AllSpeak_Browser = {
 			const lino = compiler.getLino();
 			// Get the value
 			const value = compiler.getNextValue();
-			if (compiler.tokenIs(`into`)) {
-				if (compiler.nextTokenIs(`storage`)) {
-					if (compiler.nextTokenIs(`as`)) {
+			if (compiler.isWord(`into`)) {
+				if (compiler.nextIsWord(`storage`)) {
+					if (compiler.nextIsWord(`as`)) {
 						const key = compiler.getNextValue();
 						compiler.addCommand({
 							domain: `browser`,
@@ -1777,7 +1777,7 @@ const AllSpeak_Browser = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			if (compiler.nextTokenIs(`element`)) {
+			if (compiler.nextIsWord(`element`)) {
 				if (compiler.nextIsSymbol()) {
 					const element = compiler.getSymbolRecord();
 					if (element.extra != `dom`) {
@@ -1795,9 +1795,9 @@ const AllSpeak_Browser = {
 					return true;
 				}
 			}
-			if (compiler.tokenIs(`attribute`)) {
+			if (compiler.isWord(`attribute`)) {
 				const attribute = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const targetRecord = compiler.getSymbolRecord();
 						if (targetRecord.extra !== `dom`) {
@@ -1818,8 +1818,8 @@ const AllSpeak_Browser = {
 			}
 			try {
 				const key = compiler.getValue();
-				if (compiler.tokenIs(`from`)) {
-					if (compiler.nextTokenIs(`storage`)) {
+				if (compiler.isWord(`from`)) {
+					if (compiler.nextIsWord(`storage`)) {
 						compiler.next();
 						compiler.addCommand({
 							domain: `browser`,
@@ -1868,7 +1868,7 @@ const AllSpeak_Browser = {
 		compile: (compiler) => {
 			const lino = compiler.getLino();
 			const script = compiler.getNextValue();
-			if (compiler.tokenIs(`in`)) {
+			if (compiler.isWord(`in`)) {
 				if (compiler.nextIsSymbol()) {
 					const parentRecord = compiler.getSymbolRecord();
 					if (parentRecord.extra === `dom`) {
@@ -1956,7 +1956,7 @@ const AllSpeak_Browser = {
 				name = symbolRecord.name;
 				compiler.next();
 			}
-			if (compiler.tokenIs(`to`)) {
+			if (compiler.isWord(`to`)) {
 				const to = compiler.getNextValue();
 				compiler.addCommand({
 					domain: `browser`,
@@ -2034,7 +2034,7 @@ const AllSpeak_Browser = {
 								const sourceRecord = compiler.getSymbolRecord();
 								if (sourceRecord.keyword === `variable`) {
 									var display = null;
-									if (compiler.nextTokenIs(`as`)) {
+									if (compiler.nextIsWord(`as`)) {
 										display = compiler.getNextValue();
 									}
 									compiler.addCommand({
@@ -2070,7 +2070,7 @@ const AllSpeak_Browser = {
 					token = compiler.nextToken();
 				}
 				if (token === `title`) {
-					if (compiler.nextTokenIs(`to`)) {
+					if (compiler.nextIsWord(`to`)) {
 						const value = compiler.getNextValue();
 						compiler.addCommand({
 							domain: `browser`,
@@ -2082,10 +2082,10 @@ const AllSpeak_Browser = {
 						return true;
 					}
 				} else if (token === `content`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const target = compiler.getToken();
-							if (compiler.nextTokenIs(`from`)) {
+							if (compiler.nextIsWord(`from`)) {
 								if (compiler.nextIsSymbol()) {
 									const source = compiler.getToken();
 									compiler.next();
@@ -2100,7 +2100,7 @@ const AllSpeak_Browser = {
 									return true;
 								}
 							}
-							if (compiler.tokenIs(`to`)) {
+							if (compiler.isWord(`to`)) {
 								const value = compiler.getNextValue();
 								compiler.addCommand({
 									domain: `browser`,
@@ -2116,11 +2116,11 @@ const AllSpeak_Browser = {
 						throw new Error(`'${compiler.getToken()}' is not a symbol`);
 					}
 				} else if (token === `class`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const symbol = compiler.getSymbolRecord();
 							if (symbol.extra === `dom`) {
-								if (compiler.nextTokenIs(`to`)) {
+								if (compiler.nextIsWord(`to`)) {
 									const value = compiler.getNextValue();
 									compiler.addCommand({
 										domain: `browser`,
@@ -2136,11 +2136,11 @@ const AllSpeak_Browser = {
 						}
 					}
 				} else if (token === `id`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const symbol = compiler.getSymbolRecord();
 							if (symbol.extra === `dom`) {
-								if (compiler.nextTokenIs(`to`)) {
+								if (compiler.nextIsWord(`to`)) {
 									const value = compiler.getNextValue();
 									compiler.addCommand({
 										domain: `browser`,
@@ -2156,7 +2156,7 @@ const AllSpeak_Browser = {
 						}
 					}
 				} else if (token === `text`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const symbol = compiler.getSymbolRecord();
 							switch (symbol.keyword) {
@@ -2166,7 +2166,7 @@ const AllSpeak_Browser = {
 							case `label`:
 							case `legend`:
 							case `textarea`:
-								if (compiler.nextTokenIs(`to`)) {
+								if (compiler.nextIsWord(`to`)) {
 									const value = compiler.getNextValue();
 									compiler.addCommand({
 										domain: `browser`,
@@ -2185,12 +2185,12 @@ const AllSpeak_Browser = {
 						}
 					}
 				} else if (token === `size`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const symbol = compiler.getSymbolRecord();
 							switch (symbol.keyword) {
 							case `input`:
-								if (compiler.nextTokenIs(`to`)) {
+								if (compiler.nextIsWord(`to`)) {
 									const value = compiler.getNextValue();
 									compiler.addCommand({
 										domain: `browser`,
@@ -2208,7 +2208,7 @@ const AllSpeak_Browser = {
 				} else if (token === `attribute`) {
 					compiler.next();
 					const attributeName = compiler.getValue();
-					if (compiler.tokenIs(`of`)) {
+					if (compiler.isWord(`of`)) {
 						if (compiler.nextIsSymbol(true)) {
 							const symbolRecord = compiler.getSymbolRecord();
 							const symbolName = symbolRecord.name;
@@ -2217,7 +2217,7 @@ const AllSpeak_Browser = {
 								type: `boolean`,
 								content: true
 							};
-							if (compiler.tokenIs(`to`)) {
+							if (compiler.isWord(`to`)) {
 								attributeValue = compiler.getNextValue();
 							}
 							compiler.addCommand({
@@ -2233,7 +2233,7 @@ const AllSpeak_Browser = {
 						}
 					}
 				} else if (token === `attributes`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const symbolRecord = compiler.getSymbolRecord();
 							const symbolName = symbolRecord.name;
@@ -2241,7 +2241,7 @@ const AllSpeak_Browser = {
 								compiler.warning(`'${symbolName}' is not a DOM type`);
 								return false;
 							}
-							if (compiler.nextTokenIs(`to`)) {
+							if (compiler.nextIsWord(`to`)) {
 								const attributes = compiler.getNextValue();
 								if (attributes) {
 									compiler.addCommand({
@@ -2260,7 +2260,7 @@ const AllSpeak_Browser = {
 					compiler.warning(`'${compiler.getToken()}' is not a symbol`);
 					return false;
 				} else if (token === `style`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const symbolRecord = compiler.getSymbolRecord();
 							const symbolName = symbolRecord.name;
@@ -2268,7 +2268,7 @@ const AllSpeak_Browser = {
 								compiler.warning(`'${symbolName}' is not a DOM type`);
 								return false;
 							}
-							if (compiler.nextTokenIs(`to`)) {
+							if (compiler.nextIsWord(`to`)) {
 								const styleValue = compiler.getNextValue();
 								if (styleValue) {
 									compiler.addCommand({
@@ -2302,7 +2302,7 @@ const AllSpeak_Browser = {
 						} else {
 							throw Error(`'${compiler.getToken()}' is not a known symbol`);
 						}
-						if (compiler.nextTokenIs(`to`)) {
+						if (compiler.nextIsWord(`to`)) {
 							const styleValue = compiler.getNextValue();
 							if (styleValue) {
 								compiler.addCommand({
@@ -2333,11 +2333,11 @@ const AllSpeak_Browser = {
 						}
 					}
 				} else if (token === `default`) {
-					if (compiler.nextTokenIs(`of`)) {
+					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
 							const symbolRecord = compiler.getSymbolRecord();
 							if (symbolRecord.keyword === `select`) {
-								if (compiler.nextTokenIs(`to`)) {
+								if (compiler.nextIsWord(`to`)) {
 									const value = compiler.getNextValue();
 									compiler.addCommand({
 										domain: `browser`,
@@ -2353,8 +2353,8 @@ const AllSpeak_Browser = {
 						}
 					}
 				} else if (token === `tracer`) {
-					if (compiler.nextTokenIs(`rows`)) {
-						if (compiler.nextTokenIs(`to`)) {
+					if (compiler.nextIsWord(`rows`)) {
+						if (compiler.nextIsWord(`to`)) {
 							const value = compiler.getNextValue();
 							compiler.addCommand({
 								domain: `browser`,
@@ -2713,7 +2713,7 @@ const AllSpeak_Browser = {
 					compiler.next();
 				}
 				let alignment = `horizontal`;
-				if (compiler.tokenIs(`horizontal`) || compiler.tokenIs(`vertical`)) {
+				if (compiler.isWord(`horizontal`) || compiler.isWord(`vertical`)) {
 					alignment = compiler.getToken();
 					compiler.next();
 				}
@@ -2791,12 +2791,12 @@ const AllSpeak_Browser = {
 			const lino = compiler.getLino();
 			if (compiler.nextIsSymbol()) {
 				const file = compiler.getToken();
-				if (compiler.nextTokenIs(`to`)) {
+				if (compiler.nextIsWord(`to`)) {
 					const path = compiler.getNextValue();
-					if (compiler.tokenIs(`with`)) {
+					if (compiler.isWord(`with`)) {
 						if (compiler.nextIsSymbol()) {
 							const progress = compiler.getToken();
-							if (compiler.nextTokenIs(`and`)) {
+							if (compiler.nextIsWord(`and`)) {
 								if (compiler.nextIsSymbol()) {
 									const status = compiler.getToken();
 									compiler.next();
@@ -2827,140 +2827,169 @@ const AllSpeak_Browser = {
 		}
 	},
 
-	getHandler: (name) => {
-		switch (name) {
-		case `a`:
-			return AllSpeak_Browser.A;
-		case `alert`:
-			return AllSpeak_Browser.Alert;
-		case `attach`:
-			return AllSpeak_Browser.Attach;
-		case `audioclip`:
-			return AllSpeak_Browser.Audioclip;
-		case `blockquote`:
-			return AllSpeak_Browser.BLOCKQUOTE;
-		case `button`:
-			return AllSpeak_Browser.BUTTON;
-		case `canvas`:
-			return AllSpeak_Browser.CANVAS;
-		case `clear`:
-			return AllSpeak_Browser.Clear;
-		case `click`:
-			return AllSpeak_Browser.Click;
-		case `convert`:
-			return AllSpeak_Browser.Convert;
-		case `copy`:
-			return AllSpeak_Browser.Copy;
-		case `create`:
-			return AllSpeak_Browser.Create;
-		case `disable`:
-			return AllSpeak_Browser.Disable;
-		case `div`:
-			return AllSpeak_Browser.DIV;
-		case `enable`:
-			return AllSpeak_Browser.Enable;
-		case `fieldset`:
-			return AllSpeak_Browser.FIELDSET;
-		case `file`:
-			return AllSpeak_Browser.FILE;
-		case `focus`:
-			return AllSpeak_Browser.Focus;
-		case `form`:
-			return AllSpeak_Browser.FORM;
-		case `fullscreen`:
-			return AllSpeak_Browser.FullScreen;
-		case `get`:
-			return AllSpeak_Browser.Get;
-		case `h1`:
-			return AllSpeak_Browser.H1;
-		case `h2`:
-			return AllSpeak_Browser.H2;
-		case `h3`:
-			return AllSpeak_Browser.H3;
-		case `h4`:
-			return AllSpeak_Browser.H4;
-		case `h5`:
-			return AllSpeak_Browser.H5;
-		case `h6`:
-			return AllSpeak_Browser.H6;
-		case `highlight`:
-			return AllSpeak_Browser.Highlight;
-		case `history`:
-			return AllSpeak_Browser.History;
-		case `hr`:
-			return AllSpeak_Browser.HR;
-		case `image`:
-			return AllSpeak_Browser.IMAGE;
-		case `img`:
-			return AllSpeak_Browser.IMG;
-		case `input`:
-			return AllSpeak_Browser.INPUT;
-		case `label`:
-			return AllSpeak_Browser.LABEL;
-		case `legend`:
-			return AllSpeak_Browser.LEGEND;
-		case `li`:
-			return AllSpeak_Browser.LI;
-		case `location`:
-			return AllSpeak_Browser.Location;
-		case `mail`:
-			return AllSpeak_Browser.Mail;
-		case `on`:
-			return AllSpeak_Browser.On;
-		case `option`:
-			return AllSpeak_Browser.OPTION;
-		case `p`:
-			return AllSpeak_Browser.P;
-		case `play`:
-			return AllSpeak_Browser.Play;
-		case `pre`:
-			return AllSpeak_Browser.PRE;
-		case `progress`:
-			return AllSpeak_Browser.PROGRESS;
-		case `put`:
-			return AllSpeak_Browser.Put;
-		case `remove`:
-			return AllSpeak_Browser.Remove;
-		case `render`:
-			return AllSpeak_Browser.Render;
-		case `request`:
-			return AllSpeak_Browser.Request;
-		case `scroll`:
-			return AllSpeak_Browser.Scroll;
-		case `section`:
-			return AllSpeak_Browser.SECTION;
-		case `select`:
-			return AllSpeak_Browser.SELECT;
-		case `set`:
-			return AllSpeak_Browser.Set;
-		case `span`:
-			return AllSpeak_Browser.SPAN;
-		case `table`:
-			return AllSpeak_Browser.TABLE;
-		case `td`:
-			return AllSpeak_Browser.TD;
-		case `textarea`:
-			return AllSpeak_Browser.TEXTAREA;
-		case `th`:
-			return AllSpeak_Browser.TH;
-		case `tr`:
-			return AllSpeak_Browser.TR;
-		case `trace`:
-			return AllSpeak_Browser.Trace;
-		case `ul`:
-			return AllSpeak_Browser.UL;
-		case `upload`:
-			return AllSpeak_Browser.Upload;
-		default:
-			return null;
+	// Compile-time keyword → handler map, built from the language pack.
+	_compileHandlers: null,
+
+	_buildCompileHandlers: function() {
+		const lang = AllSpeak_Language;
+		const opcodeMap = this.getOpcodeMap();
+		const elementMap = this.getElementHandlerMap();
+		const handlers = {};
+
+		// Map opcode keywords from language pack to handlers
+		if (lang.pack) {
+			const opcodes = lang.pack.opcodes;
+			for (const opcode in opcodes) {
+				const handler = opcodeMap[opcode];
+				if (handler) {
+					const keywords = opcodes[opcode].keyword.split(`|`);
+					for (const kw of keywords) {
+						if (!handlers[kw]) {
+							handlers[kw] = handler;
+						}
+					}
+				}
+			}
 		}
+
+		// Element type declarations — map each type keyword to its handler
+		for (const type in elementMap) {
+			handlers[type] = elementMap[type];
+		}
+
+		// Handlers not covered by opcode map
+		handlers[`fullscreen`] = this.FullScreen;
+
+		this._compileHandlers = handlers;
+	},
+
+	getHandler: function(name) {
+		if (!this._compileHandlers) {
+			this._buildCompileHandlers();
+		}
+		return this._compileHandlers[name] || null;
+	},
+
+	opcodeMap: null,
+
+	getOpcodeMap: function() {
+		if (this.opcodeMap) return this.opcodeMap;
+		this.opcodeMap = {
+			// Element declarations — all map to the same handler per element type
+			DECLARE_ELEMENT: null, // resolved dynamically below
+
+			// DOM manipulation
+			CREATE_ELEMENT: this.Create,
+			ATTACH_ELEMENT: this.Attach,
+			REMOVE_ELEMENT: this.Remove,
+			REMOVE_ATTRIBUTE: this.Remove,
+			CLICK_ELEMENT: this.Click,
+			FOCUS_ELEMENT: this.Focus,
+			DISABLE_ELEMENT: this.Disable,
+			ENABLE_ELEMENT: this.Enable,
+			HIGHLIGHT_ELEMENT: this.Highlight,
+
+			// Content & styling
+			SET_CONTENT: this.Set,
+			SET_CONTENT_VAR: this.Set,
+			SET_TEXT: this.Set,
+			SET_TITLE: this.Set,
+			SET_SELECT: this.Set,
+			SET_STYLE: this.Set,
+			SET_STYLES: this.Set,
+			SET_BODY_STYLE: this.Set,
+			SET_HEAD_STYLE: this.Set,
+			SET_CLASS: this.Set,
+			SET_ID: this.Set,
+			SET_SIZE: this.Set,
+			SET_ATTRIBUTE: this.Set,
+			SET_ATTRIBUTES: this.Set,
+			SET_DEFAULT: this.Set,
+			SET_TRACER_ROWS: this.Set,
+			CLEAR_ELEMENT: this.Clear,
+			RENDER: this.Render,
+			CONVERT: this.Convert,
+
+			// Events
+			ON_CHANGE: this.On,
+			ON_CLICK: this.On,
+			ON_CLICK_DOCUMENT: this.On,
+			ON_KEY: this.On,
+			ON_LEAVE: this.On,
+			ON_WINDOW_RESIZE: this.On,
+			ON_BROWSER_BACK: this.On,
+			ON_SWIPE: this.On,
+			ON_PICK: this.On,
+			ON_RESUME: this.On,
+			ON_DRAG: this.On,
+			ON_DROP: this.On,
+
+			// Navigation
+			ALERT: this.Alert,
+			NAVIGATE: this.Location,
+			HISTORY_PUSH: this.History,
+			HISTORY_SET: this.History,
+			HISTORY_REPLACE: this.History,
+			HISTORY_BACK: this.History,
+			HISTORY_FORWARD: this.History,
+			SCROLL: this.Scroll,
+			FULLSCREEN: this.Request,
+			MAIL: this.Mail,
+			COPY_TO_CLIPBOARD: this.Copy,
+
+			// Storage
+			PUT_STORAGE: this.Put,
+			GET_STORAGE: this.Get,
+			LIST_STORAGE: this.Get,
+			GET_FORM: this.Get,
+			GET_OPTION: this.Get,
+			REMOVE_STORAGE: this.Remove,
+
+			// Media
+			PLAY_AUDIO: this.Play,
+			UPLOAD_FILE: this.Upload,
+
+			// Debug
+			TRACE_SETUP: this.Trace,
+			TRACE_RUN: this.Trace
+		};
+		return this.opcodeMap;
+	},
+
+	// Map element keyword back to its handler for DECLARE_ELEMENT runtime dispatch
+	elementHandlerMap: null,
+
+	getElementHandlerMap: function() {
+		if (this.elementHandlerMap) return this.elementHandlerMap;
+		this.elementHandlerMap = {
+			a: this.A, audioclip: this.Audioclip, blockquote: this.BLOCKQUOTE,
+			button: this.BUTTON, canvas: this.CANVAS, div: this.DIV,
+			fieldset: this.FIELDSET, file: this.FILE, form: this.FORM,
+			h1: this.H1, h2: this.H2, h3: this.H3, h4: this.H4, h5: this.H5, h6: this.H6,
+			hr: this.HR, image: this.IMAGE, img: this.IMG, input: this.INPUT,
+			label: this.LABEL, legend: this.LEGEND, li: this.LI, option: this.OPTION,
+			p: this.P, pre: this.PRE, progress: this.PROGRESS, section: this.SECTION,
+			select: this.SELECT, span: this.SPAN, table: this.TABLE, td: this.TD,
+			textarea: this.TEXTAREA, th: this.TH, tr: this.TR, ul: this.UL
+		};
+		return this.elementHandlerMap;
 	},
 
 	run: (program) => {
 		const command = program[program.pc];
-		const handler = AllSpeak_Browser.getHandler(command.keyword);
+		let handler;
+		if (command.opcode) {
+			if (command.opcode === `DECLARE_ELEMENT`) {
+				handler = AllSpeak_Browser.getElementHandlerMap()[command.keyword];
+			} else {
+				handler = AllSpeak_Browser.getOpcodeMap()[command.opcode];
+			}
+		}
 		if (!handler) {
-			program.runtimeError(command.lino, `Unknown keyword '${command.keyword}' in 'browser' package`);
+			handler = AllSpeak_Browser.getHandler(command.keyword);
+		}
+		if (!handler) {
+			program.runtimeError(command.lino, `Unknown command '${command.opcode || command.keyword}' in 'browser' package`);
 		}
 		return handler.run(program);
 	},
@@ -2970,7 +2999,7 @@ const AllSpeak_Browser = {
 		compile: (compiler) => {
 			if (compiler.isSymbol()) {
 				const symbolRecord = compiler.getSymbolRecord();
-				if (compiler.nextTokenIs(`exists`)) {
+				if (compiler.nextIsWord(`exists`)) {
 					if (symbolRecord.extra === `dom`) {
 						compiler.next();
 						return {
@@ -2995,16 +3024,16 @@ const AllSpeak_Browser = {
 				return null;
 			}
 
-			if (compiler.tokenIs(`the`)) {
+			if (compiler.isWord(`the`)) {
 				compiler.next();
 			}
 			let offset = false;
-			if (compiler.tokenIs(`offset`)) {
+			if (compiler.isWord(`offset`)) {
 				offset = true;
 				compiler.next();
 			}
 
-			let type = compiler.getToken();
+			let type = AllSpeak_Language.reverseWord(compiler.getToken());
 			let text;
 			let attribute;
 			switch (type) {
@@ -3021,7 +3050,7 @@ const AllSpeak_Browser = {
 					type
 				};
 			case `browser`:
-				if (compiler.nextTokenIs(`name`)) {
+				if (compiler.nextIsWord(`name`)) {
 					compiler.next();
 					return {
 						domain: `browser`,
@@ -3031,7 +3060,7 @@ const AllSpeak_Browser = {
 				break;
 			case `content`:
 			case `text`:
-				if (compiler.nextTokenIs(`of`)) {
+				if (compiler.nextIsWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const symbol = compiler.getSymbolRecord();
 						compiler.next();
@@ -3045,9 +3074,9 @@ const AllSpeak_Browser = {
 				}
 				break;
 			case `selected`:
-				let arg = compiler.nextToken();
+				let arg = AllSpeak_Language.reverseWord(compiler.nextToken());
 				if ([`index`, `item`].includes(arg)) {
-					if ([`in`, `of`].includes(compiler.nextToken())) {
+					if ([`in`, `of`].includes(AllSpeak_Language.reverseWord(compiler.nextToken()))) {
 						if (compiler.nextIsSymbol()) {
 							const symbol = compiler.getSymbolRecord();
 							if ([`ul`, `ol`, `select`].includes(symbol.keyword)) {
@@ -3073,7 +3102,7 @@ const AllSpeak_Browser = {
 				};
 			case `attribute`:
 				attribute = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					compiler.next();
 					if (compiler.isSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
@@ -3091,7 +3120,7 @@ const AllSpeak_Browser = {
 				break;
 			case `style`:
 				const style = compiler.getNextValue();
-				if (compiler.tokenIs(`of`)) {
+				if (compiler.isWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
 						if (symbolRecord.extra === `dom`) {
@@ -3116,7 +3145,7 @@ const AllSpeak_Browser = {
 			case `prompt`:
 				text = compiler.getNextValue();
 				let pre = null;
-				if (compiler.tokenIs(`with`)) {
+				if (compiler.isWord(`with`)) {
 					pre = compiler.getNextValue();
 				}
 				return {
@@ -3126,7 +3155,7 @@ const AllSpeak_Browser = {
 					pre
 				};
 			case `screen`:
-				attribute = compiler.nextToken();
+				attribute = AllSpeak_Language.reverseWord(compiler.nextToken());
 				if ([`width`, `height`].includes(attribute)) {
 					compiler.next();
 					return {
@@ -3144,7 +3173,7 @@ const AllSpeak_Browser = {
 			case `height`:
 				return AllSpeak_Browser.value.getCoord(compiler, type, offset);
 			case `scroll`:
-				if (compiler.nextTokenIs(`position`)) {
+				if (compiler.nextIsWord(`position`)) {
 					compiler.next();
 					return {
 						domain: `browser`,
@@ -3153,7 +3182,7 @@ const AllSpeak_Browser = {
 				}
 				break;
 			case `document`:
-				if (compiler.nextTokenIs(`path`)) {
+				if (compiler.nextIsWord(`path`)) {
 					compiler.next();
 					return {
 						domain: `browser`,
@@ -3162,7 +3191,7 @@ const AllSpeak_Browser = {
 				}
 				break;
 			case `storage`:
-				if (compiler.nextTokenIs(`keys`)) {
+				if (compiler.nextIsWord(`keys`)) {
 					compiler.next();
 					return {
 						domain: `browser`,
@@ -3171,7 +3200,7 @@ const AllSpeak_Browser = {
 				}
 				break;
 			case `parent`:
-				switch (compiler.nextToken()) {
+				switch (AllSpeak_Language.reverseWord(compiler.nextToken())) {
 				case `name`:
 					compiler.next();
 					return {
@@ -3187,7 +3216,7 @@ const AllSpeak_Browser = {
 				}
 				break;
 			case `history`:
-				if (compiler.nextTokenIs(`state`)) {
+				if (compiler.nextIsWord(`state`)) {
 					compiler.next();
 					return {
 						domain: `browser`,
@@ -3197,7 +3226,7 @@ const AllSpeak_Browser = {
 				break;
 			case `pick`:
 			case `drag`:
-				if (compiler.nextTokenIs(`position`)) {
+				if (compiler.nextIsWord(`position`)) {
 					compiler.next();
 					return {
 						domain: `browser`,
@@ -3206,7 +3235,7 @@ const AllSpeak_Browser = {
 				}
 				break;
 			case `click`:
-				const which = compiler.nextToken();
+				const which = AllSpeak_Language.reverseWord(compiler.nextToken());
 				if ([`left`, `top`].includes(which)) {
 					compiler.next();
 					return {
@@ -3221,11 +3250,11 @@ const AllSpeak_Browser = {
 		},
 
 		getCoord: (compiler, type, offset) => {
-			if (compiler.nextTokenIs(`of`)) {
-				if (compiler.nextTokenIs(`the`)) {
+			if (compiler.nextIsWord(`of`)) {
+				if (compiler.nextIsWord(`the`)) {
 					compiler.nextToken();
 				}
-				const symbol = compiler.getToken();
+				const symbol = AllSpeak_Language.reverseWord(compiler.getToken());
 				if ([`window`, `viewport`].includes(symbol)) {
 					compiler.next();
 					return {
@@ -3622,23 +3651,23 @@ const AllSpeak_Browser = {
 	condition: {
 
 		compile: (compiler) => {
-			if (compiler.tokenIs(`confirm`)) {
+			if (compiler.isWord(`confirm`)) {
 				const value = compiler.getNextValue();
 				return {
 					domain: `browser`,
 					type: `confirm`,
 					value
 				};
-			} else if (compiler.tokenIs(`element`)) {
+			} else if (compiler.isWord(`element`)) {
 				if (compiler.nextIsSymbol()) {
 					const symbolRecord = compiler.getSymbolRecord();
 					if (symbolRecord.extra === `dom`) {
 						const token = compiler.nextToken();
 						if (token === `has`) {
-							if (compiler.nextTokenIs(`the`)) {
+							if (compiler.nextIsWord(`the`)) {
 								compiler.next();
 							}
-							if (compiler.tokenIs(`focus`)) {
+							if (compiler.isWord(`focus`)) {
 								compiler.next();
 								return {
 									domain: `browser`,

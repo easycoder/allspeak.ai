@@ -1,0 +1,1173 @@
+{
+  "meta": {
+    "language": "en",
+    "label": "English",
+    "version": "0.1.0",
+    "description": "English language pack for AllSpeak — maps English surface syntax to canonical opcodes"
+  },
+  "opcodes": {
+    "ADD": {
+      "keyword": "add",
+      "patterns": [
+        "add {value} to {variable}",
+        "add {value1} to {value2} giving {variable}"
+      ]
+    },
+    "ALERT": {
+      "keyword": "alert",
+      "patterns": [
+        "alert {value}"
+      ]
+    },
+    "APPEND": {
+      "keyword": "append",
+      "patterns": [
+        "append {value} to {variable}"
+      ]
+    },
+    "ATTACH_ELEMENT": {
+      "keyword": "attach",
+      "patterns": [
+        "attach {element} to body",
+        "attach {element} to {cssId}"
+      ]
+    },
+    "CLEAR": {
+      "keyword": "clear",
+      "patterns": [
+        "clear {variable}"
+      ]
+    },
+    "CLEAR_ELEMENT": {
+      "keyword": "clear",
+      "patterns": [
+        "clear {element}",
+        "clear body",
+        "clear styles"
+      ]
+    },
+    "CLICK_ELEMENT": {
+      "keyword": "click",
+      "patterns": [
+        "click {element}"
+      ]
+    },
+    "CONTINUE": {
+      "keyword": "continue",
+      "patterns": [
+        "continue"
+      ]
+    },
+    "CONVERT": {
+      "keyword": "convert",
+      "patterns": [
+        "convert whitespace in {variable} to print|html"
+      ]
+    },
+    "COPY_TO_CLIPBOARD": {
+      "keyword": "copy",
+      "patterns": [
+        "copy {element}"
+      ]
+    },
+    "CREATE_ELEMENT": {
+      "keyword": "create",
+      "patterns": [
+        "create {element} in body",
+        "create {element} in {parent}",
+        "create {audioclip} from {url}"
+      ]
+    },
+    "DEBUG_PROGRAM": {
+      "keyword": "debug",
+      "patterns": [
+        "debug program"
+      ]
+    },
+    "DEBUG_STEP": {
+      "keyword": "debug",
+      "patterns": [
+        "debug step"
+      ]
+    },
+    "DEBUG_STOP": {
+      "keyword": "debug",
+      "patterns": [
+        "debug stop"
+      ]
+    },
+    "DEBUG_SYMBOL": {
+      "keyword": "debug",
+      "patterns": [
+        "debug symbol {name}"
+      ]
+    },
+    "DEBUG_SYMBOLS": {
+      "keyword": "debug",
+      "patterns": [
+        "debug symbols"
+      ]
+    },
+    "DECLARE_ALIAS": {
+      "keyword": "alias",
+      "patterns": [
+        "alias {name} to {symbol}"
+      ]
+    },
+    "DECLARE_CALLBACK": {
+      "keyword": "callback",
+      "patterns": [
+        "callback {name}"
+      ]
+    },
+    "DECLARE_ELEMENT": {
+      "keyword": "div|span|button|input|textarea|select|option|a|p|pre|h1|h2|h3|h4|h5|h6|img|image|canvas|table|tr|td|th|ul|li|form|fieldset|legend|label|blockquote|hr|section|file|audioclip|progress",
+      "patterns": [
+        "{elementType} {name}"
+      ],
+      "elementTypes": {
+        "a": "a",
+        "blockquote": "blockquote",
+        "button": "button",
+        "canvas": "canvas",
+        "div": "div",
+        "fieldset": "fieldset",
+        "file": "file",
+        "form": "form",
+        "h1": "h1",
+        "h2": "h2",
+        "h3": "h3",
+        "h4": "h4",
+        "h5": "h5",
+        "h6": "h6",
+        "hr": "hr",
+        "image": "image",
+        "img": "img",
+        "input": "input",
+        "label": "label",
+        "legend": "legend",
+        "li": "li",
+        "option": "option",
+        "p": "p",
+        "pre": "pre",
+        "progress": "progress",
+        "section": "section",
+        "select": "select",
+        "span": "span",
+        "table": "table",
+        "td": "td",
+        "textarea": "textarea",
+        "th": "th",
+        "tr": "tr",
+        "ul": "ul",
+        "audioclip": "audioclip"
+      }
+    },
+    "DECLARE_MODULE": {
+      "keyword": "module",
+      "patterns": [
+        "module {name}"
+      ]
+    },
+    "DECLARE_SYMBOL": {
+      "keyword": "symbol",
+      "patterns": [
+        "symbol {name}"
+      ]
+    },
+    "DECLARE_VARIABLE": {
+      "keyword": "variable",
+      "patterns": [
+        "variable {name}"
+      ]
+    },
+    "DECODE": {
+      "keyword": "decode",
+      "patterns": [
+        "decode {variable}"
+      ]
+    },
+    "DISABLE_ELEMENT": {
+      "keyword": "disable",
+      "patterns": [
+        "disable {element}"
+      ]
+    },
+    "DIVIDE": {
+      "keyword": "divide",
+      "patterns": [
+        "divide {variable} by {value}",
+        "divide {value1} by {value2} giving {variable}"
+      ]
+    },
+    "DUMMY": {
+      "keyword": "dummy",
+      "patterns": [
+        "dummy"
+      ]
+    },
+    "ENABLE_ELEMENT": {
+      "keyword": "enable",
+      "patterns": [
+        "enable {element}"
+      ]
+    },
+    "ENCODE": {
+      "keyword": "encode",
+      "patterns": [
+        "encode {variable}"
+      ]
+    },
+    "END_TRY": {
+      "keyword": "end",
+      "patterns": [
+        "end try"
+      ]
+    },
+    "EVERY": {
+      "keyword": "every",
+      "patterns": [
+        "every {value} minute|minutes|second|seconds|tick|ticks"
+      ]
+    },
+    "EXIT": {
+      "keyword": "exit",
+      "patterns": [
+        "exit"
+      ]
+    },
+    "FILTER": {
+      "keyword": "filter",
+      "patterns": [
+        "filter {array} with {function}"
+      ]
+    },
+    "FOCUS_ELEMENT": {
+      "keyword": "focus",
+      "patterns": [
+        "focus {element}"
+      ]
+    },
+    "FORK": {
+      "keyword": "fork",
+      "patterns": [
+        "fork [to] {label}"
+      ]
+    },
+    "FULLSCREEN": {
+      "keyword": "request",
+      "patterns": [
+        "request fullscreen",
+        "request fullscreen exit"
+      ]
+    },
+    "GET_FORM": {
+      "keyword": "get",
+      "patterns": [
+        "get {variable} from {form}"
+      ]
+    },
+    "GET_OPTION": {
+      "keyword": "get",
+      "patterns": [
+        "get {variable} from {select}"
+      ]
+    },
+    "GET_STORAGE": {
+      "keyword": "get",
+      "patterns": [
+        "get {variable} from storage as {key}"
+      ]
+    },
+    "GOSUB": {
+      "keyword": "gosub",
+      "patterns": [
+        "gosub [to] {label}"
+      ]
+    },
+    "GOTO": {
+      "keyword": "go",
+      "patterns": [
+        "go [to] {label}"
+      ]
+    },
+    "HIGHLIGHT_ELEMENT": {
+      "keyword": "highlight",
+      "patterns": [
+        "highlight {element}"
+      ]
+    },
+    "HISTORY_BACK": {
+      "keyword": "history",
+      "patterns": [
+        "history back"
+      ]
+    },
+    "HISTORY_FORWARD": {
+      "keyword": "history",
+      "patterns": [
+        "history forward"
+      ]
+    },
+    "HISTORY_PUSH": {
+      "keyword": "history",
+      "patterns": [
+        "history push [url {url}] [state {state}] [title {title}]"
+      ]
+    },
+    "HISTORY_REPLACE": {
+      "keyword": "history",
+      "patterns": [
+        "history replace [url {url}] [state {state}] [title {title}]"
+      ]
+    },
+    "HISTORY_SET": {
+      "keyword": "history",
+      "patterns": [
+        "history set [url {url}] [state {state}] [title {title}]"
+      ]
+    },
+    "IF": {
+      "keyword": "if",
+      "patterns": [
+        "if {condition}"
+      ]
+    },
+    "IMPORT": {
+      "keyword": "import",
+      "patterns": [
+        "import {symbols}"
+      ]
+    },
+    "INDEX": {
+      "keyword": "index",
+      "patterns": [
+        "index {variable} to {value}"
+      ]
+    },
+    "JSON_ADD": {
+      "keyword": "json",
+      "patterns": [
+        "json add {item} to {variable}"
+      ]
+    },
+    "JSON_DELETE": {
+      "keyword": "json",
+      "patterns": [
+        "json delete property|element {value} from|of {variable}"
+      ]
+    },
+    "JSON_FORMAT": {
+      "keyword": "json",
+      "patterns": [
+        "json format {variable}"
+      ]
+    },
+    "JSON_PARSE": {
+      "keyword": "json",
+      "patterns": [
+        "json parse url {url} as {variable}"
+      ]
+    },
+    "JSON_RENAME": {
+      "keyword": "json",
+      "patterns": [
+        "json rename {oldName} to {newName} in {variable}"
+      ]
+    },
+    "JSON_REPLACE": {
+      "keyword": "json",
+      "patterns": [
+        "json replace element {index} of {variable} by|with {value}"
+      ]
+    },
+    "JSON_SET_LIST": {
+      "keyword": "json",
+      "patterns": [
+        "json set {select} from {variable} [as {display}]"
+      ]
+    },
+    "JSON_SET_VAR": {
+      "keyword": "json",
+      "patterns": [
+        "json set {variable} to array|object"
+      ]
+    },
+    "JSON_SHUFFLE": {
+      "keyword": "json",
+      "patterns": [
+        "json shuffle {variable}"
+      ]
+    },
+    "JSON_SORT": {
+      "keyword": "json",
+      "patterns": [
+        "json sort {variable}"
+      ]
+    },
+    "JSON_SPLIT": {
+      "keyword": "json",
+      "patterns": [
+        "json split {value} [on {delimiter}] giving|into {variable}"
+      ]
+    },
+    "LIST_STORAGE": {
+      "keyword": "get",
+      "patterns": [
+        "get {variable} from storage"
+      ]
+    },
+    "LOG": {
+      "keyword": "log",
+      "patterns": [
+        "log {value}"
+      ]
+    },
+    "MAIL": {
+      "keyword": "mail",
+      "patterns": [
+        "mail to {email} [subject {subject}] [body|message {body}]"
+      ]
+    },
+    "MQTT_INIT": {
+      "keyword": "mqtt",
+      "patterns": [
+        "mqtt init {topic} name {name} qos {qos}"
+      ]
+    },
+    "MQTT_ON_CONNECT": {
+      "keyword": "on",
+      "patterns": [
+        "on mqtt connect"
+      ]
+    },
+    "MQTT_ON_MESSAGE": {
+      "keyword": "on",
+      "patterns": [
+        "on mqtt message"
+      ]
+    },
+    "MQTT_SEND": {
+      "keyword": "send",
+      "patterns": [
+        "send mqtt {message} to {topic}",
+        "send mqtt to {topic} [sender {sender}] [action {action}] [message {message}]"
+      ]
+    },
+    "MQTT_SUBSCRIBE": {
+      "keyword": "mqtt",
+      "patterns": [
+        "mqtt topic {name}"
+      ]
+    },
+    "MULTIPLY": {
+      "keyword": "multiply",
+      "patterns": [
+        "multiply {variable} by {value}",
+        "multiply {value1} by {value2} giving {variable}"
+      ]
+    },
+    "NAVIGATE": {
+      "keyword": "location",
+      "patterns": [
+        "location {url}",
+        "location new {url}"
+      ]
+    },
+    "NEGATE": {
+      "keyword": "negate",
+      "patterns": [
+        "negate {variable}"
+      ]
+    },
+    "ON_BROWSER_BACK": {
+      "keyword": "on",
+      "patterns": [
+        "on browser back",
+        "on restore"
+      ]
+    },
+    "ON_CALLBACK": {
+      "keyword": "on",
+      "patterns": [
+        "on {callback}"
+      ]
+    },
+    "ON_CHANGE": {
+      "keyword": "on",
+      "patterns": [
+        "on change {element}"
+      ]
+    },
+    "ON_CLICK": {
+      "keyword": "on",
+      "patterns": [
+        "on click {element}"
+      ]
+    },
+    "ON_CLICK_DOCUMENT": {
+      "keyword": "on",
+      "patterns": [
+        "on click document"
+      ]
+    },
+    "ON_CLOSE": {
+      "keyword": "on",
+      "patterns": [
+        "on close"
+      ]
+    },
+    "ON_DRAG": {
+      "keyword": "on",
+      "patterns": [
+        "on drag"
+      ]
+    },
+    "ON_DROP": {
+      "keyword": "on",
+      "patterns": [
+        "on drop"
+      ]
+    },
+    "ON_ERROR": {
+      "keyword": "on",
+      "patterns": [
+        "on error"
+      ]
+    },
+    "ON_KEY": {
+      "keyword": "on",
+      "patterns": [
+        "on key"
+      ]
+    },
+    "ON_LEAVE": {
+      "keyword": "on",
+      "patterns": [
+        "on leave"
+      ]
+    },
+    "ON_MESSAGE": {
+      "keyword": "on",
+      "patterns": [
+        "on message"
+      ]
+    },
+    "ON_PICK": {
+      "keyword": "on",
+      "patterns": [
+        "on pick {element}"
+      ]
+    },
+    "ON_RESUME": {
+      "keyword": "on",
+      "patterns": [
+        "on resume"
+      ]
+    },
+    "ON_SWIPE": {
+      "keyword": "on",
+      "patterns": [
+        "on swipe left|right"
+      ]
+    },
+    "ON_WINDOW_RESIZE": {
+      "keyword": "on",
+      "patterns": [
+        "on window resize"
+      ]
+    },
+    "PLAY_AUDIO": {
+      "keyword": "play",
+      "patterns": [
+        "play {audioclip}"
+      ]
+    },
+    "POP": {
+      "keyword": "pop",
+      "patterns": [
+        "pop [into] {variable}"
+      ]
+    },
+    "PRINT": {
+      "keyword": "print",
+      "patterns": [
+        "print {value}"
+      ]
+    },
+    "PUSH": {
+      "keyword": "push",
+      "patterns": [
+        "push {value}"
+      ]
+    },
+    "PUT": {
+      "keyword": "put",
+      "patterns": [
+        "put {value} into {variable}"
+      ]
+    },
+    "PUT_STORAGE": {
+      "keyword": "put",
+      "patterns": [
+        "put {value} into storage as {key}"
+      ]
+    },
+    "REMOVE_ATTRIBUTE": {
+      "keyword": "remove",
+      "patterns": [
+        "remove attribute {name} of {element}"
+      ]
+    },
+    "REMOVE_ELEMENT": {
+      "keyword": "remove",
+      "patterns": [
+        "remove element {element}"
+      ]
+    },
+    "REMOVE_STORAGE": {
+      "keyword": "remove",
+      "patterns": [
+        "remove {key} from storage"
+      ]
+    },
+    "RENDER": {
+      "keyword": "render",
+      "patterns": [
+        "render {script} in {parent}"
+      ]
+    },
+    "REPLACE": {
+      "keyword": "replace",
+      "patterns": [
+        "replace {original} with {replacement} in {variable}"
+      ]
+    },
+    "REQUIRE": {
+      "keyword": "require",
+      "patterns": [
+        "require css|js {url}"
+      ]
+    },
+    "REST_GET": {
+      "keyword": "rest",
+      "patterns": [
+        "rest get {variable} from {url}"
+      ]
+    },
+    "REST_PATH": {
+      "keyword": "rest",
+      "patterns": [
+        "rest path {path}"
+      ]
+    },
+    "REST_POST": {
+      "keyword": "rest",
+      "patterns": [
+        "rest post [to] {url} giving {variable}",
+        "rest post {value} to {url} giving {variable}",
+        "rest post [to] {url} with {args} giving {variable}"
+      ]
+    },
+    "RETURN": {
+      "keyword": "return",
+      "patterns": [
+        "return"
+      ]
+    },
+    "RUN_MODULE": {
+      "keyword": "run",
+      "patterns": [
+        "run {script}",
+        "run {script} with {imports}",
+        "run {script} as {module}",
+        "run {script} nowait",
+        "run {script} with {imports} then {handler}"
+      ]
+    },
+    "SANITIZE": {
+      "keyword": "sanitize",
+      "patterns": [
+        "sanitize {variable}"
+      ]
+    },
+    "SCROLL": {
+      "keyword": "scroll",
+      "patterns": [
+        "scroll to {value}",
+        "scroll {element} to {value}"
+      ]
+    },
+    "SEND_MESSAGE": {
+      "keyword": "send",
+      "patterns": [
+        "send {message} to {recipient}",
+        "send {message} to parent",
+        "send {message} to sender",
+        "send to {recipient}"
+      ]
+    },
+    "SET_ARG": {
+      "keyword": "set",
+      "patterns": [
+        "set arg {name} of {variable} to {value}"
+      ]
+    },
+    "SET_ARRAY": {
+      "keyword": "set",
+      "patterns": [
+        "set {variable} to {value} {value} ..."
+      ]
+    },
+    "SET_ATTRIBUTE": {
+      "keyword": "set",
+      "patterns": [
+        "set attribute {name} of {element} to {value}",
+        "set attribute {name} of {element}"
+      ]
+    },
+    "SET_ATTRIBUTES": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] attributes of {element} to {value}"
+      ]
+    },
+    "SET_BODY_STYLE": {
+      "keyword": "set",
+      "patterns": [
+        "set {styleName} of body to {value}"
+      ]
+    },
+    "SET_BOOLEAN": {
+      "keyword": "set",
+      "patterns": [
+        "set {variable}"
+      ]
+    },
+    "SET_CLASS": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] class of {element} to {value}"
+      ]
+    },
+    "SET_CONTENT": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] content of {element} to {value}"
+      ]
+    },
+    "SET_CONTENT_VAR": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] content of {element} from {source}",
+        "set {element} from {source}"
+      ]
+    },
+    "SET_DEFAULT": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] default of {element} to {value}"
+      ]
+    },
+    "SET_ELEMENTS": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] elements of {variable} to {value}"
+      ]
+    },
+    "SET_ELEMENT_VALUE": {
+      "keyword": "set",
+      "patterns": [
+        "set element {index} of {variable} to {value}"
+      ]
+    },
+    "SET_ENCODING": {
+      "keyword": "set",
+      "patterns": [
+        "set encoding to {value}"
+      ]
+    },
+    "SET_HEAD_STYLE": {
+      "keyword": "set",
+      "patterns": [
+        "set {styleName} to {value}"
+      ]
+    },
+    "SET_ID": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] id of {element} to {value}"
+      ]
+    },
+    "SET_PAYLOAD": {
+      "keyword": "set",
+      "patterns": [
+        "set payload of {callback} to {value}"
+      ]
+    },
+    "SET_PROPERTY": {
+      "keyword": "set",
+      "patterns": [
+        "set property {name} of {variable} to {value}"
+      ]
+    },
+    "SET_READY": {
+      "keyword": "set",
+      "patterns": [
+        "set ready"
+      ],
+      "aliases": [
+        "release parent"
+      ]
+    },
+    "SET_SELECT": {
+      "keyword": "set",
+      "patterns": [
+        "set {select} from {variable} [as {display}]"
+      ]
+    },
+    "SET_SIZE": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] size of {element} to {value}"
+      ]
+    },
+    "SET_STYLE": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] style of {element} to {value}",
+        "set {styleName} of {element} to {value}"
+      ]
+    },
+    "SET_STYLES": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] styles of {element} to {value}"
+      ]
+    },
+    "SET_TEXT": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] text of {element} to {value}"
+      ]
+    },
+    "SET_TITLE": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] title to {value}"
+      ]
+    },
+    "SET_TRACER_ROWS": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] tracer rows to {value}"
+      ]
+    },
+    "SET_VAR_TYPE": {
+      "keyword": "set",
+      "patterns": [
+        "set {variable} to array",
+        "set {variable} to object"
+      ]
+    },
+    "SORT": {
+      "keyword": "sort",
+      "patterns": [
+        "sort {array} with {function}"
+      ]
+    },
+    "SPLIT": {
+      "keyword": "split",
+      "patterns": [
+        "split {value} on|by {separator} giving|into {variable}"
+      ]
+    },
+    "STOP": {
+      "keyword": "stop",
+      "patterns": [
+        "stop",
+        "stop {module}"
+      ]
+    },
+    "SUBTRACT": {
+      "keyword": "take",
+      "patterns": [
+        "take {value} from {variable}",
+        "take {value1} from {value2} giving {variable}"
+      ],
+      "aliases": [
+        "subtract"
+      ]
+    },
+    "TOGGLE": {
+      "keyword": "toggle",
+      "patterns": [
+        "toggle {variable}"
+      ]
+    },
+    "TRACE_RUN": {
+      "keyword": "trace",
+      "patterns": [
+        "trace"
+      ]
+    },
+    "TRACE_SETUP": {
+      "keyword": "trace",
+      "patterns": [
+        "trace {variables} [horizontal|vertical]"
+      ]
+    },
+    "TRY": {
+      "keyword": "try",
+      "patterns": [
+        "try"
+      ]
+    },
+    "UPLOAD_FILE": {
+      "keyword": "upload",
+      "patterns": [
+        "upload {file} to {path} with {progress} and {status}"
+      ]
+    },
+    "WAIT": {
+      "keyword": "wait",
+      "patterns": [
+        "wait {value} minute|minutes|second|seconds|tick|ticks"
+      ]
+    },
+    "WHILE": {
+      "keyword": "while",
+      "patterns": [
+        "while {condition}"
+      ]
+    },
+    "CLOSE_MODULE": {
+      "keyword": "close",
+      "patterns": [
+        "close {module}"
+      ]
+    }
+  },
+  "connectors": {
+    "to": "to",
+    "into": "into",
+    "from": "from",
+    "with": "with",
+    "by": "by",
+    "of": "of",
+    "in": "in",
+    "as": "as",
+    "on": "on",
+    "and": "and",
+    "or": "or",
+    "giving": "giving",
+    "the": "the"
+  },
+  "literals": {
+    "true": "true",
+    "false": "false",
+    "body": "body",
+    "array": "array",
+    "object": "object",
+    "storage": "storage",
+    "parent": "parent",
+    "sender": "sender",
+    "ready": "ready",
+    "nowait": "nowait"
+  },
+  "timeUnits": {
+    "second": "second",
+    "seconds": "seconds",
+    "minute": "minute",
+    "minutes": "minutes",
+    "tick": "tick",
+    "ticks": "ticks"
+  },
+  "conditions": {
+    "is": "is",
+    "not": "not",
+    "greater": "greater",
+    "less": "less",
+    "than": "than",
+    "includes": "includes",
+    "starts": "starts",
+    "ends": "ends",
+    "empty": "empty",
+    "numeric": "numeric",
+    "even": "even",
+    "odd": "odd"
+  },
+  "diagnostics": {
+    "unknownCommand": "I don't understand '{token}' at line {line}.",
+    "undeclaredVariable": "Variable '{name}' has not been declared.",
+    "unexpectedToken": "Expected '{expected}' but got '{actual}' at line {line}.",
+    "divisionByZero": "Division by zero at line {line}.",
+    "indexOutOfRange": "Index {index} is out of range at line {line}.",
+    "moduleNotFound": "Module '{name}' not found.",
+    "syntaxError": "Syntax error at line {line}: {detail}."
+  },
+  "words": {
+    "and": "and",
+    "as": "as",
+    "assign": "assign",
+    "attribute": "attribute",
+    "back": "back",
+    "body": "body",
+    "by": "by",
+    "cache": "cache",
+    "confirm": "confirm",
+    "delimited": "delimited",
+    "document": "document",
+    "element": "element",
+    "else": "else",
+    "exists": "exists",
+    "focus": "focus",
+    "from": "from",
+    "giving": "giving",
+    "handle": "handle",
+    "horizontal": "horizontal",
+    "in": "in",
+    "into": "into",
+    "is": "is",
+    "json": "json",
+    "keys": "keys",
+    "last": "last",
+    "message": "message",
+    "name": "name",
+    "new": "new",
+    "nocase": "nocase",
+    "not": "not",
+    "nowait": "nowait",
+    "number": "number",
+    "of": "of",
+    "offset": "offset",
+    "on": "on",
+    "or": "or",
+    "path": "path",
+    "position": "position",
+    "program": "program",
+    "reply": "reply",
+    "resize": "resize",
+    "rows": "rows",
+    "running": "running",
+    "state": "state",
+    "storage": "storage",
+    "subject": "subject",
+    "symbol": "symbol",
+    "symbols": "symbols",
+    "than": "than",
+    "the": "the",
+    "then": "then",
+    "to": "to",
+    "tracing": "tracing",
+    "unsorted": "unsorted",
+    "url": "url",
+    "vertical": "vertical",
+    "whitespace": "whitespace",
+    "with": "with",
+    "end": "end",
+    "length": "length",
+    "elements": "elements",
+    "index": "index",
+    "value": "value",
+    "left": "left",
+    "right": "right",
+    "field": "field",
+    "property": "property",
+    "random": "random",
+    "cos": "cos",
+    "sin": "sin",
+    "tan": "tan",
+    "acos": "acos",
+    "asin": "asin",
+    "atan": "atan",
+    "now": "now",
+    "timestamp": "timestamp",
+    "today": "today",
+    "newline": "newline",
+    "backtick": "backtick",
+    "empty": "empty",
+    "uuid": "uuid",
+    "date": "date",
+    "encode": "encode",
+    "decode": "decode",
+    "lowercase": "lowercase",
+    "hash": "hash",
+    "reverse": "reverse",
+    "trim": "trim",
+    "char": "char",
+    "character": "character",
+    "true": "true",
+    "false": "false",
+    "year": "year",
+    "month": "month",
+    "monthnumber": "monthnumber",
+    "day": "day",
+    "daynumber": "daynumber",
+    "hour": "hour",
+    "minute": "minute",
+    "second": "second",
+    "millisecond": "millisecond",
+    "modulo": "modulo",
+    "time": "time",
+    "radius": "radius",
+    "cat": "cat",
+    "greater": "greater",
+    "less": "less",
+    "even": "even",
+    "odd": "odd",
+    "includes": "includes",
+    "starts": "starts",
+    "ends": "ends",
+    "numeric": "numeric",
+    "array": "array",
+    "object": "object",
+    "an": "an",
+    "arg": "arg",
+    "payload": "payload",
+    "ready": "ready",
+    "format": "format",
+    "module": "module",
+    "variable": "variable",
+    "callback": "callback",
+    "set": "set",
+    "sort": "sort",
+    "shuffle": "shuffle",
+    "parse": "parse",
+    "delete": "delete",
+    "rename": "rename",
+    "add": "add",
+    "split": "split",
+    "replace": "replace",
+    "count": "count",
+    "size": "size",
+    "mobile": "mobile",
+    "portrait": "portrait",
+    "landscape": "landscape",
+    "br": "br",
+    "location": "location",
+    "key": "key",
+    "hostname": "hostname",
+    "browser": "browser",
+    "content": "content",
+    "text": "text",
+    "selected": "selected",
+    "color": "color",
+    "style": "style",
+    "screen": "screen",
+    "top": "top",
+    "bottom": "bottom",
+    "width": "width",
+    "height": "height",
+    "scroll": "scroll",
+    "parent": "parent",
+    "history": "history",
+    "pick": "pick",
+    "drag": "drag",
+    "click": "click",
+    "window": "window",
+    "viewport": "viewport",
+    "item": "item",
+    "prompt": "prompt"
+  }
+}
