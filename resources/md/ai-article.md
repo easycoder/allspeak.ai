@@ -34,7 +34,7 @@ end
 AllSpeak runs in two environments:
 
 - **In the browser** — load a single JavaScript file and write scripts embedded in your HTML page
-- **As a command-line tool** — install via `pip install allspeak` and run `.as` script files directly
+- **As a command-line tool** — install via `pip install allspeak-ai` and run `.as` script files directly
 
 Scripts use the `.as` extension and require no build step, no package manager, and no compiler toolchain.
 
@@ -119,7 +119,7 @@ Note that performance-critical work can be handled by plugins. AllSpeak scripts 
 ### Install the Python runtime (for CLI applications)
 
 ```bash
-pip install allspeak
+pip install allspeak-ai
 ```
 
 This installs the `allspeak` command. Test it:

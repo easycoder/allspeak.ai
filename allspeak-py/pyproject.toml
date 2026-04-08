@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "allspeak"
+name = "allspeak-ai"
 authors = [{name = "Graham Trott", email = "gtanyware@gmail.com"}]
 description = "Rapid scripting in English"
 readme = "README.md"
@@ -20,6 +20,9 @@ dependencies = [
     "paho-mqtt",
     "bottle"
 ]
+
+[tool.flit.module]
+name = "allspeak"
 
 [tool.flit.sdist]
 include = ["as_*.py", "*.png", "languages/*.json"]
