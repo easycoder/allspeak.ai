@@ -83,20 +83,17 @@ SetupScreen:
         end
     end
 
-	set style `background` of body to `#0f1923`
-
 	create Body
+    set style `max-width` of Body to `800px`
+    set style `margin` of Body to `0 auto`
+    set style `padding` of Body to `0`
+    set style `min-height` of Body to `100vh`
+    set style `background` of body to `#0f1923`
     if Mobile
     begin
-    	set style `width` of Body to `100%`
+        set style `width` of Body to `100%`
         set style `overscroll-behavior-y` of Body to `none`
     end
-    else
-    begin
-    	set style `max-width` of Body to `800px`
-        set style `margin` of Body to `0 auto`
-    end
-    set style `min-height` of Body to `100vh`
 
 !	Render the main screen layout
     rest get MainScreenWebson from `primer/project.json?v=` cat now
@@ -225,9 +222,9 @@ ShowStartTab:
     set style `display` of StartContainer to `flex`
     set style `display` of ExampleContainer to `none`
     set style `display` of ManualContainer to `none`
-    set style `background` of TabStart to `#23345e`
-    set style `background` of TabExample to `#0d1220`
-    set style `background` of TabManual to `#0d1220`
+    set style `background` of TabStart to `#1e3450`
+    set style `background` of TabExample to `#0b1018`
+    set style `background` of TabManual to `#0b1018`
     set style `display` of RetryManualButton to `none`
     gosub to EnsureStartLoaded
     return
@@ -237,9 +234,9 @@ ShowExampleTab:
     set style `display` of StartContainer to `none`
     set style `display` of ExampleContainer to `flex`
     set style `display` of ManualContainer to `none`
-    set style `background` of TabStart to `#0d1220`
-    set style `background` of TabExample to `#23345e`
-    set style `background` of TabManual to `#0d1220`
+    set style `background` of TabStart to `#0b1018`
+    set style `background` of TabExample to `#1e3450`
+    set style `background` of TabManual to `#0b1018`
     set style `display` of RetryManualButton to `none`
     gosub to EnsureExampleLoaded
     return
@@ -249,9 +246,9 @@ ShowManualTab:
     set style `display` of StartContainer to `none`
     set style `display` of ExampleContainer to `none`
     set style `display` of ManualContainer to `flex`
-    set style `background` of TabStart to `#0d1220`
-    set style `background` of TabExample to `#0d1220`
-    set style `background` of TabManual to `#23345e`
+    set style `background` of TabStart to `#0b1018`
+    set style `background` of TabExample to `#0b1018`
+    set style `background` of TabManual to `#1e3450`
     return
 
 EnsureStartLoaded:
