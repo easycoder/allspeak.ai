@@ -17,10 +17,10 @@ See the **AI Manual** tab on this page for a full exposition of this subject.
 Development can proceed using either a cloud-based agent or a local LLM hosted by yourself and accessed via Open WebUI. In either case, once you are set up, your first step will be to provide a "primer prompt" that will get your agent familiar with AllSpeak. You can ask a cloud-based agent to read this from a URL, but for a local LLM you will have to open the URL yourself, copy its content and paste this as the primer prompt.
 
 For the Python version the URL is
-`https://allspeak.github.io/agent-primer-python.md`
+`https://allspeak.ai/agent-primer-python.md`
 
 For JavaScript it is
-`https://allspeak.github.io/agent-primer-js.md`
+`https://allspeak.ai/agent-primer-js.md`
 
 Include either or both of these according to the needs of your project.
 
@@ -51,7 +51,7 @@ python3 -m http.server 5500
 
 Then open `http://localhost:5500/` in your browser.
 
-Copy the file at `https://allspeak.github.io/index_html` to your own `index.html` and serve this to your browser.
+Copy the file at `https://allspeak.ai/index_html` to your own `index.html` and serve this to your browser.
 
 Now create a script file, `project.as` with the following content. It starts by setting up a panel in your browser. Add new code written by your AI agent to the bottom of the script.
 
@@ -108,6 +108,6 @@ To test any program you need a debugger. If you are doing cloud-based developmen
 Both versions of AllSpeak have a minimal debugger; a built-in tracer that lets you stop a script at any point, examine variables and single-step or run.
 
 ## Teach yourself AllSpeak 
-You can get some familiarity with many features of AllSpeak by starting with our [Codex](https://allspeak.github.io/codex.html). This is an integrated tutorial, reference manual and programmer's playground for the scripting language.
+You can get some familiarity with many features of AllSpeak by starting with our [Codex](https://allspeak.ai/codex.html). This is an integrated tutorial, reference manual and programmer's playground for the scripting language.
 
 And that's it! If you have questions you can email us at [allspeak.ai@gmail.com](mailto:allspeak.ai@gmail.com). 

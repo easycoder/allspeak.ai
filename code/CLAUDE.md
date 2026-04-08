@@ -31,7 +31,7 @@
 6. **Explain to the user how to run their project:**
 
    - **CLI**: Run with `allspeak <project>.as`.
-   - **GUI**: Start the dev server with `allspeak code.as 8080` (or any free port), then open `http://localhost:8080/<project>.html` in a browser. The AllSpeak runtime is loaded from `https://allspeak.github.io/dist/allspeak.js`.
+   - **GUI**: Start the dev server with `allspeak code.as 8080` (or any free port), then open `http://localhost:8080/<project>.html` in a browser. The AllSpeak runtime is loaded from `https://allspeak.ai/dist/allspeak.js`.
 
 7. **Walk the user through how the files work together.** For GUI projects, explain:
 
@@ -87,7 +87,7 @@ This separation keeps code and layout independent, and the JSON format is easy f
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><Project></title>
-    <script type='text/javascript' src='https://allspeak.github.io/dist/allspeak.js'></script>
+    <script type='text/javascript' src='https://allspeak.ai/dist/allspeak.js'></script>
 </head>
 <body>
     <pre id="allspeak-script" style="display:none">

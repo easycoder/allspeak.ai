@@ -407,7 +407,7 @@ RebuildTabBar:
         on click TabLabel go to SwitchTab
         index TabClose to N
         create TabClose in TabBtn
-        set attribute `src` of TabClose to `https://allspeak.github.io/resources/icon/stop.png`
+        set attribute `src` of TabClose to `https://allspeak.ai/resources/icon/stop.png`
         set the style of TabClose to `width:12px;height:12px;opacity:0.6;cursor:pointer`
         on click TabClose go to CloseTab
         add 1 to N

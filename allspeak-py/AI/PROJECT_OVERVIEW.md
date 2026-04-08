@@ -21,9 +21,9 @@ Doclets is a searchable note/doclet system with:
 - Webson is the preferred way to define/build screens
 
 ## External references
-- AllSpeak repo: https://github.com/allspeak/allspeak.github.io
+- AllSpeak repo: https://github.com/easycoder/allspeak.ai
 - Webson repo (older, README still relevant): https://github.com/allspeak/webson
-- AllSpeak Codex intro: https://allspeak.github.io
+- AllSpeak Codex intro: https://allspeak.ai
 
 ## Current practical workflow
 - Keep local JS runtime files as symlinks in this repo

@@ -11,7 +11,7 @@ Most of the information in this website is relevant to WordPress, but part of it
 So to use ~ec~ in Wordpress, first add code to the page HEAD to call in ~ec~. We recommend installing the WordPress _Header and Footer Scripts_  plugin (or an equivalent), and use it to add the following header:
 
 ```
-<script src='https://cdn.jsdelivr.net/gh/allspeak/allspeak.github.io/dist/allspeak.js?ver=2.7.6'></script>
+<script src='https://cdn.jsdelivr.net/gh/easycoder/allspeak.ai/dist/allspeak.js?ver=2.7.6'></script>
 ```
 
 which will call in the ~ec~ JavaScript engine when your page loads. Almost everything else is done as described elsewhere in these pages. You will need to create a special &lt;div&gt; to hold the AllSpeak script, and if it is to operate on some element of your page this will need its own id, so occasionally you'll have to drop into text editing mode.

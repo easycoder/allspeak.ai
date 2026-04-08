@@ -295,7 +295,7 @@ DoNotes:
     if Arg is empty stop
 
 RunCodex:
-	location `https://allspeak.github.io/codex.html`
+	location `https://allspeak.ai/codex.html`
     stop
 
 ShowLife:

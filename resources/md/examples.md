@@ -2,7 +2,7 @@
 
 The following websites were all built entirely in AllSpeak script:
 
- - This site: [AllSpeak](https://allspeak.github.io)
+ - This site: [AllSpeak](https://allspeak.ai)
  - [Yorkshirewoman](https://yorkshirewoman.uk)
  - [Here on the map](https://hotm.allspeak.software)
  - [Rembrandt.ie](https://rembrandt.ie)
@@ -28,7 +28,7 @@ There are 9 images with only 1 showing. A row of thumbnail icons lets the user m
 
 This is a rewrite of a script published in [Smashing Magazine](https://www.smashingmagazine.com/2020/03/introduction-alpinejs-javascript-framework/) as an example of how to use the Alpine.js micro-framework. It represents a block added to a web page, that displays an announcement and handles feedback from users.
 ~<div id="ex-usercapture"></div>~
-The User Capture can be run as an independent web page; see [User Capture](https://allspeak.github.io/examples/usercapture). If you view the page source you will see the entire script inside its special preformatted element.
+The User Capture can be run as an independent web page; see [User Capture](https://allspeak.ai/examples/usercapture). If you view the page source you will see the entire script inside its special preformatted element.
 
 ## Storyteller
 
@@ -46,7 +46,7 @@ IWSY is a web app for building slideshows and presentations that can be embedded
 
 IWSY presentations are JSON files that are created edited in the IWSY editor and then run by the presentation engine, a single JavaScript file.
 
-See the [IWSY website](https://iwsy.allspeak.software); the source is in the [AllSpeak repository](https://allspeak.github.io) in the `iwsy` directory.
+See the [IWSY website](https://iwsy.allspeak.software); the source is in the [AllSpeak repository](https://allspeak.ai) in the `iwsy` directory.
 
 ## The Game of Life /SHOW-LIFE/
 

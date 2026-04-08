@@ -1,6 +1,6 @@
 ## Notes
 
-Dice Roller can be run as an independent web page; see [Dice Roller](https://allspeak.github.io/examples/dice). If you view the page source you will see the entire script inside its special preformatted element.
+Dice Roller can be run as an independent web page; see [Dice Roller](https://allspeak.ai/examples/dice). If you view the page source you will see the entire script inside its special preformatted element.
 
 After declaring all its variables, the script attaches a variable to the &lt;div&gt; element defined at the top of the file. It then creates 2 dice and paints onto each one the number of spots chosen by a random selection. Both the dice and its spots are &lt;div&gt; elements; the latter have rounded corners of 50% radius so they appear as circles.
 

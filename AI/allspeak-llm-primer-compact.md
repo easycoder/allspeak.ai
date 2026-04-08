@@ -16,7 +16,7 @@ Strict guardrails:
 ## 1) AllSpeak essentials
 
 - `.as` is AllSpeak script source.
-- `index.html` loads `https://allspeak.github.io/dist/allspeak.js` and runs script text.
+- `index.html` loads `https://allspeak.ai/dist/allspeak.js` and runs script text.
 - Variables are single-value by default.
 - To make arrays: `set the elements of Name to N`.
 
@@ -153,7 +153,7 @@ A web UI project has three files. Use these as your starting point for new proje
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project</title>
-    <script src="https://allspeak.github.io/dist/allspeak.js"></script>
+    <script src="https://allspeak.ai/dist/allspeak.js"></script>
 </head>
 <body>
     <pre id="allspeak-script" style="display:none">

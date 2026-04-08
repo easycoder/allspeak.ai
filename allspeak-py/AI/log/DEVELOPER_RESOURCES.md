@@ -329,6 +329,6 @@ allspeak-py/
 ## Related Resources
 
 - **AllSpeak GitHub**: [https://github.com/allspeak/allspeak-py](https://github.com/allspeak/allspeak-py)
-- **JavaScript Version**: [https://github.com/allspeak/allspeak.github.io](https://github.com/allspeak/allspeak.github.io)
-- **Website**: [https://allspeak.github.io](https://allspeak.github.io)
+- **JavaScript Version**: [https://github.com/easycoder/allspeak.ai](https://github.com/easycoder/allspeak.ai)
+- **Website**: [https://allspeak.ai](https://allspeak.ai)
 

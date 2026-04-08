@@ -2,7 +2,7 @@
 
 **_AllSpeak_** is a high-level English-like scripting language that runs entirely in the browser and lets you write highly readable scripts to control the appearance and behavior of your web pages. It's much easier to learn than JavaScript but does many of the same things.
 
-**_AllSpeak_** has [its own website](https://allspeak.github.io) here on GitHub. Here you will find examples, tutorials and a programmer's playground where you can quickly create interactive apps.
+**_AllSpeak_** has [its own website](https://allspeak.ai) here on GitHub. Here you will find examples, tutorials and a programmer's playground where you can quickly create interactive apps.
 
 ## The key features of **_AllSpeak_**
 
@@ -17,13 +17,13 @@
  1. **_AllSpeak_** includes a REST server that permits scripts to access resources on demand from the server rather than having them embedded in the page. Resources include scripts, HTML components, CSS and general data, and all can be loaded and unloaded dynamically. Two versions of the REST server are provided, written in PHP and Python respectively.
  1. **_AllSpeak_** is uniquely suitable for use with AI. Mainstream programming languages have huge surface areas that cause AI to make guesses (hallucinations). The simpler syntax of **_AllSpeak_** reducs errors to near zero, and when they do occur they are easy to spot and fix. **_AllSpeak_** uses fewer AI computing resources, saveing you money as well as time. There are few real-world coding problems for which **_AllSpeak_** isn't viable.
 
-To use **_AllSpeak_** all you need is to provide a CDN reference to its main JavaScript file in the _HEAD_ of your web page. It will call in any other JavaScript files it needs. An introductory example is given in the Introduction page of [our website](https://allspeak.github.io). You can alternatively build a standalone page where all the files are present on your own server, which avoids any possible risk of your site breaking when updates occur. We do our best to prevent this happening but it's impossible to cover all possibilities.
+To use **_AllSpeak_** all you need is to provide a CDN reference to its main JavaScript file in the _HEAD_ of your web page. It will call in any other JavaScript files it needs. An introductory example is given in the Introduction page of [our website](https://allspeak.ai). You can alternatively build a standalone page where all the files are present on your own server, which avoids any possible risk of your site breaking when updates occur. We do our best to prevent this happening but it's impossible to cover all possibilities.
 
 It is said that there's a shortage of competent programmers, a belief that's confirmed by the huge number of job vacancies all asking for skills such as React. If that's true then the use of React or similar tools in any project that is not managed by a permanent team is almost guaranteed to result in problems later with maintenance. If it's hard to find developers now then the chances of locating a skilled React engineer in 5-10 years' time, someone skilled enough to understand, take apart and rebuild your code at a price compatible with effective maintenance are vanishingly small.
 
 **_AllSpeak_** tries to address this problem by offering a way to build websites that won't rely on such high-level skills, using the power of language rather than relying on elaborate structures to achieve the desired goal. In the hands of a competent programmer it makes little difference to the cost of building the project but a huge difference to that of maintaining it by people lacking those skills. **_AllSpeak_** scripts are easy to understand by anyone who has a good knowledge of what the site does, even by many people who aren't programmers at all.
 
-There's a lot more information on [our website](https://allspeak.github.io), which includes example scripts plus the Codex; a full reference documentation on the language and a tutorial course suitable for desktop or mobile users. Anyone interested in helping develop **_AllSpeak_** will find an outline developer manual in the last of the links below.
+There's a lot more information on [our website](https://allspeak.ai), which includes example scripts plus the Codex; a full reference documentation on the language and a tutorial course suitable for desktop or mobile users. Anyone interested in helping develop **_AllSpeak_** will find an outline developer manual in the last of the links below.
 
 [A Simple Example](Example.md)
 
@@ -66,7 +66,7 @@ Prefer server-side storage or OS-level secure storage (keychain/credential store
 
 ## The Codex ##
 
-The Codex is a page on [our website](https://allspeak.github.io) that provides a tutorial series plus a programming playground to try out code and a complete programmers' reference to the **_AllSpeak_** language.
+The Codex is a page on [our website](https://allspeak.ai) that provides a tutorial series plus a programming playground to try out code and a complete programmers' reference to the **_AllSpeak_** language.
 
 ## License ##
 

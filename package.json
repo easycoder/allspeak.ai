@@ -1,5 +1,5 @@
 {
-  "name": "allspeak.github.io",
+  "name": "allspeak.ai",
   "version": "1.0.0",
   "description": "**_AllSpeak_** is a high-level English-like scripting language that runs entirely in the browser and lets you write highly readable scripts to control the appearance and behavior of your web pages. It's much easier to learn than JavaScript but does many of the same things.",
   "main": "ectest.js",
@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/allspeak/allspeak.github.io.git"
+    "url": "git+https://github.com/easycoder/allspeak.ai.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/allspeak/allspeak.github.io/issues"
+    "url": "https://github.com/easycoder/allspeak.ai/issues"
   },
-  "homepage": "https://github.com/allspeak/allspeak.github.io#readme",
+  "homepage": "https://github.com/easycoder/allspeak.ai#readme",
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "jsdom": "^28.1.0"

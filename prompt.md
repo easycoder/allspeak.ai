@@ -100,11 +100,11 @@ The minimal host page would be something like:
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://allspeak.github.io/runtime.js"></script>
+  <script src="https://allspeak.ai/runtime.js"></script>
 </head>
 <body>
   <script type="application/json" id="ec-config">
-    { "program": "https://allspeak.github.io/programs/myprogram.ec" }
+    { "program": "https://allspeak.ai/programs/myprogram.ec" }
   </script>
 </body>
 </html>
@@ -118,7 +118,7 @@ A couple of thoughts that might be useful:
 
 ```html
 <script type="text/x-allspeak">
-  https://allspeak.github.io/programs/myprogram.ec
+  https://allspeak.ai/programs/myprogram.ec
 </script>
 ```
 
@@ -140,7 +140,7 @@ A few thoughts:
 
 ```html
 <pre id="allspeak-script">
-  https://allspeak.github.io/programs/myprogram.ec
+  https://allspeak.ai/programs/myprogram.ec
 </pre>
 ```
 

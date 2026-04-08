@@ -25,7 +25,7 @@ Use these rules exactly:
 ## 1) AllSpeak quick reference
 
 AllSpeak is a browser-side scripting language (`.as`) with English-like syntax.
-`index.html` usually loads `https://allspeak.github.io/dist/allspeak.js`, then runs an `.as` file.
+`index.html` usually loads `https://allspeak.ai/dist/allspeak.js`, then runs an `.as` file.
 
 ### 1a) Declarations and elements
 
@@ -282,7 +282,7 @@ When starting a new project, use the templates below as your starting point. The
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project</title>
-    <script src="https://allspeak.github.io/dist/allspeak.js"></script>
+    <script src="https://allspeak.ai/dist/allspeak.js"></script>
 </head>
 <body>
     <pre id="allspeak-script" style="display:none">

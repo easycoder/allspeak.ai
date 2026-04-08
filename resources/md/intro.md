@@ -11,7 +11,7 @@ Once you have edit access to an empty server directory, create an `index.html` f
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src='https://cdn.jsdelivr.net/gh
-/allspeak/allspeak.github.io/allspeak/allspeak.js'></script>
+/easycoder/allspeak.ai/allspeak/allspeak.js'></script>
   </head>
 
   <body>

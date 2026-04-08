@@ -3,7 +3,7 @@
 Status: Draft
 Version: 0.1
 Applies to:
-- AllSpeak JS browser runtime (`allspeak.github.io`)
+- AllSpeak JS browser runtime (`allspeak.ai`)
 - AllSpeak Python CLI runtime (`allspeak-py`)
 
 ## Purpose

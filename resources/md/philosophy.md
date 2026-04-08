@@ -26,4 +26,4 @@ It's in the latter category that tools like ~ec~ provide a viable alternative to
 
 ## Technical overview ##
 
-~ec~ is about language, not structure. For a brief summary of how it works, see our [Technical overview](https://allspeak.github.io/technical.html).
+~ec~ is about language, not structure. For a brief summary of how it works, see our [Technical overview](https://allspeak.ai/technical.html).
