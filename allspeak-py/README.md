@@ -8,8 +8,8 @@ For more advanced applications, **_AllSpeak_** is designed to be extensible, by 
 
 There is also a JavaScript version of **_AllSpeak_**, which provides a full set of graphical features to run in a browser. For this, please visit
 
-Repository: [https://github.com/easycoder/allspeak.ai](https://github.com/easycoder/allspeak.ai)  
-Website: [https://allspeak.ai](https://allspeak.ai)
+Repository: [https://github.com/allspeak/allspeak.github.io](https://github.com/allspeak/allspeak.github.io)  
+Website: [https://allspeak.github.io](https://allspeak.github.io)
 <hr>
 
 ## Quick Start

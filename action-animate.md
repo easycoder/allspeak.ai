@@ -4,7 +4,7 @@
 
 This action a visual effect on the content of a bock. At present there is only pan/zoom, used to create the "Ken Burns" effect that makes still photos look a little like video.
 
-~img:https://allspeak.ai/iwsy/resources/help/img/animate.png|100%~
+~img:https://allspeak.github.io/iwsy/resources/help/img/animate.png|100%~
 
 This action performs a visual effect on one or more blocks. Each of the blocks has content which contains a special Markdown extension that defines the visual effect to be applied. The format is
 
@@ -14,7 +14,7 @@ where ~m:manarola~ is the name of the effect in the ~m:VFX~ section of the scrip
 
 The parameters needed for the effect are given by adding an item in the ~m:VFX~ section:
 
-~img:https://allspeak.ai/iwsy/resources/help/img/panzoom.png|100%~
+~img:https://allspeak.github.io/iwsy/resources/help/img/panzoom.png|100%~
 
 Here the type is defined as a ~m:panzoom~ (it's currently the only option available). The name then follows. Next we have the aspect ratio of the container that holds the image being manipulated, the URL of that image and the duration of the effect in seconds.
 

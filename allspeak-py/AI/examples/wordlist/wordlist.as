@@ -12,7 +12,7 @@
     variable F
     variable C
 
-    get Content from url `https://allspeak.ai`
+    get Content from url `https://allspeak.github.io`
     put the length of Content into Length
     print Length
 

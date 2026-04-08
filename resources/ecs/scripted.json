@@ -17,7 +17,7 @@
   "$PlusBtn": {
     "#element": "img",
     "@id": "se-plusbtn",
-    "@src": "https://allspeak.ai/resources/icon/plus.png",
+    "@src": "https://allspeak.github.io/resources/icon/plus.png",
     "width": "20px",
     "height": "20px",
     "cursor": "pointer",

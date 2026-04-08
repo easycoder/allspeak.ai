@@ -4,7 +4,7 @@ This file tracks cross-repo convergence milestones for AllSpeak JS and Python
 implementations.
 
 ## 2026-03-14
-- Repo: allspeak.ai
+- Repo: allspeak.github.io
 - Runtime: AllSpeak.version `250824` (unchanged in this workstream)
 - Spec: `0.1`
 - Conformance: pass 5, fail 0, skip 0 (`js-browser`)

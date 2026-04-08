@@ -8,7 +8,7 @@
 
 The rise of AI coding assistants has transformed software development, but it has also created a new problem: the gap between what the AI produces and what you can understand and maintain. "Vibe coding" — asking ChatGPT or Claude to write JavaScript, Python, or React for you — works for generating code, but leaves many developers stranded when it comes time to modify, debug, or understand what they've been given.
 
-This article describes a different approach: using [AllSpeak](https://allspeak.ai) — a high-level, English-like scripting language — together with [Claude Code](https://claude.ai/claude-code), Anthropic's agentic CLI tool. The combination lets developers of any experience level build real, working applications quickly, with code that reads almost like plain English.
+This article describes a different approach: using [AllSpeak](https://allspeak.github.io) — a high-level, English-like scripting language — together with [Claude Code](https://claude.ai/claude-code), Anthropic's agentic CLI tool. The combination lets developers of any experience level build real, working applications quickly, with code that reads almost like plain English.
 
 ---
 
@@ -138,7 +138,7 @@ No installation needed. Here is a complete working page:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My App</title>
-    <script src="https://allspeak.ai/dist/allspeak-min.js"></script>
+    <script src="https://allspeak.github.io/dist/allspeak-min.js"></script>
 </head>
 <body>
     <button id="my-button">Click me</button>
@@ -197,7 +197,7 @@ Let's walk through building a simple note-taking application.
 <html>
 <head>
     <title>Notes</title>
-    <script src="https://allspeak.ai/dist/allspeak-min.js"></script>
+    <script src="https://allspeak.github.io/dist/allspeak-min.js"></script>
 </head>
 <body>
     <h1>My Notes</h1>
@@ -317,7 +317,7 @@ The screenshot above shows a script open in the editor — note the syntax highl
 
 ### Setup
 
-The editor files (`edit.html` and `code.as`) are included in the [starter pack](https://allspeak.ai/code.zip). Unzip into your project root. The editor script and UI definition are fetched automatically from GitHub when you open the page.
+The editor files (`edit.html` and `code.as`) are included in the [starter pack](https://allspeak.github.io/code.zip). Unzip into your project root. The editor script and UI definition are fetched automatically from GitHub when you open the page.
 
 ### Start the server
 
@@ -425,11 +425,11 @@ Together, they represent a practical middle path: not the complexity of full-sta
 
 **Where to start:**
 
-- [AllSpeak Codex](https://allspeak.ai/codex.html) — interactive 20-part tutorial
+- [AllSpeak Codex](https://allspeak.github.io/codex.html) — interactive 20-part tutorial
 - [AllSpeak Primer](/aidev/agent-primer-js.md) — practical reference for AI agents and developers
 - [Claude Code](https://claude.ai/claude-code) — Anthropic's agentic CLI tool
-- [Starter pack](https://allspeak.ai/code.zip) — download, unzip, and start coding
-- [AllSpeak website](https://allspeak.ai) — overview and documentation
+- [Starter pack](https://allspeak.github.io/code.zip) — download, unzip, and start coding
+- [AllSpeak website](https://allspeak.github.io) — overview and documentation
 
 **Get in touch:**
 

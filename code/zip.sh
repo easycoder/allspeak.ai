@@ -1,5 +1,9 @@
 #!/bin/bash
-# Build code.zip in the repo root from the starter pack files
+# Build per-language starter zips in the deploy directory
 cd "$(dirname "$0")/.."
-zip -j code.zip code/CLAUDE.md code/code.as code/edit.html
-echo "Built code.zip"
+
+for lang in starter/*/; do
+    name=$(basename "$lang")
+    zip -j "deploy/code-${name}.zip" "${lang}"CLAUDE.md "${lang}"code.as "${lang}"edit.html
+    echo "Built deploy/code-${name}.zip"
+done

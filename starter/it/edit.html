@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>AllSpeak Editor</title>
-	<link rel="stylesheet" href="https://allspeak.ai/dist/plugins/codemirror/codemirror.css">
+	<link rel="stylesheet" href="https://allspeak.eclecity.net/dist/plugins/codemirror/codemirror.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/dialog/dialog.css">
 </head>
 
@@ -14,17 +14,17 @@
 
 <script>
 (async function() {
-	const repoBase = 'https://raw.githubusercontent.com/easycoder/allspeak.ai/master/code/';
+	const repoBase = 'https://raw.githubusercontent.com/allspeak/allspeak.github.io/master/code/';
 	const ui = await fetch(repoBase + 'ecedit.json').then(r => r.text());
 	document.getElementById('ecedit-ui').textContent = ui;
 	const ecs = await fetch(repoBase + 'ecedit.as').then(r => r.text());
 	document.getElementById('allspeak-script').textContent = ecs;
 
 	const scripts = [
-		'https://allspeak.ai/dist/allspeak-min.js',
-		'https://allspeak.ai/dist/plugins/codemirror.js',
-		'https://allspeak.ai/dist/plugins/codemirror/codemirror.js',
-		'https://cdn.jsdelivr.net/gh/easycoder/allspeak.ai/dist/plugins/codemirror-ecs.js',
+		'https://allspeak.eclecity.net/dist/allspeak-min.js',
+		'https://allspeak.eclecity.net/dist/plugins/codemirror.js',
+		'https://allspeak.eclecity.net/dist/plugins/codemirror/codemirror.js',
+		'https://cdn.jsdelivr.net/gh/allspeak/allspeak.github.io/dist/plugins/codemirror-ecs.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/dialog/dialog.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/search/search.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/search/searchcursor.js',

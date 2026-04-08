@@ -92,7 +92,7 @@ Use a clean CDN URL by default (no fixed `?ver=` token). If cache bypass is need
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>TicTacToe (Bootstrap)</title>
-	<script src="https://allspeak.ai/dist/allspeak.js"></script>
+	<script src="https://allspeak.github.io/dist/allspeak.js"></script>
 </head>
 <body id="app-root">
 	<pre id="allspeak-script" style="display:none">
@@ -217,9 +217,9 @@ For readability, follow the house style:
 
 Authoritative external references (do not infer these from the primer page URL):
 
-- AllSpeak repository: `https://github.com/easycoder/allspeak.ai`
+- AllSpeak repository: `https://github.com/allspeak/allspeak.github.io`
 - Webson repository (legacy but relevant docs): `https://github.com/allspeak/webson`
-- AllSpeak docs entry point: `https://allspeak.ai`
+- AllSpeak docs entry point: `https://allspeak.github.io`
 
 Relevant references in this repository:
 

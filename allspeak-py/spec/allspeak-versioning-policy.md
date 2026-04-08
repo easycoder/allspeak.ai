@@ -3,7 +3,7 @@
 Status: Draft
 Version: 0.1
 Applies to:
-- AllSpeak JS browser runtime (`allspeak.ai`)
+- AllSpeak JS browser runtime (`allspeak.github.io`)
 - AllSpeak Python CLI runtime (`allspeak-py`)
 
 ## Purpose
@@ -41,7 +41,7 @@ An implementation can declare compatibility with spec `X.Y` only when:
 
 Each release note entry should include:
 - Date (UTC)
-- Repository (`allspeak.ai` or `allspeak-py`)
+- Repository (`allspeak.github.io` or `allspeak-py`)
 - Runtime version (if changed)
 - Target spec version
 - Conformance summary (`pass/fail/skip`)

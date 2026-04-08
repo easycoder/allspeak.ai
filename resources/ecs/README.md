@@ -28,4 +28,4 @@ where {port} is a port number such as 5500, then run
 This should start the editor.
 
 
-See the instructions in our [Primer](https://allspeak.ai/primer.html).
+See the instructions in our [Primer](https://allspeak.github.io/primer.html).

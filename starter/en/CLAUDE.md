@@ -91,7 +91,7 @@ A GUI project uses three files:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><Project></title>
-    <script type='text/javascript' src='https://allspeak.ai/dist/allspeak.js'></script>
+    <script type='text/javascript' src='https://allspeak.eclecity.net/dist/allspeak.js'></script>
 </head>
 <body>
     <pre id="allspeak-script" style="display:none">

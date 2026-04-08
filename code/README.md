@@ -13,7 +13,7 @@ The files here make up the AllSpeak starter pack, distributed as `code.zip`.
 
 ## Installation
 
-1. Download [code.zip](https://allspeak.ai/code.zip) and unzip it into your project directory.
+1. Download [code.zip](https://allspeak.github.io/code.zip) and unzip it into your project directory.
 2. Install AllSpeak: `pip install -U allspeak`
 3. Start the server: `allspeak code.as 8080` (or any free port).
 4. Open your project at `http://localhost:8080/<project>.html`.
@@ -28,4 +28,4 @@ To use with Claude Code:
 
 Claude will read `CLAUDE.md` and guide you through project setup.
 
-See the instructions in our [Primer](https://allspeak.ai/primer.html).
+See the instructions in our [Primer](https://allspeak.github.io/primer.html).

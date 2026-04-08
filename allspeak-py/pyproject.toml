@@ -28,4 +28,4 @@ include = ["as_*.py", "*.png", "languages/*.json"]
 allspeak = "allspeak:Main"
 
 [project.urls]
-Home = "https://github.com/allspeak.ai/allspeak-py"
+Home = "https://github.com/allspeak.github.io/allspeak-py"
