@@ -1,6 +1,7 @@
 from bottle import Bottle, request as bottle_request, response as bottle_response, run, static_file
 import threading
 from allspeak import Handler, ECObject, ECValue, RuntimeError
+from .as_language import language
 
 ###############################################################################
 # An HTTP server object

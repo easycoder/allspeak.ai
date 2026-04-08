@@ -26,7 +26,7 @@
     variable LocalVersion
     server Files
 
-    put `https://raw.githubusercontent.com/allspeak/allspeak.github.io/master/scripted/` into RepoBase
+    put `https://raw.githubusercontent.com/easycoder/allspeak.ai/master/scripted/` into RepoBase
 
     put cwd into BaseDir
     put arg 0 into Port

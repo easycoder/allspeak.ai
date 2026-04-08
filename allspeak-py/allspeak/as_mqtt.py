@@ -1,5 +1,6 @@
 from cmath import log
 from allspeak import Handler, ECObject, ECValue, RuntimeError
+from .as_language import language
 import paho.mqtt.client as mqtt
 import time
 import threading
