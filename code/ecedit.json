@@ -51,6 +51,15 @@
     "min-width": "6em",
     "text-align": "right"
   },
+  "$Logo": {
+    "#element": "img",
+    "@id": "se-logo",
+    "@src": "https://allspeak.ai/resources/icon/duckthink.png",
+    "width": "28px",
+    "height": "28px",
+    "border-radius": "6px",
+    "flex-shrink": "0"
+  },
   "$TopBar": {
     "#element": "div",
     "@id": "se-topbar",
@@ -59,7 +68,7 @@
     "background": "#2d2d2d",
     "padding": "4px",
     "gap": "4px",
-    "#": ["$OpenBtn", "$TabGroup", "$StatusSpan", "$FindBtn"]
+    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$FindBtn"]
   },
   "$ContentEditor": {
     "#element": "textarea",
