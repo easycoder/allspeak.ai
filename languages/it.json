@@ -127,13 +127,14 @@
       ]
     },
     "DECLARE_ELEMENT": {
-      "keyword": "div|span|button|input|textarea|select|option|a|p|pre|h1|h2|h3|h4|h5|h6|img|image|canvas|table|tr|td|th|ul|li|form|fieldset|legend|label|blockquote|hr|section|file|audioclip|progress",
+      "keyword": "div|span|button|bottone|input|textarea|select|option|a|p|pre|h1|h2|h3|h4|h5|h6|img|image|canvas|table|tr|td|th|ul|li|form|fieldset|legend|label|blockquote|hr|section|file|audioclip|progress",
       "patterns": [
         "{elementType} {name}"
       ],
       "elementTypes": {
         "a": "a",
         "blockquote": "blockquote",
+        "bottone": "button",
         "button": "button",
         "canvas": "canvas",
         "div": "div",

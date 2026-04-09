@@ -1,6 +1,7 @@
 // Italian language pack for AllSpeak — auto-generated from languages/it.json
 // eslint-disable-next-line no-unused-vars
-var AllSpeak_LanguagePack_it = {
+var AllSpeak_LanguagePack_it =
+{
   "meta": {
     "language": "it",
     "label": "Italiano",
@@ -129,13 +130,14 @@ var AllSpeak_LanguagePack_it = {
       ]
     },
     "DECLARE_ELEMENT": {
-      "keyword": "div|span|button|input|textarea|select|option|a|p|pre|h1|h2|h3|h4|h5|h6|img|image|canvas|table|tr|td|th|ul|li|form|fieldset|legend|label|blockquote|hr|section|file|audioclip|progress",
+      "keyword": "div|span|button|bottone|input|textarea|select|option|a|p|pre|h1|h2|h3|h4|h5|h6|img|image|canvas|table|tr|td|th|ul|li|form|fieldset|legend|label|blockquote|hr|section|file|audioclip|progress",
       "patterns": [
         "{elementType} {name}"
       ],
       "elementTypes": {
         "a": "a",
         "blockquote": "blockquote",
+        "bottone": "button",
         "button": "button",
         "canvas": "canvas",
         "div": "div",
@@ -965,7 +967,7 @@ var AllSpeak_LanguagePack_it = {
     "horizontal": "orizzontale",
     "in": "in",
     "into": "in",
-    "is": "e",
+    "is": "è|e",
     "json": "json",
     "keys": "chiavi",
     "last": "ultimo",
@@ -1296,4 +1298,5 @@ var AllSpeak_LanguagePack_it = {
     "moduleNotFound": "Modulo '{name}' non trovato.",
     "syntaxError": "Errore di sintassi alla riga {line}: {detail}."
   }
-};
+}
+;
