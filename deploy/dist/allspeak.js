@@ -6921,8 +6921,8 @@ const AllSpeak_Core = {
 	elementHandlerMap: null,
 
 	getElementHandlerMap: function() {
-		if (this.elementHandlerMap) return this.elementHandlerMap;
-		this.elementHandlerMap = {
+		// Base English element type → handler mapping
+		const baseMap = {
 			a: this.A, audioclip: this.Audioclip, blockquote: this.BLOCKQUOTE,
 			button: this.BUTTON, canvas: this.CANVAS, div: this.DIV,
 			fieldset: this.FIELDSET, file: this.FILE, form: this.FORM,
@@ -6933,6 +6933,19 @@ const AllSpeak_Core = {
 			select: this.SELECT, span: this.SPAN, table: this.TABLE, td: this.TD,
 			textarea: this.TEXTAREA, th: this.TH, tr: this.TR, ul: this.UL
 		};
+		// Add translated element type aliases from the active language pack
+		if (AllSpeak_Language.pack && AllSpeak_Language.pack.opcodes &&
+			AllSpeak_Language.pack.opcodes.DECLARE_ELEMENT &&
+			AllSpeak_Language.pack.opcodes.DECLARE_ELEMENT.elementTypes) {
+			const types = AllSpeak_Language.pack.opcodes.DECLARE_ELEMENT.elementTypes;
+			for (const translated in types) {
+				const canonical = types[translated];
+				if (baseMap[canonical] && !baseMap[translated]) {
+					baseMap[translated] = baseMap[canonical];
+				}
+			}
+		}
+		this.elementHandlerMap = baseMap;
 		return this.elementHandlerMap;
 	},
 
@@ -13169,6 +13182,7 @@ const AllSpeak_Compiler = {
 				// Reset cached compile handler tables
 				if (AllSpeak_Core._compileHandlers) AllSpeak_Core._compileHandlers = null;
 				if (AllSpeak_Browser._compileHandlers) AllSpeak_Browser._compileHandlers = null;
+				if (AllSpeak_Browser.elementHandlerMap) AllSpeak_Browser.elementHandlerMap = null;
 				if (AllSpeak_REST._compileHandlers) AllSpeak_REST._compileHandlers = null;
 				if (AllSpeak_MQTT._compileHandlers) AllSpeak_MQTT._compileHandlers = null;
 			} else {
