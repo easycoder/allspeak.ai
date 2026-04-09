@@ -4,6 +4,6 @@ cd "$(dirname "$0")/.."
 
 for lang in starter/*/; do
     name=$(basename "$lang")
-    zip -j "deploy/allspeak-${name}.zip" "${lang}"CLAUDE.md "${lang}"allspeak.as "${lang}"edit.html
+    zip -j "deploy/allspeak-${name}.zip" "${lang}"CLAUDE.md "${lang}"allspeak.as "${lang}"edit.html code/asedit.json code/asedit.as
     echo "Built deploy/allspeak-${name}.zip"
 done

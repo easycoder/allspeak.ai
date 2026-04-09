@@ -15,10 +15,9 @@
 
 <script>
 (async function() {
-	const repoBase = 'https://allspeak.ai/code/';
-	const ui = await fetch(repoBase + 'asedit.json').then(r => r.text());
+	const ui = await fetch('asedit.json').then(r => r.text());
 	document.getElementById('asedit-ui').textContent = ui;
-	const ecs = await fetch(repoBase + 'asedit.as').then(r => r.text());
+	const ecs = await fetch('asedit.as').then(r => r.text());
 	document.getElementById('allspeak-script').textContent = ecs;
 
 	const scripts = [
