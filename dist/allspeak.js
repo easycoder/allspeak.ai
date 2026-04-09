@@ -11144,15 +11144,9 @@ const AllSpeak_Opcodes = {
 	resolveBrowser: function(command) {
 		const keyword = command.keyword;
 
-		// Element type declarations
-		const elementTypes = [
-			`a`, `blockquote`, `button`, `canvas`, `div`, `fieldset`, `file`,
-			`form`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, `hr`, `image`, `img`,
-			`input`, `label`, `legend`, `li`, `option`, `p`, `pre`, `progress`,
-			`section`, `select`, `span`, `table`, `td`, `textarea`, `th`, `tr`, `ul`,
-			`audioclip`
-		];
-		if (elementTypes.indexOf(keyword) >= 0) {
+		// Element type declarations — check via language pack keyword index
+		const opcodes = AllSpeak_Language.getOpcodesForKeyword(keyword);
+		if (opcodes.indexOf(`DECLARE_ELEMENT`) >= 0) {
 			return `DECLARE_ELEMENT`;
 		}
 
