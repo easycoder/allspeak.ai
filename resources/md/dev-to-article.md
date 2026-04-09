@@ -179,7 +179,7 @@ Getting started:
 mkdir myproject && cd myproject
 pip install -U allspeak-ai
 # Download the starter pack for your language from allspeak.ai
-unzip code-xx.zip # where xx is your language code
+unzip allspeak-xx.zip # where xx is your language code
 ```
 
 Then launch Claude Code and say: "I want to build a weather dashboard."

@@ -33,7 +33,7 @@ Il percorso più veloce è **AllSpeak + Claude Code**. Claude Code è un agente 
 Ecco cosa devi fare:
 
 1. Crea una cartella vuota per il tuo progetto.
-2. Scarica [code-it.zip](https://allspeak.ai/code-it.zip) e decomprimilo in quella cartella.
+2. Scarica [allspeak-it.zip](https://allspeak.ai/allspeak-it.zip) e decomprimilo in quella cartella.
 3. Installa AllSpeak: `pip install -U allspeak`
 4. Installa Claude Code (vedi [claude.ai/code](https://claude.ai/code)).
 5. Apri un terminale in quella cartella e digita `claude`.
