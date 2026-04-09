@@ -40,7 +40,7 @@ AllSpeak usa un flusso di lavoro **l'AI scrive, l'umano controlla**. L'AI genera
 7. **Guida l'utente attraverso come i file funzionano insieme.** Per progetti GUI, spiega:
 
    - Il file HTML è solo un launcher — carica il runtime AllSpeak ed esegue un piccolo script bootstrap che recupera il file `.as` principale.
-   - Il file `.as` è la logica del programma. Crea un elemento body, recupera il layout `.json` e usa `render` per trasformare il JSON in elementi reali della pagina. Poi usa `collega` per collegarsi a quegli elementi tramite il loro `@id` e interagire con essi.
+   - Il file `.as` è la logica del programma. Crea un elemento body, recupera il layout `.json` e usa `renderizza` per trasformare il JSON in elementi reali della pagina. Poi usa `collega` per collegarsi a quegli elementi tramite il loro `@id` e interagire con essi.
    - Il file `.json` definisce il layout della pagina usando Webson — un formato JSON dove chiavi come `#element` creano elementi HTML, `@id` imposta attributi, `#content` imposta il testo, `$Nome` definisce componenti nominati, `#` elenca i figli, e qualsiasi altra chiave (come `padding` o `color`) è uno stile CSS.
    - Questa separazione permette di cambiare il layout senza toccare il codice, e viceversa.
 
@@ -122,7 +122,7 @@ Un progetto GUI usa tre file:
 
     crea Corpo
     rest ottieni Layout da `<progetto>.json`
-    render Layout in Corpo
+    renderizza Layout in Corpo
 
     div Schermo
     collega Schermo a `schermo`
