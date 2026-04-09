@@ -3,6 +3,8 @@ AllSpeak.timestamp = Date.now();
 AllSpeak.writeStartupTrace(`AllSpeak loaded; waiting for page`);
 
 function AllSpeak_Startup() {
+	if (AllSpeak._started) return;
+	AllSpeak._started = true;
 	AllSpeak.writeStartupTrace(`window.onload fired`);
 	AllSpeak.writeStartupTrace(`${Date.now() - AllSpeak.timestamp} ms: Start AllSpeak`);
 	AllSpeak.timestamp = Date.now();
