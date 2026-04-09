@@ -386,7 +386,7 @@ This Webson layout gives a full-viewport app with a header bar and a scrollable 
 The dev server already serves static files:
 
 ```bash
-allspeak code.as 8080
+allspeak allspeak.as 8080
 ```
 
 Open `http://localhost:8080/index.html`.

@@ -1,6 +1,6 @@
-!   code.as
+!   allspeak.as
 !   AllSpeak development server.
-!   Usage: allspeak code.as [port]    (default: 8080)
+!   Usage: allspeak allspeak.as [port]    (default: 8080)
 !
 !   Serves two purposes:
 !     1. Hosts the AllSpeak editor at localhost:<port>/edit.html
@@ -70,7 +70,7 @@
         begin
             print `Updating from version ` cat LocalVersion cat ` to ` cat RemoteVersion
             download RepoBase cat `edit.html` to BaseDir cat `/edit.html`
-            download RepoBase cat `code.as` to BaseDir cat `/code.as`
+            download RepoBase cat `allspeak.as` to BaseDir cat `/allspeak.as`
             save RemoteVersion to BaseDir cat `/.code-version`
             print `Update complete`
         end
@@ -100,7 +100,7 @@
         else if FullPath is `/restart`
         begin
             print `Restart requested`
-            system background `sleep 2 && allspeak code.as ` cat Port
+            system background `sleep 2 && allspeak allspeak.as ` cat Port
             return `OK` to Files
             exit
         end

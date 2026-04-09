@@ -317,12 +317,12 @@ The screenshot above shows a script open in the editor — note the syntax highl
 
 ### Setup
 
-The editor files (`edit.html` and `code.as`) are included in the [starter pack](https://allspeak.ai/code.zip). Unzip into your project root. The editor script and UI definition are fetched automatically from GitHub when you open the page.
+The editor files (`edit.html` and `allspeak.as`) are included in the [starter pack](https://allspeak.ai/code.zip). Unzip into your project root. The editor script and UI definition are fetched automatically from GitHub when you open the page.
 
 ### Start the server
 
 ```bash
-allspeak code.as 8080
+allspeak allspeak.as 8080
 ```
 
 You should see:
@@ -356,7 +356,7 @@ Because both work on the same files on disk, they complement each other naturall
 
 ## Setting Up a Client/Server Application
 
-For applications that need to read from or write to the server (rather than just using browser localStorage), you need a server that provides `/read/` and `/write/` routes. The `code.as` server already provides exactly this — it acts as both the editor's file server and as a general-purpose backend for your applications.
+For applications that need to read from or write to the server (rather than just using browser localStorage), you need a server that provides `/read/` and `/write/` routes. The `allspeak.as` server already provides exactly this — it acts as both the editor's file server and as a general-purpose backend for your applications.
 
 ### Routes provided
 
