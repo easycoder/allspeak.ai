@@ -20,11 +20,12 @@
 	const ecs = await fetch('asedit.as').then(r => r.text());
 	document.getElementById('allspeak-script').textContent = ecs;
 
+	const t = Date.now();
 	const scripts = [
-		'https://allspeak.ai/dist/allspeak-min.js',
-		'https://allspeak.ai/dist/plugins/codemirror.js',
-		'https://allspeak.ai/dist/plugins/codemirror/codemirror.js',
-		'https://allspeak.ai/dist/plugins/codemirror-ecs.js',
+		'https://allspeak.ai/dist/allspeak-min.js?v=' + t,
+		'https://allspeak.ai/dist/plugins/codemirror.js?v=' + t,
+		'https://allspeak.ai/dist/plugins/codemirror/codemirror.js?v=' + t,
+		'https://allspeak.ai/dist/plugins/codemirror-ecs.js?v=' + t,
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/dialog/dialog.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/search/search.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/search/searchcursor.js',

@@ -91,7 +91,6 @@ A GUI project uses three files:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><Project></title>
-    <script type='text/javascript' src='https://allspeak.ai/dist/allspeak.js'></script>
 </head>
 <body>
     <pre id="allspeak-script" style="display:none">
@@ -99,6 +98,15 @@ A GUI project uses three files:
     rest get Script from `<project>-main.as`
     run Script
     </pre>
+    <script>
+    (function() {
+        var t = Date.now();
+        var s = document.createElement('script');
+        s.src = 'https://allspeak.ai/dist/allspeak.js?v=' + t;
+        s.onload = function() { AllSpeak_Startup(); };
+        document.head.appendChild(s);
+    })();
+    </script>
 </body>
 </html>
 ```

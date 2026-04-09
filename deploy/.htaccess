@@ -1,9 +1,6 @@
 <FilesMatch "\.(json|as|js|css|png|zip)$">
     Header set Access-Control-Allow-Origin "*"
-</FilesMatch>
-
-<FilesMatch "\.zip$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Cache-Control "no-cache, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires "0"
 </FilesMatch>

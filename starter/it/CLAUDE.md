@@ -108,8 +108,6 @@ Un progetto GUI usa tre file:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><Progetto></title>
-    <script type='text/javascript' src='https://allspeak.ai/dist/allspeak.js'></script>
-    <script type='text/javascript' src='https://allspeak.ai/dist/LanguagePack_it.js'></script>
 </head>
 <body>
     <pre id="allspeak-script" style="display:none">
@@ -119,6 +117,23 @@ Un progetto GUI usa tre file:
     rest ottieni Script da `<progetto>-main.as`
     esegui Script
     </pre>
+    <script>
+    (function() {
+        var t = Date.now();
+        var scripts = [
+            'https://allspeak.ai/dist/allspeak.js?v=' + t,
+            'https://allspeak.ai/dist/LanguagePack_it.js?v=' + t
+        ];
+        function load(i) {
+            if (i >= scripts.length) { AllSpeak_Startup(); return; }
+            var s = document.createElement('script');
+            s.src = scripts[i];
+            s.onload = function() { load(i + 1); };
+            document.head.appendChild(s);
+        }
+        load(0);
+    })();
+    </script>
 </body>
 </html>
 ```
