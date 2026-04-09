@@ -45,6 +45,10 @@ Claude will ask you a couple of questions, create your project files, and walk y
 - **AI Manual tab** — the full case for structured AI development vs vibe coding.
 - **[Codex](https://allspeak.ai/codex.html)** — an interactive tutorial, reference and playground for the AllSpeak language.
 
+## A note on language variants
+
+AllSpeak is under active development. Language variants other than English may contain keywords or patterns not yet fully supported by the engine. If you encounter a compile error on a keyword that looks correct, please report it to [info@allspeak.ai](mailto:info@allspeak.ai) — fixes are usually quick.
+
 ## Questions?
 
 Contact us at [info@allspeak.ai](mailto:info@allspeak.ai).

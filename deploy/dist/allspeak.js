@@ -5206,7 +5206,7 @@ const AllSpeak_Core = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			const action = compiler.nextToken();
+			const action = AllSpeak_Language.reverseWord(compiler.nextToken());
 			switch (action) {
 			case `change`:
 				compiler.next();

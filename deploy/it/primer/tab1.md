@@ -47,6 +47,10 @@ Claude ti farà un paio di domande, creerà i file del progetto e ti guiderà at
 - **Scheda Manuale AI** — la spiegazione completa dello sviluppo strutturato con AI vs vibe coding.
 - **[Codex](https://allspeak.ai/codex.html)** — un tutorial interattivo, riferimento e ambiente di prova per il linguaggio AllSpeak.
 
+## Nota sulle varianti linguistiche
+
+AllSpeak è in sviluppo attivo. Le varianti in lingue diverse dall'inglese possono contenere parole chiave o pattern non ancora completamente supportati dal motore. Se incontri un errore di compilazione su una parola chiave che sembra corretta, segnalalo a [info@allspeak.ai](mailto:info@allspeak.ai) — di solito la correzione è rapida.
+
 ## Domande?
 
 Contattaci a [info@allspeak.ai](mailto:info@allspeak.ai).
