@@ -1,8 +1,10 @@
-!   Styling and CSS
+!   Stili e CSS
+
+    language italiano
 
     p Para
 
-    create Para
-    set the style of Para to `text-align:center;color:blue;font-size:1.4em`
-    set the content of Para to `The quick brown fox jumps over the lazy dog`
-    stop
+    crea Para
+    imposta lo stile di Para a `text-align:center;color:blue;font-size:1.4em`
+    imposta il contenuto di Para a `La veloce volpe marrone salta sopra il cane pigro`
+    ferma

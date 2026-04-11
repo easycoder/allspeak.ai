@@ -134,8 +134,8 @@
     end
     set ShowRun
 
-    require js `dist/plugins/gmap.js`
-    require js `dist/plugins/svg.js`
+    require js `dist/plugins/gmap.js?v=26041102`
+    require js `dist/plugins/svg.js?v=26041102`
 
     codemirror init basic profile `/dist/plugins/codemirror-ecs.js`
     require css `/dist/plugins/codemirror/addon/dialog/dialog.css`

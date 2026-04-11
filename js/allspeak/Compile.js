@@ -353,8 +353,26 @@ const AllSpeak_Compiler = {
 			const langName = this.tokens[this.index].token;
 			this.index++;
 			// Look for a global language pack variable: AllSpeak_LanguagePack_<name>
-			const packName = `AllSpeak_LanguagePack_${langName}`;
-			const pack = typeof window !== `undefined` ? window[packName] : null;
+			// Try direct match first (e.g. "it"), then scan loaded packs for a
+			// matching meta.label (e.g. "italiano" → AllSpeak_LanguagePack_it)
+			let pack = null;
+			const directName = `AllSpeak_LanguagePack_${langName}`;
+			if (typeof window !== `undefined`) {
+				pack = window[directName] || null;
+				if (!pack) {
+					const lowerName = langName.toLowerCase();
+					for (const key of Object.keys(window)) {
+						if (key.startsWith(`AllSpeak_LanguagePack_`) && window[key] && window[key].meta) {
+							const meta = window[key].meta;
+							if ((meta.label || ``).toLowerCase() === lowerName ||
+								(meta.language || ``) === lowerName) {
+								pack = window[key];
+								break;
+							}
+						}
+					}
+				}
+			}
 			if (pack) {
 				AllSpeak_Language.init(pack);
 				// Reset cached compile handler tables

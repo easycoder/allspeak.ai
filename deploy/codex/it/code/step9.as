@@ -1,90 +1,92 @@
-!   The Mexican Wave
+!   L'onda messicana
 
-	script Wave
+    language italiano
 
-    div Container
-    div Rectangle
-    variable Height
-    variable Angle
-    variable Start
-    variable Done
-    variable AllDone
-    variable Time
-    variable N
-    variable NRect
-    
-    put 10 into NRect
-    
-    create Container
-    set the style of Container to
+	script Onda
+
+    div Contenitore
+    div Rettangolo
+    variabile Altezza
+    variabile Angolo
+    variabile Inizio
+    variabile Fatto
+    variabile TuttiFatti
+    variabile Tempo
+    variabile N
+    variabile NRett
+
+    metti 10 in NRett
+
+    crea Contenitore
+    imposta lo stile di Contenitore a
         `position:relative;width:90%;height:200px;margin:1em auto 0;`
         cat `border:1px solid black;padding-bottom:10px;text-align:center`
-    
-    set the elements of Rectangle to NRect
-    set the elements of Angle to NRect
-    set the elements of Start to NRect
-    set the elements of Done to NRect
-    
-    put 0 into N
-    while N is less than NRect
-    begin
-    	! Init the rectangles
-    	index Rectangle to N
-	    create Rectangle in Container
-	    set the style of Rectangle to
+
+    imposta gli elementi di Rettangolo a NRett
+    imposta gli elementi di Angolo a NRett
+    imposta gli elementi di Inizio a NRett
+    imposta gli elementi di Fatto a NRett
+
+    metti 0 in N
+    mentre N è minore di NRett
+    inizio
+    	! Inizializza i rettangoli
+    	indice Rettangolo a N
+	    crea Rettangolo in Contenitore
+	    imposta lo stile di Rettangolo a
 	       `position:absolute;width:9%;background:peru;`
 	        cat `display:inline-block;margin-left:0.5%`
-	    set style `top` of Rectangle to 200
-        set style `left` of Rectangle to `calc(10% * ` cat N cat `)`
-	    set style `height` of Rectangle to `1px`
-    	add 1 to N
-    end
+	    imposta stile `top` di Rettangolo a 200
+        imposta stile `left` di Rettangolo a `calc(10% * ` cat N cat `)`
+	    imposta stile `height` di Rettangolo a `1px`
+    	aggiungi 1 a N
+    fine
 
-Loop:
-    wait 2 seconds
-    
-    put 0 into N
-    while N is less than NRect
-    begin
-        ! Init the angles, etc.
-        index Angle to N
-        index Start to N
-        index Done to N
-        put 0 into Angle
-        put N into Start
-        multiply Start by 10
-        clear Done
-    	add 1 to N
-    end
+Ciclo:
+    attendi 2 secondi
 
-	put 0 into Time
-    while true
-    begin
-	    set AllDone
-		put 0 into N
-	    while N is less than NRect
-	    begin
-	    	index Rectangle to N
-	    	index Angle to N
-	    	index Start to N
-	    	index Done to N
-            if not Done
-            begin
-            	clear AllDone ! not finished yet
-		        if Time is greater than Start
-	            begin
-	        		put cos Angle radius 100 into Height
-                    negate Height
-	        		set style `top` of Rectangle to `calc(50% - ` cat Height cat `px)`
-	        		set style `height` of Rectangle to `calc(100px + ` cat Height cat `px)`
-        			add 1 to Angle
-            		if Angle is greater than 360 set Done
-	            end
-            end
-	    	add 1 to N
-	    end
-     	add 1 to Time
-        wait 5 millis
-        if AllDone goto Loop
-    end
-    stop
+    metti 0 in N
+    mentre N è minore di NRett
+    inizio
+        ! Inizializza gli angoli ecc.
+        indice Angolo a N
+        indice Inizio a N
+        indice Fatto a N
+        metti 0 in Angolo
+        metti N in Inizio
+        moltiplica Inizio per 10
+        svuota Fatto
+    	aggiungi 1 a N
+    fine
+
+	metti 0 in Tempo
+    mentre vero
+    inizio
+	    imposta TuttiFatti
+		metti 0 in N
+	    mentre N è minore di NRett
+	    inizio
+	    	indice Rettangolo a N
+	    	indice Angolo a N
+	    	indice Inizio a N
+	    	indice Fatto a N
+            se non Fatto
+            inizio
+            	svuota TuttiFatti
+		        se Tempo è maggiore di Inizio
+	            inizio
+	        		metti cos Angolo radius 100 in Altezza
+                    nega Altezza
+	        		imposta stile `top` di Rettangolo a `calc(50% - ` cat Altezza cat `px)`
+	        		imposta stile `height` di Rettangolo a `calc(100px + ` cat Altezza cat `px)`
+        			aggiungi 1 a Angolo
+            		se Angolo è maggiore di 360 imposta Fatto
+	            fine
+            fine
+	    	aggiungi 1 a N
+	    fine
+     	aggiungi 1 a Tempo
+        attendi 5 milli
+        se TuttiFatti vai a Ciclo
+    fine
+    ferma

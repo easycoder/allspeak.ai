@@ -1,25 +1,27 @@
-  script TicTacToe
+    language italiano
 
-  div Panel
-  div Board
-  div Row
-  div Cell
-  div Message
-  variable Model
-  variable Index
-  variable Turn
-  variable Moves
-  variable Winner
-  variable Score
-  variable WinningCombinations
+  script Tris
 
-! Initialization
-  set the elements of Cell to 9
-  set the elements of Model to 9
-  clear Turn
-  put 0 into Moves
-  put empty into Winner
-  set WinningCombinations to
+  div Pannello
+  div Tavola
+  div Riga
+  div Cella
+  div Messaggio
+  variabile Modello
+  variabile Indice
+  variabile Turno
+  variabile Mosse
+  variabile Vincitore
+  variabile Punteggio
+  variabile CombinazioniVincenti
+
+! Inizializzazione
+  imposta gli elementi di Cella a 9
+  imposta gli elementi di Modello a 9
+  svuota Turno
+  metti 0 in Mosse
+  metti vuoto in Vincitore
+  imposta CombinazioniVincenti a
     0 1 2
     3 4 5
     6 7 8
@@ -29,97 +31,97 @@
     0 4 8
     2 4 6
 
-! Set up the board
-  create Panel
-  create Message in Panel
-  set the content of Message to `Click to take your turn`
-  create Board in Panel
-  set style `font-size` of Board to `24px`
-  put 0 into Index
-  while Index is less than 9
-  begin
-    if Index modulo 3 is 0
-    begin
-      create Row in Board
-      set the style of Row to `width:105px;height:34px`
-    end
-    index Cell to Index
-    create Cell in Row
-    set style `display` of Cell to `inline-block`
-    set style `border` of Cell to `1px solid gray`
-    set style `float` of Cell to `left`
-    set style `font-size` of Cell to `24px`
-    set style `font-weight` of Cell to `bold`
-    set style `line-height` of Cell to `34px`
-    set style `width` of Cell to `34px`
-    set style `height` of Cell to `34px`
-    set style `margin-right` of Cell to `-1px`
-    set style `margin-top` of Cell to `-1px`
-    set style `padding` of Cell to `0`
-    set style `text-align` of Cell to `center`
-    index Model to Index
-    put 0 into Model
-    add 1 to Index
-  end
-  on click Cell
-  begin
-    if Moves is 9 stop
-    if Winner stop
-    put the index of Cell into Index
-    index Model to Index
-    if Model is not 0 stop
-    if Turn
-    begin
-      put 1 into Model
-      set the content of Cell to `X`
-    end
-    else
-    begin
-      put -1 into Model
-      set the content of Cell to `O`
-    end
-    gosub to CheckWinner
-    if Winner
-    begin
-      set the content of Message to `The winner is ` cat Winner
-      stop
-    end
-    toggle Turn
-    add 1 to Moves
-    if Moves is 9
-    begin
-      set the content of Message to `Stalemate - no winner`
-      stop
-    end
-  end
-  stop
+! Prepara la tavola
+  crea Pannello
+  crea Messaggio in Pannello
+  imposta il contenuto di Messaggio a `Clicca per fare la tua mossa`
+  crea Tavola in Pannello
+  imposta stile `font-size` di Tavola a `24px`
+  metti 0 in Indice
+  mentre Indice è minore di 9
+  inizio
+    se Indice modulo 3 è 0
+    inizio
+      crea Riga in Tavola
+      imposta lo stile di Riga a `width:105px;height:34px`
+    fine
+    indice Cella a Indice
+    crea Cella in Riga
+    imposta stile `display` di Cella a `inline-block`
+    imposta stile `border` di Cella a `1px solid gray`
+    imposta stile `float` di Cella a `left`
+    imposta stile `font-size` di Cella a `24px`
+    imposta stile `font-weight` di Cella a `bold`
+    imposta stile `line-height` di Cella a `34px`
+    imposta stile `width` di Cella a `34px`
+    imposta stile `height` di Cella a `34px`
+    imposta stile `margin-right` di Cella a `-1px`
+    imposta stile `margin-top` di Cella a `-1px`
+    imposta stile `padding` di Cella a `0`
+    imposta stile `text-align` di Cella a `center`
+    indice Modello a Indice
+    metti 0 in Modello
+    aggiungi 1 a Indice
+  fine
+  su clic Cella
+  inizio
+    se Mosse è 9 ferma
+    se Vincitore ferma
+    metti lo indice di Cella in Indice
+    indice Modello a Indice
+    se Modello non è 0 ferma
+    se Turno
+    inizio
+      metti 1 in Modello
+      imposta il contenuto di Cella a `X`
+    fine
+    altrimenti
+    inizio
+      metti -1 in Modello
+      imposta il contenuto di Cella a `O`
+    fine
+    vaisub a ControllaVincitore
+    se Vincitore
+    inizio
+      imposta il contenuto di Messaggio a `Il vincitore è ` cat Vincitore
+      ferma
+    fine
+    inverti Turno
+    aggiungi 1 a Mosse
+    se Mosse è 9
+    inizio
+      imposta il contenuto di Messaggio a `Pareggio - nessun vincitore`
+      ferma
+    fine
+  fine
+  ferma
 
-CheckWinner:
-  put 0 into Index
-  while Index is less than 24
-  begin
-    put 0 into Score
-    index WinningCombinations to Index
-    index Model to WinningCombinations
-    add Model to Score
-    add 1 to Index
-    index WinningCombinations to Index
-    index Model to WinningCombinations
-    add Model to Score
-    add 1 to Index
-    index WinningCombinations to Index
-    index Model to WinningCombinations
-    add Model to Score
-    add 1 to Index
-    if Score is -3
-    begin
-      put `O` into Winner
-      return
-    end
-    if Score is 3
-    begin
-      put `X` into Winner
-      return
-    end
-  end
-  return
+ControllaVincitore:
+  metti 0 in Indice
+  mentre Indice è minore di 24
+  inizio
+    metti 0 in Punteggio
+    indice CombinazioniVincenti a Indice
+    indice Modello a CombinazioniVincenti
+    aggiungi Modello a Punteggio
+    aggiungi 1 a Indice
+    indice CombinazioniVincenti a Indice
+    indice Modello a CombinazioniVincenti
+    aggiungi Modello a Punteggio
+    aggiungi 1 a Indice
+    indice CombinazioniVincenti a Indice
+    indice Modello a CombinazioniVincenti
+    aggiungi Modello a Punteggio
+    aggiungi 1 a Indice
+    se Punteggio è -3
+    inizio
+      metti `O` in Vincitore
+      ritorna
+    fine
+    se Punteggio è 3
+    inizio
+      metti `X` in Vincitore
+      ritorna
+    fine
+  fine
+  ritorna

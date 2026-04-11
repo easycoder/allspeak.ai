@@ -2705,7 +2705,13 @@ const AllSpeak_Core = {
 						name
 					};
 				case `variable`:
-					const type = AllSpeak_Language.reverseWord(compiler.nextToken());
+					const nextTok = compiler.nextToken();
+					let type = AllSpeak_Language.reverseWord(nextTok);
+					if (AllSpeak_Language.matchesWord(nextTok, `modulo`)) {
+						type = `modulo`;
+					} else if (AllSpeak_Language.matchesWord(nextTok, `format`)) {
+						type = `format`;
+					}
 					if ([`format`, `modulo`].includes(type)) {
 						const value = compiler.getNextValue();
 						return {
@@ -2823,11 +2829,12 @@ const AllSpeak_Core = {
 					dx
 				};
 			}
-			if ([`now`, `timestamp`, `today`, `newline`, `backtick`, `break`, `empty`, `uuid`].includes(AllSpeak_Language.reverseWord(token))) {
+			const canonicalToken = AllSpeak_Language.reverseWord(token);
+			if ([`now`, `timestamp`, `today`, `newline`, `backtick`, `break`, `empty`, `uuid`].includes(canonicalToken)) {
 				compiler.next();
 				return {
 					domain: `core`,
-					type: token
+					type: canonicalToken
 				};
 			}
 			if (token === AllSpeak_Language.word(`date`)) {
@@ -2838,12 +2845,13 @@ const AllSpeak_Core = {
 					value
 				};
 			}
-			if ([`encode`, `decode`, `lowercase`, `hash`, `reverse`, `trim`].includes(AllSpeak_Language.reverseWord(token))) {
+			const canonicalToken2 = AllSpeak_Language.reverseWord(token);
+			if ([`encode`, `decode`, `lowercase`, `hash`, `reverse`, `trim`].includes(canonicalToken2)) {
 				compiler.next();
 				const value = compiler.getValue();
 				return {
 					domain: `core`,
-					type: token,
+					type: canonicalToken2,
 					value
 				};
 			}
@@ -2966,7 +2974,9 @@ const AllSpeak_Core = {
 			case `index`:
 				if (compiler.nextIsWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
-						if (compiler.peek() === AllSpeak_Language.word(`in`)) {
+						const symbolRec = compiler.getSymbolRecord();
+						if (symbolRec.keyword === `variable`
+							&& compiler.peek() === AllSpeak_Language.word(`in`)) {
 							const value1 = compiler.getValue();
 							const value2 = compiler.getNextValue();
 							return {
@@ -3720,8 +3730,8 @@ const AllSpeak_Core = {
 			}
 			try {
 				const value1 = compiler.getValue();
-				const token = compiler.getToken();
-				if (token === AllSpeak_Language.word(`includes`)) {
+				let token = compiler.getToken();
+				if (AllSpeak_Language.matchesWord(token, `includes`)) {
 					const value2 = compiler.getNextValue();
 					return {
 						domain: `core`,
@@ -3730,7 +3740,7 @@ const AllSpeak_Core = {
 						value2
 					};
 				}
-				if (token === AllSpeak_Language.word(`starts`)) {
+				if (AllSpeak_Language.matchesWord(token, `starts`)) {
 					if (compiler.nextIsWord(`with`)) {
 						compiler.next();
 						const value2 = compiler.getValue();
@@ -3743,7 +3753,7 @@ const AllSpeak_Core = {
 					}
 					return null;
 				}
-				if (token === AllSpeak_Language.word(`ends`)) {
+				if (AllSpeak_Language.matchesWord(token, `ends`)) {
 					if (compiler.nextIsWord(`with`)) {
 						compiler.next();
 						const value2 = compiler.getValue();
@@ -3756,9 +3766,17 @@ const AllSpeak_Core = {
 					}
 					return null;
 				}
-				if (token === AllSpeak_Language.word(`is`)) {
+				// Handle both "is not" (English order) and "not is" (e.g. Italian "non è")
+				let preNegate = false;
+				if (AllSpeak_Language.matchesWord(token, `not`)
+					&& AllSpeak_Language.matchesWord(compiler.peek(), `is`)) {
+					preNegate = true;
 					compiler.next();
-					const negate = AllSpeak_Core.isNegate(compiler);
+					token = compiler.getToken();
+				}
+				if (AllSpeak_Language.matchesWord(token, `is`)) {
+					compiler.next();
+					const negate = preNegate || AllSpeak_Core.isNegate(compiler);
 					const test = AllSpeak_Language.reverseWord(compiler.getToken());
 					switch (test) {
 					case `numeric`:

@@ -1,8 +1,9 @@
-!   The DOM
+!   Il DOM
+
+    language italiano
 
     p Para
-    
-    create Para
-    set the content of Para to `The quick brown fox jumps over the lazy dog`
-    stop
-    
+
+    crea Para
+    imposta il contenuto di Para a `La veloce volpe marrone salta sopra il cane pigro`
+    ferma

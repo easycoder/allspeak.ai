@@ -1,9 +1,11 @@
-  script Solitaire
+    language italiano
 
-! The map of the board.
+  script Solitario
 
-  variable Map
-  set Map to
+! La mappa della tavola.
+
+  variabile Mappa
+  imposta Mappa a
     0 0 2 2 2 0 0
     0 0 2 2 2 0 0
     2 2 2 2 2 2 2
@@ -13,383 +15,383 @@
     0 0 2 2 2 0 0
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Variables.
+! Variabili.
 
-  div Container
-  div Board
-  div GameOver
-  div Grey
-  div Red
-  variable Width
-  variable N
-  variable M
-  variable X
-  variable Y
-  variable R
-  variable C
-  variable S
-  variable Size
-  variable Offset
-  variable Selected
-  variable Row
-  variable Column
-  variable Valid
-  variable Index
-  variable Up
-  variable Down
-  variable Left
-  variable Right
-  variable PickPos
-  variable DragPos
-  variable Lefts
-  variable Tops
-  variable Destination
+  div Contenitore
+  div Tavola
+  div FineGioco
+  div Grigio
+  div Rosso
+  variabile Larghezza
+  variabile N
+  variabile M
+  variabile X
+  variabile Y
+  variabile R
+  variabile C
+  variabile S
+  variabile Dimensione
+  variabile Offset
+  variabile Selezionato
+  variabile Riga
+  variabile Colonna
+  variabile Valido
+  variabile Indice
+  variabile Su
+  variabile Giu
+  variabile Sinistra
+  variabile Destra
+  variabile PosPresa
+  variabile PosTrascinamento
+  variabile Sinistre
+  variabile Alti
+  variabile Destinazione
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Create all the elements.
-  create Board
+! Crea tutti gli elementi.
+  crea Tavola
 
-  set the elements of Grey to 49
-  set the elements of Red to 49
-  set the elements of Lefts to 49
-  set the elements of Tops to 49
+  imposta gli elementi di Grigio a 49
+  imposta gli elementi di Rosso a 49
+  imposta gli elementi di Sinistre a 49
+  imposta gli elementi di Alti a 49
 
-  if mobile
-  begin
-    put the width of Board into Width
-    multiply Width by 90
-    divide Width by 100
-    set style `touch-action` of Board to `none`;
-  end
-  else
-  begin
-    put 500 into Width
-  end
-  set style `width` of Board to Width cat `px`
-  set style `height` of Board to Width cat `px`
-  set style `background-size` of Board to Width cat `px`
-  set style `margin` of Board to `2em auto 0 auto`
-  set style `border` of Board to `1px solid #888`
-  set style `border-radius` of Board to `50%`
-  set style `background-image` of Board to
+  se mobile
+  inizio
+    metti la larghezza di Tavola in Larghezza
+    moltiplica Larghezza per 90
+    dividi Larghezza per 100
+    imposta stile `touch-action` di Tavola a `none`
+  fine
+  altrimenti
+  inizio
+    metti 500 in Larghezza
+  fine
+  imposta stile `width` di Tavola a Larghezza cat `px`
+  imposta stile `height` di Tavola a Larghezza cat `px`
+  imposta stile `background-size` di Tavola a Larghezza cat `px`
+  imposta stile `margin` di Tavola a `2em auto 0 auto`
+  imposta stile `border` di Tavola a `1px solid #888`
+  imposta stile `border-radius` di Tavola a `50%`
+  imposta stile `background-image` di Tavola a
   	`url('https://allspeak.software/public/skybg.jpg')`
 
-  create Container in Board
-  set the style of Container to
+  crea Contenitore in Tavola
+  imposta lo stile di Contenitore a
   	`position:relative;width:100%,height:100%;margin:5%`
-  
-  multiply Width by 90
-  divide Width by 100
-  divide Width by 7 giving S
-  divide S by 7 giving Size
-  multiply Size by 6
-  multiply Size by 7 giving Offset
-  take Offset from Width giving Offset
-  divide Offset by 14
-      
+
+  moltiplica Larghezza per 90
+  dividi Larghezza per 100
+  dividi Larghezza per 7 dando S
+  dividi S per 7 dando Dimensione
+  moltiplica Dimensione per 6
+  moltiplica Dimensione per 7 dando Offset
+  togli Offset da Larghezza dando Offset
+  dividi Offset per 14
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Draw the initial board layout.
-  put 0 into N
-  while N is less than 49
-  begin
-    index Map to N
-    if Map is not 0
-    begin
-      divide N by 7 giving Row
-      multiply Row by S giving Y
-      add Offset to Y
-      index Tops to N
-      put Y into Tops
-      put N modulo 7 into Column
-      multiply Column by S giving X
-      add Offset to X
-      index Lefts to N
-      put X into Lefts
-      index Grey to N
-      create Grey in Container
-      set the style of Grey to `position:absolute;left:` cat X cat `px;top:` cat Y
-		cat `px;width:` cat Size cat `px;height:` cat Size cat `px;background:gray`
+! Disegna il layout iniziale della tavola.
+  metti 0 in N
+  mentre N è minore di 49
+  inizio
+    indice Mappa a N
+    se Mappa non è 0
+    inizio
+      dividi N per 7 dando Riga
+      moltiplica Riga per S dando Y
+      aggiungi Offset a Y
+      indice Alti a N
+      metti Y in Alti
+      metti N modulo 7 in Colonna
+      moltiplica Colonna per S dando X
+      aggiungi Offset a X
+      indice Sinistre a N
+      metti X in Sinistre
+      indice Grigio a N
+      crea Grigio in Contenitore
+      imposta lo stile di Grigio a `position:absolute;left:` cat X cat `px;top:` cat Y
+		cat `px;width:` cat Dimensione cat `px;height:` cat Dimensione cat `px;background:gray`
         cat `;border:1px solid darkgray;border-radius:50%`
-      index Red to N
-      create Red in Container
-      set the style of Red to `position:absolute;left:` cat X cat `px;top:` cat Y
-		cat `px;width:` cat Size cat `px;height:` cat Size cat `px;background:red`
+      indice Rosso a N
+      crea Rosso in Contenitore
+      imposta lo stile di Rosso a `position:absolute;left:` cat X cat `px;top:` cat Y
+		cat `px;width:` cat Dimensione cat `px;height:` cat Dimensione cat `px;background:red`
         cat `;border:1px solid darkred;border-radius:50%`
-      if Map is 1 set style `opacity` of Red to `0`
-    end
-    add 1 to N
-  end
-  on pick Red go to Pick
-  on drag go to Drag
-  on drop go to Drop
-  stop
+      se Mappa è 1 imposta stile `opacity` di Rosso a `0`
+    fine
+    aggiungi 1 a N
+  fine
+  su scegli Rosso vai a Prendi
+  su trascina vai a Trascina
+  su rilascia vai a Rilascia
+  ferma
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Pick a peg
-Pick:
-  clear Valid
-  put the pick position into PickPos
-  put the index of Red into Index
-  put -1 into Left
-  put -1 into Right
-  put -1 into Up
-  put -1 into Down
-! Get the row
-  put Index modulo 7 into R
-! Must be > 1 to be able to go left
-  if R is greater than 1
-  begin
-    take 2 from Index giving N
-    index Map to N
-    if Map is 1
-    begin
-      add 1 to N giving M
-      index Map to M
-      if Map is 2 put N into Left
-    end
-  end
-! Must be < 5 to be able to go right
-  if R is less than 5
-  begin
-  	add 2 to Index giving N
-    index Map to N
-    if Map is 1
-    begin
-	  take 1 from N giving M
-      index Map to M
-      if Map is 2 put N into Right
-    end
-  end
-  take 14 from Index giving N
-! N must be >= 0 to go up
-  if N is not less than 0
-  begin
-  	index Map to N
-    if Map is 1
-    begin
-      add 7 to N giving M
-      index Map to M
-      if Map is 2 put N into Up
-    end
-  end
-  add 14 to Index giving N
-! N must be < 49 to go down
-  if N is less than 49
-  begin
-  	index Map to N
-    if Map is 1
-    begin
-      take 7 from N giving M
-      index Map to M
-      if Map is 2 put N into Down
-    end
-  end
-! If any move is possible select this peg
-  if Left is not -1 goto Select
-  if Right is not -1 goto Select
-  if Up is not -1 goto Select
-  if Down is not -1 goto Select
-  stop
+! Prendi una pedina
+Prendi:
+  svuota Valido
+  metti la scegli posizione in PosPresa
+  metti lo indice di Rosso in Indice
+  metti -1 in Sinistra
+  metti -1 in Destra
+  metti -1 in Su
+  metti -1 in Giu
+! Ottieni la riga
+  metti Indice modulo 7 in R
+! Deve essere > 1 per poter andare a sinistra
+  se R è maggiore di 1
+  inizio
+    togli 2 da Indice dando N
+    indice Mappa a N
+    se Mappa è 1
+    inizio
+      aggiungi 1 a N dando M
+      indice Mappa a M
+      se Mappa è 2 metti N in Sinistra
+    fine
+  fine
+! Deve essere < 5 per poter andare a destra
+  se R è minore di 5
+  inizio
+  	aggiungi 2 a Indice dando N
+    indice Mappa a N
+    se Mappa è 1
+    inizio
+	  togli 1 da N dando M
+      indice Mappa a M
+      se Mappa è 2 metti N in Destra
+    fine
+  fine
+  togli 14 da Indice dando N
+! N deve essere >= 0 per andare su
+  se N non è minore di 0
+  inizio
+  	indice Mappa a N
+    se Mappa è 1
+    inizio
+      aggiungi 7 a N dando M
+      indice Mappa a M
+      se Mappa è 2 metti N in Su
+    fine
+  fine
+  aggiungi 14 a Indice dando N
+! N deve essere < 49 per andare giù
+  se N è minore di 49
+  inizio
+  	indice Mappa a N
+    se Mappa è 1
+    inizio
+      togli 7 da N dando M
+      indice Mappa a M
+      se Mappa è 2 metti N in Giu
+    fine
+  fine
+! Se qualsiasi mossa è possibile seleziona questa pedina
+  se Sinistra non è -1 vai a Seleziona
+  se Destra non è -1 vai a Seleziona
+  se Su non è -1 vai a Seleziona
+  se Giu non è -1 vai a Seleziona
+  ferma
 
-Select:
-  set style `z-index` of Red to 10
-  set style `background` of Red to `orange`
-  put the index of Red into Selected
-  stop
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Drag the peg
-Drag:
-  if not Selected stop
-  put the drag position into DragPos
-  put property `x` of DragPos into X
-  put property `y` of DragPos into Y
-  take property `x` of PickPos from X
-  take property `y` of PickPos from Y
-  index Lefts to Selected
-  index Tops to Selected
-  add Lefts to X
-  add Tops to Y
-  set style `left` of Red to X cat `px`
-  set style `top` of Red to Y cat `px`
-  if Left is not -1
-  begin
-	index Grey to Left
-    if element Grey contains DragPos go to ShowValid
-  end
-  if Right is not -1
-  begin
-	index Grey to Right
-    if element Grey contains DragPos go to ShowValid
-  end
-  if Up is not -1
-  begin
-	index Grey to Up
-    if element Grey contains DragPos go to ShowValid
-  end
-  if Down is not -1
-  begin
-	index Grey to Down
-    if element Grey contains DragPos go to ShowValid
-  end
-  clear Valid
-  set style `background` of Grey to `gray`
-  stop
-
-ShowValid:
-  put the index of Grey into Destination
-  set style `background` of Grey to `yellow`
-  set Valid
-  stop
+Seleziona:
+  imposta stile `z-index` di Rosso a 10
+  imposta stile `background` di Rosso a `orange`
+  metti lo indice di Rosso in Selezionato
+  ferma
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Drop the peg
-Drop:
-  if not Selected stop
-  if Valid
-  begin
-    index Lefts to Selected
-    index Tops to Selected
-    set style `left` of Red to Lefts cat `px`
-    set style `top` of Red to Tops cat `px`
-    put Selected into N
-    gosub to Remove
-  	index Red to Destination
-    index Lefts to Destination
-    index Tops to Destination
-    set style `left` of Red to Lefts cat `px`
-    set style `top` of Red to Tops cat `px`
-    put Destination into N
-    gosub to Place
-    add Destination to Selected giving N
-    divide N by 2
-    gosub to Remove
-  end
-  else
-  begin
-  	put Selected into N
-    index Lefts to N
-    index Tops to N
-    set style `left` of Red to Lefts cat `px`
-    set style `top` of Red to Tops cat `px`
-    gosub to Place
-  end
-  set style `z-index` of Red to 1
-  clear Selected
-  go to CheckIfFinished
+! Trascina la pedina
+Trascina:
+  se non Selezionato ferma
+  metti la trascina posizione in PosTrascinamento
+  metti proprieta `x` di PosTrascinamento in X
+  metti proprieta `y` di PosTrascinamento in Y
+  togli proprieta `x` di PosPresa da X
+  togli proprieta `y` di PosPresa da Y
+  indice Sinistre a Selezionato
+  indice Alti a Selezionato
+  aggiungi Sinistre a X
+  aggiungi Alti a Y
+  imposta stile `left` di Rosso a X cat `px`
+  imposta stile `top` di Rosso a Y cat `px`
+  se Sinistra non è -1
+  inizio
+	indice Grigio a Sinistra
+    se elemento Grigio racchiude PosTrascinamento vai a MostraValido
+  fine
+  se Destra non è -1
+  inizio
+	indice Grigio a Destra
+    se elemento Grigio racchiude PosTrascinamento vai a MostraValido
+  fine
+  se Su non è -1
+  inizio
+	indice Grigio a Su
+    se elemento Grigio racchiude PosTrascinamento vai a MostraValido
+  fine
+  se Giu non è -1
+  inizio
+	indice Grigio a Giu
+    se elemento Grigio racchiude PosTrascinamento vai a MostraValido
+  fine
+  svuota Valido
+  imposta stile `background` di Grigio a `gray`
+  ferma
+
+MostraValido:
+  metti lo indice di Grigio in Destinazione
+  imposta stile `background` di Grigio a `yellow`
+  imposta Valido
+  ferma
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Place a peg
-Place:
-  index Map to N
-  index Red to N
-  index Grey to N
-  put 2 into Map
-  set style `opacity` of Red to `1`
-  set style `background` of Red to `red`
-  set style `background` of Grey to `gray`
-  return
+! Rilascia la pedina
+Rilascia:
+  se non Selezionato ferma
+  se Valido
+  inizio
+    indice Sinistre a Selezionato
+    indice Alti a Selezionato
+    imposta stile `left` di Rosso a Sinistre cat `px`
+    imposta stile `top` di Rosso a Alti cat `px`
+    metti Selezionato in N
+    vaisub a Rimuovi
+  	indice Rosso a Destinazione
+    indice Sinistre a Destinazione
+    indice Alti a Destinazione
+    imposta stile `left` di Rosso a Sinistre cat `px`
+    imposta stile `top` di Rosso a Alti cat `px`
+    metti Destinazione in N
+    vaisub a Piazza
+    aggiungi Destinazione a Selezionato dando N
+    dividi N per 2
+    vaisub a Rimuovi
+  fine
+  altrimenti
+  inizio
+  	metti Selezionato in N
+    indice Sinistre a N
+    indice Alti a N
+    imposta stile `left` di Rosso a Sinistre cat `px`
+    imposta stile `top` di Rosso a Alti cat `px`
+    vaisub a Piazza
+  fine
+  imposta stile `z-index` di Rosso a 1
+  svuota Selezionato
+  vai a ControllaSeFinito
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Remove a peg
-Remove:
-   index Map to N
-   index Red to N
-   put 1 into Map
-   set style `opacity` of Red to `0`
-   return
+!  Piazza una pedina
+Piazza:
+  indice Mappa a N
+  indice Rosso a N
+  indice Grigio a N
+  metti 2 in Mappa
+  imposta stile `opacity` di Rosso a `1`
+  imposta stile `background` di Rosso a `red`
+  imposta stile `background` di Grigio a `gray`
+  ritorna
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Check if there are any moves left.
-CheckIfFinished:
-  put 0 into N
-  while N is less than 49
-  begin
-    index Map to N
-    if Map is 2
-    begin
-      divide N by 7 giving Row
-      put N modulo 7 into Column
-      ! Try the left
-      take 1 from Column giving C
-      if C is not less than 0
-      begin
-        multiply Row by 7 giving M
-        add C to M
-        index Map to M
-        if Map is 2
-        begin
-          take 1 from C
-          if C is not less than 0
-          begin
-            multiply Row by 7 giving M
-            add C to M
-            index Map to M
-            if Map is 1 stop
-          end
-        end
-      end
-      ! Try the right
-      add 1 to Column giving C
-      if C is less than 7
-      begin
-        multiply Row by 7 giving M
-        add C to M
-        index Map to M
-        if Map is 2
-        begin
-          add 1 to C
-          if C is less than 7
-          begin
-            multiply Row by 7 giving M
-            add C to M
-            index Map to M
-            if Map is 1 stop
-          end
-        end
-      end
-      ! Try up
-      take 1 from Row giving R
-      if R is not less than 0
-      begin
-        multiply R by 7 giving M
-        add Column to M
-        index Map to M
-        if Map is 2
-        begin
-          take 1 from R
-          if R is not less than 0
-          begin
-            multiply R by 7 giving M
-            add Column to M
-            index Map to M
-            if Map is 1 stop
-          end
-        end
-      end
-      ! Try down
-      add 1 to Row giving R
-      if R is less than 7
-      begin
-        multiply R by 7 giving M
-        add Column to M
-        index Map to M
-        if Map is 2
-        begin
-          add 1 to R
-          if R is less than 7
-          begin
-            multiply R by 7 giving M
-            add Column to M
-            index Map to M
-            if Map is 1 stop
-          end
-        end
-      end
-    end
-    add 1 to N
-  end
-  create GameOver
-  set the style of GameOver to `text-align:center`
-  set the content of GameOver to `Game over - no more moves are possible`
-  stop
+!  Rimuovi una pedina
+Rimuovi:
+   indice Mappa a N
+   indice Rosso a N
+   metti 1 in Mappa
+   imposta stile `opacity` di Rosso a `0`
+   ritorna
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Controlla se ci sono ancora mosse possibili.
+ControllaSeFinito:
+  metti 0 in N
+  mentre N è minore di 49
+  inizio
+    indice Mappa a N
+    se Mappa è 2
+    inizio
+      dividi N per 7 dando Riga
+      metti N modulo 7 in Colonna
+      ! Prova a sinistra
+      togli 1 da Colonna dando C
+      se C non è minore di 0
+      inizio
+        moltiplica Riga per 7 dando M
+        aggiungi C a M
+        indice Mappa a M
+        se Mappa è 2
+        inizio
+          togli 1 da C
+          se C non è minore di 0
+          inizio
+            moltiplica Riga per 7 dando M
+            aggiungi C a M
+            indice Mappa a M
+            se Mappa è 1 ferma
+          fine
+        fine
+      fine
+      ! Prova a destra
+      aggiungi 1 a Colonna dando C
+      se C è minore di 7
+      inizio
+        moltiplica Riga per 7 dando M
+        aggiungi C a M
+        indice Mappa a M
+        se Mappa è 2
+        inizio
+          aggiungi 1 a C
+          se C è minore di 7
+          inizio
+            moltiplica Riga per 7 dando M
+            aggiungi C a M
+            indice Mappa a M
+            se Mappa è 1 ferma
+          fine
+        fine
+      fine
+      ! Prova su
+      togli 1 da Riga dando R
+      se R non è minore di 0
+      inizio
+        moltiplica R per 7 dando M
+        aggiungi Colonna a M
+        indice Mappa a M
+        se Mappa è 2
+        inizio
+          togli 1 da R
+          se R non è minore di 0
+          inizio
+            moltiplica R per 7 dando M
+            aggiungi Colonna a M
+            indice Mappa a M
+            se Mappa è 1 ferma
+          fine
+        fine
+      fine
+      ! Prova giù
+      aggiungi 1 a Riga dando R
+      se R è minore di 7
+      inizio
+        moltiplica R per 7 dando M
+        aggiungi Colonna a M
+        indice Mappa a M
+        se Mappa è 2
+        inizio
+          aggiungi 1 a R
+          se R è minore di 7
+          inizio
+            moltiplica R per 7 dando M
+            aggiungi Colonna a M
+            indice Mappa a M
+            se Mappa è 1 ferma
+          fine
+        fine
+      fine
+    fine
+    aggiungi 1 a N
+  fine
+  crea FineGioco
+  imposta lo stile di FineGioco a `text-align:center`
+  imposta il contenuto di FineGioco a `Partita finita - non ci sono più mosse possibili`
+  ferma

@@ -106,7 +106,7 @@ const AllSpeak_GMap = {
 
 		compile: compiler => {
 			const lino = compiler.getLino();
-			const action = compiler.nextToken();
+			const action = AllSpeak_Language.reverseWord(compiler.nextToken());
 			if ([`click`, `move`, `type`, `zoom`].includes(action)) {
 				if (compiler.nextIsSymbol()) {
 					const symbolRecord = compiler.getSymbolRecord();
@@ -207,8 +207,8 @@ const AllSpeak_GMap = {
 
 		compile: compiler => {
 			const lino = compiler.getLino();
-			compiler.skip(`the`);
-			const attribute = compiler.getToken();
+			compiler.skipWord(`the`);
+			const attribute = AllSpeak_Language.reverseWord(compiler.getToken());
 			if ([`key`, `latitude`, `longitude`, `type`, `zoom`].includes(attribute)) {
 				if (compiler.nextIsWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
@@ -403,7 +403,7 @@ const AllSpeak_GMap = {
 	},
 
 	getHandler: name => {
-		switch (name) {
+		switch (AllSpeak_Language.reverseWord(name)) {
 		case `create`:
 			return AllSpeak_GMap.Create;
 		case `gmap`:
@@ -440,7 +440,8 @@ const AllSpeak_GMap = {
 			if (compiler.isWord(`the`)) {
 				compiler.next();
 			}
-			const type = compiler.getToken();
+			const rawType = compiler.getToken();
+			const type = AllSpeak_Language.reverseWord(rawType);
 			if (type === `click`) {
 				if (compiler.nextIsWord(`position`)) {
 					if (compiler.nextIsWord(`of`)) {

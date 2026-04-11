@@ -1,52 +1,54 @@
-!   Basic interactivity
+!   Interattività di base
 
-    div Container
-    div Button
+    language italiano
+
+    div Contenitore
+    div Bottone
     a Link
-    variable Count
-    variable N
-    variable Clicked
+    variabile Conteggio
+    variabile N
+    variabile Cliccato
 
-    put prompt `How many buttons?` with `5` into Count
-    set the elements of Link to Count
-    set the elements of Clicked to Count
+    metti prompt `Quanti bottoni?` con `5` in Conteggio
+    imposta gli elementi di Link a Conteggio
+    imposta gli elementi di Cliccato a Conteggio
 
-!   Initialize the buttons
-    put 0 into N
-    while N is less than Count
-    begin
-        index Clicked to N
-        clear Clicked
-        add 1 to N
-    end
-    
-    create Container
+!   Inizializza i bottoni
+    metti 0 in N
+    mentre N è minore di Conteggio
+    inizio
+        indice Cliccato a N
+        svuota Cliccato
+        aggiungi 1 a N
+    fine
 
-!   Redraw the screen every time the user clicks a button
-Redraw:
-    clear Container
-    put 0 into N
-    while N is less than Count
-    begin
-        index Link to N
-        index Clicked to N
-        create Button in Container
-        set the style of Button to
+    crea Contenitore
+
+!   Ridisegna lo schermo ogni volta che l'utente clicca un bottone
+Ridisegna:
+    svuota Contenitore
+    metti 0 in N
+    mentre N è minore di Conteggio
+    inizio
+        indice Link a N
+        indice Cliccato a N
+        crea Bottone in Contenitore
+        imposta lo stile di Bottone a
             `margin:0.5em 0 0 2em;border:1px solid red;`
             cat `padding:0.5em;width:10em;text-align:center`
-        add 1 to N
-        if Clicked set the content of Button to `Done`
-        else
-        begin
-            create Link in Button
-            set the content of Link to `Button ` cat N
-        end
-    end
-    on click Link
-    begin
-        index Clicked to the index of Link
-        set Clicked
-        go to Redraw
-    end
-    
-    stop
+        aggiungi 1 a N
+        se Cliccato imposta il contenuto di Bottone a `Fatto`
+        altrimenti
+        inizio
+            crea Link in Bottone
+            imposta il contenuto di Link a `Bottone ` cat N
+        fine
+    fine
+    su clic Link
+    inizio
+        indice Cliccato a lo indice di Link
+        imposta Cliccato
+        vai a Ridisegna
+    fine
+
+    ferma

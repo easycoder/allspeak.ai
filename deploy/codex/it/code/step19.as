@@ -1,63 +1,65 @@
-!	Pan and Zoom
+!	Pan e Zoom
+
+    language italiano
 
 	script PanZoom
 
     div Div
-    animation Anim
-    variable Spec
-    variable AspectW
-    variable AspectH
-    variable Width
-    variable Height
-    variable Item
-    variable Finished
-    
-    put 16 into AspectW
-    put 9 into AspectH
-    
-    set Spec to object
-    set property `type` of Spec to `panzoom`
-    set property `width` of Spec to `100%`
-    set property `height` of Spec to `100%`
-    set property `url` of Spec to `/resources/img/demo3.jpg`
-    set property `steps` of Spec to 100
-    set property `trigger` of Spec to 100
-    set Item to object
-    set property `left` of Item to 30
-    set property `top` of Item to 37
-    set property `width` of Item to 20
-    set property `start` of Spec to Item
-    set Item to object
-    set property `left` of Item to 0
-    set property `top` of Item to 0
-    set property `width` of Item to 100
-    set property `finish` of Spec to Item
+    animazione Anim
+    variabile Spec
+    variabile AspettoL
+    variabile AspettoA
+    variabile Larghezza
+    variabile Altezza
+    variabile Articolo
+    variabile Finito
 
-!	Get the width and height
-    create Div
-    set style `margin` of Div to `1em 0 0 5%`
-    set style `width` of Div to `90%`
-	put the width of Div into Width
-    multiply Width by AspectH giving Height
-    divide Height by AspectW
-    set style `height` of Div to Height cat `px`
+    metti 16 in AspettoL
+    metti 9 in AspettoA
 
-!	Create the components
-    create Anim in Div
-    set style `width` of Anim to `100%`
-    set style `height` of Anim to Height cat `px`
-    set the specification of Anim to Spec
-    on trigger Anim set Finished
-    
-    wait 2
+    imposta Spec a oggetto
+    imposta proprieta `type` di Spec a `panzoom`
+    imposta proprieta `width` di Spec a `100%`
+    imposta proprieta `height` di Spec a `100%`
+    imposta proprieta `url` di Spec a `/resources/img/demo3.jpg`
+    imposta proprieta `steps` di Spec a 100
+    imposta proprieta `trigger` di Spec a 100
+    imposta Articolo a oggetto
+    imposta proprieta `left` di Articolo a 30
+    imposta proprieta `top` di Articolo a 37
+    imposta proprieta `width` di Articolo a 20
+    imposta proprieta `start` di Spec a Articolo
+    imposta Articolo a oggetto
+    imposta proprieta `left` di Articolo a 0
+    imposta proprieta `top` di Articolo a 0
+    imposta proprieta `width` di Articolo a 100
+    imposta proprieta `finish` di Spec a Articolo
 
-!	Start the animation
-	clear Finished
-    start Anim
-    while not Finished
-    begin
-    	step Anim
-        wait 5 ticks
-    end
-    print `Finished`
-    stop
+!	Ottieni larghezza e altezza
+    crea Div
+    imposta stile `margin` di Div a `1em 0 0 5%`
+    imposta stile `width` di Div a `90%`
+	metti la larghezza di Div in Larghezza
+    moltiplica Larghezza per AspettoA dando Altezza
+    dividi Altezza per AspettoL
+    imposta stile `height` di Div a Altezza cat `px`
+
+!	Crea i componenti
+    crea Anim in Div
+    imposta stile `width` di Anim a `100%`
+    imposta stile `height` di Anim a Altezza cat `px`
+    imposta la specificazione di Anim a Spec
+    su attiva Anim imposta Finito
+
+    attendi 2
+
+!	Avvia l'animazione
+	svuota Finito
+    avvia Anim
+    mentre non Finito
+    inizio
+    	passo Anim
+        attendi 5 ticks
+    fine
+    stampa `Finito`
+    ferma

@@ -1,32 +1,34 @@
-!   The bouncy rectangle
+!   Il rettangolo rimbalzante
 
-    div Container
-    div Rectangle
-    variable Height
-    variable Angle
-    
-    create Container
-    set the style of Container to
+    language italiano
+
+    div Contenitore
+    div Rettangolo
+    variabile Altezza
+    variabile Angolo
+
+    crea Contenitore
+    imposta lo stile di Contenitore a
         `width:90%;height:200px;margin:1em auto 0;`
         cat `border:1px solid black;padding:10px`
-    
-    create Rectangle in Container
-    set the style of Rectangle to
+
+    crea Rettangolo in Contenitore
+    imposta lo stile di Rettangolo a
        `position:relative;width:9%;border:1px solid gray;`
         cat `background:lightgray`
-    set style `top` of Rectangle to `50%`
-    set style `height` of Rectangle to `100px`
-    
-    wait 2 seconds
-    
-    put 0 into Angle
-    while Angle is less than 360
-    begin
-        put sin Angle radius 100 into Height
-        set style `top` of Rectangle to `calc(50% - ` cat Height cat `px)`
-        set style `height` of Rectangle to `calc(100px + ` cat Height cat `px)`
-        add 1 to Angle
-        wait 5 millis
-    end
-    
-    stop
+    imposta stile `top` di Rettangolo a `50%`
+    imposta stile `height` di Rettangolo a `100px`
+
+    attendi 2 secondi
+
+    metti 0 in Angolo
+    mentre Angolo è minore di 360
+    inizio
+        metti sin Angolo radius 100 in Altezza
+        imposta stile `top` di Rettangolo a `calc(50% - ` cat Altezza cat `px)`
+        imposta stile `height` di Rettangolo a `calc(100px + ` cat Altezza cat `px)`
+        aggiungi 1 a Angolo
+        attendi 5 milli
+    fine
+
+    ferma

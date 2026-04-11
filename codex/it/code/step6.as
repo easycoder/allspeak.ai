@@ -1,22 +1,24 @@
-!   The Golden Gate
+!   Il Golden Gate
 
-    div Container
-    img Image
-    p Title
-    
-    create Container
-    set the style of Container to
+    language italiano
+
+    div Contenitore
+    img Immagine
+    p Titolo
+
+    crea Contenitore
+    imposta lo stile di Contenitore a
         `text-align:center;margin:1em;padding:1em;`
         cat `border:1px solid gray;background:#ffe`
-    
-    create Image in Container
-    set the style of Image to `width:70%`
-    set attribute `src` of Image to
+
+    crea Immagine in Contenitore
+    imposta lo stile di Immagine a `width:70%`
+    imposta attributo `src` di Immagine a
         `resources/img/goldengate.jpg`
-    
-    create Title in Container
-    set the content of Title to `The Golden Gate Bridge,`
+
+    crea Titolo in Contenitore
+    imposta il contenuto di Titolo a `Il Golden Gate Bridge,`
         cat break cat `San Francisco, California`
         cat break cat break
-        cat `Photo by Gerson Repreza on Unsplash`
-    stop
+        cat `Foto di Gerson Repreza su Unsplash`
+    ferma

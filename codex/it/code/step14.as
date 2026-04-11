@@ -1,100 +1,102 @@
-!   Shopping list 2
+!   Lista della spesa 2
 
-    script ShoppingList2
-    
-    div Panel
-    div Row
-    button Sorted
-    button Unsorted
-    variable OriginalList
-    variable DisplayList
-    variable A
-    variable B
-    variable Result
-    variable N
-    variable Item
-    
-    put empty into OriginalList
-    set Item to object
-    set property `name` of Item to `Fish`
-    set property `price` of Item to 349
-    append Item to OriginalList
-    set Item to object
-    set property `name` of Item to `Potatoes`
-    set property `price` of Item to 105
-    append Item to OriginalList
-    set Item to object
-    set property `name` of Item to `Cheese`
-    set property `price` of Item to 275
-    append Item to OriginalList
-    set Item to object
-    set property `name` of Item to `Wine`
-    set property `price` of Item to 749
-    append Item to OriginalList
-    set Item to object
-    set property `name` of Item to `Sugar`
-    set property `price` of Item to 85
-    append Item to OriginalList
-    set Item to object
-    set property `name` of Item to `Pineapple`
-    set property `price` of Item to 93
-    append Item to OriginalList
-    set Item to object
-    set property `name` of Item to `Milk`
-    set property `price` of Item to 85
-    append Item to OriginalList
-    set Item to object
-    set property `name` of Item to `Eggs`
-    set property `price` of Item to 125
-    append Item to OriginalList
-    set Item to object
-    set property `name` of Item to `Butter`
-    set property `price` of Item to 185
-    append Item to OriginalList
-    
-    create Panel
-    set the style of Panel to `border:1px solid black;margin:1em;padding:1em`
-    
-    create Unsorted
-    set the style of Unsorted to `margin:1em`
-    set the text of Unsorted to `Unsorted`
-    on click Unsorted go to DisplayUnsorted
-    
-    create Sorted
-    set the style of Sorted to `margin:1em`
-    set the text of Sorted to `Sorted`
-    on click Sorted
-    begin
-        put OriginalList into DisplayList
-        sort DisplayList with PriceSort
-        gosub to Display
-    end
+    language italiano
 
-DisplayUnsorted:
-    put OriginalList into DisplayList
-    gosub to Display
-    
-    stop
+    script ListaSpesa2
 
-Display:
-    clear Panel
-    put 0 into N
-    while N is less than the json count of DisplayList
-    begin
-    create Row in Panel
-        put element N of DisplayList into Item
-        set the content of Row to property `name` of Item
-    add 1 to N
-    end
-    return
+    div Pannello
+    div Riga
+    button Ordinato
+    button NonOrdinato
+    variabile ListaOriginale
+    variabile ListaVisualizzata
+    variabile A
+    variabile B
+    variabile Risultato
+    variabile N
+    variabile Articolo
 
-PriceSort:
-	put arg `a` of DisplayList into A
-    put arg `b` of DisplayList into B
-    if property `price` of A is greater than property `price` of B
-        put 1 into Result
-    else if property `price` of A is less than property `price` of B
-        put -1 into Result
-    else put 0 into Result
-    set arg `v` of DisplayList to Result
-    stop
+    metti vuoto in ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Pesce`
+    imposta proprieta `price` di Articolo a 349
+    accoda Articolo a ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Patate`
+    imposta proprieta `price` di Articolo a 105
+    accoda Articolo a ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Formaggio`
+    imposta proprieta `price` di Articolo a 275
+    accoda Articolo a ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Vino`
+    imposta proprieta `price` di Articolo a 749
+    accoda Articolo a ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Zucchero`
+    imposta proprieta `price` di Articolo a 85
+    accoda Articolo a ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Ananas`
+    imposta proprieta `price` di Articolo a 93
+    accoda Articolo a ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Latte`
+    imposta proprieta `price` di Articolo a 85
+    accoda Articolo a ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Uova`
+    imposta proprieta `price` di Articolo a 125
+    accoda Articolo a ListaOriginale
+    imposta Articolo a oggetto
+    imposta proprieta `name` di Articolo a `Burro`
+    imposta proprieta `price` di Articolo a 185
+    accoda Articolo a ListaOriginale
+
+    crea Pannello
+    imposta lo stile di Pannello a `border:1px solid black;margin:1em;padding:1em`
+
+    crea NonOrdinato
+    imposta lo stile di NonOrdinato a `margin:1em`
+    imposta il testo di NonOrdinato a `Non ordinato`
+    su clic NonOrdinato vai a MostraNonOrdinato
+
+    crea Ordinato
+    imposta lo stile di Ordinato a `margin:1em`
+    imposta il testo di Ordinato a `Ordinato`
+    su clic Ordinato
+    inizio
+        metti ListaOriginale in ListaVisualizzata
+        ordina ListaVisualizzata con OrdinamentoPrezzo
+        vaisub a Mostra
+    fine
+
+MostraNonOrdinato:
+    metti ListaOriginale in ListaVisualizzata
+    vaisub a Mostra
+
+    ferma
+
+Mostra:
+    svuota Pannello
+    metti 0 in N
+    mentre N è minore di il json conteggio di ListaVisualizzata
+    inizio
+    crea Riga in Pannello
+        metti elemento N di ListaVisualizzata in Articolo
+        imposta il contenuto di Riga a proprieta `name` di Articolo
+    aggiungi 1 a N
+    fine
+    ritorna
+
+OrdinamentoPrezzo:
+	metti arg `a` di ListaVisualizzata in A
+    metti arg `b` di ListaVisualizzata in B
+    se proprieta `price` di A è maggiore di proprieta `price` di B
+        metti 1 in Risultato
+    altrimenti se proprieta `price` di A è minore di proprieta `price` di B
+        metti -1 in Risultato
+    altrimenti metti 0 in Risultato
+    imposta arg `v` di ListaVisualizzata a Risultato
+    ferma

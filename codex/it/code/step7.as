@@ -1,40 +1,42 @@
-! Simple animation
+! Animazione semplice
 
-  div Container
-  div Button
-  variable N
-  
-  create Container
-  set the style of Container to `text-align:center`
+    language italiano
 
-! Create the array
-  set the elements of Button to 3
+  div Contenitore
+  div Bottone
+  variabile N
 
-! Create the buttons
-  put 0 into N
-  while N is less than 3
-  begin
-    index Button to N
-    create Button in Container
-    set the style of Button to
+  crea Contenitore
+  imposta lo stile di Contenitore a `text-align:center`
+
+! Crea l'array
+  imposta gli elementi di Bottone a 3
+
+! Crea i bottoni
+  metti 0 in N
+  mentre N è minore di 3
+  inizio
+    indice Bottone a N
+    crea Bottone in Contenitore
+    imposta lo stile di Bottone a
   	  `width:50px;height:50px;margin:0.5em;border-radius:50%`
       cat `;display:inline-block;visibility:hidden`
-    if N is 0 set style `background` of Button to `red`
-    else if N is 1 set style `background` of Button to `green`
-    else set style `background` of Button to `blue`
-    add 1 to N
-  end
+    se N è 0 imposta stile `background` di Bottone a `red`
+    altrimenti se N è 1 imposta stile `background` di Bottone a `green`
+    altrimenti imposta stile `background` di Bottone a `blue`
+    aggiungi 1 a N
+  fine
 
-! Animate the buttons
-  while true
-  begin
-  	put 0 into N
-    while N is less than 3
-    begin
-    	index Button to N
-        set style `visibility` of Button to `visible`
-        wait 20 ticks
-        set style `visibility` of Button to `hidden`
-        add 1 to N
-    end
-  end
+! Anima i bottoni
+  mentre vero
+  inizio
+  	metti 0 in N
+    mentre N è minore di 3
+    inizio
+    	indice Bottone a N
+        imposta stile `visibility` di Bottone a `visible`
+        attendi 20 ticks
+        imposta stile `visibility` di Bottone a `hidden`
+        aggiungi 1 a N
+    fine
+  fine

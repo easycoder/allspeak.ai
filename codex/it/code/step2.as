@@ -1,17 +1,19 @@
-!   Arithmetic
+!   Aritmetica
 
-    variable X
-    variable Y
-    variable Z
-    variable Sum
-    
-    put 5 into X
-    put 7 into Y
-    add X to Y
-    alert `5 added to 7 makes ` cat Y
-    
-    multiply Y by 3 giving Z
-    alert `12 multiplied by 3 makes ` cat Z
-    
-    take X from Z giving Sum
-    alert `36 take away 5 makes ` cat Sum
+    language italiano
+
+    variabile X
+    variabile Y
+    variabile Z
+    variabile Somma
+
+    metti 5 in X
+    metti 7 in Y
+    aggiungi X a Y
+    avviso `5 più 7 fa ` cat Y
+
+    moltiplica Y per 3 dando Z
+    avviso `12 per 3 fa ` cat Z
+
+    togli X da Z dando Somma
+    avviso `36 meno 5 fa ` cat Somma

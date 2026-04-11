@@ -78,7 +78,7 @@ const AllSpeak_VFX = {
 
 		compile: compiler => {
 			const lino = compiler.getLino();
-			const action = compiler.nextToken();
+			const action = AllSpeak_Language.reverseWord(compiler.nextToken());
 			switch (action) {
 			case `trigger`:
 				if (compiler.nextIsSymbol()) {
@@ -120,9 +120,9 @@ const AllSpeak_VFX = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			let type = compiler.nextToken();
+			let type = AllSpeak_Language.reverseWord(compiler.nextToken());
 			if (compiler.isWord(`the`)) {
-				type = compiler.nextToken();
+				type = AllSpeak_Language.reverseWord(compiler.nextToken());
 			}
 			if ([`url`, `specification`, `spec`, `opacity`].includes(type)) {
 				if (compiler.nextIsWord(`of`)) {
@@ -302,7 +302,7 @@ const AllSpeak_VFX = {
 	},
 
 	getHandler: (name) => {
-		switch (name) {
+		switch (AllSpeak_Language.reverseWord(name)) {
 		case `animation`:
 			return AllSpeak_VFX.ANIMATION;
 		case `create`:

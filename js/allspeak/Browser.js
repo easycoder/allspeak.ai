@@ -2066,7 +2066,7 @@ const AllSpeak_Browser = {
 				}
 			} else {
 				let token = compiler.getToken();
-				if (token === AllSpeak_Language.word(`the`)) {
+				if (AllSpeak_Language.matchesWord(token, `the`)) {
 					token = compiler.nextToken();
 				}
 				if (token === AllSpeak_Language.word(`title`)) {
@@ -3675,7 +3675,7 @@ const AllSpeak_Browser = {
 				if (compiler.nextIsSymbol()) {
 					const symbolRecord = compiler.getSymbolRecord();
 					if (symbolRecord.extra === `dom`) {
-						const token = compiler.nextToken();
+						const token = AllSpeak_Language.reverseWord(compiler.nextToken());
 						if (token === `has`) {
 							if (compiler.nextIsWord(`the`)) {
 								compiler.next();

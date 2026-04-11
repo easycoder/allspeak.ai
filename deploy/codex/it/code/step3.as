@@ -1,18 +1,20 @@
-!   Strings
+!   Stringhe
 
-    variable String1
-    variable String2
-    variable String3
-    variable Length
-    
-    put `Strings can be complicated but can also be fun!` into String1
+    language italiano
 
-    put the length of String1 into Length
-    alert `The string has ` cat Length cat ` characters`
+    variabile Stringa1
+    variabile Stringa2
+    variabile Stringa3
+    variabile Lunghezza
 
-    put left 27 of String1 into String2
-    alert `Left 27 is: ` cat String2
-    
-    put left 11 of String1 into String2
-    put right 8 of String1 into String3
-    alert `The short version: ` cat String2 cat String3
+    metti `Le stringhe possono essere complicate ma anche divertenti!` in Stringa1
+
+    metti la lunghezza di Stringa1 in Lunghezza
+    avviso `La stringa ha ` cat Lunghezza cat ` caratteri`
+
+    metti sinistra 35 di Stringa1 in Stringa2
+    avviso `Sinistra 35: ` cat Stringa2
+
+    metti sinistra 19 di Stringa1 in Stringa2
+    metti destra 12 di Stringa1 in Stringa3
+    avviso `La versione breve: ` cat Stringa2 cat Stringa3

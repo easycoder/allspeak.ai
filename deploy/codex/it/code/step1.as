@@ -1,1 +1,3 @@
-    alert `Hello, world!`
+    language italiano
+
+    avviso `Ciao, mondo!`

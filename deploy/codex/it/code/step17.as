@@ -1,42 +1,44 @@
-!	Drag and drop
+!	Trascina e rilascia
 
-	script DragDrop
-    
-    div Container
-    div Component
-    variable PickPos
-    variable DragPos
-    variable X
-    variable Y
-    variable OffsetX
-    variable OffsetY
-    
-    create Container
-    set style `position` of Container to `relative`
-    
-    create Component in Container
-    set the style of Component to
+    language italiano
+
+	script TrascinaRilascia
+
+    div Contenitore
+    div Componente
+    variabile PosPresa
+    variabile PosTrascinamento
+    variabile X
+    variabile Y
+    variabile OffsetX
+    variabile OffsetY
+
+    crea Contenitore
+    imposta stile `position` di Contenitore a `relative`
+
+    crea Componente in Contenitore
+    imposta lo stile di Componente a
     	`position:absolute;left:1em;top:1em;cursor:default`
-	set the content of Component to `This is draggable text`
-    
-    on pick Component
-    begin
-		put the pick position into PickPos
-        put the offset left of Component into OffsetX
-        put the offset top of Component into OffsetY
-    end
-    
-    on drag
-    begin
-		put the drag position into DragPos
-        put property `x` of DragPos into X
-        put property `y` of DragPos into Y
-        take property `x` of PickPos from X
-        take property `y` of PickPos from Y
-        add OffsetX to X
-        add OffsetY to Y
-        set style `left` of Component to X cat `px`
-        set style `top` of Component to Y cat `px`
-    end
-    
-    stop
+	imposta il contenuto di Componente a `Questo testo è trascinabile`
+
+    su scegli Componente
+    inizio
+		metti la scegli posizione in PosPresa
+        metti lo offset sinistra di Componente in OffsetX
+        metti lo offset alto di Componente in OffsetY
+    fine
+
+    su trascina
+    inizio
+		metti la trascina posizione in PosTrascinamento
+        metti proprieta `x` di PosTrascinamento in X
+        metti proprieta `y` di PosTrascinamento in Y
+        togli proprieta `x` di PosPresa da X
+        togli proprieta `y` di PosPresa da Y
+        aggiungi OffsetX a X
+        aggiungi OffsetY a Y
+        imposta stile `left` di Componente a X cat `px`
+        imposta stile `top` di Componente a Y cat `px`
+    fine
+
+    ferma

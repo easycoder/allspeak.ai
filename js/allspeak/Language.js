@@ -13,6 +13,7 @@ const AllSpeak_Language = {
 	init: function(packData) {
 		this.pack = packData;
 		this._buildKeywordIndex();
+		this._reverseWords = null;
 	},
 
 	// Build reverse lookup: from each opcode's keyword, map back to opcode + domain

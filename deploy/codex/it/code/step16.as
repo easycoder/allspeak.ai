@@ -1,45 +1,47 @@
-!   Map MapDemo
+!   Mappa
 
-    script MapDemo
+    language italiano
 
-    div Panel
-    div Controls
-    div MapPanel
+    script DemoMappa
+
+    div Pannello
+    div Controlli
+    div PannelloMappa
     span Span
-    gmap Map
-    variable Key
-    variable Latitude
-    variable Longitude
-    variable Zoom
+    gmap Mappa
+    variabile Chiave
+    variabile Latitudine
+    variabile Longitudine
+    variabile Zoom
 
-    rest get Key from `/config/gmap-key.txt`
-    or begin
-        alert `Unable to load Google Maps API key.`
-        stop
-    end
+    rest ottieni Chiave da `/config/gmap-key.txt`
+    oppure inizio
+        avviso `Impossibile caricare la chiave API di Google Maps.`
+        ferma
+    fine
 
-    put `53.8291119` into Latitude
-    put `-1.5381586` into Longitude
-    put `17.0` into Zoom
+    metti `53.8291119` in Latitudine
+    metti `-1.5381586` in Longitudine
+    metti `17.0` in Zoom
 
-    create Panel
-    set the style of Panel to
+    crea Pannello
+    imposta lo stile di Pannello a
     	`width:100%;height:100%;display:flex;flex-direction:column`
 
-    create Controls in Panel
-    set the style of Controls to `height:3em;padding:4px`
-    create Span in Controls
-    set the style of Span to `font-size:120%`
-    set the content of Span to `Festival locations map`
+    crea Controlli in Pannello
+    imposta lo stile di Controlli a `height:3em;padding:4px`
+    crea Span in Controlli
+    imposta lo stile di Span a `font-size:120%`
+    imposta il contenuto di Span a `Mappa dei luoghi del festival`
 
-    create MapPanel in Panel
-    set the style of MapPanel to `width:100%;flex:1`
+    crea PannelloMappa in Pannello
+    imposta lo stile di PannelloMappa a `width:100%;flex:1`
 
-    create Map in  MapPanel
-    set the key of Map to Key
-    set the latitude of Map to Latitude
-    set the longitude of Map to Longitude
-    set the zoom of Map to Zoom
-    show Map
+    crea Mappa in PannelloMappa
+    imposta la chiave di Mappa a Chiave
+    imposta la latitudine di Mappa a Latitudine
+    imposta la longitudine di Mappa a Longitudine
+    imposta lo zoom di Mappa a Zoom
+    mostra Mappa
 
-    stop
+    ferma
