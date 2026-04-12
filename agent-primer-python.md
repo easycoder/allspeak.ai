@@ -18,7 +18,7 @@ Establish a safe, milestone-first workflow for Python AllSpeak scripts, with str
 Install and run:
 
 ```bash
-pip install -U allspeak
+pip install -U allspeak-ai
 ```
 
 Run script:

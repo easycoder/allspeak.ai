@@ -14,7 +14,7 @@ The files here make up the AllSpeak starter pack, distributed as `code.zip`.
 ## Installation
 
 1. Download [code.zip](https://allspeak.ai/code.zip) and unzip it into your project directory.
-2. Install AllSpeak: `pip install -U allspeak`
+2. Install AllSpeak: `pip install -U allspeak-ai`
 3. Start the server: `allspeak allspeak.as 8080` (or any free port).
 4. Open your project at `http://localhost:8080/<project>.html`.
 5. Open the editor at `http://localhost:8080/edit.html`.

@@ -34,7 +34,7 @@ Ecco cosa devi fare:
 
 1. Crea una cartella vuota per il tuo progetto.
 2. Scarica [allspeak-it.zip](https://allspeak.ai/allspeak-it.zip) e decomprimilo in quella cartella.
-3. Installa AllSpeak: `pip install -U allspeak`
+3. Installa AllSpeak: `pip install -U allspeak-ai`
 4. Installa Claude Code (vedi [claude.ai/code](https://claude.ai/code)).
 5. Apri un terminale in quella cartella e digita `claude`.
 6. Quando Claude si avvia, digita **go**.

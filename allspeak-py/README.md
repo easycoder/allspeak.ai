@@ -15,7 +15,7 @@ Website: [https://allspeak.ai](https://allspeak.ai)
 ## Quick Start
 Install **_AllSpeak_** in your Python environment:
 ```
-pip install requests allspeak
+pip install requests allspeak-ai
 ```
 
 Test the install by typing the command `allspeak`.

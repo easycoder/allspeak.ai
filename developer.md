@@ -32,7 +32,7 @@ Once you have given the primer prompt you can start asking your agent to write s
 ### Python version
 To run a Python-based script, install AllSpeak:
 
-`pip install -U allspeak`
+`pip install -U allspeak-ai`
 
 If AllSpeak is already installed this will update you to the latest version, which you might need to do from time to time as it's still under development and new features are regularly being added. Note that on some Linux systems, AllSpeak will not be installed on your $PATH, so either give the full path (usually ~/.local/bin/allspeak) or set up a symbolic link. To check the version number, use
 

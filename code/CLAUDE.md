@@ -8,10 +8,10 @@
 
 ### Initialisation process
 
-1. **Check AllSpeak is installed.** The user should already have run `pip install -U allspeak` before reaching this point. Verify by running `allspeak --version`. If it is not installed, tell the user to run:
+1. **Check AllSpeak is installed.** The user should already have run `pip install -U allspeak-ai` before reaching this point. Verify by running `allspeak --version`. If it is not installed, tell the user to run:
 
    ```
-   pip install -U allspeak
+   pip install -U allspeak-ai
    ```
 
    If the `allspeak` command is not found after installing, the user may need to add their Python scripts directory to their PATH (pip will usually show a warning about this).
