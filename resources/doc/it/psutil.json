@@ -1,0 +1,1 @@
+{"commands": {"PSUTIL": {"syntax": "", "description": "Modulo Python per utilita di processo (monitoraggio della memoria)", "examples": "", "versions": ["python"]}}, "values": {"memoria": {"syntax": "la memoria", "description": "L'utilizzo di memoria del processo corrente in megabyte", "examples": "metti la memoria in UsoMem", "versions": ["python"]}}, "conditions": {}, "": ""}
