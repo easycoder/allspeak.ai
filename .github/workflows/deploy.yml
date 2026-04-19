@@ -1,0 +1,43 @@
+name: Deploy to allspeak.ai
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install system packages
+        run: sudo apt-get update && sudo apt-get install -y zip rsync
+
+      - name: Build
+        run: ./build-allspeak
+
+      - name: Prepare deploy/ directory
+        run: |
+          rsync -a --delete dist/ deploy/dist/
+          cp code/asedit.as code/asedit.json code/allspeak.as code/edit.html code/code-version deploy/code/
+          bash code/zip.sh
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy via rsync
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            deploy/ \
+            allspeak@allspeak.ai:allspeak.ai/

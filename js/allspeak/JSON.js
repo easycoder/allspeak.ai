@@ -566,6 +566,7 @@ const AllSpeak_JSON = {
 				compiler.next();
 			}
 			if (compiler.isWord(`json`)) {
+				const startIdx = compiler.getIndex();
 				const type = AllSpeak_Language.reverseWord(compiler.nextToken());
 				if ([`size`, `count`].includes(type)) {
 					compiler.skipWord(`of`);
@@ -614,6 +615,18 @@ const AllSpeak_JSON = {
 						}
 					}
 				}
+				// Fallback: `json <value>` — pass-through wrapper that lets the
+				// caller use a JSON literal/variable where a value is expected.
+				compiler.rewindTo(startIdx + 1);
+				const inner = compiler.getValue();
+				if (inner) {
+					return {
+						domain: `json`,
+						type: `value`,
+						value: inner
+					};
+				}
+				compiler.rewindTo(startIdx);
 			}
 			return null;
 		},
@@ -623,6 +636,8 @@ const AllSpeak_JSON = {
 			let data;
 			let content;
 			switch (value.type) {
+			case `value`:
+				return AllSpeak_Value.doValue(program, value.value);
 			case `size`:
 			case `count`:
 				symbolRecord = program.getSymbolRecord(value.name);

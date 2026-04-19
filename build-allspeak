@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "Copy the various files"
-cd ~/dev/allspeak
+cd "$(dirname "$0")"
 rm -rf dist/*
 mkdir dist/plugins
 mkdir -p dist/vendor/showdown

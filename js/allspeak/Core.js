@@ -3495,7 +3495,7 @@ const AllSpeak_Core = {
 					} else {
 						content = ``;
 						propertyContent = ``+propertyContent;
-						if (propertyContent != `` && [`{`, `]`].includes(propertyContent.charAt(0))) {
+						if (propertyContent != `` && [`{`, `[`].includes(propertyContent.charAt(0))) {
 							try {
 								content = JSON.parse(propertyContent);
 								content = content[property];
