@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AllSpeak — Deutsch</title>
+  <script type='text/javascript' src='../dist/allspeak.js'></script>
+</head>
+<body>
+  <pre id="allspeak-script" style="display:none">
+    script Loader
+
+    variable Content
+    variable Lang
+
+    put `de` into Lang
+    rest get Content from `../shared/home.as?v=` cat now
+    run Content with Lang
+  </pre>
+</body>
+</html>

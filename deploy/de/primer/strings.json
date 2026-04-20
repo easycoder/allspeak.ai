@@ -1,0 +1,9 @@
+{
+  "lang": "de",
+  "title": "AllSpeak Einführung",
+  "manualLoaded": "KI-Handbuch geladen. Wählen Sie ein Kapitel.",
+  "manualLoading": "KI-Handbuch wird geladen...",
+  "manualFailed": "KI-Handbuch konnte nicht geladen werden.",
+  "chapterFailed": "Kapitel konnte nicht geladen werden: ",
+  "viewing": "Anzeige: "
+}
