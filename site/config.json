@@ -10,6 +10,11 @@
       "label": "Italiano",
       "flag": "it",
       "status": "public"
+    },
+    "fr": {
+      "label": "Français",
+      "flag": "fr",
+      "status": "dev"
     }
   }
 }
