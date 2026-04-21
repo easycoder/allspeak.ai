@@ -1,0 +1,173 @@
+{
+	"step0": {
+    	"index":1,
+        "file":"step0",
+        "title":"Coder peut être amusant !",
+        "next":"step1"
+    },
+	"step1": {
+    	"index":2,
+        "file":"step1",
+        "title":"Première étape : Bonjour, tout le monde !",
+        "prev":"step0",
+        "next":"step2"
+    },
+	"step2": {
+    	"index":3,
+        "file":"step2",
+        "title":"Arithmétique de base",
+        "prev":"step1",
+        "next":"step3"
+    },
+	"step3": {
+    	"index":4,
+        "file":"step3",
+        "title":"Manipulation des chaînes",
+        "prev":"step2",
+        "next":"step4"
+    },
+	"step4": {
+    	"index":5,
+        "file":"step4",
+        "title":"Introduction au DOM",
+        "prev":"step3",
+        "next":"step5"
+    },
+	"step5": {
+    	"index":6,
+        "file":"step5",
+        "title":"Style et CSS",
+        "prev":"step4",
+        "next":"step6"
+    },
+	"step6": {
+    	"index":7,
+        "file":"step6",
+        "title":"Ajouter des images",
+        "prev":"step5",
+        "next":"step7"
+    },
+	"step7": {
+    	"index":8,
+        "file":"step7",
+        "title":"Animation simple",
+        "prev":"step6",
+        "next":"step8"
+    },
+	"step8": {
+    	"index":9,
+        "file":"step8",
+        "title":"Un rectangle rebondissant",
+        "prev":"step7",
+        "next":"step9"
+    },
+	"step9": {
+    	"index":10,
+        "file":"step9",
+        "title":"La Ola mexicaine",
+        "prev":"step8",
+        "next":"step10"
+    },
+	"step10": {
+    	"index":11,
+        "file":"step10",
+        "title":"Le traceur",
+        "prev":"step9",
+        "next":"step11"
+    },
+	"step11": {
+    	"index":12,
+        "file":"step11",
+        "title":"Interactivité",
+        "prev":"step10",
+        "next":"step12"
+    },
+	"step12": {
+    	"index":13,
+        "file":"step12",
+        "title":"Morpion",
+        "prev":"step11",
+        "next":"step13"
+    },
+	"step13": {
+    	"index":14,
+        "file":"step13",
+        "title":"Manipuler les listes",
+        "prev":"step12",
+        "next":"step14"
+    },
+	"step14": {
+    	"index":15,
+        "file":"step14",
+        "title":"Tri avancé",
+        "prev":"step13",
+        "next":"step15"
+    },
+	"step15": {
+    	"index":16,
+        "file":"step15",
+        "title":"Filtrer les listes",
+        "prev":"step14",
+        "next":"step16"
+    },
+	"step16": {
+    	"index":17,
+        "file":"step16",
+        "title":"Utiliser Google Maps",
+        "prev":"step15",
+        "next":"step17"
+    },
+	"step17": {
+    	"index":18,
+        "file":"step17",
+        "title":"Saisir, glisser et déposer",
+        "prev":"step16",
+        "next":"step18"
+    },
+	"step18": {
+    	"index":19,
+        "file":"step18",
+        "title":"Solitaire",
+        "prev":"step17",
+        "next":"step19"
+    },
+	"step19": {
+    	"index":20,
+        "file":"step19",
+        "title":"Panoramique et zoom",
+        "prev":"step18",
+        "next":"step20"
+    },
+	"step20": {
+    	"index":21,
+        "file":"step20",
+        "title":"L'effet Ken Burns",
+        "prev":"step19"
+    },
+	"gap": {
+    	"index":50,
+        "title":"gap"
+    },
+	"home": {
+        "file":"home",
+        "title":"Accueil"
+    },
+	"background": {
+    	"index":51,
+        "file":"background",
+        "title":"Contexte"
+    },
+	"tools": {
+    	"index":53,
+        "file":"tools",
+        "title":"Outils"
+    },
+	"contact": {
+    	"index":54,
+        "file":"contact",
+        "title":"Contact"
+    },
+	"contents": {
+        "title":"Sommaire"
+    }
+}

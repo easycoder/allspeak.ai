@@ -1,0 +1,173 @@
+{
+	"step0": {
+    	"index":1,
+        "file":"step0",
+        "title":"Programmieren kann Spaß machen!",
+        "next":"step1"
+    },
+	"step1": {
+    	"index":2,
+        "file":"step1",
+        "title":"Erster Schritt: Hallo, Welt!",
+        "prev":"step0",
+        "next":"step2"
+    },
+	"step2": {
+    	"index":3,
+        "file":"step2",
+        "title":"Grundlegende Arithmetik",
+        "prev":"step1",
+        "next":"step3"
+    },
+	"step3": {
+    	"index":4,
+        "file":"step3",
+        "title":"Zeichenkettenverarbeitung",
+        "prev":"step2",
+        "next":"step4"
+    },
+	"step4": {
+    	"index":5,
+        "file":"step4",
+        "title":"Einführung in das DOM",
+        "prev":"step3",
+        "next":"step5"
+    },
+	"step5": {
+    	"index":6,
+        "file":"step5",
+        "title":"Stil und CSS",
+        "prev":"step4",
+        "next":"step6"
+    },
+	"step6": {
+    	"index":7,
+        "file":"step6",
+        "title":"Bilder hinzufügen",
+        "prev":"step5",
+        "next":"step7"
+    },
+	"step7": {
+    	"index":8,
+        "file":"step7",
+        "title":"Einfache Animation",
+        "prev":"step6",
+        "next":"step8"
+    },
+	"step8": {
+    	"index":9,
+        "file":"step8",
+        "title":"Ein springendes Rechteck",
+        "prev":"step7",
+        "next":"step9"
+    },
+	"step9": {
+    	"index":10,
+        "file":"step9",
+        "title":"Die Mexikanische Welle",
+        "prev":"step8",
+        "next":"step10"
+    },
+	"step10": {
+    	"index":11,
+        "file":"step10",
+        "title":"Der Tracer",
+        "prev":"step9",
+        "next":"step11"
+    },
+	"step11": {
+    	"index":12,
+        "file":"step11",
+        "title":"Interaktivität",
+        "prev":"step10",
+        "next":"step12"
+    },
+	"step12": {
+    	"index":13,
+        "file":"step12",
+        "title":"TicTacToe",
+        "prev":"step11",
+        "next":"step13"
+    },
+	"step13": {
+    	"index":14,
+        "file":"step13",
+        "title":"Listen verarbeiten",
+        "prev":"step12",
+        "next":"step14"
+    },
+	"step14": {
+    	"index":15,
+        "file":"step14",
+        "title":"Fortgeschrittenes Sortieren",
+        "prev":"step13",
+        "next":"step15"
+    },
+	"step15": {
+    	"index":16,
+        "file":"step15",
+        "title":"Listen filtern",
+        "prev":"step14",
+        "next":"step16"
+    },
+	"step16": {
+    	"index":17,
+        "file":"step16",
+        "title":"Google Maps verwenden",
+        "prev":"step15",
+        "next":"step17"
+    },
+	"step17": {
+    	"index":18,
+        "file":"step17",
+        "title":"Auswählen, Ziehen und Ablegen",
+        "prev":"step16",
+        "next":"step18"
+    },
+	"step18": {
+    	"index":19,
+        "file":"step18",
+        "title":"Solitär",
+        "prev":"step17",
+        "next":"step19"
+    },
+	"step19": {
+    	"index":20,
+        "file":"step19",
+        "title":"Schwenken und Zoomen",
+        "prev":"step18",
+        "next":"step20"
+    },
+	"step20": {
+    	"index":21,
+        "file":"step20",
+        "title":"Der Ken-Burns-Effekt",
+        "prev":"step19"
+    },
+	"gap": {
+    	"index":50,
+        "title":"gap"
+    },
+	"home": {
+        "file":"home",
+        "title":"Startseite"
+    },
+	"background": {
+    	"index":51,
+        "file":"background",
+        "title":"Hintergrund"
+    },
+	"tools": {
+    	"index":53,
+        "file":"tools",
+        "title":"Werkzeuge"
+    },
+	"contact": {
+    	"index":54,
+        "file":"contact",
+        "title":"Kontakt"
+    },
+	"contents": {
+        "title":"Inhalt"
+    }
+}
