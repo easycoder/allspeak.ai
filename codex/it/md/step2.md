@@ -29,7 +29,7 @@ Naturalmente, l'aritmetica non è solo addizione. Ci sono anche sottrazione, mol
 take X from Y       take X from Y giving Z
 multiply Y by X     multiply Y by X giving Z
 divide Y by X       divide Y by X giving Z~
-Nota che nella colonna di sinistra, moltiplicazione e divisione funzionano al contrario rispetto ad addizione e sottrazione, con il risultato dell'operazione (Y) come primo elemento, non il secondo. A differenza di praticamente tutti gli altri linguaggi, ~ec~ segue il modo in cui si esprime in inglese, per renderlo più naturale per gli utenti.
+Nota che nella colonna di sinistra, moltiplicazione e divisione funzionano al contrario rispetto ad addizione e sottrazione, con il risultato dell'operazione (Y) come primo elemento, non il secondo. A differenza di praticamente tutti gli altri linguaggi, ~ec~ segue il modo in cui ci si esprime nel linguaggio naturale, per renderlo più intuitivo per gli utenti.
 
 Anche se ho usato solo X e Y, puoi fare aritmetica anche con i numeri:
 
