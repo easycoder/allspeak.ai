@@ -1,14 +1,14 @@
-# String handling #
+# Zeichenketten verarbeiten #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-As well as numbers there are strings. ~ec~ has a useful set of string handling commands that are needed when processing textual data received from the Internet. I'll show you some of the simpler ones, but be aware there are more powerful commands that must be left for a later tutorial.
+Neben Zahlen gibt es auch Zeichenketten. ~ec~ verfügt über eine nützliche Auswahl an Befehlen zur Verarbeitung von Zeichenketten, die nötig sind, wenn Sie Textdaten aus dem Internet verarbeiten. Ich zeige Ihnen einige der einfacheren, beachten Sie aber, dass es noch leistungsfähigere Befehle gibt, die für ein späteres Tutorial aufgehoben werden müssen.
 
-Copy this code to the editor:
+Kopieren Sie diesen Code in den Editor:
 
 ~step~
 ~copy~
 
-In the **Values** section of the **Core** package in our Programmers Reference (click the book icon at the top of this panel) you'll find a number of other functions that deal with strings. Try experimenting with a few of them.
+Im Abschnitt **Values** des Pakets **Core** in unserem Programmierer-Referenzhandbuch (klicken Sie auf das Buchsymbol oben in diesem Bereich) finden Sie zahlreiche weitere Funktionen, die Zeichenketten verarbeiten. Probieren Sie ruhig ein paar davon aus.
 
-~next:Introducing the DOM~
+~next:Einführung in das DOM~

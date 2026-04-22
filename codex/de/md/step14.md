@@ -1,26 +1,26 @@
-# Advanced sorting #
+# Fortgeschrittenes Sortieren #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-The previous example was simple, but sometimes the elements of a list comprise a number of values. For a shopping list you might have the price, the stock ID and so on. Here we'll modify our list to add prices, then sort by price as well as alphabetically.
+Das vorherige Beispiel war einfach, aber manchmal bestehen die Elemente einer Liste aus mehreren Werten. Bei einer Einkaufsliste könnten Sie beispielsweise den Preis, die Artikelnummer und so weiter haben. Hier ändern wir unsere Liste, um Preise hinzuzufügen, und sortieren dann sowohl nach Preis als auch alphabetisch.
 
 ~copy~
 
-The list now has the same items, but each one contains 2 values; the name of the item and its price (in pence, cents or whatever; AllSpeak doesn't handle floating-point values). At the start of the previous step I mentioned that the JSON format can handle things other than lists; here we have a property map; a set of values each having a key to say what it is - here name or price - and the value itself. Each of the items is separately added to a list, so the overall structure is a list of items each having 2 properties.
+Die Liste enthält jetzt dieselben Artikel, aber jeder enthält 2 Werte: den Namen des Artikels und seinen Preis (in Cent, Pence oder einer anderen Einheit; AllSpeak verarbeitet keine Gleitkommazahlen). Zu Beginn des vorherigen Schritts habe ich erwähnt, dass das JSON-Format auch andere Dinge als Listen verarbeiten kann; hier haben wir eine Eigenschafts-Map: eine Sammlung von Werten, die jeweils einen Schlüssel haben, der angibt, worum es sich handelt — hier name oder price — und den eigentlichen Wert. Jeder der Artikel wird einzeln einer Liste hinzugefügt, sodass die Gesamtstruktur eine Liste von Artikeln ist, die jeweils 2 Eigenschaften haben.
 
-Everything else is the same as the previous example - apart from the comparator function, which now has to dive into the properties to find the price and do the comparison on that. I've renamed the function to make that clear.
+Alles andere ist genauso wie im vorherigen Beispiel — außer der Vergleichsfunktion, die jetzt in die Eigenschaften hineingreifen muss, um den Preis zu finden und den Vergleich darauf durchzuführen. Ich habe die Funktion umbenannt, um das deutlich zu machen.
 
-As before there's a small gotcha for you, in that milk and sugar have the same price but sugar displays first because it comes first in the list. We can make these 2 items appear in alphabetic order by changing line 98 to
+Wie zuvor gibt es eine kleine Tücke: Milch und Zucker haben denselben Preis, aber Zucker erscheint zuerst, weil er in der Liste zuerst steht. Wir können erreichen, dass diese 2 Artikel in alphabetischer Reihenfolge erscheinen, indem wir Zeile 98 ändern in
 
-~pre:else
-begin
-    if property `name` of A is greater than property `name` of B
-        put 1 into Result
-    else if property `name` of A is less than property `name` of B
-        put -1 into Result
-    else put 0 into Result
-end~
+~pre:sonst
+beginn
+    wenn eigenschaft `name` von A ist größer als eigenschaft `name` von B
+        lege 1 in Ergebnis
+    sonst wenn eigenschaft `name` von A ist kleiner als eigenschaft `name` von B
+        lege -1 in Ergebnis
+    sonst lege 0 in Ergebnis
+ende~
 
-The next page will show you how to extract just some of the elements of a list.
+Die nächste Seite zeigt Ihnen, wie Sie nur einige der Elemente einer Liste extrahieren.
 
-~next:Filtering lists~
+~next:Listen filtern~

@@ -1,25 +1,24 @@
-# Pan and Zoom #
+# Schwenken und Zoomen #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
+Wenn Fernsehsendungen eine Serie von Bildern zeigen, wenden sie häufig etwas an, das man den „Ken-Burns-Effekt" nennt (benannt nach dem amerikanischen Dokumentarfilmer, der diese Technik bekannt gemacht hat). Dabei wird jedes Bild langsam geschwenkt und/oder gezoomt, bevor es in das nächste übergeblendet wird, wodurch ein Gefühl von Bewegung entsteht. Der Effekt wurde ausgiebig von dem amerikanischen Dokumentarfilmer verwendet, nach dem er benannt ist.
 
-When TV programmes show a series of images they often apply something called the "Ken Burns" Effect (named after the American documentary maker who pioneered the technique). This causes each image to slowly pan and/or zoom before dissolving into the next, giving a sense of movement. The effect was extensively used by the American documentarian after whom it was named.
+In diesem Tutorial-Schritt behandeln wir nur das Schwenken und Zoomen; die Überblendung kann bis später warten.
 
-In this tutorial step we'll just deal with the pan and zoom; the dissolve can wait till later.
-
-Most of the work in the animation is done by an ~ec~ `vfx` plugin module. All the script has to do is set things up and then run it.
+Der Großteil der Arbeit in der Animation wird von einem ~ec~-`vfx`-Plugin-Modul erledigt. Alles, was das Skript tun muss, ist, die Dinge einzurichten und dann auszuführen.
 
 ~copy~
 
-The code here is designed to work with any size of image container, so all dimensions are calculated as a percentage of the parent element. The data for the animation is all held in a variable called ~code:Spec~, with 2 blocks of data for the start and finish of the animation. The key items are the ~code:left~, ~code:top~ and ~code:width~ values. ~code:width~ is the percentage of the entire image that will be shown for the start or the finish of the animation. ~code:left~ is the percentage that will "hang off" to the left of the display area and ~code:top~ to the corresponding amount that will hang off the top. Since the height of the image always tracks its width, keeping the aspect ratio the same, that's all we need. The data pack also includes the URL of the image, the number of steps involved and which step should cause the script to do something special, in this case to stop the animation.
+Der Code hier ist so konzipiert, dass er mit jeder Größe eines Bildcontainers funktioniert, sodass alle Abmessungen als Prozentsatz des übergeordneten Elements berechnet werden. Die Daten für die Animation sind alle in einer Variable namens ~code:Spec~ gespeichert, mit 2 Datenblöcken für Anfang und Ende der Animation. Die zentralen Elemente sind die Werte ~code:left~, ~code:top~ und ~code:width~. ~code:width~ ist der Prozentsatz des gesamten Bildes, der am Anfang oder am Ende der Animation gezeigt wird. ~code:left~ ist der Prozentsatz, der links vom Anzeigebereich „hervorragt", und ~code:top~ der entsprechende Betrag, der oben hervorragt. Da die Höhe des Bildes immer seiner Breite folgt und das Seitenverhältnis gleich bleibt, ist das alles, was wir brauchen. Das Datenpaket enthält außerdem die URL des Bildes, die Anzahl der beteiligten Schritte und welcher Schritt das Skript dazu veranlassen soll, etwas Besonderes zu tun, in diesem Fall die Animation zu stoppen.
 
-All we have to do now is send regular requests to step the animation. This is done by the script rather than the plugin as it enables us to keep control over the process.
+Alles, was wir jetzt noch tun müssen, ist, regelmäßige Anforderungen zu senden, um die Animation schrittweise voranzutreiben. Dies wird vom Skript und nicht vom Plugin erledigt, damit wir die Kontrolle über den Prozess behalten können.
 
-If you create more than one animation but put them all into the same variable as an array, the ~code:step~ command will run all of them, though the only ones that actually do anything will be those whose step counter hasn't yet reached its number of steps. You can restart an animation at any time by using
+Wenn Sie mehr als eine Animation erstellen, diese aber alle in derselben Variable als Array ablegen, führt der ~code:step~-Befehl alle aus, wobei die einzigen, die tatsächlich etwas tun, diejenigen sind, deren Schrittzähler noch nicht die Anzahl der vorgesehenen Schritte erreicht hat. Sie können eine Animation jederzeit neu starten, indem Sie verwenden
 
 ```
-    index Anim to N
-    start Anim
+    indexiere Anim zu N
+    starte Anim
 ```
 
-~next:The Ken Burns Effect~
+~next:Der Ken-Burns-Effekt~

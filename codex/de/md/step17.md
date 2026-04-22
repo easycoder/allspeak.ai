@@ -1,21 +1,21 @@
-# Pick, Drag and Drop #
+# Auswählen, Ziehen und Ablegen #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-Interactive graphical interfaces frequently offer the user the ability to move items around the screen, as an alternative to copy and paste. Under the hood the implementation can be rather complex as there are usually many things to consider; things that are specific to the particular application.
+Interaktive grafische Oberflächen bieten dem Benutzer häufig die Möglichkeit, Elemente auf dem Bildschirm zu verschieben, als Alternative zum Kopieren und Einfügen. Hinter den Kulissen kann die Implementierung recht komplex sein, da in der Regel viele Dinge zu berücksichtigen sind, die spezifisch für die jeweilige Anwendung sind.
 
-In ~ec~ the basic drag-drop feature provides a solid foundation for you to build much more complex functionality on top. The example we present here is about as simple as it can be; on the next page is a more complex example.
+In ~ec~ bildet die grundlegende Drag-and-Drop-Funktion eine solide Basis, auf der Sie viel komplexere Funktionalitäten aufbauen können. Das Beispiel, das wir hier zeigen, ist ungefähr so einfach, wie es nur sein kann; auf der nächsten Seite folgt ein komplexeres Beispiel.
 
 ~copy~
 
-The script builds a simple screen containing a single component that can be picked up and moved around. The component can be almost any element; the only thing that needs special attention is text, which usually displays an i-beam cursor as the pointer moves over it. In this example the cursor is forced to the default arrow.
+Das Skript baut einen einfachen Bildschirm auf, der eine einzelne Komponente enthält, die aufgenommen und bewegt werden kann. Die Komponente kann fast jedes Element sein; das Einzige, was besondere Aufmerksamkeit erfordert, ist Text, der normalerweise einen I-Balken-Cursor anzeigt, wenn der Zeiger darüber fährt. In diesem Beispiel wird der Cursor auf den standardmäßigen Pfeil gezwungen.
 
-The script has 2 elements and a handful of variables. The Container element exists only to take the CSS style ~code:position:relative~, which allows elements inside it to have absolute positioning. (It's not very intuitive but that's the way it works.) The ~code:Component~ is the thing we're going to drag around; it's just a string of text.
+Das Skript hat 2 Elemente und eine Handvoll Variablen. Das Container-Element existiert nur, um den CSS-Stil ~code:position:relative~ aufzunehmen, der es Elementen darin erlaubt, absolute Positionierung zu verwenden. (Es ist nicht sehr intuitiv, aber so funktioniert es.) Die ~code:Component~ ist das Objekt, das wir umherziehen werden; es ist einfach eine Textzeichenkette.
 
-The script is interested in 2 events; one when the user clicks inside the component, the other when the element is then dragged. For the first of these we need to know where the "pick" occurred relative to the top left of the window. It also needs to know where the component currently is located relative to its parent (so we can change that value).
+Das Skript interessiert sich für 2 Ereignisse: eines, wenn der Benutzer in die Komponente klickt, und das andere, wenn das Element anschließend gezogen wird. Für das erste müssen wir wissen, wo die „Auswahl" relativ zur oberen linken Ecke des Fensters erfolgte. Außerdem muss es wissen, wo sich die Komponente derzeit relativ zu ihrem Eltern­element befindet (damit wir diesen Wert ändern können).
 
-When a drag event occurs the script gets the location of the pointer (or the finger on a mobile screen) and computes how much it has moved from the "pick" position. It adds to this the previous position of the component in its container and the result is used to set a new position.
+Wenn ein Zieh-Ereignis auftritt, ermittelt das Skript die Position des Zeigers (oder des Fingers auf einem mobilen Bildschirm) und berechnet, wie weit er sich von der „Auswahl"-Position entfernt hat. Dazu addiert es die vorherige Position der Komponente in ihrem Container, und das Ergebnis wird verwendet, um eine neue Position zu setzen.
 
-The system also lets you specify what happens when the component is released. Here we use the default action, which is simply to stop dragging the component.
+Das System erlaubt Ihnen auch anzugeben, was passiert, wenn die Komponente losgelassen wird. Hier verwenden wir die Standardaktion, die einfach darin besteht, das Ziehen der Komponente zu beenden.
 
-~next:Solitaire~
+~next:Solitär~

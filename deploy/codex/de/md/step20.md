@@ -1,22 +1,21 @@
-# The Ken Burns Effect #
+# Der Ken-Burns-Effekt #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-
-In this tutorial step we'll complete the Ken Burns Effect by adding some more images and a dissolve between them. Each of the images will animate according to its own set of rules so the overall effect is one of continuous movement. On TV this gives an impression of watching a video rather than a slide show, which is why the effect is so popular.
+In diesem Tutorial-Schritt vervollständigen wir den Ken-Burns-Effekt, indem wir weitere Bilder und eine Überblendung zwischen ihnen hinzufügen. Jedes der Bilder wird nach seinem eigenen Regelsatz animiert, sodass der Gesamteindruck einer ununterbrochenen Bewegung entsteht. Im Fernsehen vermittelt das den Eindruck, ein Video anzuschauen statt einer Diashow, und deshalb ist der Effekt so beliebt.
 
 ~copy~
 
-Most of the code is the specifications for each of 9 images. (The images are all of arbitrary scenes in northern Italy). The code does much the same as for the pan/zoom example except that it repeats itself in a loop, once for each of the images. This is all handled by making ~code:Anim~ and ~code:Spec~ arrays of 9 elements each.
+Der größte Teil des Codes besteht aus den Spezifikationen für jedes der 9 Bilder. (Die Bilder zeigen alle zufällige Szenen in Norditalien.) Der Code macht im Grunde dasselbe wie beim Schwenk-/Zoom-Beispiel, nur dass er sich in einer Schleife wiederholt, einmal für jedes Bild. All das wird dadurch gehandhabt, dass ~code:Anim~ und ~code:Spec~ jeweils Felder mit 9 Elementen sind.
 
-The key to the effect is in the transitions. At the top we define the style that will cause an image to fade in or out from one level of opacity to another. The code arranges for the current image to fade out while the next image fades in, creating a dissolve. We set a trigger on each image to be one second before the end of its zoom/pan so the dissolve happens at the end of one image and the start of the next. The zoom/pan for the 2 images run concurrently and the images are set up as a circular list so the effect runs forever.
+Der Schlüssel zum Effekt liegt in den Übergängen. Oben definieren wir den Stil, der ein Bild von einer Deckkraftstufe zur anderen ein- oder ausblenden lässt. Der Code sorgt dafür, dass das aktuelle Bild ausgeblendet wird, während das nächste Bild eingeblendet wird, und erzeugt so eine Überblendung. Wir setzen auf jedem Bild einen Auslöser auf eine Sekunde vor dem Ende seines Zooms/Schwenks, damit die Überblendung am Ende eines Bildes und am Anfang des nächsten stattfindet. Die Zooms/Schwenks der 2 Bilder laufen gleichzeitig, und die Bilder sind als zirkuläre Liste angeordnet, sodass der Effekt unendlich weiterläuft.
 
 ---
 
-## That's a wrap!
+## Das war's!
 
-Congratulations — you've completed the ~ec~ Codex tutorial. Along the way you've covered variables, arithmetic, string handling, the DOM, styling, images, animation, user interaction, games, lists, sorting, filtering, Google Maps, drag and drop, and visual effects. That's a solid foundation for building real websites.
+Herzlichen Glückwunsch — Sie haben das ~ec~-Codex-Tutorial abgeschlossen. Auf dem Weg haben Sie Variablen, Arithmetik, die Verarbeitung von Zeichenketten, das DOM, Styling, Bilder, Animation, Nutzerinteraktion, Spiele, Listen, Sortieren, Filtern, Google Maps, Drag-and-Drop und visuelle Effekte behandelt. Das ist ein solides Fundament für den Bau echter Websites.
 
-Everything you've learned here transfers directly to building complete web applications. The ~link:background:Background~ page has more about the philosophy behind ~ec~, and the Programmer's Reference (click the book icon above) is your go-to for looking up any command.
+Alles, was Sie hier gelernt haben, lässt sich direkt auf den Bau vollständiger Webanwendungen übertragen. Die Seite ~link:background:Hintergrundinformationen~ bietet mehr über die Philosophie hinter ~ec~, und das Programmierer-Referenzhandbuch (klicken Sie auf das Buchsymbol oben) ist Ihre Anlaufstelle, um einen beliebigen Befehl nachzuschlagen.
 
-Happy coding!
+Viel Freude beim Programmieren!

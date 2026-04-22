@@ -1,51 +1,51 @@
-# Basic arithmetic #
+# Grundrechenarten #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-~ec~ is designed for the web; to build apps that do stuff in a browser. The world of the browser is primarily visual, with lots of images and text, but there's always a need for some basic arithmetic so we'll write a couple of scripts that illustrate what's available.
+~ec~ ist für das Web entworfen: um Anwendungen zu bauen, die im Browser Dinge tun. Die Browser-Welt ist in erster Linie visuell geprägt, mit vielen Bildern und Texten, aber ein bisschen Grundrechnen wird immer gebraucht, also schreiben wir ein paar Skripte, die zeigen, was es gibt.
 
-In most computer languages, if you want to add numbers together it will look like your school algebra:
+In den meisten Programmiersprachen sieht es aus wie die Algebra aus der Schule, wenn Sie Zahlen addieren möchten:
 
 ~pre:Z = X + Y~
 
-but that's not how you'd express it in written or spoken English. Instead, you might say
+aber so würden Sie es im Deutschen weder sagen noch schreiben. Eher würden Sie etwas sagen wie
 
-~pre:add X to Y giving Z~
+~pre:addiere X zu Y ergibt Z~
 
-where ~code:giving~ is a shorthand for "and put the result into".
+wobei ~code:ergibt~ eine Kurzform für „und lege das Ergebnis in" ist.
 
-As it happens, this is exactly how ~ec~ does it too. Here you are adding the values X and Y together and putting the result into a variable called Z.
+Wie es sich trifft, macht ~ec~ es genau so. Hier addieren Sie die Werte X und Y und legen das Ergebnis in eine Variable namens Z.
 
-The words ~code:value~ and ~code:variable~ have specific meanings. A ~code:value~ is anything you can measure or count, such as cars or pennies or days. ~ec~ doesn't care what they are; it just knows you have an X pile and a Y pile of them and want to add them together into a Z pile.
+Die Wörter ~code:Wert~ und ~code:Variable~ haben bestimmte Bedeutungen. Ein ~code:Wert~ ist alles, was Sie messen oder zählen können, zum Beispiel Autos, Cent oder Tage. ~ec~ ist es gleich, was das ist; es weiß nur, dass Sie einen X-Haufen und einen Y-Haufen haben und diese zu einem Z-Haufen zusammenzählen möchten.
 
-A ~code:variable~ is a little more specific; it's a container where something is stored. Your wallet or purse contains money having a certain value, so the purse also has that value. A dollar or a pound, on the other hand, have specific values but they can't contain other things so they can't be variables. All this means is that in the sum above, X and Y can be either values or variables (containing values), but Z can't be a simple value; it must be a variable because we're putting something (the sum of X and Y) into it.
+Eine ~code:Variable~ ist etwas spezifischer; es ist ein Behälter, in dem etwas aufbewahrt wird. Ihre Geldbörse enthält Geld mit einem bestimmten Wert, also hat auch die Geldbörse diesen Wert. Eine Ein-Euro-Münze dagegen hat zwar einen festen Wert, kann aber nichts anderes enthalten, und kann deshalb keine Variable sein. All das bedeutet lediglich, dass in der obigen Summe X und Y entweder Werte oder Variablen (die Werte enthalten) sein können, Z aber kein einfacher Wert sein kann; es muss eine Variable sein, weil wir etwas (die Summe von X und Y) darin ablegen.
 
-A variant of this sum is where you want to add value X to whatever is already in Y. The sum is simpler:
+Eine Variante dieser Summe ist, wenn Sie den Wert X zu dem addieren möchten, was schon in Y steht. Die Rechnung ist einfacher:
 
-~pre:add X to Y~
+~pre:addiere X zu Y~
 
-Again, X can be any value but Y must be a variable.
+Auch hier kann X ein beliebiger Wert sein, Y muss aber eine Variable sein.
 
-Of course, arithmetic is more than just addition. There's also subtraction, multiplication and division too. Here's what they all look like:
+Natürlich ist Arithmetik mehr als nur Addition. Es gibt auch Subtraktion, Multiplikation und Division. So sehen sie alle aus:
 
-~pre:add X to Y          add X to Y giving Z
-take X from Y       take X from Y giving Z
-multiply Y by X     multiply Y by X giving Z
-divide Y by X       divide Y by X giving Z~
-Note that in the left-hand column, multiplication and division work the opposite way round to addition and subtraction, with the result of the sum (Y) being the first item, not the second. Unlike virtually all other computer languages, ~ec~ follows the way it's done in English, to make it more natural for users.
+~pre:addiere X zu Y          addiere X zu Y ergibt Z
+subtrahiere X von Y       subtrahiere X von Y ergibt Z
+multipliziere Y mit X     multipliziere Y mit X ergibt Z
+dividiere Y durch X       dividiere Y durch X ergibt Z~
+Beachten Sie, dass in der linken Spalte Multiplikation und Division umgekehrt zu Addition und Subtraktion funktionieren: Das Ergebnis der Rechnung (Y) ist hier das erste Element, nicht das zweite. Im Gegensatz zu praktisch allen anderen Programmiersprachen folgt ~ec~ der Art, wie es in der natürlichen Sprache ausgedrückt wird, damit es für Anwender intuitiver ist.
 
-Although I've used just X and Y, you can also do arithmetic with numbers:
+Obwohl ich nur X und Y verwendet habe, können Sie auch mit Zahlen rechnen:
 
-~pre:add 4 to X
-take 3 from 13 giving Y~
+~pre:addiere 4 zu X
+subtrahiere 3 von 13 ergibt Y~
 
-and so on. At which point let's start coding. Copy this code to the editor:
+und so weiter. An diesem Punkt fangen wir an zu programmieren. Kopieren Sie diesen Code in den Editor:
 
 ~step~
 ~copy~
 
-In the alert command you'll see the word ~code:cat~ used to 'catenate' 2 strings together. Apart from that I hope it's all easy to follow even if you're completely new to coding.
+Im Alarm-Befehl sehen Sie das Wort ~code:cat~, das zum „Verketten" (engl. „concatenate") zweier Zeichenketten verwendet wird. Davon abgesehen hoffe ich, dass alles leicht zu verstehen ist, selbst wenn Sie gerade erst mit dem Programmieren anfangen.
 
-If at any time you want to find out about a particular command, click the  button at the top of this panel and you'll be switched to the ~ec~ Programmer's Reference manual. You need to select a package - most of the commands we'll be using are in either Core or Browser - and choose Commands, Values or Conditions. There's a drop-down list of all the keywords in that section. Click the **Tutorial** button to return here when you've had enough.
+Wenn Sie sich zu irgendeinem Zeitpunkt über einen bestimmten Befehl informieren möchten, klicken Sie auf die Schaltfläche oben in diesem Bereich, und Sie werden zum Programmierer-Referenzhandbuch von ~ec~ weitergeleitet. Sie müssen ein Paket auswählen — die meisten Befehle, die wir verwenden, sind entweder in Core oder Browser — und dann Commands, Values oder Conditions wählen. Eine Auswahlliste zeigt alle Schlüsselwörter dieses Abschnitts. Klicken Sie auf die Schaltfläche **Tutorial**, um wieder hierher zurückzukehren, wenn Sie fertig sind.
 
-~next:String handling~
+~next:Zeichenketten verarbeiten~

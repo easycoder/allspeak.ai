@@ -1,22 +1,21 @@
-# AllSpeak Tools and Techniques #
+# AllSpeak-Werkzeuge und -Techniken #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
-
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
 ## Plugins ##
-The standard ~ec~ language includes a wide range of general-purpose programming constructs needed by any language; variables, values, conditionals, strings, numbers and so on. Everything else is provided by plugins. Some of these, notably browser features, JSON and REST, are loaded automatically (though this behavior can be changed if necessary) and several more are available as optional plugins. Plugins add commands to the language and must be loaded before any script that makes use of those keywords will compile.
+Die Standardsprache ~ec~ umfasst ein breites Spektrum an allgemeinen Programmierkonstrukten, die jede Sprache benötigt: Variablen, Werte, Bedingungen, Zeichenketten, Zahlen und so weiter. Alles Weitere wird von Plugins bereitgestellt. Einige davon, insbesondere Browser-Funktionen, JSON und REST, werden automatisch geladen (obwohl dieses Verhalten bei Bedarf geändert werden kann), und mehrere weitere stehen als optionale Plugins zur Verfügung. Plugins fügen der Sprache Befehle hinzu und müssen geladen werden, bevor ein Skript, das diese Schlüsselwörter verwendet, kompiliert werden kann.
 
-The mechanism for requesting a plugin is very simple. Suppose you want to include a Google Map in your web page. You will need the ~code:gmap~ plugin, which is loaded like this, where the ~ec~ files are all in a top-level `allspeak` folder:
+Der Mechanismus zum Anfordern eines Plugins ist sehr einfach. Angenommen, Sie möchten eine Google-Karte in Ihre Webseite einbinden. Sie benötigen das Plugin ~code:gmap~, das wie folgt geladen wird, wobei die ~ec~-Dateien sich alle in einem Ordner `allspeak` auf oberster Ebene befinden:
 
 ~pre:require js `allspeak/plugins/gmap.js`~
 
-In this example the plugin is a standard ~ec~ one but you can also load third-party plugins from any URL if you deal with CORS issues.
+In diesem Beispiel handelt es sich um ein Standard-~ec~-Plugin, aber Sie können auch Plugins von Drittanbietern von jeder URL laden, sofern Sie die CORS-Fragen klären.
 
-Once the plugin is loaded it is available to any script that needs it (but not the one that loaded it). Here, any script that includes map commands can be loaded and compiled, as in
+Sobald das Plugin geladen ist, steht es jedem Skript zur Verfügung, das es benötigt (nicht aber demjenigen, das es geladen hat). Hier kann jedes Skript, das Kartenbefehle enthält, geladen und kompiliert werden, etwa so
 
-~pre:rest get Script from `/resources/ecs/myscript.as`
-run Script~
+~pre:rest hole Skript von `/resources/ecs/myscript.as`
+laufe Skript~
 
-(This is the simplest form, that assumes you don't need to communicate with the script once it's running.)
+(Dies ist die einfachste Form, die voraussetzt, dass Sie nicht mit dem Skript kommunizieren müssen, sobald es läuft.)
 
-It should be fairly obvious that when plugins are used in this way the code you want to run must be in a separate script that's loaded and run _after_ the plugin is ready. An alternative to this is to declare the plugin globally at the point ~ec~ starts up. In the top-level allspeak folder is a file called ~code:plugins.js~, which allows you to specify which plugins should be loaded at startup and which will be available to load on demand. This will make the initial page load a little more slowly, but in practice the difference is very small.
+Es sollte ziemlich offensichtlich sein, dass, wenn Plugins auf diese Weise verwendet werden, der Code, den Sie ausführen möchten, in einem separaten Skript stehen muss, das geladen und ausgeführt wird, _nachdem_ das Plugin bereit ist. Eine Alternative dazu ist, das Plugin global an der Stelle zu deklarieren, an der ~ec~ startet. Im obersten allspeak-Ordner befindet sich eine Datei namens ~code:plugins.js~, in der Sie angeben können, welche Plugins beim Start geladen werden sollen und welche bei Bedarf zum Laden verfügbar sein werden. Dadurch wird das anfängliche Laden der Seite etwas langsamer, aber in der Praxis ist der Unterschied sehr gering.

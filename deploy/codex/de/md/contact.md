@@ -1,9 +1,7 @@
-# ~ec~ Contacts #
+# ~ec~-Kontakte #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
+Hier sind einige Möglichkeiten, ~ec~ zu kontaktieren:
 
-Here are some ~ec~ contact options:
-
-1. Email to [info@allspeak.ai](mailto:info@allspeak.ai)
-
+1. E-Mail an [info@allspeak.ai](mailto:info@allspeak.ai)

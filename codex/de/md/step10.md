@@ -1,21 +1,21 @@
-# The tracer #
+# Der Tracer #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-The hardest part about programming is figuring out why things don't work as expected, and for many of us this is much of the time. To help with this, development systems usually have some kind of ability to stop a running program, examine its variables and step through the instructions one by one. Your browser has a very good debugger but all it will tell you is what's happening inside the ~ec~ engine, not what your script is doing. So we added a feature that will do these things. It's a little basic but there are times when it can help a lot.
+Der schwierigste Teil beim Programmieren ist herauszufinden, warum Dinge nicht wie erwartet funktionieren, und für viele von uns ist das die meiste Zeit der Fall. Um dabei zu helfen, haben Entwicklungsumgebungen meist eine Funktion, mit der man ein laufendes Programm anhalten, seine Variablen untersuchen und die Anweisungen eine nach der anderen durchgehen kann. Ihr Browser verfügt über einen sehr guten Debugger, aber er zeigt Ihnen nur, was innerhalb der ~ec~-Engine geschieht, nicht, was Ihr Skript tut. Deshalb haben wir eine Funktion hinzugefügt, die diese Dinge erledigt. Sie ist etwas einfach gehalten, aber es gibt Situationen, in denen sie enorm helfen kann.
 
-The ~ec~ tracer needs you to tell it where it can display its information, and this is done in your script itself. Referring back to the bouncy rectangle, click the button to get the same script with some tracer code added:
+Der ~ec~-Tracer benötigt von Ihnen die Angabe, wo er seine Informationen anzeigen kann, und das wird im Skript selbst festgelegt. Zurück zum hüpfenden Rechteck: Klicken Sie auf die Schaltfläche, um dasselbe Skript mit hinzugefügtem Tracer-Code zu erhalten:
 
 ~copy~
 
-At the top we have an additional ~code:div~ called ~code:Tracer~. The first thing the script does is create this div, giving it a specific id; a special value that ~ec~ knows about.
+Ganz oben haben wir ein zusätzliches ~code:div~ namens ~code:Tracer~. Das Erste, was das Skript tut, ist, dieses div zu erstellen und ihm eine bestimmte id zu geben; einen speziellen Wert, den ~ec~ kennt.
 
-Later in the program, at the start of the main loop, we want to start examining our running script. In this example there are only 2 things we can ask for information about; the values of ~code:Angle~ and ~code:Height~. You can only ask for the values of ordinary numeric/string variables; to cater for other types would hugely add to the size of ~ec~ for something that's relatively infrequently used. At line 26, the first ~code:trace~ command takes a list of the variables we want to inspect and states whether they should be presented horizontally on one line or vertically. This command is optional; sometimes you only want to know where you are without needing to know any variable values.
+Später im Programm, am Anfang der Hauptschleife, wollen wir damit beginnen, unser laufendes Skript zu untersuchen. In diesem Beispiel können wir nur zu 2 Dingen Informationen anfordern: den Werten von ~code:Angle~ und ~code:Height~. Sie können nur die Werte gewöhnlicher numerischer oder Zeichenketten-Variablen abfragen; andere Typen zu unterstützen würde die Größe von ~ec~ für etwas, das relativ selten genutzt wird, enorm erhöhen. In Zeile 26 nimmt der erste ~code:trace~-Befehl eine Liste der Variablen entgegen, die wir inspizieren möchten, und gibt an, ob sie horizontal auf einer Zeile oder vertikal angezeigt werden sollen. Dieser Befehl ist optional; manchmal möchten Sie nur wissen, wo Sie sich befinden, ohne Variablenwerte kennen zu müssen.
 
-The second ~code:trace~ command causes the program to stop when it reaches it. It displays the variables you asked for plus the last 5 lines executed prior to reaching the trace command, then stops. You can ask it to continue one step or to run again without stopping.
+Der zweite ~code:trace~-Befehl bewirkt, dass das Programm anhält, sobald es diese Stelle erreicht. Es zeigt die von Ihnen angeforderten Variablen sowie die letzten 5 Zeilen an, die vor dem Erreichen des trace-Befehls ausgeführt wurden, und stoppt dann. Sie können es anweisen, einen Schritt fortzusetzen oder erneut ohne Unterbrechung weiterzulaufen.
 
-If you run this script you'll see this happening, and when you step through the code the values of ~code:Angle~ and ~code:Height~ will increase, one faster than the other.
+Wenn Sie dieses Skript ausführen, werden Sie das beobachten, und während Sie den Code schrittweise durchlaufen, werden die Werte von ~code:Angle~ und ~code:Height~ zunehmen, der eine schneller als der andere.
 
-Once you have diagnosed and fixed whatever problem you were having you can remove the tracer code and the program will run normally.
+Sobald Sie das jeweilige Problem diagnostiziert und behoben haben, können Sie den Tracer-Code entfernen, und das Programm läuft normal weiter.
 
-~next:Interactivity~
+~next:Interaktivität~

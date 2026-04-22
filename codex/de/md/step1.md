@@ -1,42 +1,44 @@
-# First step: Hello, world! #
+# Erster Schritt: Hallo, Welt! #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-We'll start off with some very basic things and gradually introduce you to more and more of the ~ec~ system. You can break off at any point and return later (on the same computer and browser); the system will remember where you were. Above this text are navigation buttons that let you return to the previous step in the tutorial or move on to the next one. So let's get started.
+Wir beginnen mit einigen ganz grundlegenden Dingen und stellen Ihnen nach und nach immer mehr vom ~ec~-System vor. Sie können jederzeit unterbrechen und später zurückkehren (auf demselben Computer und im selben Browser); das System merkt sich, wo Sie waren. Über diesem Text befinden sich Navigationsschaltflächen, mit denen Sie zum vorherigen Schritt des Tutorials zurückkehren oder zum nächsten weitergehen können. Dann fangen wir an.
 
-On the left you can see a blank panel with just a line number '1'. (On a smartphone you'll have to tap the ~icon:cycle:20px:Cycle screens~ (Cycle) button to go to the Code panel.) This is where you will put your program code. Above it are buttons to let you save your code, load code you previously saved and run what you have on-screen at the moment.
+Auf der linken Seite sehen Sie ein leeres Feld mit nur einer Zeilennummer '1'. (Auf einem Smartphone müssen Sie die Schaltfläche ~icon:cycle:20px:Cycle screens~ (Wechseln) antippen, um zum Code-Bereich zu gelangen.) Hier werden Sie Ihren Programmcode eingeben. Darüber befinden sich Schaltflächen, mit denen Sie Ihren Code speichern, zuvor gespeicherten Code laden und das, was gerade auf dem Bildschirm zu sehen ist, ausführen können.
 
-It's a tradition in programming that your first program is called "Hello, world". It just displays a message - that's all. So we'll honor the tradition by doing it here. Type the text you see below into the panel on the left, or click the "Copy to editor" button. (If you're on a smartphone you may like to read on a bit before doing this, but remember you can return here at any time by tapping the ~icon:cycle:20px:Cycle screens~ button.)
+In der Programmierung ist es Tradition, dass das erste Programm "Hallo, Welt" heißt. Es zeigt einfach eine Nachricht an — das ist alles. Wir werden diese Tradition also hier fortführen. Geben Sie den unten stehenden Text in das Feld auf der linken Seite ein oder klicken Sie auf die Schaltfläche "In Editor kopieren". (Wenn Sie ein Smartphone benutzen, möchten Sie vielleicht noch etwas weiterlesen, bevor Sie das tun, aber denken Sie daran, dass Sie jederzeit hierher zurückkehren können, indem Sie die Schaltfläche ~icon:cycle:20px:Cycle screens~ antippen.)
 
-~pre:alert &#96;Hello, world!&#96;~
+~pre:alarm &#96;Hallo, Welt!&#96;~
 ~copy~
 
-You'll see that in our editor the text inside the backticks is colored whereas the word 'alert' is black. This is because the editor 'understands' what ~ec~ scripts look like. Also note that blank lines or spaces at the start of lines are ignored, and that a command can occupy more than one line as long as you don't put a line break in the middle of a quoted string (such as ~quot:Hello, world!~).
+Sie werden feststellen, dass in unserem Editor der Text zwischen den Backticks farbig dargestellt wird, während das Wort 'alarm' schwarz ist. Das liegt daran, dass der Editor 'versteht', wie ~ec~-Skripte aussehen. Beachten Sie auch, dass leere Zeilen oder Leerzeichen am Zeilenanfang ignoriert werden und dass ein Befehl mehr als eine Zeile einnehmen kann, solange Sie keinen Zeilenumbruch inmitten einer in Anführungszeichen gesetzten Zeichenkette einfügen (wie bei ~quot:Hallo, Welt!~).
 
-The word ~code:alert~ is an ~ec~ command word and the text between the backticks is fixed text. We programmers call it a string. Words that are colored black are all part of ~ec~ itself; everything else has a color that indicates the part it plays in the language. Strings are always ~code:dull~ ~code:red~.
+Das Wort ~code:alarm~ ist ein ~ec~-Befehlswort und der Text zwischen den Backticks ist fester Text. Wir Programmierer nennen das eine Zeichenkette (String). Schwarz gefärbte Wörter sind alle Bestandteil von ~ec~ selbst; alles andere hat eine Farbe, die die Rolle im Sprachsystem anzeigt. Zeichenketten sind immer in ~code:gedämpftem~ ~code:Rot~.
 
-When you click the ~icon:run:20px:Run~ button its icon will change to ~icon:runstop:20px:Stop~ and a popup box will appear containing your message. When you click the OK button in the box everything will be returned to as it was before. Your script has finished its job.
+Wenn Sie auf die Schaltfläche ~icon:run:20px:Run~ klicken, ändert sich deren Symbol zu ~icon:runstop:20px:Stop~ und ein Popup-Fenster erscheint mit Ihrer Nachricht. Wenn Sie in diesem Fenster auf OK klicken, wird alles wieder so wie vorher. Ihr Skript hat seine Aufgabe erledigt.
 
-The program actually behaved as if you'd typed
+Das Programm hat sich tatsächlich so verhalten, als hätten Sie
 
-~pre:alert &#96;Hello, world!&#96;
-exit~
+~pre:alarm &#96;Hallo, Welt!&#96;
+ausgang~
 
-If you leave off the ~code:exit~ instruction the ~ec~ compiler puts one in for you, but there are times when you don't want the program to just exit. It may be waiting for the user to interact so it has to keep itself alive. To do this we need another variation:
+eingegeben.
 
-~pre:alert &#96;Hello, world!&#96;
-stop~
+Wenn Sie die Anweisung ~code:ausgang~ weglassen, fügt der ~ec~-Compiler sie für Sie ein, aber es gibt Momente, in denen Sie nicht wollen, dass das Programm einfach beendet wird. Es könnte auf eine Benutzerinteraktion warten und muss daher weiterlaufen. Dazu benötigen wir eine andere Variante:
 
-In this case, after you click the OK button and the popup box disappears, the  button doesn't change back to ~icon:run:20px:Run~. This is because the script is still in a 'running' state but it isn't actually doing anything. If you click the ~icon:runstop:20px:Stop~ button the script will be forced to exit. Try it and see.
+~pre:alarm &#96;Hallo, Welt!&#96;
+stoppe~
 
-The alert popup is very useful when you want to stop your script and check what it's doing. You can construct a message that contains whatever information you need. For the next couple of steps in this tutorial we'll use alerts to explore some of the basic programming features and do some arithmetical computing before we get onto the visual stuff.
+In diesem Fall wird die Schaltfläche nach dem Klick auf OK und dem Verschwinden des Popups nicht wieder zu ~icon:run:20px:Run~. Das liegt daran, dass sich das Skript noch im Zustand 'läuft' befindet, aber in Wirklichkeit nichts tut. Wenn Sie auf die Schaltfläche ~icon:runstop:20px:Stop~ klicken, wird das Skript zwangsweise beendet. Probieren Sie es aus.
 
-Before we continue, let's just fit in one more thing here.
+Das Alarm-Popup ist sehr nützlich, wenn Sie Ihr Skript anhalten und überprüfen möchten, was es gerade tut. Sie können eine Nachricht zusammenstellen, die alle benötigten Informationen enthält. In den nächsten paar Schritten dieses Tutorials verwenden wir Alarme, um einige grundlegende Programmierfunktionen zu erkunden und etwas Rechnen durchzuführen, bevor wir uns dem visuellen Teil zuwenden.
 
-This script may only comprise one line, but it's your first script. You might have made changes to it to see what effect they have (I hope you do, in fact; it's the best way to learn). If you want to come back another time and run it, to save having to type it in again how about saving it? Do this by typing a suitable name - such as ~code:hello~ - into the Script Name box and then clicking the ~icon:save:20px:Save~ button. If you're running the Codex from our web server, your scripts are saved into an area of memory managed by your browser and are only visible by you while you are using this website. This means they are not permanent, so if you really want to save a script you should copy it and paste it into a text document or an email.
+Bevor wir fortfahren, packen wir hier noch eine Sache hinein.
 
-When you click ~icon:open:20px:Open~ you will see all the scripts you have saved while using ~ec~. Click any one of them to load it into the editor, where you can make changes and run it.
+Dieses Skript besteht zwar nur aus einer Zeile, aber es ist Ihr erstes Skript. Sie haben möglicherweise Änderungen vorgenommen, um zu sehen, welche Wirkung diese haben (ich hoffe es sogar; das ist die beste Art zu lernen). Wenn Sie ein anderes Mal zurückkehren und es ausführen möchten, wäre es doch gut, es zu speichern, damit Sie es nicht wieder eintippen müssen. Tun Sie dies, indem Sie einen passenden Namen — etwa ~code:hallo~ — in das Feld "Skriptname" eingeben und dann auf die Schaltfläche ~icon:save:20px:Save~ klicken. Wenn Sie den Codex über unseren Webserver nutzen, werden Ihre Skripte in einem von Ihrem Browser verwalteten Speicherbereich abgelegt und sind nur für Sie sichtbar, solange Sie diese Website benutzen. Das bedeutet, dass sie nicht dauerhaft sind; wenn Sie ein Skript also wirklich sichern möchten, sollten Sie es kopieren und in ein Textdokument oder eine E-Mail einfügen.
 
-To clear the current script (without removing it from storage), click ~icon:new:20px:New~, and to delete the current script from storage click ~icon:trash:20px:Delete~.
+Wenn Sie auf ~icon:open:20px:Open~ klicken, sehen Sie alle Skripte, die Sie während der Nutzung von ~ec~ gespeichert haben. Klicken Sie auf eines davon, um es in den Editor zu laden, wo Sie Änderungen vornehmen und es ausführen können.
 
-~next:Basic arithmetic~
+Um das aktuelle Skript zu löschen (ohne es aus dem Speicher zu entfernen), klicken Sie auf ~icon:new:20px:New~, und um das aktuelle Skript aus dem Speicher zu löschen, klicken Sie auf ~icon:trash:20px:Delete~.
+
+~next:Grundrechenarten~

@@ -1,15 +1,15 @@
-# Filtering lists #
+# Listen filtern #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-Filtering is rather similar to sorting, but instead of changing the order of the items in a list it removes unwanted ones. The syntax of the command is very similar and like sorting it uses a function to do the work; this time it's called a filter function.
+Das Filtern ist dem Sortieren recht ähnlich, doch statt die Reihenfolge der Elemente einer Liste zu ändern, entfernt es unerwünschte Einträge. Die Syntax des Befehls ist sehr ähnlich, und wie beim Sortieren wird eine Funktion zur Ausführung eingesetzt; diesmal nennt man sie Filterfunktion.
 
-The example is the same shopping list as before, but here we want to remove from the list all items having a value less than one pound (or dollar, euro, etc.)
+Das Beispiel ist dieselbe Einkaufsliste wie zuvor, aber hier wollen wir alle Einträge aus der Liste entfernen, deren Wert unter einem Pfund (bzw. Dollar, Euro usw.) liegt.
 
 ~copy~
 
-The list now has the same items but there's an extra button under the panel, which when clicked filters the list. It also sorts what's left, so you can see the two commands one after the other. The filter function itself is simpler than the comparator; only a single value is presented each time. The result, instead of having one of three values now only has two; true or false depending if the value should be accepted or rejected.
+Die Liste enthält nun dieselben Einträge, doch es gibt eine zusätzliche Schaltfläche unter dem Feld, die beim Anklicken die Liste filtert. Sie sortiert außerdem, was übrig bleibt, sodass Sie die beiden Befehle direkt nacheinander sehen können. Die Filterfunktion selbst ist einfacher als die Vergleichsfunktion; es wird jeweils nur ein einzelner Wert übergeben. Das Ergebnis hat nun statt drei möglichen Werten nur noch zwei: true oder false, je nachdem, ob der Wert angenommen oder abgelehnt werden soll.
 
-Sorting and filtering are a crucial part of much data management and the use of custom comparison and filter functions makes it very easy to control the process.
+Sortieren und Filtern sind ein entscheidender Bestandteil vieler Datenverwaltungen, und der Einsatz eigener Vergleichs- und Filterfunktionen macht es sehr einfach, den Vorgang zu steuern.
 
-~next:Using Google Maps~
+~next:Google Maps verwenden~

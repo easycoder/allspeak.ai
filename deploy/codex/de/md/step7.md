@@ -1,44 +1,44 @@
-# Simple animation #
+# Einfache Animation #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
-This is another tool in the programmer's box. Although it can easily be overdone, the right amount of movement brings a web page to life and directs the user's attention to key parts of it.
+Dies ist ein weiteres Werkzeug im Werkzeugkasten des Programmierers. Obwohl man es leicht übertreiben kann, erweckt das richtige Maß an Bewegung eine Webseite zum Leben und lenkt die Aufmerksamkeit des Nutzers auf die wichtigsten Stellen.
 
-This example draws 3 colored circles and turns them on and off in rapid succession. I've chosen this example in order to highlight a number of useful programming techniques and bring in some more CSS.
+Dieses Beispiel zeichnet 3 farbige Kreise und schaltet sie in rascher Folge ein und aus. Ich habe dieses Beispiel gewählt, um einige nützliche Programmiertechniken aufzuzeigen und etwas mehr CSS einzuführen.
 
-From this point on some of the examples get quite long, so we won't reproduce them here. Instead, click the button below to load the example into the editor:
+Ab diesem Punkt werden manche Beispiele ziemlich lang, deshalb geben wir sie hier nicht vollständig wieder. Klicken Sie stattdessen auf die Schaltfläche unten, um das Beispiel in den Editor zu laden:
 
 ~copy~
 
-When you have similar things being done to a number of different objects your code starts to get repetitive. Repetition is bad because if you need to change some key feature you have to do it in all the places it occurs. And of course, the more code there is, the more places there are for errors (bugs) to creep in through simple typos.
+Wenn Sie auf mehreren verschiedenen Objekten ähnliche Dinge tun, wird Ihr Code schnell repetitiv. Wiederholung ist schlecht, denn wenn Sie ein zentrales Merkmal ändern müssen, müssen Sie es an allen Stellen ändern, an denen es vorkommt. Und natürlich gilt: je mehr Code es gibt, desto mehr Stellen gibt es, an denen sich Fehler (Bugs) durch simple Tippfehler einschleichen können.
 
-One good way to avoid this is to use arrays. An array is a variable that has multiple values. Like a pigeon-hole letterbox system, where the boxes are all the same but have different contents.
+Eine gute Möglichkeit, das zu vermeiden, ist der Einsatz von Feldern (Arrays). Ein Feld ist eine Variable, die mehrere Werte enthält. Ähnlich einem Postfachsystem, bei dem die Fächer zwar alle gleich sind, aber unterschiedliche Inhalte haben.
 
-In most programming languages, arrays use brackets to indicate what's going on. So, to access the third element of the array variable ~code:data~ you would see
+In den meisten Programmiersprachen verwenden Felder eckige Klammern, um anzuzeigen, was vor sich geht. Um also auf das dritte Element der Feldvariablen ~code:data~ zuzugreifen, würden Sie sehen:
 
 ~code:data[3]~
 
-~ec~ doesn't like symbols, using as few of them as it can to keep things as close as possible to natural English. We could have replaced this with
+~ec~ mag keine Symbole und verwendet so wenige wie möglich, um möglichst nah an der natürlichen Sprache zu bleiben. Wir hätten das ersetzen können durch
 
-~code:the third element of Data~
+~code:das dritte Element von Data~
 
-but that's rather clunky so we took a cleaner approach. In ~ec~ all variables are arrays but most of them only have a single element. They also have an internal value that points to the current element. If there's only one, the pointer contains zero. (In computing, the first element of anything is 0, not 1). You can ask for however many elements you like for an array, and the internal pointer - called the _index_, ranges from 0 up to 1 less than the number of elements in the array.
+aber das ist ziemlich umständlich, also haben wir einen saubereren Weg gewählt. In ~ec~ sind alle Variablen Felder, aber die meisten haben nur ein einziges Element. Sie haben außerdem einen internen Wert, der auf das aktuelle Element zeigt. Wenn es nur eines gibt, enthält der Zeiger null. (In der Informatik ist das erste Element von allem 0, nicht 1). Sie können beliebig viele Elemente für ein Feld anfordern, und der interne Zeiger — der _Index_ genannt wird — reicht von 0 bis zu 1 weniger als die Anzahl der Elemente im Feld.
 
-In this script I've added some comment lines to help you see where things are being done. They have no effect on the program.
+In diesem Skript habe ich einige Kommentarzeilen hinzugefügt, damit Sie besser sehen, wo was passiert. Sie haben keinen Einfluss auf das Programm.
 
-At line 11 we request 3 elements for the ~code:Button~ array. These will be addressed as index 0, 1 and 2. Then we have a loop that repeats 3 times, incrementing the counter ~code:N~ each time. We 'index' the button to the value of ~code:N~ so the array presents each of the elements in turn, and we do all the things that are the same for all the buttons. These are:
+In Zeile 11 fordern wir 3 Elemente für das Feld ~code:Button~ an. Diese werden mit den Indizes 0, 1 und 2 angesprochen. Dann folgt eine Schleife, die sich 3-mal wiederholt und dabei den Zähler ~code:N~ jedes Mal um eins erhöht. Wir „indizieren" den Knopf auf den Wert von ~code:N~, damit das Feld jedes Element nacheinander bereitstellt, und wir erledigen alle Dinge, die für alle Knöpfe gleich sind. Das sind:
 
-- The width and height.
-- A margin on each side that keeps them apart.
-- The border radius. Buttons are rectangular by default; this gives them rounded corners. By using the value 50% we make the button a circle or an ellipse, depending if the width and height are the same.
-Setting the display value to ~code:inline-block~ keeps all the buttons on a single line. (You're right; that not at all obvious, is it?)
+- Die Breite und die Höhe.
+- Ein Rand auf jeder Seite, der sie voneinander trennt.
+- Der Rahmenradius. Knöpfe sind standardmäßig rechteckig; das gibt ihnen abgerundete Ecken. Mit dem Wert 50% machen wir den Knopf zu einem Kreis oder einer Ellipse, je nachdem, ob Breite und Höhe gleich sind oder nicht.
+Indem wir den display-Wert auf ~code:inline-block~ setzen, halten wir alle Knöpfe auf einer einzigen Zeile. (Sie haben recht; das ist überhaupt nicht offensichtlich, oder?)
 
-The buttons start off invisible (but still occupying space).
+Die Knöpfe sind anfangs unsichtbar (belegen aber trotzdem Platz).
 
-Now we have to set the background color, which is different for each button so we test the value of ~code:N~ to see which color to use. CSS has 140 named colors, plus you can use combinations of red, green, blue and transparency to make a total of 4,294,967,296 distinct colors to choose from.
+Nun müssen wir die Hintergrundfarbe festlegen, die für jeden Knopf anders ist; deshalb testen wir den Wert von ~code:N~, um zu sehen, welche Farbe zu verwenden ist. CSS bietet 140 benannte Farben, und Sie können zusätzlich Kombinationen aus Rot, Grün, Blau und Transparenz verwenden, sodass sich insgesamt 4.294.967.296 unterschiedliche Farben ergeben, aus denen Sie wählen können.
 
-Finally, at line 29 the animation itself starts. We have a loop within a loop; the outer one runs forever while the inner one counts through the buttons, setting the index of the ~code:Button~ array each time then making the button visible for a short while before making it invisible again. Note how ~ec~ has 2 different ways of setting styles; one deals with just a single style while the other sets several at once and overrides anything else that was previously set.
+Schließlich beginnt in Zeile 29 die eigentliche Animation. Wir haben eine Schleife innerhalb einer Schleife; die äußere läuft unendlich, während die innere die Knöpfe durchzählt, jedes Mal den Index des Feldes ~code:Button~ setzt und den Knopf dann für kurze Zeit sichtbar macht, bevor er wieder unsichtbar wird. Beachten Sie, wie ~ec~ 2 verschiedene Wege hat, Stile zu setzen; der eine bearbeitet nur einen einzelnen Stil, während der andere mehrere auf einmal setzt und alles andere überschreibt, was zuvor gesetzt war.
 
-The script has no need of a ~code:stop~ command at the end because it will never reach it.
+Das Skript braucht am Ende keinen ~code:stoppe~-Befehl, weil es ihn nie erreichen wird.
 
-~next:Bouncy rectangle~
+~next:Ein springendes Rechteck~
