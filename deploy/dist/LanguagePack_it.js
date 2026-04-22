@@ -1,7 +1,6 @@
 // Italian language pack for AllSpeak — auto-generated from languages/it.json
 // eslint-disable-next-line no-unused-vars
-var AllSpeak_LanguagePack_it =
-{
+var AllSpeak_LanguagePack_it = {
   "meta": {
     "language": "it",
     "label": "Italiano",
@@ -439,16 +438,10 @@ var AllSpeak_LanguagePack_it =
         "email a {email} [oggetto {subject}] [corpo|messaggio {body}]"
       ]
     },
-    "MQTT_TOPIC_INIT": {
-      "keyword": "inizializza",
-      "patterns": [
-        "inizializza {topic} nome {name} qos {qos}"
-      ]
-    },
-    "MQTT_CONNECT": {
+    "MQTT_INIT": {
       "keyword": "mqtt",
       "patterns": [
-        "mqtt token {token} [{secretKey}] id {clientID} broker {broker} porta {port} sottoscrivi {topic} [e {topic} ...]"
+        "mqtt inizializza {topic} nome {name} qos {qos}"
       ]
     },
     "MQTT_ON_CONNECT": {
@@ -1091,7 +1084,7 @@ var AllSpeak_LanguagePack_it =
     "landscape": "paesaggio",
     "br": "br",
     "location": "posizione",
-    "key": "tasto|chiave",
+    "key": "tasto",
     "hostname": "hostname",
     "browser": "browser",
     "content": "contenuto",
@@ -1110,8 +1103,11 @@ var AllSpeak_LanguagePack_it =
     "pick": "scegli",
     "drag": "trascina",
     "drop": "rilascia",
-    "contains": "racchiude",
-    "has": "ha",
+    "change": "cambio",
+    "leave": "lascia",
+    "restore": "ripristina",
+    "resume": "riprendi",
+    "that": "che",
     "click": "clic",
     "window": "finestra",
     "viewport": "viewport",
@@ -1307,5 +1303,4 @@ var AllSpeak_LanguagePack_it =
     "moduleNotFound": "Modulo '{name}' non trovato.",
     "syntaxError": "Errore di sintassi alla riga {line}: {detail}."
   }
-}
-;
+};

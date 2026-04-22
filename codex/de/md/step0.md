@@ -1,6 +1,6 @@
-# Coding can be fun! #
+# Programmieren kann Spaß machen! #
 
-> ⚠ *Übersetzung in Arbeit — der Inhalt unten ist noch auf Englisch.*
+> 📝 *Diese deutsche Übersetzung von AllSpeak ist ein laufendes Projekt, mit KI-Unterstützung erstellt. Wenn Ihnen holprige Formulierungen oder Fehler auffallen, schreiben Sie uns gern an [info@allspeak.ai](mailto:info@allspeak.ai) — Ihre Korrekturvorschläge helfen, die Übersetzung für künftige Nutzer zu verfeinern.*
 
 Welcome to the ~ec~ **_Codex_**, a comprehensive free resource where you can learn to code using English-like scripts and use the skills you gain to build and manage websites of any complexity. (Experienced developers: See the note at the foot of this page.)
 

@@ -12,7 +12,7 @@ Il codice che segue recupera un'immagine dal nostro server web, la ridimensiona 
 
 Lo script inizia non con codice di programma ma con un commento. I commenti servono ai lettori umani; puoi metterli ovunque senti il bisogno di spiegare — a qualcun altro o al tuo futuro te stesso — cosa sta succedendo nel tuo codice. I commenti iniziano con un punto esclamativo e continuano fino alla fine della stessa riga, quindi puoi metterli su una riga a sé (come qui) oppure dopo — e sulla stessa riga di — un comando dello script.
 
-I commenti sono oggetto di molte discussioni tra programmatori. Alcuni non amano scrivere commenti, sostenendo che il codice stesso dovrebbe essere auto-esplicativo, mentre altri sentono il bisogno di aggiungerne per spiegare l'intenzione dietro al codice, che altrimenti spesso manca. Ti lasciamo fare come preferisci.
+I commenti sono oggetto di molte discussioni tra programmatori. Alcuni non amano scrivere commenti, sostenendo che il codice stesso dovrebbe essere autoesplicativo, mentre altri sentono il bisogno di aggiungerne per spiegare l'intenzione dietro al codice, che altrimenti spesso manca. Ti lasciamo fare come preferisci.
 
 Poi abbiamo 3 variabili di tipi diversi. Un ~code:div~ è una divisione di una pagina; un contenitore all'interno del quale possono essere posizionati altri elementi. Molte pagine web sono composte da molti div dentro altri div, la maggior parte invisibili e che forniscono solo la struttura complessiva.
 

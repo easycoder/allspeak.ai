@@ -1,6 +1,6 @@
-# Coding can be fun! #
+# Coder peut être amusant ! #
 
-> ⚠ *Traduction en cours — le contenu ci-dessous est encore en anglais.*
+> 📝 *Cette traduction française d'AllSpeak est un travail en cours, produit avec l'aide d'une IA. Si vous remarquez des formulations maladroites ou des erreurs, écrivez-nous à [info@allspeak.ai](mailto:info@allspeak.ai) — vos suggestions de relecture aideront à affiner la traduction pour les futurs utilisateurs.*
 
 Welcome to the ~ec~ **_Codex_**, a comprehensive free resource where you can learn to code using English-like scripts and use the skills you gain to build and manage websites of any complexity. (Experienced developers: See the note at the foot of this page.)
 

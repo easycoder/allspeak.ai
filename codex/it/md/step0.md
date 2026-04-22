@@ -1,4 +1,7 @@
 # Programmare può essere divertente! #
+
+> 📝 *La traduzione italiana di AllSpeak è stata curata con attenzione, ma lingua e software si evolvono. Se noti qualcosa che potrebbe essere migliorato — una parola più adatta, un esempio più chiaro — scrivici a [info@allspeak.ai](mailto:info@allspeak.ai). Ogni contributo è benvenuto.*
+
 Benvenuto nel **_Codex_** di ~ec~, una risorsa gratuita e completa dove puoi imparare a programmare usando script simili all'inglese e utilizzare le competenze acquisite per costruire e gestire siti web di qualsiasi complessità. (Sviluppatori esperti: consultate la nota in fondo a questa pagina.)
 
 Se stai usando lo sviluppo assistito dall'IA, `codex.as` è una risorsa di apprendimento preziosa non solo per ciò che può fare, ma anche per come è strutturato.

@@ -1,0 +1,47 @@
+#!/bin/sh
+# deploy-sync: mirror source-tree changes into deploy/ for serving.
+#
+# Run this after:
+#   - editing anything under codex/
+#   - running ./build-allspeak (which rewrites dist/)
+#   - adding or regenerating docs under resources/doc/
+#
+# Uses rsync when available (preserves timestamps, only copies changes)
+# and falls back to cp -r. Safe to re-run at any time.
+
+set -eu
+cd "$(dirname "$0")"
+
+if command -v rsync >/dev/null 2>&1; then
+    SYNC="rsync -a --delete"
+else
+    SYNC="cp_r_clobber"
+    cp_r_clobber() {
+        # $1 = source dir (must end with /), $2 = destination dir
+        rm -rf "$2"
+        mkdir -p "$2"
+        cp -r "$1". "$2"
+    }
+fi
+
+run_sync() {
+    src="$1"
+    dst="$2"
+    if [ ! -d "$src" ]; then
+        echo "  skip: $src does not exist"
+        return
+    fi
+    mkdir -p "$dst"
+    if [ "$SYNC" = "cp_r_clobber" ]; then
+        cp_r_clobber "$src" "$dst"
+    else
+        $SYNC "$src" "$dst"
+    fi
+    echo "  synced: $src -> $dst"
+}
+
+echo "Syncing source -> deploy/"
+run_sync "codex/"           "deploy/codex/"
+run_sync "dist/"            "deploy/dist/"
+run_sync "resources/doc/"   "deploy/resources/doc/"
+echo "Done."

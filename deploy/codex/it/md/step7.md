@@ -15,7 +15,7 @@ Nella maggior parte dei linguaggi di programmazione, gli array usano le parentes
 
 ~code:data[3]~
 
-~ec~ non ama i simboli, usandone il meno possibile per mantenere le cose il più vicino possibile al linguaggio naturale. Avremmo potuto sostituire questo con
+~ec~ non ama i simboli, usandone il meno possibile per mantenere le cose il più vicino possibile all'inglese naturale. Avremmo potuto sostituire questo con
 
 ~code:the third element of Data~
 

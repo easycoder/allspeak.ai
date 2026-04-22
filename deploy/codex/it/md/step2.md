@@ -1,11 +1,11 @@
 # Aritmetica di base #
 ~ec~ è progettato per il web: per costruire app che fanno cose in un browser. Il mondo del browser è principalmente visuale, con molte immagini e testo, ma c'è sempre bisogno di un po' di aritmetica di base, quindi scriveremo un paio di script che illustrano ciò che è disponibile.
 
-Nella maggior parte dei linguaggi informatici, se vuoi sommare dei numeri, il risultato assomiglia all'algebra che si studia a scuola:
+Nella maggior parte dei linguaggi di programmazione, se vuoi sommare dei numeri, il risultato assomiglia all'algebra scolastica:
 
 ~pre:Z = X + Y~
 
-ma non è così che lo esprimeresti nel linguaggio parlato o scritto. Piuttosto, potresti dire
+ma non è così che lo esprimeresti a parole, parlando o scrivendo. Piuttosto, potresti dire
 
 ~pre:add X to Y giving Z~
 
@@ -29,7 +29,7 @@ Naturalmente, l'aritmetica non è solo addizione. Ci sono anche sottrazione, mol
 take X from Y       take X from Y giving Z
 multiply Y by X     multiply Y by X giving Z
 divide Y by X       divide Y by X giving Z~
-Nota che nella colonna di sinistra, moltiplicazione e divisione funzionano al contrario rispetto ad addizione e sottrazione, con il risultato dell'operazione (Y) come primo elemento, non il secondo. A differenza di praticamente tutti gli altri linguaggi informatici, ~ec~ segue il modo in cui si dice in linguaggio naturale, per renderlo più intuitivo per gli utenti.
+Nota che nella colonna di sinistra, moltiplicazione e divisione funzionano al contrario rispetto ad addizione e sottrazione, con il risultato dell'operazione (Y) come primo elemento, non il secondo. A differenza di praticamente tutti gli altri linguaggi, ~ec~ segue il modo in cui si esprime in inglese, per renderlo più naturale per gli utenti.
 
 Anche se ho usato solo X e Y, puoi fare aritmetica anche con i numeri:
 
@@ -43,6 +43,6 @@ e così via. A questo punto iniziamo a programmare. Copia questo codice nell'edi
 
 Nel comando alert vedrai la parola ~code:cat~ usata per 'concatenare' 2 stringhe insieme. A parte questo, spero che sia tutto facile da seguire anche se sei completamente nuovo alla programmazione.
 
-Se in qualsiasi momento vuoi informarti su un comando specifico, clicca il pulsante  in cima a questo pannello e verrai portato al Manuale di Riferimento per Programmatori di ~ec~. Devi selezionare un pacchetto — la maggior parte dei comandi che useremo sono in Core o Browser — e scegliere Comandi, Valori o Condizioni. C'è un elenco a discesa di tutte le parole chiave in quella sezione. Clicca il pulsante **Tutorial** per tornare qui quando hai finito.
+Se in qualsiasi momento vuoi informarti su un comando specifico, clicca il pulsante  in cima a questo pannello e verrai portato al Manuale di Riferimento per Programmatori di ~ec~. Devi selezionare un pacchetto — la maggior parte dei comandi che useremo sono in Core o Browser — e scegliere Commands, Values o Conditions. C'è un elenco a discesa di tutte le parole chiave in quella sezione. Clicca il pulsante **Tutorial** per tornare qui quando hai finito.
 
 ~next:Gestione delle stringhe~

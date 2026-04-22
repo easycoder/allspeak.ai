@@ -11923,10 +11923,16 @@ var AllSpeak_LanguagePack_en = {
         "mail to {email} [subject {subject}] [body|message {body}]"
       ]
     },
-    "MQTT_INIT": {
+    "MQTT_TOPIC_INIT": {
+      "keyword": "init",
+      "patterns": [
+        "init {topic} name {name} qos {qos}"
+      ]
+    },
+    "MQTT_CONNECT": {
       "keyword": "mqtt",
       "patterns": [
-        "mqtt init {topic} name {name} qos {qos}"
+        "mqtt token {token} [{secretKey}] id {clientID} broker {broker} port {port} subscribe {topic} [and {topic} ...]"
       ]
     },
     "MQTT_ON_CONNECT": {

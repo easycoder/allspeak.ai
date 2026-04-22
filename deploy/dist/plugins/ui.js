@@ -230,7 +230,7 @@ const AllSpeak_UI = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			compiler.skip(`the`);
+			compiler.skipWord(`the`);
 			const token = compiler.getToken();
 			switch (token) {
 			case `date`:
