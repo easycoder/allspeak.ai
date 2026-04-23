@@ -3622,17 +3622,18 @@ const AllSpeak_Core = {
 			case `indexOf`:
 				const value1 = program.getValue(value.value1);
 				const value2 = program.getValue(value.value2);
+				let searchIn = value2;
 				try {
-					content = JSON.parse(value2).indexOf(value1);
-					return {
-						type: `constant`,
-						numeric: true,
-						content
-					};
+					const parsed = JSON.parse(value2);
+					if (Array.isArray(parsed)) searchIn = parsed;
 				} catch (err) {
-					program.runtimeError(program[program.pc].lino, `Can't parse ${value2}`);
+					// Not JSON - search value2 as a plain string.
 				}
-				break;
+				return {
+					type: `constant`,
+					numeric: true,
+					content: searchIn.indexOf(value1)
+				};
 			case `arg`:
 				const name = program.getValue(value.value);
 				const target = program.getSymbolRecord(value.target);
