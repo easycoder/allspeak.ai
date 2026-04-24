@@ -13337,7 +13337,7 @@ const AllSpeak_Compiler = {
 				if (AllSpeak_REST._compileHandlers) AllSpeak_REST._compileHandlers = null;
 				if (AllSpeak_MQTT._compileHandlers) AllSpeak_MQTT._compileHandlers = null;
 			} else {
-				this.addWarning(`Language pack '${langName}' not found (looked for ${packName})`);
+				this.addWarning(`Language pack '${langName}' not found (looked for ${directName})`);
 			}
 		}
 	},

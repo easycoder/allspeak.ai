@@ -443,6 +443,44 @@ const AllSpeak_Core = {
 		}
 	},
 
+	Decrement: {
+
+		compile: compiler => {
+			const lino = compiler.getLino();
+			if (compiler.nextIsSymbol()) {
+				const target = compiler.getToken();
+				compiler.next();
+				compiler.addCommand({
+					domain: `core`,
+					keyword: `decrement`,
+					lino,
+					target
+				});
+				return true;
+			}
+			return false;
+		},
+
+		run: program => {
+			const command = program[program.pc];
+			const target = program.getSymbolRecord(command.target);
+			if (target.isVHolder) {
+				const value = target.value[target.index];
+				if (!value.numeric && isNaN(value.content)) {
+					program.nonNumericValueError(command.lino);
+				}
+				target.value[target.index] = {
+					type: `constant`,
+					numeric: true,
+					content: parseInt(value.content) - 1
+				};
+			} else {
+				program.variableDoesNotHoldAValueError(command.lino, target.name);
+			}
+			return command.pc + 1;
+		}
+	},
+
 	Divide: {
 
 		compile: compiler => {
@@ -921,6 +959,44 @@ const AllSpeak_Core = {
 
 		run: program => {
 			const command = program[program.pc];
+			return command.pc + 1;
+		}
+	},
+
+	Increment: {
+
+		compile: compiler => {
+			const lino = compiler.getLino();
+			if (compiler.nextIsSymbol()) {
+				const target = compiler.getToken();
+				compiler.next();
+				compiler.addCommand({
+					domain: `core`,
+					keyword: `increment`,
+					lino,
+					target
+				});
+				return true;
+			}
+			return false;
+		},
+
+		run: program => {
+			const command = program[program.pc];
+			const target = program.getSymbolRecord(command.target);
+			if (target.isVHolder) {
+				const value = target.value[target.index];
+				if (!value.numeric && isNaN(value.content)) {
+					program.nonNumericValueError(command.lino);
+				}
+				target.value[target.index] = {
+					type: `constant`,
+					numeric: true,
+					content: parseInt(value.content) + 1
+				};
+			} else {
+				program.variableDoesNotHoldAValueError(command.lino, target.name);
+			}
 			return command.pc + 1;
 		}
 	},
@@ -2599,6 +2675,8 @@ const AllSpeak_Core = {
 			MULTIPLY: this.Multiply,
 			DIVIDE: this.Divide,
 			NEGATE: this.Negate,
+			INCREMENT: this.Increment,
+			DECREMENT: this.Decrement,
 			PUT: this.Put,
 			SET_VAR_TYPE: this.Set,
 			SET_ARRAY: this.Set,
@@ -3544,17 +3622,18 @@ const AllSpeak_Core = {
 			case `indexOf`:
 				const value1 = program.getValue(value.value1);
 				const value2 = program.getValue(value.value2);
+				let searchIn = value2;
 				try {
-					content = JSON.parse(value2).indexOf(value1);
-					return {
-						type: `constant`,
-						numeric: true,
-						content
-					};
+					const parsed = JSON.parse(value2);
+					if (Array.isArray(parsed)) searchIn = parsed;
 				} catch (err) {
-					program.runtimeError(program[program.pc].lino, `Can't parse ${value2}`);
+					// Not JSON - search value2 as a plain string.
 				}
-				break;
+				return {
+					type: `constant`,
+					numeric: true,
+					content: searchIn.indexOf(value1)
+				};
 			case `arg`:
 				const name = program.getValue(value.value);
 				const target = program.getSymbolRecord(value.target);
@@ -11073,6 +11152,8 @@ const AllSpeak_Opcodes = {
 		case `multiply`:  return `MULTIPLY`;
 		case `divide`:    return `DIVIDE`;
 		case `negate`:    return `NEGATE`;
+		case `increment`: return `INCREMENT`;
+		case `decrement`: return `DECREMENT`;
 
 		// Assignment
 		case `put`:       return `PUT`;
@@ -11681,6 +11762,12 @@ var AllSpeak_LanguagePack_en = {
         "decode {variable}"
       ]
     },
+    "DECREMENT": {
+      "keyword": "decrement",
+      "patterns": [
+        "decrement {variable}"
+      ]
+    },
     "DISABLE_ELEMENT": {
       "keyword": "disable",
       "patterns": [
@@ -11831,6 +11918,12 @@ var AllSpeak_LanguagePack_en = {
       "keyword": "import",
       "patterns": [
         "import {symbols}"
+      ]
+    },
+    "INCREMENT": {
+      "keyword": "increment",
+      "patterns": [
+        "increment {variable}"
       ]
     },
     "INDEX": {
@@ -12757,6 +12850,8 @@ var AllSpeak_LanguagePack_en = {
     "send": "send",
     "multiply": "multiply",
     "negate": "negate",
+    "increment": "increment",
+    "decrement": "decrement",
     "play": "play",
     "pop": "pop",
     "print": "print",
@@ -13242,7 +13337,7 @@ const AllSpeak_Compiler = {
 				if (AllSpeak_REST._compileHandlers) AllSpeak_REST._compileHandlers = null;
 				if (AllSpeak_MQTT._compileHandlers) AllSpeak_MQTT._compileHandlers = null;
 			} else {
-				this.addWarning(`Language pack '${langName}' not found (looked for ${packName})`);
+				this.addWarning(`Language pack '${langName}' not found (looked for ${directName})`);
 			}
 		}
 	},
