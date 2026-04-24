@@ -987,7 +987,7 @@ var AllSpeak_LanguagePack_de = {
     "number": "zahl",
     "of": "von",
     "offset": "versatz",
-    "on": "auf",
+    "on": "bei",
     "or": "oder",
     "path": "pfad",
     "position": "position",
