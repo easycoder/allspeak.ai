@@ -8,12 +8,14 @@ AllSpeak steht dazwischen. Es ist eine Skriptsprache, die sich wie Deutsch (oder
 
 ## Wie sieht das aus?
 
-Hier ist ein echter Ausschnitt (vorerst auf Englisch):
+Hier ist ein echter Ausschnitt:
 
 ```
-    attach Display to `greeting`
-    put `Hello!` into Message
-    set the content of Display to Message
+    language deutsch
+
+    variable Gruß
+    lege `Hallo!` in Gruß
+    logge Gruß
 ```
 
 Keine Klammern, keine Semikolons, kein Rätselraten. Wenn Sie einen Satz lesen können, können Sie AllSpeak lesen.
@@ -31,7 +33,7 @@ Der schnellste Weg ist **AllSpeak + Claude Code**. Claude Code ist ein KI-Progra
 So gehen Sie vor:
 
 1. Legen Sie einen leeren Ordner für Ihr Projekt an.
-2. Laden Sie [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) herunter und entpacken Sie es in diesen Ordner.
+2. Laden Sie [allspeak-de.zip](https://allspeak.ai/allspeak-de.zip) herunter und entpacken Sie es in diesen Ordner.
 3. Installieren Sie AllSpeak: `pip install -U allspeak-ai`
 4. Installieren Sie Claude Code (siehe [claude.ai/code](https://claude.ai/code)).
 5. Öffnen Sie ein Terminal in diesem Ordner und tippen Sie `claude`.

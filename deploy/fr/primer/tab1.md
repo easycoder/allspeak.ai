@@ -6,14 +6,16 @@ Vous avez sans doute entendu parler du *vibe coding* — vous dites à une IA ce
 
 AllSpeak se place entre les deux. C'est un langage de script conçu pour se lire comme du français (ou de l'anglais, ou toute autre langue), de sorte que lorsque l'IA écrit du code pour vous, vous pouvez suivre ce qu'elle fait. Vous gardez le contrôle sans avoir besoin d'un diplôme d'informatique.
 
-## À quoi cela ressemble-t-il ?
+## À quoi ça ressemble ?
 
-Voici un vrai extrait (en anglais, pour l'instant) :
+Voici un vrai extrait :
 
 ```
-    attach Display to `greeting`
-    put `Hello!` into Message
-    set the content of Display to Message
+    language français
+
+    variable Salutation
+    mets `Bonjour !` dans Salutation
+    journalise Salutation
 ```
 
 Pas de crochets, pas de points-virgules, pas de mystère. Si vous savez lire une phrase, vous savez lire AllSpeak.
@@ -31,7 +33,7 @@ La voie la plus rapide est **AllSpeak + Claude Code**. Claude Code est un agent 
 Voici la marche à suivre :
 
 1. Créez un dossier vide pour votre projet.
-2. Téléchargez [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) et décompressez-le dans ce dossier.
+2. Téléchargez [allspeak-fr.zip](https://allspeak.ai/allspeak-fr.zip) et décompressez-le dans ce dossier.
 3. Installez AllSpeak : `pip install -U allspeak-ai`
 4. Installez Claude Code (voir [claude.ai/code](https://claude.ai/code)).
 5. Ouvrez un terminal dans ce dossier et tapez `claude`.
