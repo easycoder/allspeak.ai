@@ -28,6 +28,17 @@ The original EasyCoder repo continues unchanged as the stable English-only produ
 /examples/         Demo apps (carried over)
 ```
 
+## Working in non-English languages (FR / IT / DE / …)
+
+When writing or debugging `.as` scripts in a non-English language, the English-only utility scripts (`allspeak.as`, `asedit.as`) are **not** a reliable vocabulary reference. Use these instead:
+
+- **Canonical keyword/token map per language:** `js/allspeak/LanguagePack_<lang>.js` — e.g. `LanguagePack_fr.js`, `LanguagePack_it.js`, `LanguagePack_de.js`. Each entry lists the keyword, its grammar patterns, and accepted spelling variants (with/without accents).
+- **Idiomatic working examples:** `codex/<lang>/code/step*.as` — full tutorial scripts already written in the target language.
+
+Note: the `patterns` strings in language packs are descriptive hints, not strict grammars. The compiler in `Core.js` may accept tokens not listed in a pattern (e.g. `attends N millis` works in French even though `millis` isn't in the FR `wait` pattern, because `Core.js` `Wait.compile` reads the scale word loosely). When in doubt, check the relevant `compile:` function in `Core.js`, then confirm with a working example under `codex/<lang>/code/`.
+
+Don't ask the user for the equivalent of an English keyword in another language — look it up in the language pack first.
+
 ## Architecture — The Multilingual Goal
 
 The key architectural challenge is separating **language-neutral runtime** from **language-specific front-ends**.
@@ -44,12 +55,13 @@ The key architectural challenge is separating **language-neutral runtime** from 
 - Error messages
 - Plugin keyword definitions
 
-### Design direction
-- **Declarative language definitions** — each human language maps its keywords/grammar to the internal command set, likely via JSON or similar
-- **Table-driven compilation** — the compiler reads language definitions rather than hardcoding English keywords
-- **One runtime, many front-ends** — a French `.as` script and an English `.as` script compile to the same internal representation and run on the same engine
+### Design
+- **Declarative language definitions** — each human language maps its keywords/grammar to the internal command set via a language-pack file (`js/allspeak/LanguagePack_<lang>.js`, mirrored as JSON for Python under `allspeak-py/allspeak/languages/<lang>.json`).
+- **Table-driven compilation** — the compiler resolves source tokens through `AllSpeak_Language.word()` / `reverseWord()` rather than hardcoding English keywords. `Core.js`, `Browser.js`, and `Compile.js` all go through this layer.
+- **One runtime, many front-ends** — a French `.as` script and an English `.as` script compile to the same internal representation and run on the same engine.
 
-This architecture is **not yet implemented** — the current code is still the English-only EasyCoder engine with names changed. The multilingual layer is the work to be done.
+### Current state
+The JS multilingual layer is implemented and in active use: language packs ship for EN, FR, IT, and DE, and the JS runtime resolves keywords through the language layer throughout. The Python runtime has the same loader (`as_language.py`) and JSON packs, but i18n coverage is incomplete — see the project memory notes on Python and JS i18n gaps for known issues.
 
 ## Two Implementations
 
@@ -60,7 +72,7 @@ This architecture is **not yet implemented** — the current code is still the E
 | Runtime | Browser | CLI |
 | Core files | `Core.js`, `Browser.js`, `Compile.js`, `Run.js`, `Main.js` | `as_core.py`, `as_compiler.py`, `as_program.py` |
 
-The Python implementation has only been renamed, not adapted for multilingual yet. JS is the primary focus.
+Both implementations have the multilingual layer wired in (loader + language packs), but JS is where the work is most complete; Python lags and has known i18n gaps. JS is the primary focus.
 
 ## Build System
 
