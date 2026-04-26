@@ -236,6 +236,15 @@ Label:
 
 DoWork:
     return
+
+! Non-blocking pause (also: seconds, minutes, ticks)
+wait 500 millis
+
+! Random integer between 0 and N-1
+put random 9 into X
+
+! Run a routine in the background (does not freeze the UI)
+fork to RoutineName
 ```
 
 ## Error handling

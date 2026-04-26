@@ -87,6 +87,10 @@ The build script is `./build-allspeak` (shell script). It:
 
 **Never edit files in `/dist/` directly.**
 
+### Starter packs
+
+The four per-language starter zips at `deploy/allspeak-<lang>.zip` are built by `./build-starters`. It auto-discovers languages from `starter/*/` and bundles each language's `CLAUDE.md` + `allspeak.as` + `edit.html` with the shared `asedit.as` + `asedit.json`. Run it after editing anything under `starter/` or after touching the shared files. Adding a new language is just creating `starter/<lang>/` with the three required files and re-running.
+
 ## Versioning
 
 Date-based (e.g. `250824` = 24 Aug 2025). Set in `js/allspeak/AllSpeak.js` line 1.

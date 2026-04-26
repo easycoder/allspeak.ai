@@ -266,6 +266,15 @@ Etikett:
 
 MacheArbeit:
     retourniere
+
+! Nicht-blockierende Pause (auch: sekunden, minuten, ticks)
+warte 500 millis
+
+! Zufallsganzzahl zwischen 0 und N-1
+lege zufall 9 in X
+
+! Routine im Hintergrund starten (blockiert die UI nicht)
+zweige zu RoutineName
 ```
 
 ## Fehlerbehandlung

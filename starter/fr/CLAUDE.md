@@ -266,6 +266,15 @@ Etiquette:
 
 FaisTravail:
     retourne
+
+! Pause non-bloquante (aussi : secondes, minutes, ticks)
+attends 500 millis
+
+! Entier aléatoire entre 0 et N-1
+mets aléatoire 9 dans X
+
+! Lance une routine en arrière-plan (ne fige pas l'UI)
+bifurque à NomDeRoutine
 ```
 
 ## Gestion des erreurs

@@ -266,6 +266,15 @@ Etichetta:
 
 FaiLavoro:
     ritorna
+
+! Pausa non bloccante (anche: secondi, minuti, ticks)
+attendi 500 millis
+
+! Intero casuale tra 0 e N-1
+metti casuale 9 in X
+
+! Avvia una routine in background (non blocca l'UI)
+biforca a NomeRoutine
 ```
 
 ## Gestione errori
