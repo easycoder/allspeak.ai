@@ -227,6 +227,7 @@ Die Division ist ganzzahlig (abgeschnitten), daher funktioniert dies korrekt.
 - Deklarieren Sie Variablen vor ihrer Verwendung.
 - Schleifen: `solange ... beginn ... ende` — niemals `ende solange`.
 - Bedingungen: `wenn ... beginn ... ende` — niemals `ende wenn`.
+- Ereignishandler: `bei klick X gosub Handler` (eine einzelne Anweisung) oder `bei klick X beginn ... ende` (Block) — **niemals** `ende bei`. Gilt auch für `bei änderung`, `bei taste` usw.
 - `beginn ... ende`-Blöcke müssen zu einer Steueranweisung gehören.
 - Kein `funktion`, `ende funktion`, `definiere`, `sonst wenn`.
 - Keine aufrufbare Form `Name(...)` — verwenden Sie `gosub Etikett` und `retourniere`.
@@ -292,6 +293,30 @@ oder behandle
   lege die fehlermeldung in Status
 ende
 ```
+
+## Arrays
+
+Eine Variable kann ein indiziertes Array von Werten enthalten. Deklarieren Sie die Größe mit `setze die elemente von X zu N`, dann zeigen Sie mit `indexiere X zu N` auf ein bestimmtes Element, bevor Sie lesen oder schreiben.
+
+```text
+variable Zelle
+setze die elemente von Zelle zu 9      ! Array mit 9 Slots
+
+lege 0 in Index
+solange Index ist kleiner als 9
+beginn
+    indexiere Zelle zu Index           ! zeigt auf Slot Index
+    lege 0 in Zelle                    ! schreibt Zelle[Index]
+    addiere 1 zu Index
+ende
+
+indexiere Zelle zu 4
+lege Zelle in Mitte                    ! liest Zelle[4]
+```
+
+Auch eine DOM-Element-Variable kann ein Array sein (`div Zelle`, dann `setze die elemente von Zelle zu 9`). Ein einziges `erstelle Zelle` in einer Schleife erzeugt jeden Slot, und `bei klick Zelle` wird für jeden ausgelöst; `lege der index von Zelle in Index` sagt dem Handler welcher.
+
+**Erstellen Sie keine** parallelen nummerierten Variablen (`variable Punkte0`, `variable Punkte1`, …). Verwenden Sie ein einzelnes Array (`variable Punkte`, `setze die elemente von Punkte zu 9`) und indizieren Sie es. Schleifen werden möglich, das Skript wird kürzer, und das Datenmodell passt zum Problem.
 
 ## GUI-spezifisch (JS/Browser)
 

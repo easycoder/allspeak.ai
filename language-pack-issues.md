@@ -30,7 +30,25 @@ The JS pack header says "auto-generated from languages/<lang>.json", but no gene
 ### 8. Python runtime i18n is incomplete (separate workstream)
 Hardcoded English literals, accent issues, word-order mismatches. Out of scope for JS pack work but tracked here so it isn't forgotten. Catalogue lives in the auto-memory note `project_python_i18n_gaps.md`.
 
+### 9. Starter pack lacks an idioms/tutorial layer
+Beyond the Quick Reference and template snippets, there's no guide to the *patterns* of AllSpeak — when to use arrays vs separate variables, how event handlers compose with state, how REST / Webson / script-side coordinate in a GUI app, etc. The bugs and smells fixed on 2026-04-27 (numbered-variable anti-pattern across all four TicTacToe runs, `end on` confusion, missing array idiom in starter docs) all trace to this gap: AI agents working from the starter pack get correct syntax but not idiomatic structure.
+
+Methodology when tackling this: study the larger scripts already in the repo as worked examples — `chat/chat-main.as`, `asedit.as`, `allspeak.as`, `codex/<lang>/code/step12.as`–`step20.as`, `primer/project.as`, plus whatever lands under `examples/` (Graham plans to populate this with past EasyCoder projects; current contents `dice`, `imageswitcher`, `usercapture`) — and ask Graham to explain *why* particular constructs are used. Some idiomatic choices reflect tacit experience that won't surface from reading code alone. Don't try to invent the curriculum from first principles.
+
+EasyCoder scripts are valid sources too: AllSpeak was a global rename of EasyCoder (per project root `CLAUDE.md`), so EN-language idioms in `.ecs` files map directly. The non-trivial part is generalising idioms across languages, not translating them.
+
+Distinct from #5: that item is about keeping the existing Quick Reference auto-synced with the language pack. #9 is about adding a new, larger guide that doesn't currently exist.
+
 ## Resolved
+
+### 2026-04-27 — Editor UI strings (`asedit.as`) only translated for IT
+The editor displayed English `Open`/`Find`/`Save` etc. for FR and DE because `asedit.as` had only `if Lang is \`it\` ... else [English]`. Added `else if Lang is \`fr\`` and `else if Lang is \`de\`` branches with full string sets.
+
+### 2026-04-27 — Starter `CLAUDE.md` had no array idiom; AI generated parallel numbered variables
+TicTacToe runs in all four languages produced `variable Score0`, `variable Score1`, ... `variable Score8` etc. — anti-pattern across all 4 languages because the array idiom (`set the elements of X to N` + `index X to N`) wasn't documented anywhere in the starter pack. Added an `## Arrays` / `## Tableaux` / `## Array` / `## Arrays` section to all four starter `CLAUDE.md` files showing the canonical idiom, the DOM-array-with-`on click` pattern, and an explicit "do not create parallel numbered variables" warning.
+
+### 2026-04-27 — Starter `CLAUDE.md` didn't warn against `end on`
+EN test project's AI-generated code wrote `on click Cell ... end on`. There is no closing `end on` form: `on click X` takes a single statement, or a `begin ... end` block (closed by `end`, not `end on`). Added a guardrail line to the "Strict syntax guardrails" section in all four starter `CLAUDE.md` files.
 
 ### 2026-04-27 — Unmapped pattern words across DE/FR/IT
 For 9 opcodes (`END_TRY`, `HISTORY_FORWARD`, `JSON_FORMAT`, `MQTT_SUBSCRIBE`, `MQTT_ON_CONNECT`, `ON_CLOSE`, `ON_ERROR`, `SEND_MESSAGE`, `SET_ENCODING`) the patterns used surface words that didn't reverse-map to any canonical, so the compiler emitted "Unrecognised syntax". Fixed by extending the words map: added canonicals `forward`, `topic`, `error`, `sender`, `encoding`; extended existing `format`, `close`, `try`, `connect` with the surface form used in the pattern. Both `js/allspeak/` and `dist/` copies refreshed.

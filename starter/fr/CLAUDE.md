@@ -227,6 +227,7 @@ La division est entière (tronquée), donc cela fonctionne correctement.
 - Déclare les variables avant leur utilisation.
 - Boucles : `tant que ... début ... fin` — jamais `fin tant que`.
 - Conditionnels : `si ... début ... fin` — jamais `fin si`.
+- Gestionnaires d'événements : `sur clic X vasous Gestionnaire` (instruction unique) ou `sur clic X début ... fin` (bloc) — **jamais** `fin sur`. Idem pour `sur changement`, `sur touche`, etc.
 - Les blocs `début ... fin` doivent appartenir à une instruction de contrôle.
 - Pas de `fonction`, `fin fonction`, `définis` (au sens « definir une fonction »), `sinon` mal placé, `finsi`.
 - Pas de forme appelable `Nom(...)` — utilise `vasous Étiquette` et `retourne`.
@@ -293,6 +294,30 @@ ou gère
   mets le message d'erreur dans Statut
 fin
 ```
+
+## Tableaux
+
+Une variable peut contenir un tableau indexé de valeurs. Déclare la taille avec `définis les éléments de X à N`, puis pointe sur un élément précis avec `indexe X à N` avant de lire ou d'écrire.
+
+```text
+variable Cellule
+définis les éléments de Cellule à 9    ! tableau de 9 cases
+
+mets 0 dans Index
+tant que Index est inférieur à 9
+début
+    indexe Cellule à Index             ! pointe sur la case Index
+    mets 0 dans Cellule                ! écrit Cellule[Index]
+    ajoute 1 à Index
+fin
+
+indexe Cellule à 4
+mets Cellule dans Milieu               ! lit Cellule[4]
+```
+
+Une variable d'élément DOM peut aussi être un tableau (`div Cellule`, puis `définis les éléments de Cellule à 9`). Un seul `crée Cellule` dans une boucle crée chaque case, et `sur clic Cellule` se déclenche pour n'importe laquelle ; `mets l index de Cellule dans Index` indique au gestionnaire laquelle.
+
+**Ne crée pas** de variables numérotées en parallèle (`variable Score0`, `variable Score1`, …). Utilise un seul tableau (`variable Score`, `définis les éléments de Score à 9`) et indexe-le. Les boucles deviennent possibles, le script raccourcit, et le modèle de données correspond au problème.
 
 ## Spécifique GUI (JS/navigateur)
 

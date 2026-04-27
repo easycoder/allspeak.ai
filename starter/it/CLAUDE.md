@@ -227,6 +227,7 @@ La divisione è intera (troncata), quindi questo funziona correttamente.
 - Dichiara le variabili prima dell'uso.
 - Cicli: `mentre ... inizio ... fine` — mai `fine mentre`.
 - Condizionali: `se ... inizio ... fine` — mai `fine se`.
+- Gestori di eventi: `su clic X vaisub Gestore` (istruzione singola) o `su clic X inizio ... fine` (blocco) — **mai** `fine su`. Idem per `su cambio`, `su tasto`, ecc.
 - I blocchi `inizio ... fine` devono appartenere a un'istruzione di controllo.
 - Nessun `funzione`, `fine funzione`, `definisci`, `altrimenti`.
 - Nessuna forma richiamabile `Nome(...)` — usa `vaisub Etichetta` e `ritorna`.
@@ -292,6 +293,30 @@ o gestisci
   metti il messaggio di errore in Stato
 fine
 ```
+
+## Array
+
+Una variabile può contenere un array indicizzato di valori. Dichiara la dimensione con `imposta gli elementi di X a N`, poi punta a un elemento specifico con `indice X a N` prima di leggere o scrivere.
+
+```text
+variabile Cella
+imposta gli elementi di Cella a 9     ! array di 9 caselle
+
+metti 0 in Indice
+mentre Indice è minore di 9
+inizio
+    indice Cella a Indice              ! punta alla casella Indice
+    metti 0 in Cella                   ! scrive Cella[Indice]
+    aggiungi 1 a Indice
+fine
+
+indice Cella a 4
+metti Cella in Mezzo                   ! legge Cella[4]
+```
+
+Anche una variabile di elemento DOM può essere un array (`div Cella`, poi `imposta gli elementi di Cella a 9`). Un solo `crea Cella` in un ciclo crea ogni casella, e `su clic Cella` si attiva per qualunque di esse; `metti lo indice di Cella in Indice` dice al gestore quale.
+
+**Non creare** variabili numerate in parallelo (`variabile Punteggio0`, `variabile Punteggio1`, …). Usa un singolo array (`variabile Punteggio`, `imposta gli elementi di Punteggio a 9`) e indicizzalo. I cicli diventano possibili, lo script si accorcia, e il modello di dati corrisponde al problema.
 
 ## Specifico GUI (JS/browser)
 

@@ -198,6 +198,7 @@ Division is integer (truncated), so this works correctly.
 - Declare variables before use.
 - Loops: `while ... begin ... end` — never `end while`.
 - Conditionals: `if ... begin ... end` — never `end if`.
+- Event handlers: `on click X gosub Handler` (single statement) or `on click X begin ... end` (block) — **never** `end on`. Same for `on change`, `on key`, etc.
 - `begin ... end` blocks must belong to a control statement.
 - No `function`, `end function`, `define`, `end define`, `otherwise`, `endif`.
 - No callable form `Name(...)` — use `gosub Label` and `return`.
@@ -262,6 +263,30 @@ or handle
   put the error message into Status
 end
 ```
+
+## Arrays
+
+A variable can hold an indexed array of values. Declare the size with `set the elements of X to N`, then point to a specific element with `index X to N` before reading or writing.
+
+```text
+variable Cell
+set the elements of Cell to 9        ! 9-slot array
+
+put 0 into Index
+while Index is less than 9
+begin
+    index Cell to Index              ! point to slot Index
+    put 0 into Cell                  ! writes Cell[Index]
+    add 1 to Index
+end
+
+index Cell to 4
+put Cell into Middle                 ! reads Cell[4]
+```
+
+A DOM element variable can also be an array (`div Cell`, then `set the elements of Cell to 9`). One `create Cell` call inside a loop creates each slot, and `on click Cell` fires for any of them; `put the index of Cell into Index` tells the handler which.
+
+**Do not** create parallel numbered variables (`variable Score0`, `variable Score1`, …). Use one array (`variable Score`, `set the elements of Score to 9`) and index into it. Loops become possible, the script gets shorter, and the data model matches the problem.
 
 ## GUI-specific (JS/browser)
 
