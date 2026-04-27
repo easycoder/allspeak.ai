@@ -5,11 +5,11 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "allspeak-ai"
 authors = [{name = "Graham Trott", email = "gtanyware@gmail.com"}]
-description = "Rapid scripting in English"
+description = "AllSpeak — multilingual high-level scripting designed for AI-assisted coding"
 readme = "README.md"
 license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: MIT License"]
-keywords = ["compiler", "scripting", "prototyping", "programming", "coding", "python", "low code", "hypertalk", "computer language", "learn to code"]
+classifiers = ["License :: OSI Approved :: Apache Software License"]
+keywords = ["compiler", "scripting", "ai-coding", "multilingual", "low code", "hypertalk", "learn to code"]
 dynamic = ["version"]
 dependencies = [
     "pytz",

@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 tools/
+
+# Local secrets — supply your own; never commit
+config/gmap-key.txt
+deploy/config/gmap-key.txt

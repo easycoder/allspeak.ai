@@ -172,6 +172,34 @@ const AllSpeak_GMap = {
 
 		compile: compiler => {
 			const lino = compiler.getLino();
+			// remove marker <Symbol> from <Map>  (single, at current index)
+			if (compiler.nextIsWord(`marker`)) {
+				if (compiler.nextIsSymbol()) {
+					const markerRecord = compiler.getSymbolRecord();
+					if (markerRecord.keyword === `marker`) {
+						if (compiler.nextIsWord(`from`)) {
+							if (compiler.nextIsSymbol()) {
+								const mapRecord = compiler.getSymbolRecord();
+								if (mapRecord.keyword === `gmap`) {
+									compiler.next();
+									compiler.addCommand({
+										domain: `gmap`,
+										keyword: `remove`,
+										lino,
+										name: mapRecord.name,
+										marker: markerRecord.name,
+										all: false
+									});
+									return true;
+								}
+							}
+						}
+					}
+				}
+				return false;
+			}
+			// remove [all] markers from <Map>  (all)
+			compiler.skipWord(`all`);
 			if (compiler.nextTokenIs(`markers`)) {
 				if (compiler.nextIsWord(`from`)) {
 					if (compiler.nextIsSymbol()) {
@@ -182,7 +210,8 @@ const AllSpeak_GMap = {
 								domain: `gmap`,
 								keyword: `remove`,
 								lino,
-								name: symbolRecord.name
+								name: symbolRecord.name,
+								all: true
 							});
 							return true;
 						}
@@ -195,10 +224,23 @@ const AllSpeak_GMap = {
 		run: program => {
 			const command = program[program.pc];
 			const mapRecord = program.getSymbolRecord(command.name);
-			for (const marker of mapRecord.markers) {
-				marker.setMap(null);
+			if (command.all) {
+				for (const marker of mapRecord.markers) {
+					if (marker) marker.setMap(null);
+				}
+				mapRecord.markers = [];
+			} else {
+				const markerRecord = program.getSymbolRecord(command.marker);
+				const idx = markerRecord.index;
+				const m = markerRecord.element[idx];
+				if (m) {
+					m.setMap(null);
+					const i = mapRecord.markers.indexOf(m);
+					if (i >= 0) mapRecord.markers.splice(i, 1);
+					markerRecord.element[idx] = undefined;
+					if (markerRecord.id) markerRecord.id[idx] = undefined;
+				}
 			}
-			mapRecord.markers = [];
 			return command.pc + 1;
 		}
 	},
@@ -229,7 +271,7 @@ const AllSpeak_GMap = {
 						}
 					}
 				}
-			} else if ([`label`, `title`, `position`, `color`].includes(attribute)) {
+			} else if ([`label`, `title`, `position`, `color`, `id`].includes(attribute)) {
 				if (compiler.nextIsWord(`of`)) {
 					if (compiler.nextIsSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
@@ -281,6 +323,9 @@ const AllSpeak_GMap = {
 				symbolRecord.color = program.getValue(command.value);
 				const marker = symbolRecord.element[symbolRecord.index];
 				marker.setIcon(pinSymbol(symbolRecord.color));
+			} else if (command.attribute === `id`) {
+				if (!symbolRecord.id) symbolRecord.id = [];
+				symbolRecord.id[symbolRecord.index] = program.getValue(command.value);
 			} else if (command.attribute === `position`) {
 				const value = JSON.parse(program.getValue(command.value));
 				symbolRecord.latitude = value.latitude;
@@ -458,12 +503,33 @@ const AllSpeak_GMap = {
 						}
 					}
 				}
+				return null;
+			}
+			// the <north|south|east|west> edge of <Map>
+			if ([`north`, `south`, `east`, `west`].includes(type)) {
+				if (compiler.nextIsWord(`edge`)) {
+					if (compiler.nextIsWord(`of`)) {
+						if (compiler.nextIsSymbol()) {
+							const mapRecord = compiler.getSymbolRecord();
+							if (mapRecord.keyword === `gmap`) {
+								compiler.next();
+								return {
+									domain: `gmap`,
+									type: `edge`,
+									edge: type,
+									name: mapRecord.name
+								};
+							}
+						}
+					}
+				}
+				return null;
 			}
 			if (compiler.nextIsWord(`of`)) {
 				if (compiler.nextIsSymbol()) {
 					const symbolRecord = compiler.getSymbolRecord();
-					if (symbolRecord.keyword === `gmap` && [`latitude`, `longitude`, `type`, `zoom`, `bounds`].includes(type) ||
-            symbolRecord.keyword === `marker` && [`latitude`, `longitude`, `title`].includes(type)) {
+					if (symbolRecord.keyword === `gmap` && [`latitude`, `longitude`, `type`, `zoom`, `bounds`, `edges`].includes(type) ||
+            symbolRecord.keyword === `marker` && [`latitude`, `longitude`, `title`, `id`].includes(type)) {
 						compiler.next();
 						return {
 							domain: `gmap`,
@@ -533,6 +599,43 @@ const AllSpeak_GMap = {
 					numeric: false,
 					content: bounds
 				};
+			case `edge`: {
+				const m = program.getSymbolRecord(value.name).map;
+				if (!m) {
+					return { type: `constant`, numeric: false, content: `` };
+				}
+				const b = m.getBounds();
+				let v;
+				switch (value.edge) {
+				case `north`: v = b.getNorthEast().lat(); break;
+				case `south`: v = b.getSouthWest().lat(); break;
+				case `east`:  v = b.getNorthEast().lng(); break;
+				case `west`:  v = b.getSouthWest().lng(); break;
+				}
+				return { type: `constant`, numeric: false, content: v.toString() };
+			}
+			case `edges`: {
+				const m = program.getSymbolRecord(value.name).map;
+				if (!m) {
+					return { type: `constant`, numeric: false, content: `{}` };
+				}
+				const b = m.getBounds();
+				const obj = {
+					north: b.getNorthEast().lat(),
+					south: b.getSouthWest().lat(),
+					east: b.getNorthEast().lng(),
+					west: b.getSouthWest().lng()
+				};
+				return { type: `constant`, numeric: false, content: JSON.stringify(obj) };
+			}
+			case `id`: {
+				const r = program.getSymbolRecord(value.name);
+				return {
+					type: `constant`,
+					numeric: false,
+					content: r.id ? (r.id[r.index] || ``) : ``
+				};
+			}
 			case `title`:
 				return {
 					type: `constant`,

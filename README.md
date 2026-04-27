@@ -1,79 +1,127 @@
-# AllSpeak #
+# AllSpeak
 
-**_AllSpeak_** is a high-level English-like scripting language that runs entirely in the browser and lets you write highly readable scripts to control the appearance and behavior of your web pages. It's much easier to learn than JavaScript but does many of the same things.
+**AllSpeak is a high-level scripting language designed for an age where AI writes most of the code.** Scripts read like a natural human sentence — *"set the content of Heading to `Welcome`"* — so the human can verify what the AI produced without learning a programming language. The same script can be written in any of several human languages and run on a single shared, language-neutral runtime.
 
-**_AllSpeak_** has [its own website](https://allspeak.ai) here on GitHub. Here you will find examples, tutorials and a programmer's playground where you can quickly create interactive apps.
+Currently shipping language packs for **English, Italian, French, and German** (with `language` directives `en`, `it`, `français`, `deutsch`). Adding a new language is a JSON-pack contribution, not an engine change.
 
-## The key features of **_AllSpeak_**
-
- 1. It's quick to write browser applications in **_AllSpeak_**. Website development is faster and sites are more reliable because they are more compact and easier to read.
- 1. **_AllSpeak_** requires no build environment. It compiles plain-text scripts in the browser and runs them immediately. Compilation is usually in the low tens of millseconds, even on a smartphone.
- 1. **_AllSpeak_** scripts are smaller than the corresponding JavaScript and are easy to read by most people, not just by programmers. This matters later on when maintenance is needed and the original programmer may no longer be available.
- 1. **_AllSpeak_** is well suited to the construction of single-page web designs of unlimited size. The memory space occupied by JavaScript remains roughly the same no matter how many scripts and data you load and unload using REST. There is no memory or performance hit as the size of the project grows, because unused modules remain on the server, ready for use, instead of taking up permanent browser space.
- 1. The language itself is a subset of plain English, with commands to do things that are complex to do in JavaScript such as handling REST dialogs, custom GUI elements and vector graphics. These features are implemented as plug-in JavaScript modules that leave you to focus on the user logic of your website or app.
- 1. **_AllSpeak_** has a fully pluggable architecture. This allows any owner of JavaScript functionality to 'wrap' this in script commands and offer it as a plugin, allowing any site developer to use it without the need to learn JavaScript. Typical examples of such wrappers that are already provided are Google Maps and Markdown, both of which present a concise API and functionality that's easily understood and easy to describe in plain English. Well-encapsulated products are ideal candidates for implementation as **_AllSpeak_** plug-ins.
- 1. **_AllSpeak_** has the ability to single-step scripts, showing you its variables at each step, which makes it easier to see what's happening.
- 1. When things go wrong a comprehensive error message pops up, showing you which line of the code you reached. The error message also gets written to the browser console.
- 1. **_AllSpeak_** includes a REST server that permits scripts to access resources on demand from the server rather than having them embedded in the page. Resources include scripts, HTML components, CSS and general data, and all can be loaded and unloaded dynamically. Two versions of the REST server are provided, written in PHP and Python respectively.
- 1. **_AllSpeak_** is uniquely suitable for use with AI. Mainstream programming languages have huge surface areas that cause AI to make guesses (hallucinations). The simpler syntax of **_AllSpeak_** reducs errors to near zero, and when they do occur they are easy to spot and fix. **_AllSpeak_** uses fewer AI computing resources, saveing you money as well as time. There are few real-world coding problems for which **_AllSpeak_** isn't viable.
-
-To use **_AllSpeak_** all you need is to provide a CDN reference to its main JavaScript file in the _HEAD_ of your web page. It will call in any other JavaScript files it needs. An introductory example is given in the Introduction page of [our website](https://allspeak.ai). You can alternatively build a standalone page where all the files are present on your own server, which avoids any possible risk of your site breaking when updates occur. We do our best to prevent this happening but it's impossible to cover all possibilities.
-
-It is said that there's a shortage of competent programmers, a belief that's confirmed by the huge number of job vacancies all asking for skills such as React. If that's true then the use of React or similar tools in any project that is not managed by a permanent team is almost guaranteed to result in problems later with maintenance. If it's hard to find developers now then the chances of locating a skilled React engineer in 5-10 years' time, someone skilled enough to understand, take apart and rebuild your code at a price compatible with effective maintenance are vanishingly small.
-
-**_AllSpeak_** tries to address this problem by offering a way to build websites that won't rely on such high-level skills, using the power of language rather than relying on elaborate structures to achieve the desired goal. In the hands of a competent programmer it makes little difference to the cost of building the project but a huge difference to that of maintaining it by people lacking those skills. **_AllSpeak_** scripts are easy to understand by anyone who has a good knowledge of what the site does, even by many people who aren't programmers at all.
-
-There's a lot more information on [our website](https://allspeak.ai), which includes example scripts plus the Codex; a full reference documentation on the language and a tutorial course suitable for desktop or mobile users. Anyone interested in helping develop **_AllSpeak_** will find an outline developer manual in the last of the links below.
-
-[A Simple Example](Example.md)
-
-[A Demo Website](DemoWebsite.md)
-
-[About AllSpeak](AboutAllSpeak.md)
-
-[Developer Manual](developer/README.md)
-
-## Primer Selection ##
-
-For AI-assisted project starts, use the primer that matches intent:
-
-- `mapintel-agent-primer.md`: guided repository learning path (TicTacToe first, then MapIntel capstone).
-- `general-agent-primer.md`: experienced-user, domain-neutral project bootstrap.
-
-## Debug Output Routing ##
-
-AllSpeak runtime/debug output now goes through `AllSpeak.writeToDebugConsole`.
-
-- By default, output is written to the in-page debug console (`allspeak-debug-console`).
-- If the URL contains `?vscodeDebugConsole=1`, output is sent to `console.log`, which is useful when debugging from VS Code's debug console.
-- You can also enable this persistently with local storage:
-
-```js
-localStorage.setItem('allspeak.vscodeDebugConsole', '1');
+```text
+    language français
+    script Bonjour
+    variable Salutation
+    mets `Bonjour, AllSpeak !` dans Salutation
+    journalise Salutation
 ```
 
-Disable it with:
-
-```js
-localStorage.removeItem('allspeak.vscodeDebugConsole');
+```text
+    language deutsch
+    script Hallo
+    variable Gruss
+    lege `Hallo, AllSpeak!` in Gruss
+    logge Gruss
 ```
 
-## Sensitive Data ##
+Both scripts compile to identical internal opcodes and run on the same engine.
 
-Do not store long-lived secrets (for example MQTT/Flespi tokens) in browser local storage where possible. Local storage is readable by page JavaScript and is vulnerable if any script on the page is compromised.
+## Why AllSpeak
 
-Prefer server-side storage or OS-level secure storage (keychain/credential store), and issue short-lived credentials to the browser when needed.
+- **AI-native.** Mainstream languages have huge surface areas that lead AI to hallucinate. AllSpeak's small, regular grammar collapses that surface — AI writes correct AllSpeak almost reliably, and when it doesn't, the error sits in plain sight on a single line.
+- **Readable by domain experts, not just programmers.** A doctor, accountant, or operations lead can read a maintained AllSpeak script and tell whether it's doing what the business needs. JavaScript, even more so React or Python frameworks, are opaque to that audience.
+- **Multilingual by design.** The runtime is language-neutral. A French team and a German team can share one engine, one set of plugins, one set of tutorials — each in their own language.
+- **No build environment for browser apps.** Drop a `<script>` tag, write your script in a `<pre>`, refresh. Compilation is tens of milliseconds, even on a phone.
+- **Pluggable.** Anything wrappable in JavaScript or Python — Google Maps, Markdown, MQTT, REST, SVG, SQLite — becomes a plugin with a script-friendly vocabulary. See [`spec/allspeak-plugin-contract.md`](spec/allspeak-plugin-contract.md).
 
-## The Codex ##
+## Two implementations
 
-The Codex is a page on [our website](https://allspeak.ai) that provides a tutorial series plus a programming playground to try out code and a complete programmers' reference to the **_AllSpeak_** language.
+| | JavaScript (browser) | Python (CLI) |
+|--|--|--|
+| Runtime | `dist/allspeak.js` (loaded via CDN or self-hosted) | `pip install allspeak-ai`, then `allspeak script.as` |
+| Source | `js/allspeak/` | `allspeak-py/allspeak/` |
+| State | Production | Production; some i18n gaps tracked in [`language-pack-issues.md`](language-pack-issues.md) |
 
-## License ##
+## Quick start — browser
 
-Copyright (c) 2018-21 AllSpeak Software
+```html
+<html>
+<body>
+    <pre id="allspeak-script" style="display:none">
+    language en
+    script Hello
+    div Heading
+    create Heading
+    set the content of Heading to `Hello, AllSpeak!`
+    </pre>
+    <script src="https://allspeak.ai/dist/allspeak-min.js"></script>
+</body>
+</html>
+```
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+For a non-English script, also load the relevant language pack (e.g. `LanguagePack_fr.js`) — see the codex examples for full templates.
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+## Quick start — CLI (Python)
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```sh
+pip install allspeak-ai
+allspeak hello.as
+```
+
+```text
+!   hello.as
+    script Hello
+    print `Hello, AllSpeak!`
+    exit
+```
+
+## Quick start — AI-assisted
+
+Each non-English language ships a starter pack at `deploy/allspeak-<lang>.zip` containing a `CLAUDE.md` (or compatible AI-agent context file), the editor, and a quick reference. Drop the contents into a project directory, point an AI coding agent at it, and ask it to build something.
+
+The starter pack drives the **AI writes, human reviews** workflow that is core to using AllSpeak in practice. See [`starter/<lang>/CLAUDE.md`](starter/) for the agent-facing instructions.
+
+## Repository layout
+
+```
+js/allspeak/         JavaScript runtime + language packs (LanguagePack_<lang>.js)
+js/plugins/          JS plugins (ui, svg, gmap, markdown, mqtt, sqlite, etc.)
+allspeak-py/         Python implementation (runtime + CLI + plugins)
+dist/                Built JS bundles — built by ./build-allspeak; do not edit
+deploy/              Web-served mirror of dist/ + per-language starter zips
+spec/                Language contract, plugin contract, versioning policy, opcodes
+conformance/         Cross-implementation test suite (.as scripts + expected output)
+starter/<lang>/      Source files for the per-language AI-agent starter packs
+codex/<lang>/        Tutorial curriculum (step1.as ... step20.as) per language
+primer/              Primer materials for AI-assisted project starts
+examples/            Standalone example projects
+chat/                Multilingual chat application (worked example)
+AI/                  Onboarding for AI agents working in this repo
+```
+
+## Documentation
+
+- [`spec/allspeak-language-contract.md`](spec/allspeak-language-contract.md) — language semantics
+- [`spec/allspeak-plugin-contract.md`](spec/allspeak-plugin-contract.md) — how to write a plugin
+- [`spec/allspeak-versioning-policy.md`](spec/allspeak-versioning-policy.md) — versioning and compatibility
+- [`developer.md`](developer.md) — developer notes
+- [`language-pack-issues.md`](language-pack-issues.md) — known gaps, open items, and a static audit script for language packs
+- [`AGENTS.md`](AGENTS.md) and [`AI/`](AI/) — guidance for AI agents working on the codebase
+
+For interactive learning, the **Codex** at [https://allspeak.ai](https://allspeak.ai) offers a tutorial course and a programmers' reference. Source under `codex/<lang>/`.
+
+## Building
+
+```sh
+./build-allspeak     # bundle and minify the JS runtime
+./build-starters     # rebuild deploy/allspeak-<lang>.zip from starter/<lang>/
+./deploy-sync        # mirror codex/, dist/, resources/ into deploy/
+```
+
+## Contributing
+
+AllSpeak is recently open-sourced. Contributions of language packs, plugins, examples, and curriculum are especially welcome — those are the assets that compound. Issues for runtime gaps and ergonomic problems are tracked in [`language-pack-issues.md`](language-pack-issues.md).
+
+## Origin
+
+Forked from [EasyCoder](https://github.com/easycoder/easycoder.github.io) on 2026-04-06; the original EasyCoder repository continues unchanged as the stable English-only product. AllSpeak adds the multilingual layer and the AI-coding-companion focus.
+
+## License
+
+Apache License 2.0. See [`LICENSE`](LICENSE) for the full text.

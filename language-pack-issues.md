@@ -30,16 +30,54 @@ The JS pack header says "auto-generated from languages/<lang>.json", but no gene
 ### 8. Python runtime i18n is incomplete (separate workstream)
 Hardcoded English literals, accent issues, word-order mismatches. Out of scope for JS pack work but tracked here so it isn't forgotten. Catalogue lives in the auto-memory note `project_python_i18n_gaps.md`.
 
-### 9. Starter pack lacks an idioms/tutorial layer
+### 9. Floats are not first-class numerics — by design
+Python value parser rejects float literals (`as_value.py:43` uses `isnumeric()`, `'51.5'.isnumeric()` is `False`). This is the intended convention, not a parser bug:
+
+- Pass floats as backtick strings (`` `51.5` ``); DBs and APIs that need float coerce on receive.
+- For arithmetic with fixed precision, use scaled integers (e.g. multiply by 100 for 2-decimal precision) at script level.
+- If an imported API requires native float, do the str→float conversion at the boundary, not in the value parser.
+
+Open task is documentation, not code: starter `CLAUDE.md` should mention the convention so AI agents don't write `put 51.5 into X`.
+
+### 10. List-of-dict access: `item N of List` works; dict-field access needs an intermediate
+ECList supports `put item N of List into X` for positional access. A multi-row SQL result *can* be iterated via `item Index of Rows`, but dict-field access on the returned element requires a copy through a `dictionary` variable first:
+
+```text
+dictionary Row
+put 0 into Index
+while Index is less than the count of Rows
+begin
+    put item Index of Rows into Row
+    put entry `body` of Row into Body
+    ! ...
+    add 1 to Index
+end
+```
+
+`entry of` is not valid directly on a list, and ECList has no get-by-value (`find` / `indexOf` / etc.). Open task is documentation, not code. Surfaced 2026-04-27 building the SQL plugin's multi-row select.
+
+### 11. `the elements of` (arrays) vs `entry of` (dictionaries) — by design
+`set the elements of X to N` and `the elements of X` are for ECVariable's array mode (positional/numeric indexing via `index X to I`). `entry of X` is for ECDictionary (keyed access). They serve different shapes and the runtime error when used on the wrong one is the right behaviour. Open task is documenting the distinction in starter `CLAUDE.md` (the array form was added 2026-04-27; the dictionary contrast still isn't called out).
+
+### 12. Starter pack lacks an idioms/tutorial layer
 Beyond the Quick Reference and template snippets, there's no guide to the *patterns* of AllSpeak — when to use arrays vs separate variables, how event handlers compose with state, how REST / Webson / script-side coordinate in a GUI app, etc. The bugs and smells fixed on 2026-04-27 (numbered-variable anti-pattern across all four TicTacToe runs, `end on` confusion, missing array idiom in starter docs) all trace to this gap: AI agents working from the starter pack get correct syntax but not idiomatic structure.
 
 Methodology when tackling this: study the larger scripts already in the repo as worked examples — `chat/chat-main.as`, `asedit.as`, `allspeak.as`, `codex/<lang>/code/step12.as`–`step20.as`, `primer/project.as`, plus whatever lands under `examples/` (Graham plans to populate this with past EasyCoder projects; current contents `dice`, `imageswitcher`, `usercapture`) — and ask Graham to explain *why* particular constructs are used. Some idiomatic choices reflect tacit experience that won't surface from reading code alone. Don't try to invent the curriculum from first principles.
 
 EasyCoder scripts are valid sources too: AllSpeak was a global rename of EasyCoder (per project root `CLAUDE.md`), so EN-language idioms in `.ecs` files map directly. The non-trivial part is generalising idioms across languages, not translating them.
 
-Distinct from #5: that item is about keeping the existing Quick Reference auto-synced with the language pack. #9 is about adding a new, larger guide that doesn't currently exist.
+Distinct from #5: that item is about keeping the existing Quick Reference auto-synced with the language pack. #12 is about adding a new, larger guide that doesn't currently exist.
+
+### 13. (low-priority, cosmetic) Internal Python class names still carry `EC` prefix
+The 2026-04-06 EasyCoder→AllSpeak global rename caught file paths, package names, the `.as` extension, and source-level identifiers, but internal Python classes still carry the EC prefix: `ECValue`, `ECVariable`, `ECDictionary`, `ECList`, `ECObject`, `ECValueHolder`, `ECFile`, `ECModule`, `ECSSH`, `ECQueue`. These aren't user-visible — only plugin authors and runtime contributors see them — so the inconsistency is cosmetic. Worth a sweep eventually for naming consistency, but not a priority.
 
 ## Resolved
+
+### 2026-04-27 — JS gmap plugin missing single-marker remove, marker IDs, structured bounds
+`js/plugins/gmap.js` extended: added `set the id of Marker to V` (stores per-marker arbitrary string, accessible from click handler via `the id of Marker`); single-marker `remove marker X from Map` (was multi-only); structured bounds via `the north|south|east|west edge of Map` (returns scalar) and `the edges of Map` (returns JSON dict `{north,south,east,west}`). The pre-existing `remove markers from Map` and `set color of Marker` were already in place; `on move Map` / `on zoom Map` already wired in `setupMap`. Both `js/plugins/gmap.js` and `dist/plugins/gmap.js` refreshed.
+
+### 2026-04-27 — Python SQL plugin had no runtime query execution
+`allspeak-py/plugins/as_sql.py` was DDL-only (generated `CREATE TABLE` strings). Added connection management (`database X` / `connect X to sqlite \`path\``), parameterised query execution (`sql select Row from X with QUERY and V1 V2 ...`, `sql exec on X with QUERY [giving NewId]`), and transactions (`sql begin/commit/rollback X`). Single-row select returns a `dictionary`, multi-row a `list`; `or begin ... end` error blocks fire on DB exceptions and on single-row no-match. Test in `allspeak-py/testsqlite.as`. Items 9–11 were latent issues surfaced during this work.
 
 ### 2026-04-27 — Editor UI strings (`asedit.as`) only translated for IT
 The editor displayed English `Open`/`Find`/`Save` etc. for FR and DE because `asedit.as` had only `if Lang is \`it\` ... else [English]`. Added `else if Lang is \`fr\`` and `else if Lang is \`de\`` branches with full string sets.
