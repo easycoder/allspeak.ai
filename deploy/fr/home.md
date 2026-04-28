@@ -20,7 +20,7 @@ ils l'expriment simplement différemment.</p>
 <h2>Questions fréquentes</h2>
 
 <h3>Qu'est-ce qu'AllSpeak ?</h3>
-<p>AllSpeak est un langage de script de haut niveau conçu pour être écrit par l'IA et lu par les humains, dans plusieurs langues humaines — actuellement allemand, anglais, français et italien. Le même moteur exécute toutes les versions, ce qui permet aux non-anglophones de programmer dans leur propre langue sans renoncer à l'assistance par IA.</p>
+<p>AllSpeak est un langage de script de haut niveau conçu pour être écrit par l'IA et lu par les humains, dans plusieurs langues humaines — actuellement français, allemand, anglais et italien. Le même moteur exécute toutes les versions, ce qui permet aux non-anglophones de programmer dans leur propre langue sans renoncer à l'assistance par IA.</p>
 
 <h3>À quoi ressemble le code AllSpeak ?</h3>
 <p>Il se lit de manière proche du langage naturel et évite les symboles mathématiques quand c'est possible :</p>
@@ -55,7 +55,7 @@ ils l'expriment simplement différemment.</p>
 
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-{"@type":"Question","name":"Qu'est-ce qu'AllSpeak ?","acceptedAnswer":{"@type":"Answer","text":"AllSpeak est un langage de script de haut niveau conçu pour être écrit par l'IA et lu par les humains, dans plusieurs langues humaines — actuellement allemand, anglais, français et italien. Le même moteur exécute toutes les versions, ce qui permet aux non-anglophones de programmer dans leur propre langue sans renoncer à l'assistance par IA."}},
+{"@type":"Question","name":"Qu'est-ce qu'AllSpeak ?","acceptedAnswer":{"@type":"Answer","text":"AllSpeak est un langage de script de haut niveau conçu pour être écrit par l'IA et lu par les humains, dans plusieurs langues humaines — actuellement français, allemand, anglais et italien. Le même moteur exécute toutes les versions, ce qui permet aux non-anglophones de programmer dans leur propre langue sans renoncer à l'assistance par IA."}},
 {"@type":"Question","name":"À quoi ressemble le code AllSpeak ?","acceptedAnswer":{"@type":"Answer","text":"Il se lit de manière proche du langage naturel et évite les symboles mathématiques quand c'est possible. Trois lignes d'AllSpeak valide : variable Salutation ; mets `Bonjour, AllSpeak !` dans Salutation ; journalise Salutation."}},
 {"@type":"Question","name":"Comment AllSpeak s'utilise-t-il ?","acceptedAnswer":{"@type":"Answer","text":"Vous écrivez vos prompts à un assistant IA dans votre propre langue, et l'IA produit du code AllSpeak dans cette même langue. Comme le code est lisible, vous pouvez vérifier ce que l'IA a fait avant de l'exécuter. AllSpeak fonctionne dans le navigateur via une seule balise script, ou en ligne de commande via pip install allspeak-ai."}},
 {"@type":"Question","name":"AllSpeak est-il meilleur que les outils de programmation classiques ?","acceptedAnswer":{"@type":"Answer","text":"Pour de nombreuses tâches, oui — non parce que le moteur soit plus puissant que JavaScript ou Python, mais parce que le code produit par l'IA en AllSpeak est nettement plus lisible : un expert du domaine peut vérifier ce qui a été écrit. Avec les langages classiques, on fait souvent confiance à un code de l'IA qu'on ne peut pas facilement contrôler."}},
