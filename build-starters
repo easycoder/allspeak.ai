@@ -2,7 +2,7 @@
 # build-starters: rebuild deploy/allspeak-<lang>.zip from starter/<lang>/.
 #
 # Each starter zip bundles the language-specific bootstrap files
-# (CLAUDE.md, allspeak.as, edit.html) with the shared editor
+# (CLAUDE.md, server.as, edit.html) with the shared editor
 # (asedit.as, asedit.json) at the zip root.
 #
 # Run after editing anything under starter/ or after changing
@@ -31,7 +31,7 @@ built=0
 for dir in starter/*/; do
     lang=$(basename "$dir")
     missing=
-    for f in CLAUDE.md allspeak.as edit.html; do
+    for f in CLAUDE.md server.as edit.html; do
         [ -f "$dir$f" ] || missing="$missing $f"
     done
     if [ -n "$missing" ]; then
@@ -41,12 +41,12 @@ for dir in starter/*/; do
 
     work="$STAGE/$lang"
     mkdir -p "$work"
-    cp -p "$dir"CLAUDE.md "$dir"allspeak.as "$dir"edit.html "$work/"
+    cp -p "$dir"CLAUDE.md "$dir"server.as "$dir"edit.html "$work/"
     cp -p asedit.as asedit.json "$work/"
 
     out="$PWD/deploy/allspeak-$lang.zip"
     rm -f "$out"
-    ( cd "$work" && zip -q "$out" CLAUDE.md allspeak.as edit.html asedit.json asedit.as )
+    ( cd "$work" && zip -q "$out" CLAUDE.md server.as edit.html asedit.json asedit.as )
 
     echo "  built: deploy/allspeak-$lang.zip"
     built=$((built + 1))

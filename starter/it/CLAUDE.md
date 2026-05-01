@@ -50,7 +50,7 @@ Le risposte dell'AI (spiegazioni, domande, commenti nel codice) saranno in itali
 6. **Spiega all'utente come eseguire il progetto:**
 
    - **CLI**: Esegui con `allspeak <progetto>.as`.
-   - **GUI**: Apri `<progetto>.html` direttamente nel browser — il runtime AllSpeak viene caricato dal CDN. Per progetti che caricano file locali (chiamate REST per caricare `.as` o `.json`), avvia un server di sviluppo con `allspeak allspeak.as 8080` (o qualsiasi porta libera), poi apri `http://localhost:8080/<progetto>.html`.
+   - **GUI**: Apri `<progetto>.html` direttamente nel browser — il runtime AllSpeak viene caricato dal CDN. Per progetti che caricano file locali (chiamate REST per caricare `.as` o `.json`), avvia un server di sviluppo con `allspeak server.as 8080` (o qualsiasi porta libera), poi apri `http://localhost:8080/<progetto>.html`.
 
 7. **Guida l'utente attraverso come i file funzionano insieme.** Per progetti GUI, spiega:
 
@@ -61,9 +61,9 @@ Le risposte dell'AI (spiegazioni, domande, commenti nel codice) saranno in itali
 
    Per progetti CLI, spiega che il file `.as` è uno script autonomo eseguito dal terminale, e descrivi cosa fa ogni riga.
 
-8. **Spiega l'editor incluso.** La directory del progetto include `edit.html` e `allspeak.as`, che forniscono un editor nel browser con evidenziazione della sintassi:
+8. **Spiega l'editor incluso.** La directory del progetto include `edit.html` e `server.as`, che forniscono un editor nel browser con evidenziazione della sintassi:
 
-   - Avvia il server di sviluppo con `allspeak allspeak.as 8080` (o qualsiasi porta libera).
+   - Avvia il server di sviluppo con `allspeak server.as 8080` (o qualsiasi porta libera).
    - Apri `http://localhost:8080/edit.html` nel browser.
    - L'editor permette di aprire, modificare e salvare file `.as`, `.json`, `.html` e altri file di progetto con evidenziazione colorata della sintassi.
    - Lo stesso server serve anche i file del progetto, quindi puoi testare i progetti GUI su `http://localhost:8080/<progetto>.html` sulla stessa porta.

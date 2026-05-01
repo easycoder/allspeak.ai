@@ -50,7 +50,7 @@ Die Antworten der KI (Erklärungen, Fragen, Kommentare im Code) werden auf Deuts
 6. **Erklären Sie dem Benutzer, wie das Projekt ausgeführt wird:**
 
    - **CLI**: Ausführen mit `allspeak <projekt>.as`.
-   - **GUI**: Öffnen Sie `<projekt>.html` direkt im Browser — die AllSpeak-Laufzeitumgebung wird vom CDN geladen. Für Projekte, die lokale Dateien laden (REST-Aufrufe zum Laden von `.as` oder `.json`), starten Sie einen Entwicklungsserver mit `allspeak allspeak.as 8080` (oder einem beliebigen freien Port) und öffnen Sie dann `http://localhost:8080/<projekt>.html`.
+   - **GUI**: Öffnen Sie `<projekt>.html` direkt im Browser — die AllSpeak-Laufzeitumgebung wird vom CDN geladen. Für Projekte, die lokale Dateien laden (REST-Aufrufe zum Laden von `.as` oder `.json`), starten Sie einen Entwicklungsserver mit `allspeak server.as 8080` (oder einem beliebigen freien Port) und öffnen Sie dann `http://localhost:8080/<projekt>.html`.
 
 7. **Führen Sie den Benutzer durch das Zusammenspiel der Dateien.** Erklären Sie bei GUI-Projekten:
 
@@ -61,9 +61,9 @@ Die Antworten der KI (Erklärungen, Fragen, Kommentare im Code) werden auf Deuts
 
    Erklären Sie bei CLI-Projekten, dass die `.as`-Datei ein eigenständiges, vom Terminal ausgeführtes Skript ist, und beschreiben Sie, was jede Zeile bewirkt.
 
-8. **Erklären Sie den mitgelieferten Editor.** Das Projektverzeichnis enthält `edit.html` und `allspeak.as`, die einen browserbasierten Editor mit Syntaxhervorhebung bereitstellen:
+8. **Erklären Sie den mitgelieferten Editor.** Das Projektverzeichnis enthält `edit.html` und `server.as`, die einen browserbasierten Editor mit Syntaxhervorhebung bereitstellen:
 
-   - Starten Sie den Entwicklungsserver mit `allspeak allspeak.as 8080` (oder einem beliebigen freien Port).
+   - Starten Sie den Entwicklungsserver mit `allspeak server.as 8080` (oder einem beliebigen freien Port).
    - Öffnen Sie `http://localhost:8080/edit.html` im Browser.
    - Der Editor erlaubt das Öffnen, Bearbeiten und Speichern von `.as`-, `.json`-, `.html`- und anderen Projektdateien mit farbiger Syntaxhervorhebung.
    - Derselbe Server liefert auch die Projektdateien aus, sodass Sie GUI-Projekte auf demselben Port unter `http://localhost:8080/<projekt>.html` testen können.

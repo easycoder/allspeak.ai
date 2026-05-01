@@ -45,9 +45,9 @@ Translators adapted some English-specific asides thoughtfully (step4's "works li
 
 *Noticed 2026-04-24 while producing the FR and DE starter zips.*
 
-The per-language starter zips (`deploy/allspeak-{en,it,fr,de}.zip`) bundle five files: `CLAUDE.md`, `allspeak.as`, `edit.html`, `asedit.json`, `asedit.as`. Of these, only `CLAUDE.md` and `edit.html` are per-language. The three shared files are English across every pack, including Italian:
+The per-language starter zips (`deploy/allspeak-{en,it,fr,de}.zip`) bundle five files: `CLAUDE.md`, `server.as`, `edit.html`, `asedit.json`, `asedit.as`. Of these, only `CLAUDE.md` and `edit.html` are per-language. The three shared files are English across every pack, including Italian:
 
-- `code/allspeak.as` — the dev-server program. User-visible strings include startup prints (`AllSpeak dev server running on port …`, `Serving files from …`, `Press Ctrl+C to stop`) and error messages (`Warning: could not check for updates`, `Updating from version … to …`, `Update complete`, `Restart requested`, `Forbidden`, `Not found`). All hardcoded English.
+- `code/server.as` — the dev-server program. User-visible strings include startup prints (`AllSpeak dev server running on port …`, `Serving files from …`, `Press Ctrl+C to stop`) and error messages (`Warning: could not check for updates`, `Updating from version … to …`, `Update complete`, `Restart requested`, `Forbidden`, `Not found`). All hardcoded English.
 - `code/asedit.as` — the browser editor script. Builds UI strings for the editor (labels, prompts, error messages) — all hardcoded English.
 - `code/asedit.json` — Webson layout for the editor UI. Labels inside values (button text, tab names, etc.) are English.
 

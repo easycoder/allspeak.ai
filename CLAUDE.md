@@ -30,7 +30,7 @@ The original EasyCoder repo continues unchanged as the stable English-only produ
 
 ## Working in non-English languages (FR / IT / DE / …)
 
-When writing or debugging `.as` scripts in a non-English language, the English-only utility scripts (`allspeak.as`, `asedit.as`) are **not** a reliable vocabulary reference. Use these instead:
+When writing or debugging `.as` scripts in a non-English language, the English-only utility scripts (`server.as`, `asedit.as`) are **not** a reliable vocabulary reference. Use these instead:
 
 - **Canonical keyword/token map per language:** `js/allspeak/LanguagePack_<lang>.js` — e.g. `LanguagePack_fr.js`, `LanguagePack_it.js`, `LanguagePack_de.js`. Each entry lists the keyword, its grammar patterns, and accepted spelling variants (with/without accents).
 - **Idiomatic working examples:** `codex/<lang>/code/step*.as` — full tutorial scripts already written in the target language.
@@ -89,7 +89,7 @@ The build script is `./build-allspeak` (shell script). It:
 
 ### Starter packs
 
-The four per-language starter zips at `deploy/allspeak-<lang>.zip` are built by `./build-starters`. It auto-discovers languages from `starter/*/` and bundles each language's `CLAUDE.md` + `allspeak.as` + `edit.html` with the shared `asedit.as` + `asedit.json`. Run it after editing anything under `starter/` or after touching the shared files. Adding a new language is just creating `starter/<lang>/` with the three required files and re-running.
+The four per-language starter zips at `deploy/allspeak-<lang>.zip` are built by `./build-starters`. It auto-discovers languages from `starter/*/` and bundles each language's `CLAUDE.md` + `server.as` + `edit.html` with the shared `asedit.as` + `asedit.json`. Run it after editing anything under `starter/` or after touching the shared files. Adding a new language is just creating `starter/<lang>/` with the three required files and re-running.
 
 ## Versioning
 

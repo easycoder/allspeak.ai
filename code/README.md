@@ -4,7 +4,7 @@ The files here make up the AllSpeak starter pack, distributed as `code.zip`.
 
 ## Contents
 
-- `allspeak.as` — development server (file serving + editor API)
+- `server.as` — development server (file serving + editor API)
 - `edit.html` — browser-based script editor with syntax highlighting
 - `asedit.as` — editor logic (fetched from repo at runtime)
 - `asedit.json` — editor UI layout (fetched from repo at runtime)
@@ -15,7 +15,7 @@ The files here make up the AllSpeak starter pack, distributed as `code.zip`.
 
 1. Download [code.zip](https://allspeak.ai/code.zip) and unzip it into your project directory.
 2. Install AllSpeak: `pip install -U allspeak-ai`
-3. Start the server: `allspeak allspeak.as 8080` (or any free port).
+3. Start the server: `allspeak server.as 8080` (or any free port).
 4. Open your project at `http://localhost:8080/<project>.html`.
 5. Open the editor at `http://localhost:8080/edit.html`.
 

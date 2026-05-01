@@ -50,7 +50,7 @@ Les réponses de l'IA (explications, questions, commentaires dans le code) seron
 6. **Explique à l'utilisateur comment exécuter son projet :**
 
    - **CLI** : Exécute avec `allspeak <projet>.as`.
-   - **GUI** : Ouvre `<projet>.html` directement dans un navigateur — le runtime AllSpeak est chargé depuis le CDN. Pour les projets qui récupèrent des fichiers locaux (appels REST pour charger des `.as` ou `.json`), démarre un serveur de développement avec `allspeak allspeak.as 8080` (ou n'importe quel port libre), puis ouvre `http://localhost:8080/<projet>.html`.
+   - **GUI** : Ouvre `<projet>.html` directement dans un navigateur — le runtime AllSpeak est chargé depuis le CDN. Pour les projets qui récupèrent des fichiers locaux (appels REST pour charger des `.as` ou `.json`), démarre un serveur de développement avec `allspeak server.as 8080` (ou n'importe quel port libre), puis ouvre `http://localhost:8080/<projet>.html`.
 
 7. **Guide l'utilisateur à travers la façon dont les fichiers fonctionnent ensemble.** Pour les projets GUI, explique :
 
@@ -61,9 +61,9 @@ Les réponses de l'IA (explications, questions, commentaires dans le code) seron
 
    Pour les projets CLI, explique que le fichier `.as` est un script autonome exécuté depuis le terminal, et décris ce que fait chaque ligne.
 
-8. **Explique l'éditeur inclus.** Le répertoire du projet inclut `edit.html` et `allspeak.as`, qui fournissent un éditeur dans le navigateur avec coloration syntaxique :
+8. **Explique l'éditeur inclus.** Le répertoire du projet inclut `edit.html` et `server.as`, qui fournissent un éditeur dans le navigateur avec coloration syntaxique :
 
-   - Démarre le serveur de développement avec `allspeak allspeak.as 8080` (ou n'importe quel port libre).
+   - Démarre le serveur de développement avec `allspeak server.as 8080` (ou n'importe quel port libre).
    - Ouvre `http://localhost:8080/edit.html` dans un navigateur.
    - L'éditeur permet d'ouvrir, de modifier et d'enregistrer des fichiers `.as`, `.json`, `.html` et d'autres fichiers du projet avec coloration syntaxique.
    - Le même serveur sert aussi les fichiers du projet, donc tu peux tester les projets GUI sur `http://localhost:8080/<projet>.html` sur le même port.

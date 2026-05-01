@@ -31,7 +31,7 @@
 6. **Explain to the user how to run their project:**
 
    - **CLI**: Run with `allspeak <project>.as`.
-   - **GUI**: Start the dev server with `allspeak allspeak.as 8080` (or any free port), then open `http://localhost:8080/<project>.html` in a browser. The AllSpeak runtime is loaded from `https://allspeak.ai/dist/allspeak.js`.
+   - **GUI**: Start the dev server with `allspeak server.as 8080` (or any free port), then open `http://localhost:8080/<project>.html` in a browser. The AllSpeak runtime is loaded from `https://allspeak.ai/dist/allspeak.js`.
 
 7. **Walk the user through how the files work together.** For GUI projects, explain:
 
@@ -42,9 +42,9 @@
 
    For CLI projects, explain that the `.as` file is a standalone script run from the terminal, and walk through what each line does.
 
-8. **Explain the included editor.** The project directory includes `edit.html` and `allspeak.as`, which provide a browser-based editor with syntax highlighting:
+8. **Explain the included editor.** The project directory includes `edit.html` and `server.as`, which provide a browser-based editor with syntax highlighting:
 
-   - The dev server (`allspeak allspeak.as 8080`) is already running from step 6.
+   - The dev server (`allspeak server.as 8080`) is already running from step 6.
    - Open `http://localhost:8080/edit.html` in a browser.
    - The editor lets you open, edit, and save `.as`, `.json`, `.html` and other project files with colour-coded syntax highlighting. It fetches its UI from the AllSpeak repo automatically so only the two local files are needed.
    - The same server also serves the project files, so you can test GUI projects at `http://localhost:8080/<project>.html` on the same port.

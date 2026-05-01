@@ -35,7 +35,7 @@ AllSpeak uses an **AI-writes, human-reviews** workflow. The AI generates `.as` c
 6. **Explain to the user how to run their project:**
 
    - **CLI**: Run with `allspeak <project>.as`.
-   - **GUI**: Open `<project>.html` directly in a browser — the AllSpeak runtime is loaded from the CDN. For projects that fetch local files (REST calls to load `.as` or `.json`), start a dev server with `allspeak allspeak.as 8080` (or any free port), then open `http://localhost:8080/<project>.html`.
+   - **GUI**: Open `<project>.html` directly in a browser — the AllSpeak runtime is loaded from the CDN. For projects that fetch local files (REST calls to load `.as` or `.json`), start a dev server with `allspeak server.as 8080` (or any free port), then open `http://localhost:8080/<project>.html`.
 
 7. **Walk the user through how the files work together.** For GUI projects, explain:
 
@@ -46,9 +46,9 @@ AllSpeak uses an **AI-writes, human-reviews** workflow. The AI generates `.as` c
 
    For CLI projects, explain that the `.as` file is a standalone script run from the terminal, and walk through what each line does.
 
-8. **Explain the included editor.** The project directory includes `edit.html` and `allspeak.as`, which provide a browser-based editor with syntax highlighting:
+8. **Explain the included editor.** The project directory includes `edit.html` and `server.as`, which provide a browser-based editor with syntax highlighting:
 
-   - Start the dev server with `allspeak allspeak.as 8080` (or any free port).
+   - Start the dev server with `allspeak server.as 8080` (or any free port).
    - Open `http://localhost:8080/edit.html` in a browser.
    - The editor lets you open, edit, and save `.as`, `.json`, `.html` and other project files with colour-coded syntax highlighting.
    - The same server also serves the project files, so you can test GUI projects at `http://localhost:8080/<project>.html` on the same port.

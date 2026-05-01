@@ -1,6 +1,6 @@
 !   asedit.as
 !   Tabbed script editor with auto-save and external change detection.
-!   Served by allspeak.as locally, or any web server with /list, /read, /write routes.
+!   Served by server.as locally, or any web server with /list, /read, /write routes.
 
     script ECEditor
 
