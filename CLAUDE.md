@@ -76,20 +76,9 @@ Both implementations have the multilingual layer wired in (loader + language pac
 
 ## Build System
 
-The build script is `./build-allspeak` (shell script). It:
-1. Clears `/dist/`
-2. Copies `/js/plugins/` to `/dist/plugins/`
-3. Fetches vendor assets from CDN if not in `/vendor/`
-4. Concatenates all core JS files into `/dist/allspeak.js`
-5. Minifies → `/dist/allspeak-min.js`
+See [BUILD.md](BUILD.md) for the "edited X → run Y" lookup table covering all four dev scripts (`build-allspeak`, `sync-language-packs`, `build-starters`, `deploy-sync`) and the GitHub deploy workflow.
 
-**Bundle order:** `Core.js` → `Browser.js` → `MarkdownRenderer.js` → `Webson.js` → `JSON.js` → `MQTT.js` → `REST.js` → `Compare.js` → `Condition.js` → `Value.js` → `Run.js` → `Compile.js` → `Main.js` → `AllSpeak.js`
-
-**Never edit files in `/dist/` directly.**
-
-### Starter packs
-
-The four per-language starter zips at `deploy/allspeak-<lang>.zip` are built by `./build-starters`. It auto-discovers languages from `starter/*/` and bundles each language's `CLAUDE.md` + `server.as` + `edit.html` with the shared `asedit.as` + `asedit.json`. Run it after editing anything under `starter/` or after touching the shared files. Adding a new language is just creating `starter/<lang>/` with the three required files and re-running.
+`./build-allspeak` concatenates the JS runtime into `/dist/allspeak.js` and minifies to `/dist/allspeak-min.js`. Bundle order: `Core.js` → `Browser.js` → `MarkdownRenderer.js` → `Webson.js` → `JSON.js` → `MQTT.js` → `REST.js` → `Compare.js` → `Condition.js` → `Value.js` → `Run.js` → `Compile.js` → `Main.js` → `AllSpeak.js`. **Never edit files in `/dist/` directly.**
 
 ## Versioning
 
