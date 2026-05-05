@@ -172,8 +172,7 @@ const AllSpeak_Core = {
 							select: symbolRecord.name,
 							onError: 0
 						});
-						if (compiler.isWord(`or`)) {
-							compiler.next();
+						if (compiler.consumeFailureClause()) {
 							compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 							compiler.completeHandler();
 						}
@@ -731,8 +730,7 @@ const AllSpeak_Core = {
 						func,
 						onError: 0
 					});
-					if (compiler.isWord(`or`)) {
-						compiler.next();
+					if (compiler.consumeFailureClause()) {
 						compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 						compiler.completeHandler();
 					}
@@ -1020,8 +1018,7 @@ const AllSpeak_Core = {
 						value,
 						onError: 0
 					});
-					if (compiler.isWord(`or`)) {
-						compiler.next();
+					if (compiler.consumeFailureClause()) {
 						compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 						compiler.completeHandler();
 					}
@@ -2135,8 +2132,7 @@ const AllSpeak_Core = {
 						func,
 						onError: 0
 					});
-					if (compiler.isWord(`or`)) {
-						compiler.next();
+					if (compiler.consumeFailureClause()) {
 						compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 						compiler.completeHandler();
 					}
@@ -4163,8 +4159,7 @@ const AllSpeak_Core = {
 						}
 						else cssId = compiler.getValue();
 						let onError = 0;
-						if (compiler.isWord(`or`)) {
-							compiler.next();
+						if (compiler.consumeFailureClause()) {
 							onError = compiler.getPc() + 1;
 							compiler.completeHandler();
 						}
@@ -4605,8 +4600,7 @@ const AllSpeak_Core = {
 								parent: parentRecord.name,
 								onError: 0
 							});
-							if (compiler.isWord(`or`)) {
-								compiler.next();
+							if (compiler.consumeFailureClause()) {
 								compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 								compiler.completeHandler();
 							}
@@ -8516,8 +8510,7 @@ const AllSpeak_JSON = {
 
 	// Helper to add or-handling after a json command
 	addOrHandling: (compiler, pc) => {
-		if (compiler.isWord(`or`)) {
-			compiler.next();
+		if (compiler.consumeFailureClause()) {
 			compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
 			compiler.completeHandler();
 		}
@@ -10310,8 +10303,7 @@ const AllSpeak_REST = {
 								url,
 								onError: null
 							});
-							if (compiler.isWord(`or`)) {
-								compiler.next();
+							if (compiler.consumeFailureClause()) {
 								compiler.getCommandAt(fixup).onError = compiler.getPc() + 1;
 								compiler.completeHandler();
 							} 
@@ -10370,8 +10362,7 @@ const AllSpeak_REST = {
 					onError: compiler.getPc() + 2
 				});
 				onError = null;
-				if (compiler.isWord(`or`)) {
-					compiler.next();
+				if (compiler.consumeFailureClause()) {
 					// onError = compiler.getPc() + 1;
 					compiler.completeHandler();
 				}
@@ -11571,7 +11562,7 @@ const AllSpeak_Language = {
 		return this._keywordIndex[keyword] || [];
 	}
 };
-// English language pack for AllSpeak — auto-generated from languages/en.json
+// English language pack for AllSpeak — JS is source of truth; sync-language-packs writes allspeak-py/allspeak/languages/en.json from this
 // eslint-disable-next-line no-unused-vars
 var AllSpeak_LanguagePack_en = {
   "meta": {
@@ -12720,6 +12711,7 @@ var AllSpeak_LanguagePack_en = {
     "payload": "payload",
     "ready": "ready",
     "format": "format",
+    "failure": "failure",
     "module": "module",
     "variable": "variable",
     "callback": "callback",
@@ -13158,6 +13150,29 @@ const AllSpeak_Compiler = {
 
 	rewindto: function(index) {
 		this.rewindTo(index);
+	},
+
+	// Consume an error-recovery clause introducer, accepting either the
+	// terse 'or' form or the explicit 'on failure' form. Both attach a
+	// recovery handler that runs on failure and continues execution after.
+	// Returns true iff a clause was found and consumed; advances the index
+	// past the introducer in that case. Caller is then expected to record
+	// the onError PC and call completeHandler().
+	consumeFailureClause: function() {
+		if (this.isWord(`or`)) {
+			this.next();
+			return true;
+		}
+		if (this.isWord(`on`)) {
+			const mark = this.getIndex();
+			this.next();
+			if (this.isWord(`failure`)) {
+				this.next();
+				return true;
+			}
+			this.rewindTo(mark);
+		}
+		return false;
 	},
 
 	completeHandler: function() {

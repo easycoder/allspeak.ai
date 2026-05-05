@@ -1,4 +1,4 @@
-// French language pack for AllSpeak — auto-generated from languages/fr.json
+// French language pack for AllSpeak — JS is source of truth; sync-language-packs writes allspeak-py/allspeak/languages/fr.json from this
 // eslint-disable-next-line no-unused-vars
 var AllSpeak_LanguagePack_fr = {
   "meta": {
@@ -1076,7 +1076,12 @@ var AllSpeak_LanguagePack_fr = {
     "arg": "arg",
     "payload": "payload",
     "ready": "prêt|pret",
-    "format": "format",
+    "format": "format|formate",
+    "forward": "avant",
+    "failure": "échec|echec",
+    "error": "erreur",
+    "sender": "expéditeur|expediteur",
+    "encoding": "encodage",
     "module": "module",
     "variable": "variable",
     "callback": "callback",
@@ -1223,11 +1228,11 @@ var AllSpeak_LanguagePack_fr = {
     "take": "soustrais|retire",
     "toggle": "bascule",
     "trace": "trace",
-    "try": "essaie",
+    "try": "essaie|essai",
     "upload": "téléverse|televerse",
     "wait": "attends",
     "while": "tant",
-    "close": "ferme",
+    "close": "ferme|fermeture",
     "binary": "binaire",
     "directory": "répertoire|repertoire",
     "exist": "existe",

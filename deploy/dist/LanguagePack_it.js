@@ -1,4 +1,4 @@
-// Italian language pack for AllSpeak — auto-generated from languages/it.json
+// Italian language pack for AllSpeak — JS is source of truth; sync-language-packs writes allspeak-py/allspeak/languages/it.json from this
 // eslint-disable-next-line no-unused-vars
 var AllSpeak_LanguagePack_it = {
   "meta": {
@@ -196,6 +196,12 @@ var AllSpeak_LanguagePack_it = {
         "decodifica {variable}"
       ]
     },
+    "DECREMENT": {
+      "keyword": "decrementa",
+      "patterns": [
+        "decrementa {variable}"
+      ]
+    },
     "DISABLE_ELEMENT": {
       "keyword": "disabilita",
       "patterns": [
@@ -346,6 +352,12 @@ var AllSpeak_LanguagePack_it = {
       "keyword": "importa",
       "patterns": [
         "importa {symbols}"
+      ]
+    },
+    "INCREMENT": {
+      "keyword": "incrementa",
+      "patterns": [
+        "incrementa {variable}"
       ]
     },
     "INDEX": {
@@ -1064,7 +1076,13 @@ var AllSpeak_LanguagePack_it = {
     "arg": "arg",
     "payload": "payload",
     "ready": "pronto",
-    "format": "formato",
+    "format": "formato|formatta",
+    "forward": "avanti",
+    "failure": "fallimento",
+    "topic": "argomento",
+    "error": "errore",
+    "sender": "mittente",
+    "encoding": "codifica",
     "module": "modulo",
     "variable": "variabile",
     "callback": "callback",
@@ -1195,6 +1213,8 @@ var AllSpeak_LanguagePack_it = {
     "send": "invia",
     "multiply": "moltiplica",
     "negate": "nega",
+    "increment": "incrementa",
+    "decrement": "decrementa",
     "play": "riproduci",
     "pop": "estrai",
     "print": "stampa",
@@ -1216,7 +1236,7 @@ var AllSpeak_LanguagePack_it = {
     "upload": "carica",
     "wait": "attendi",
     "while": "mentre",
-    "close": "chiudi",
+    "close": "chiudi|chiusura",
     "binary": "binario",
     "directory": "cartella",
     "exist": "esiste",
@@ -1264,7 +1284,7 @@ var AllSpeak_LanguagePack_it = {
     "subscribe": "sottoscrivi",
     "qos": "qos",
     "token": "token",
-    "connect": "connetti",
+    "connect": "connetti|connessione",
     "layout": "layout",
     "panel": "pannello",
     "dialog": "dialogo",

@@ -1,4 +1,4 @@
-// German language pack for AllSpeak — auto-generated from languages/de.json
+// German language pack for AllSpeak — JS is source of truth; sync-language-packs writes allspeak-py/allspeak/languages/de.json from this
 // eslint-disable-next-line no-unused-vars
 var AllSpeak_LanguagePack_de = {
   "meta": {
@@ -1004,7 +1004,7 @@ var AllSpeak_LanguagePack_de = {
     "than": "als",
     "the": "der|die|das|den|dem|des",
     "then": "dann",
-    "to": "zu",
+    "to": "zu|an",
     "tracing": "verfolgung",
     "unsorted": "unsortiert",
     "url": "url",
@@ -1072,7 +1072,13 @@ var AllSpeak_LanguagePack_de = {
     "arg": "arg",
     "payload": "payload",
     "ready": "bereit",
-    "format": "format",
+    "format": "format|formatiere",
+    "forward": "vor",
+    "failure": "fehlschlag",
+    "topic": "thema",
+    "error": "fehler",
+    "sender": "absender",
+    "encoding": "kodierung",
     "module": "modul",
     "variable": "variable",
     "callback": "callback",
@@ -1220,11 +1226,11 @@ var AllSpeak_LanguagePack_de = {
     "take": "subtrahiere",
     "toggle": "wechsle",
     "trace": "verfolge",
-    "try": "versuche",
+    "try": "versuche|versuch",
     "upload": "hochlade",
     "wait": "warte",
     "while": "solange",
-    "close": "schließe|schliesse",
+    "close": "schließe|schliesse|schließen",
     "binary": "binär|binaer",
     "directory": "verzeichnis",
     "exist": "existiere",
