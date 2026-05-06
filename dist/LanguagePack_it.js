@@ -1104,6 +1104,7 @@ var AllSpeak_LanguagePack_it = {
     "location": "posizione",
     "key": "tasto",
     "hostname": "hostname",
+    "query": "query",
     "browser": "browser",
     "content": "contenuto",
     "text": "testo",

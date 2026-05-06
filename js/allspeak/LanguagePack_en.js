@@ -1169,6 +1169,7 @@ var AllSpeak_LanguagePack_en = {
     "location": "location",
     "key": "key",
     "hostname": "hostname",
+    "query": "query",
     "browser": "browser",
     "content": "content",
     "text": "text",

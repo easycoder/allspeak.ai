@@ -3055,6 +3055,8 @@ const AllSpeak_Browser = {
 			case `location`:
 			case `key`:
 			case `hostname`:
+			case `path`:
+			case `query`:
 				compiler.next();
 				return {
 					domain: `browser`,
@@ -3617,6 +3619,18 @@ const AllSpeak_Browser = {
 					type: `constant`,
 					numeric: false,
 					content: location.hostname
+				};
+			case `path`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: window.location.pathname
+				};
+			case `query`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: window.location.search
 				};
 			case `screen`:
 				return {

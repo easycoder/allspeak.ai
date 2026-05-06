@@ -1103,6 +1103,7 @@ var AllSpeak_LanguagePack_fr = {
     "location": "emplacement",
     "key": "clé|cle|touche",
     "hostname": "hôte|hote|hostname",
+    "query": "requête|requete",
     "browser": "navigateur",
     "content": "contenu",
     "text": "texte",

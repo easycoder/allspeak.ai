@@ -1102,6 +1102,7 @@
     "location": "posizione",
     "key": "tasto",
     "hostname": "hostname",
+    "query": "query",
     "browser": "browser",
     "content": "contenuto",
     "text": "testo",

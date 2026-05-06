@@ -7099,6 +7099,8 @@ const AllSpeak_Core = {
 			case `location`:
 			case `key`:
 			case `hostname`:
+			case `path`:
+			case `query`:
 				compiler.next();
 				return {
 					domain: `browser`,
@@ -7661,6 +7663,18 @@ const AllSpeak_Core = {
 					type: `constant`,
 					numeric: false,
 					content: location.hostname
+				};
+			case `path`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: window.location.pathname
+				};
+			case `query`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: window.location.search
 				};
 			case `screen`:
 				return {
@@ -12733,6 +12747,7 @@ var AllSpeak_LanguagePack_en = {
     "location": "location",
     "key": "key",
     "hostname": "hostname",
+    "query": "query",
     "browser": "browser",
     "content": "content",
     "text": "text",

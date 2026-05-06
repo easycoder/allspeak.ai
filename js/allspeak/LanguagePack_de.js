@@ -1100,6 +1100,7 @@ var AllSpeak_LanguagePack_de = {
     "location": "ort",
     "key": "schlüssel|schluessel|taste",
     "hostname": "hostname",
+    "query": "abfrage|query",
     "browser": "browser",
     "content": "inhalt",
     "text": "text",
