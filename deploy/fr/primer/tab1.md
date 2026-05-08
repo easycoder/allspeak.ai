@@ -51,6 +51,35 @@ Claude vous posera quelques questions, créera les fichiers de votre projet et v
 
 AllSpeak est en développement actif. Les variantes autres que l'anglais peuvent contenir des mots-clés ou des tournures que le moteur ne prend pas encore pleinement en charge. Si vous rencontrez une erreur de compilation sur un mot-clé qui paraît correct, signalez-le à [info@allspeak.ai](mailto:info@allspeak.ai) — les corrections sont généralement rapides.
 
+## Auto-hébergement pour la stabilité
+
+Le starter et les modèles chargent le runtime depuis `https://allspeak.ai/dist/`, qui reflète toujours la dernière version. C'est parfait pour les tutoriels et les expériences courtes — mais pour les projets que vous comptez maintenir, fixez une version stable afin qu'une future mise à jour ne casse pas votre script de façon imprévue.
+
+Deux options s'offrent à vous :
+
+### 1. Fixer un instantané daté (recommandé)
+
+Chaque déploiement est aussi archivé sous un chemin daté :
+
+```html
+<script src="https://allspeak.ai/dist/260508/allspeak.js"></script>
+```
+
+Cette URL sert le build déployé le 8 mai 2026 et ne changera pas — le `/dist/allspeak.js` glissant continue d'avancer en parallèle. Pour mettre à niveau, changez un seul nombre après avoir testé.
+
+### 2. Auto-héberger
+
+Pour un contrôle total ou un usage hors-ligne, copiez le runtime sur votre propre serveur. Les fichiers essentiels sont :
+
+- `dist/allspeak.js` (ou `dist/allspeak-min.js`) — le runtime
+- `dist/LanguagePack_*.js` — les packs de langue non anglais
+- `dist/plugins/` — les plugins utilisés par votre projet
+- `dist/vendor/` — Showdown et les extensions CodeMirror
+
+Modifiez ensuite les URL `src=` de votre HTML pour pointer vers votre copie. Pour mettre à jour ultérieurement, récupérez un instantané daté depuis `https://allspeak.ai/dist/<AAMMJJ>/` et remplacez les fichiers.
+
+Pour les tutoriels et les expériences courtes, aucune de ces étapes n'est nécessaire — gardez l'URL glissante.
+
 ## Des questions ?
 
 Contactez-nous à [info@allspeak.ai](mailto:info@allspeak.ai).

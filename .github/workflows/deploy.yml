@@ -37,7 +37,19 @@ jobs:
 
       - name: Deploy via rsync
         run: |
+          # Protect server-side dist/<YYMMDD>/ snapshot directories from --delete,
+          # since they aren't kept in the repo.
           rsync -avz --delete \
+            --filter='P /dist/[0-9]*' \
             -e "ssh -i ~/.ssh/id_ed25519" \
             deploy/ \
             allspeak@allspeak.ai:allspeak.ai/
+
+      - name: Snapshot dist/ to dated path
+        run: |
+          VERSION="$(date +%y%m%d)"
+          echo "Snapshotting dist/ to dist/${VERSION}/"
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            dist/ \
+            allspeak@allspeak.ai:allspeak.ai/dist/${VERSION}/

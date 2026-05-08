@@ -49,6 +49,35 @@ Claude will ask you a couple of questions, create your project files, and walk y
 
 AllSpeak is under active development. Language variants other than English may contain keywords or patterns not yet fully supported by the engine. If you encounter a compile error on a keyword that looks correct, please report it to [info@allspeak.ai](mailto:info@allspeak.ai) — fixes are usually quick.
 
+## Self-hosting for stability
+
+The starter pack and templates load the runtime from `https://allspeak.ai/dist/`, which always reflects the latest version. That's perfect for tutorials and short experiments — but for projects you intend to keep running, pin to a stable version so a future update can't break your script unexpectedly.
+
+You have two options:
+
+### 1. Pin to a date-stamped snapshot (recommended)
+
+Every deploy is also archived under a date-stamped path:
+
+```html
+<script src="https://allspeak.ai/dist/260508/allspeak.js"></script>
+```
+
+That URL serves the build deployed on 8 May 2026 and won't change — the rolling `/dist/allspeak.js` keeps advancing alongside it. To upgrade, change one number after testing.
+
+### 2. Self-host
+
+For full control or air-gapped use, copy the runtime to your own server. The essentials are:
+
+- `dist/allspeak.js` (or `dist/allspeak-min.js`) — the runtime
+- `dist/LanguagePack_*.js` — non-English language packs
+- `dist/plugins/` — whichever plugins your project uses
+- `dist/vendor/` — Showdown and the CodeMirror addons
+
+Then change the `src=` URLs in your HTML to point at your copy. To update later, fetch a date-stamped snapshot from `https://allspeak.ai/dist/<YYMMDD>/` and replace the files.
+
+For tutorial users and short experiments, neither step is needed — keep the rolling URL.
+
 ## Questions?
 
 Contact us at [info@allspeak.ai](mailto:info@allspeak.ai).

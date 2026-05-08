@@ -11,7 +11,7 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 | `starter/<lang>/*` or repo-root `asedit.as` / `asedit.json` | `./build-starters` |
 | `code/server.as` or `code/edit.html` (auto-update payload) | nothing locally — committed file is used directly by deploy |
 | `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
-| Any of the above, shipping to allspeak.ai | trigger the GitHub `Deploy to allspeak.ai` workflow |
+| Any of the above, shipping to allspeak.ai | `./deploy-allspeak` (local) **or** trigger the GitHub `Deploy to allspeak.ai` workflow |
 
 ## The four scripts
 
@@ -29,12 +29,18 @@ Mirrors `codex/`, `dist/`, and `resources/doc/` into the matching `deploy/` subd
 
 ## Deploying to allspeak.ai
 
-Triggered manually via GitHub Actions (`workflow_dispatch`) on `.github/workflows/deploy.yml`.
+Two equivalent paths:
 
-**The workflow itself runs** `./build-allspeak` and `./build-starters` on the runner, then rsyncs `deploy/` to the server.
+### Local: `./deploy-allspeak`
+Runs `build-allspeak`, `deploy-sync`, the `cp` into `deploy/code/`, `build-starters`, then rsyncs `deploy/` to `allspeak@allspeak.ai:allspeak.ai/`. Uses your default SSH key. Fastest iteration: skip the commit/push round-trip.
 
-**You must run locally and commit before triggering**, if relevant to your changes:
-- `./sync-language-packs` — the Python `.json` packs aren't shipped by this workflow, but you should commit them in step with the JS source.
+### GitHub: `Deploy to allspeak.ai` workflow
+Triggered manually via `workflow_dispatch` on `.github/workflows/deploy.yml`. The workflow itself runs `./build-allspeak` and `./build-starters` on the runner, then rsyncs `deploy/` to the server. Uses the deploy SSH key stored as a repo secret.
+
+**Before triggering the GitHub workflow**, run locally and commit, if relevant to your changes:
+- `./sync-language-packs` — the Python `.json` packs aren't shipped by the workflow, but you should commit them in step with the JS source.
 - `./deploy-sync` — the workflow rsyncs `deploy/` as-is, so stale `deploy/codex/` or `deploy/resources/doc/` will go out unless you sync first.
 
-Edits to `code/server.as`, `code/edit.html`, `code-version`, `asedit.as`, `asedit.json` are picked up directly by the workflow's `cp` step — no local sync needed for those.
+The local script does both implicitly so there's nothing extra to remember.
+
+Edits to `code/server.as`, `code/edit.html`, `code-version`, `asedit.as`, `asedit.json` are picked up directly by both paths' `cp` step — no separate sync needed for those.

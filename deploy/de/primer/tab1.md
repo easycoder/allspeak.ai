@@ -51,6 +51,35 @@ Claude wird Ihnen ein paar Fragen stellen, die Projektdateien anlegen und erklä
 
 AllSpeak wird aktiv weiterentwickelt. Sprachvarianten außer Englisch können Schlüsselwörter oder Muster enthalten, die die Laufzeitumgebung noch nicht vollständig unterstützt. Falls Sie bei einem scheinbar korrekten Schlüsselwort einen Kompilierfehler bekommen, melden Sie ihn bitte an [info@allspeak.ai](mailto:info@allspeak.ai) — Korrekturen sind meistens schnell.
 
+## Selbst hosten für Stabilität
+
+Das Starter-Paket und die Vorlagen laden die Laufzeitumgebung von `https://allspeak.ai/dist/`, was stets die neueste Version widerspiegelt. Das ist ideal für Tutorials und kurze Experimente — für Projekte, die längerfristig laufen sollen, sollten Sie jedoch eine stabile Version festlegen, damit ein zukünftiges Update Ihr Skript nicht unerwartet beschädigt.
+
+Sie haben zwei Möglichkeiten:
+
+### 1. Auf einen datierten Snapshot fixieren (empfohlen)
+
+Jeder Deploy wird zusätzlich unter einem datierten Pfad archiviert:
+
+```html
+<script src="https://allspeak.ai/dist/260508/allspeak.js"></script>
+```
+
+Diese URL liefert den am 8. Mai 2026 ausgelieferten Build und bleibt unverändert — das fortlaufende `/dist/allspeak.js` läuft parallel weiter. Zum Upgrade ändern Sie nach dem Testen eine einzige Zahl.
+
+### 2. Selbst hosten
+
+Für volle Kontrolle oder den Offline-Einsatz kopieren Sie die Laufzeitumgebung auf Ihren eigenen Server. Die wesentlichen Dateien sind:
+
+- `dist/allspeak.js` (oder `dist/allspeak-min.js`) — die Laufzeitumgebung
+- `dist/LanguagePack_*.js` — die nicht-englischen Sprachpakete
+- `dist/plugins/` — die in Ihrem Projekt verwendeten Plugins
+- `dist/vendor/` — Showdown und die CodeMirror-Erweiterungen
+
+Passen Sie dann die `src=`-URLs in Ihrem HTML an Ihre Kopie an. Zum späteren Aktualisieren laden Sie einen datierten Snapshot von `https://allspeak.ai/dist/<JJMMTT>/` herunter und ersetzen die Dateien.
+
+Für Tutorial-Nutzer und kurze Experimente sind beide Schritte überflüssig — behalten Sie die fortlaufende URL.
+
 ## Fragen?
 
 Schreiben Sie uns an [info@allspeak.ai](mailto:info@allspeak.ai).

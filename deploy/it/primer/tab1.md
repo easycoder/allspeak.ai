@@ -51,6 +51,35 @@ Claude ti farà un paio di domande, creerà i file del progetto e ti guiderà at
 
 AllSpeak è in sviluppo attivo. Le varianti in lingue diverse dall'inglese possono contenere parole chiave o pattern non ancora completamente supportati dal motore. Se incontri un errore di compilazione su una parola chiave che sembra corretta, segnalalo a [info@allspeak.ai](mailto:info@allspeak.ai) — di solito la correzione è rapida.
 
+## Auto-hosting per la stabilità
+
+Lo starter e i modelli caricano il runtime da `https://allspeak.ai/dist/`, che riflette sempre l'ultima versione. È perfetto per i tutorial e gli esperimenti brevi — ma per progetti che intendi mantenere nel tempo, fissa una versione stabile in modo che un aggiornamento futuro non rompa lo script in modo imprevisto.
+
+Hai due opzioni:
+
+### 1. Fissare uno snapshot datato (consigliato)
+
+Ogni deploy viene anche archiviato sotto un percorso datato:
+
+```html
+<script src="https://allspeak.ai/dist/260508/allspeak.js"></script>
+```
+
+Quell'URL serve la build distribuita l'8 maggio 2026 e non cambierà — il `/dist/allspeak.js` corrente continua ad avanzare in parallelo. Per aggiornare, basta cambiare un numero dopo aver testato.
+
+### 2. Auto-hosting
+
+Per il controllo completo o l'uso offline, copia il runtime sul tuo server. I file essenziali sono:
+
+- `dist/allspeak.js` (oppure `dist/allspeak-min.js`) — il runtime
+- `dist/LanguagePack_*.js` — i pacchetti di lingua non inglesi
+- `dist/plugins/` — i plugin usati dal tuo progetto
+- `dist/vendor/` — Showdown e le estensioni CodeMirror
+
+Poi modifica gli URL `src=` nel tuo HTML perché puntino alla tua copia. Per aggiornare in seguito, scarica uno snapshot datato da `https://allspeak.ai/dist/<AAMMGG>/` e sostituisci i file.
+
+Per tutorial e esperimenti brevi, nessuno dei due passaggi è necessario — usa l'URL corrente.
+
 ## Domande?
 
 Contattaci a [info@allspeak.ai](mailto:info@allspeak.ai).

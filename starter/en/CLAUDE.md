@@ -111,6 +111,13 @@ A GUI project uses three files:
 </html>
 ```
 
+**About the runtime URL.** The template above loads `https://allspeak.ai/dist/allspeak.js`, which always reflects the latest build. That's fine for tutorials and short experiments. For projects intended to keep running, AllSpeak is under active development and changes can occasionally be breaking — so before you ship anything you want to keep, mention this to the user and offer one of two stabilising options:
+
+1. **Date-pin the URL.** Replace `dist/allspeak.js` with `dist/<YYMMDD>/allspeak.js` (today's date as a six-digit yymmdd, e.g. `dist/260508/allspeak.js`). That URL serves the build deployed on that day and won't change. To upgrade later, change one number after testing.
+2. **Self-host.** Copy `dist/allspeak.js`, `dist/LanguagePack_*.js`, `dist/plugins/` (whichever plugins are used) and `dist/vendor/` to the user's own server, and change the `src=` URL to point there.
+
+Both options are documented at https://allspeak.ai/primer.html (Start Here tab → "Self-hosting for stability").
+
 ### `<project>-main.as`
 
 ```

@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# deploy-allspeak: build and deploy AllSpeak to allspeak.ai from this machine.
+# Local equivalent of the GitHub workflow at .github/workflows/deploy.yml.
+#
+# Steps:
+#   1. ./build-allspeak       — rebuild dist/allspeak.js + minified bundle
+#   2. ./deploy-sync          — mirror codex/, dist/, resources/doc/ → deploy/
+#   3. Refresh deploy/code/   — asedit, server, edit, version
+#   4. ./build-starters       — rebuild deploy/allspeak-<lang>.zip
+#   5. rsync deploy/ → server (with --delete; protects snapshot dirs)
+#   6. rsync dist/ → server's dist/<YYMMDD>/ (additive snapshot)
+#
+# Order note: deploy-sync runs AFTER build-allspeak so the freshly-built
+# dist/ is what lands in deploy/dist/ in one pass. Putting it first would
+# sync the pre-build dist and force a second sync after the build.
+#
+# Snapshot note: each deploy also publishes the current dist/ under a
+# date-stamped path (https://allspeak.ai/dist/<YYMMDD>/allspeak.js).
+# Users can pin to that URL for a stable runtime even though the rolling
+# https://allspeak.ai/dist/allspeak.js continues to advance. Snapshots
+# accumulate server-side; the main rsync's --delete is filtered to leave
+# them untouched.
+#
+# Usage: ./deploy-allspeak
+
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+REMOTE="allspeak@allspeak.ai:allspeak.ai/"
+VERSION="$(date +%y%m%d)"
+
+# SSH connection multiplexing — share a single SSH session across rsync
+# invocations and keep it briefly alive so an immediate re-run is fast.
+SSH_CTL="/tmp/ssh-allspeak-%r@%h:%p"
+SSH_OPTS="ssh -o ControlMaster=auto -o ControlPath=$SSH_CTL -o ControlPersist=60"
+
+echo "==> 1/6 build-allspeak"
+./build-allspeak
+
+echo "==> 2/6 deploy-sync"
+./deploy-sync
+
+echo "==> 3/6 prepare deploy/code/"
+cp asedit.as asedit.json code/server.as code/edit.html code/code-version deploy/code/
+
+echo "==> 4/6 build-starters"
+./build-starters
+
+echo "==> 5/6 rsync deploy/ to ${REMOTE}"
+# Protect server-side dist/<YYMMDD>/ snapshot directories from --delete,
+# since they aren't kept locally.
+rsync -avz --delete --no-perms \
+    --filter='P /dist/[0-9]*' \
+    -e "$SSH_OPTS" \
+    deploy/ "$REMOTE"
+
+echo "==> 6/6 snapshot dist/ to ${REMOTE}dist/${VERSION}/"
+rsync -avz --no-perms -e "$SSH_OPTS" dist/ "${REMOTE}dist/${VERSION}/"
+
+echo "Done. Rolling: https://allspeak.ai/dist/allspeak.js"
+echo "      Pinned:  https://allspeak.ai/dist/${VERSION}/allspeak.js"
