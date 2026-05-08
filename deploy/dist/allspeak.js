@@ -3799,6 +3799,27 @@ const AllSpeak_Core = {
 						value2
 					};
 				}
+				if (AllSpeak_Language.matchesWord(token, `has`)) {
+					compiler.next();
+					let negate = false;
+					if (AllSpeak_Language.matchesWord(compiler.getToken(), `no`)) {
+						negate = true;
+						compiler.next();
+					}
+					const kind = AllSpeak_Language.reverseWord(compiler.getToken());
+					if ([`property`, `element`, `entry`].includes(kind)) {
+						const key = compiler.getNextValue();
+						return {
+							domain: `core`,
+							type: `has`,
+							kind,
+							value1,
+							key,
+							negate
+						};
+					}
+					return null;
+				}
 				if (AllSpeak_Language.matchesWord(token, `starts`)) {
 					if (compiler.nextIsWord(`with`)) {
 						compiler.next();
@@ -4038,6 +4059,26 @@ const AllSpeak_Core = {
 				return program.getValue(condition.value1).startsWith(program.getValue(condition.value2));
 			case `endsWith`:
 				return program.getValue(condition.value1).endsWith(program.getValue(condition.value2));
+			case `has`:
+				const haystack = program.getValue(condition.value1);
+				const needle = program.getValue(condition.key);
+				let parsed = haystack;
+				if (typeof haystack === `string`) {
+					try {
+						parsed = JSON.parse(haystack);
+					} catch (err) {
+						return condition.negate;
+					}
+				}
+				let result;
+				if (condition.kind === `element`) {
+					const idx = Number(needle);
+					result = Array.isArray(parsed) && Number.isInteger(idx)
+						&& idx >= 0 && idx < parsed.length;
+				} else {
+					result = parsed !== null && typeof parsed === `object` && (needle in parsed);
+				}
+				return condition.negate ? !result : result;
 			}
 			return false;
 		}
@@ -7099,6 +7140,8 @@ const AllSpeak_Core = {
 			case `location`:
 			case `key`:
 			case `hostname`:
+			case `path`:
+			case `query`:
 				compiler.next();
 				return {
 					domain: `browser`,
@@ -7661,6 +7704,18 @@ const AllSpeak_Core = {
 					type: `constant`,
 					numeric: false,
 					content: location.hostname
+				};
+			case `path`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: window.location.pathname
+				};
+			case `query`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: window.location.search
 				};
 			case `screen`:
 				return {
@@ -12703,6 +12758,9 @@ var AllSpeak_LanguagePack_en = {
     "includes": "includes",
     "starts": "starts",
     "ends": "ends",
+    "has": "has",
+    "no": "no",
+    "entry": "entry",
     "numeric": "numeric",
     "array": "array",
     "object": "object",
@@ -12733,6 +12791,7 @@ var AllSpeak_LanguagePack_en = {
     "location": "location",
     "key": "key",
     "hostname": "hostname",
+    "query": "query",
     "browser": "browser",
     "content": "content",
     "text": "text",
