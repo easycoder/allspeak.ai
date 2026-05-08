@@ -107,6 +107,40 @@ SetStrings:
         put `L'editor è stato aggiornato. Riavviare?` into StrUpdated
         put `Riavvia il server manualmente.` into StrRestart
     end
+    else if Lang is `fr`
+    begin
+        put `Ouvrir` into StrOpen
+        put `Rechercher` into StrFind
+        put `Fermer` into StrClose
+        put `Enregistré` into StrSaved
+        put `Échec de l'enregistrement` into StrSaveFailed
+        put `Rechargé` into StrReloaded
+        put `Modification externe détectée` into StrExtChange
+        put `Impossible de se connecter au serveur` into StrNoConnect
+        put `Enregistrer sous (nom de fichier sans .as) :` into StrSaveAs
+        put `(dossier vide)` into StrEmpty
+        put `.. (niveau supérieur)` into StrUpLevel
+        put `/ (racine du projet)` into StrRoot
+        put `L'éditeur a été mis à jour. Redémarrer ?` into StrUpdated
+        put `Veuillez redémarrer le serveur manuellement.` into StrRestart
+    end
+    else if Lang is `de`
+    begin
+        put `Öffnen` into StrOpen
+        put `Suchen` into StrFind
+        put `Schließen` into StrClose
+        put `Gespeichert` into StrSaved
+        put `Speichern fehlgeschlagen` into StrSaveFailed
+        put `Neu geladen` into StrReloaded
+        put `Externe Änderung erkannt` into StrExtChange
+        put `Verbindung zum Server nicht möglich` into StrNoConnect
+        put `Speichern unter (Dateiname ohne .as):` into StrSaveAs
+        put `(leerer Ordner)` into StrEmpty
+        put `.. (Ebene höher)` into StrUpLevel
+        put `/ (Projektstamm)` into StrRoot
+        put `Der Editor wurde aktualisiert. Neu starten?` into StrUpdated
+        put `Bitte den Server manuell neu starten.` into StrRestart
+    end
     else
     begin
         put `Open` into StrOpen

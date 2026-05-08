@@ -1,4 +1,4 @@
-# i18n Polish — Nice-to-haves
+# i18n Nice-to-haves
 
 Running list of translation / i18n rough edges found while reviewing the 4-language pack (en / it / fr / de). Nothing here is a compile-or-crash blocker — that class of issue gets fixed immediately. This is for "would be nicer if..." items.
 
