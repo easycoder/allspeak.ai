@@ -1034,6 +1034,7 @@ var AllSpeak_LanguagePack_fr = {
     "timestamp": "horodatage",
     "today": "aujourdhui",
     "newline": "nouvelleligne",
+    "tab": "tabulation|tab",
     "backtick": "backtick",
     "empty": "vide",
     "uuid": "uuid",

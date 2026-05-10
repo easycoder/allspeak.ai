@@ -1102,6 +1102,7 @@ var AllSpeak_LanguagePack_en = {
     "timestamp": "timestamp",
     "today": "today",
     "newline": "newline",
+    "tab": "tab",
     "backtick": "backtick",
     "empty": "empty",
     "uuid": "uuid",

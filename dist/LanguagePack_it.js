@@ -1035,6 +1035,7 @@ var AllSpeak_LanguagePack_it = {
     "timestamp": "timestamp",
     "today": "today",
     "newline": "newline",
+    "tab": "tabulazione|tab",
     "backtick": "backtick",
     "empty": "vuoto",
     "uuid": "uuid",

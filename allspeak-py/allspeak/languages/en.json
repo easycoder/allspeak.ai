@@ -1100,6 +1100,7 @@
     "timestamp": "timestamp",
     "today": "today",
     "newline": "newline",
+    "tab": "tab",
     "backtick": "backtick",
     "empty": "empty",
     "uuid": "uuid",

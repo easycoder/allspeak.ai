@@ -2963,7 +2963,7 @@ const AllSpeak_Core = {
 				};
 			}
 			const canonicalToken = AllSpeak_Language.reverseWord(token);
-			if ([`now`, `timestamp`, `today`, `newline`, `backtick`, `break`, `empty`, `uuid`].includes(canonicalToken)) {
+			if ([`now`, `timestamp`, `today`, `newline`, `tab`, `backtick`, `break`, `empty`, `uuid`].includes(canonicalToken)) {
 				compiler.next();
 				return {
 					domain: `core`,
@@ -3508,6 +3508,12 @@ const AllSpeak_Core = {
 					type: `constant`,
 					numeric: false,
 					content: `\n`
+				};
+			case `tab`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: `\t`
 				};
 			case `backtick`:
 				return {
@@ -12769,6 +12775,7 @@ var AllSpeak_LanguagePack_en = {
     "timestamp": "timestamp",
     "today": "today",
     "newline": "newline",
+    "tab": "tab",
     "backtick": "backtick",
     "empty": "empty",
     "uuid": "uuid",

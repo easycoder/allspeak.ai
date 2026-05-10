@@ -1030,6 +1030,7 @@ var AllSpeak_LanguagePack_de = {
     "timestamp": "zeitstempel",
     "today": "heute",
     "newline": "zeilenumbruch",
+    "tab": "tabulator|tab",
     "backtick": "backtick",
     "empty": "leer",
     "uuid": "uuid",
