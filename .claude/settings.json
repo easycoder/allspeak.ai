@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C * log:*)",
+      "Bash(git -C * status:*)",
+      "Bash(git -C * show:*)",
+      "Bash(git -C * diff:*)",
+      "Bash(python3 tools/asdoc-check.py:*)",
+      "Bash(allspeak tools/asdoc-check-cli.as:*)"
+    ]
+  }
+}

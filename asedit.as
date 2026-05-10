@@ -4,7 +4,7 @@
 
     script ASEditor
 !! @hash 7ad312d2
-!!
+!!!
 !!	Variable declarations
 !! The script uses a lot of variables; they are grouped here by function.
 !   -- DOM --
@@ -61,7 +61,7 @@
     variable EntryName
     variable EntryType
 !! @hash b95a2cc1
-!!
+!!!
 
 !!	The UI is described by a DOM element 'asedit-ui',
 !!	a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -85,7 +85,7 @@
     attach Scroller to `se-scroller`
     attach CloseBtn to `se-closebtn`
 !! @hash d006ed09
-!!
+!!!
 
 !!	Some general initialisation
 !   -- CodeMirror --
@@ -95,7 +95,7 @@
     put 0 into ActiveTab
     put `` into CurrentPath
 !! @hash 3a601096
-!!
+!!!
 
 !!	Language detection
 !!	The command 'language xx' switches the system to the given language (fr, de, it etc.)
@@ -182,7 +182,7 @@ SetStrings:
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
 !! @hash 57698f27
-!!
+!!!
 
 !!	The editor checks on startup and periodically for updates to itself.
 !!	(explain)
@@ -212,7 +212,7 @@ SetStrings:
     end
 VersionDone:
 !! @hash 96465c41
-!!
+!!!
 
 !!	Set up click handlers for the various editor functions
 !   -- Handlers --
@@ -220,7 +220,7 @@ VersionDone:
     on click PlusBtn go to NewFile
     on click FindBtn go to DoFind
 !! @hash 78e093b8
-!!
+!!!
 
 !!	While editor is running it periodically saves changes made by the user
 !!	and updates the display to show updates made externally.
@@ -230,7 +230,7 @@ VersionDone:
     fork to PollFile
     stop
 !! @hash f86feb98
-!!
+!!!
 
 !!	Every half-second, changes to the content are saved
 !!	TabSaved is an array of tab contents. If its content differs from
@@ -287,7 +287,7 @@ SaveFailed:
     fork to AutoSave
     stop
 !! @hash a9c8ba92
-!!
+!!!
 
 !!	Every 3 seconds, the curret file is re-read into FileContent
 !!	If this differs from what is currently held in TabSaved for this tab,
@@ -324,7 +324,7 @@ PollNext:
     fork to PollFile
     stop
 !! @hash b40404be
-!!
+!!!
 
 !!	(explain)
 !   -- File browser with directory navigation --
@@ -428,7 +428,7 @@ CloseBrowser:
     set style `display` of Overlay to `none`
     stop
 !! @hash 90558828
-!!
+!!!
 
 !!	This secttion is tab management; creating a new tab, opening a file,
 !!	selecting a tab and closing a tab.
@@ -541,7 +541,7 @@ ActivateTab:
     gosub to RebuildTabBar
     stop
 !! @hash 14377e61
-!!
+!!!
 
 !!	Rebuilding the tab bar is done by assigning styles to each tab
 !!	to indicate which one is current.
@@ -575,7 +575,7 @@ RebuildTabBar:
     end
     return
 !! @hash 1347598c
-!!
+!!!
 !!	Here are some utility functions.
 !   -- Find --
 DoFind:
@@ -588,4 +588,4 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 !! @hash df75e3d8
-!!
+!!!
