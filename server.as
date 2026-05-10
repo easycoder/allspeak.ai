@@ -129,6 +129,11 @@
                 return `Forbidden` to Files with status 403
             end
             load Content from BaseDir cat `/` cat FilePath
+            	on failure
+            	begin
+                	log `Could not open ` cat BaseDir cat  `/` cat FilePath
+                    put empty into Content
+                end
             return Content to Files
         end
         else if FullPath starts with `/write/`

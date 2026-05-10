@@ -1,4 +1,4 @@
-AllSpeak.version = `250824`;
+AllSpeak.version = `2605101119`;
 AllSpeak.timestamp = Date.now();
 AllSpeak.writeStartupTrace(`AllSpeak loaded; waiting for page`);
 

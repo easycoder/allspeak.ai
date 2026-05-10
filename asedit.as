@@ -1,9 +1,12 @@
+!!  Tabbed script editor with auto-save and external change detection.
+!!  Served by server.as locally, or any web server with /list, /read, /write routes.
 !   asedit.as
-!   Tabbed script editor with auto-save and external change detection.
-!   Served by server.as locally, or any web server with /list, /read, /write routes.
 
-    script ECEditor
-
+    script ASEditor
+!! @hash 7ad312d2
+!!
+!!	Variable declarations
+!! The script uses a lot of variables; they are grouped here by function.
 !   -- DOM --
     div Body
     div TabBar
@@ -57,7 +60,16 @@
     variable CurrentPath   ! current directory being browsed (relative, no leading /)
     variable EntryName
     variable EntryType
+!! @hash b95a2cc1
+!!
 
+!!	The UI is described by a DOM element 'asedit-ui',
+!!	a <pre> element that contains all the DOM elements that go to make up the editor.
+!!	These are formatted using Webson, a JSON representation of any number of DOM elements,
+!!	which is rendered into an existing element using the 'render' command
+!!	'body' without a capital, is the HTML <body> element
+!!	'Body', where the first letter is a capital, is a variable that is attached to the page body
+!!	so that other elements - in this case those represented by the Webson -  can be added to it.
 !   -- Build UI --
     attach Body to body
     attach UIPre to `asedit-ui`
@@ -72,15 +84,23 @@
     attach Overlay to `se-overlay`
     attach Scroller to `se-scroller`
     attach CloseBtn to `se-closebtn`
+!! @hash d006ed09
+!!
 
+!!	Some general initialisation
 !   -- CodeMirror --
     codemirror attach to ContentEditor
 
     put 0 into TabCount
     put 0 into ActiveTab
     put `` into CurrentPath
+!! @hash 3a601096
+!!
 
-!   -- Detect language and set strings --
+!!	Language detection
+!!	The command 'language xx' switches the system to the given language (fr, de, it etc.)
+!!	and defaults to 'en'. All of the language-specific strings are then defined for each language.
+!   -- Detect language and set strings for each supported language --
     div LangDiv
     put `en` into Lang
     attach LangDiv to `editor-lang` or go to SetStrings
@@ -88,8 +108,8 @@
     replace ` ` with `` in Lang
     replace newline with `` in Lang
     if Lang is empty put `en` into Lang
-SetStrings:
 
+SetStrings:
     if Lang is `it`
     begin
         put `Apri` into StrOpen
@@ -161,7 +181,12 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
+!! @hash 57698f27
+!!
 
+!!	The editor checks on startup and periodically for updates to itself.
+!!	(explain)
+!!	then 
 !   -- Check for updates --
     rest get VersionResult from `/version` or go VersionDone
     if VersionResult is `updated`
@@ -174,39 +199,43 @@ SetStrings:
             end
             wait 3 seconds
             location the location
+
+!			 Is this alternative valid?
+!            rest get VersionResult from `/restart`
+!            on failure alert StrRestart
+!           	else
+!            begin
+!            	wait 3 seconds
+!            	location the location
+!            end
         end
     end
 VersionDone:
+!! @hash 96465c41
+!!
 
+!!	Set up click handlers for the various editor functions
 !   -- Handlers --
     on click OpenBtn go to ShowBrowser
     on click PlusBtn go to NewFile
     on click FindBtn go to DoFind
+!! @hash 78e093b8
+!!
 
+!!	While editor is running it periodically saves changes made by the user
+!!	and updates the display to show updates made externally.
+!!	This avoids the need for any Save mechanism.
 !   -- Start background loops --
     fork to AutoSave
     fork to PollFile
     stop
+!! @hash f86feb98
+!!
 
-!   -- New empty tab --
-NewFile:
-    put TabCount into N
-    add 1 to TabCount
-    set the elements of TabPath to TabCount
-    set the elements of TabName to TabCount
-    set the elements of TabSaved to TabCount
-    set the elements of TabBtn to TabCount
-    set the elements of TabLabel to TabCount
-    set the elements of TabClose to TabCount
-    index TabPath to N
-    put `` into TabPath
-    index TabName to N
-    put `new` into TabName
-    index TabSaved to N
-    put `` into TabSaved
-    put N into ActiveTab
-    go to ActivateTab
-
+!!	Every half-second, changes to the content are saved
+!!	TabSaved is an array of tab contents. If its content differs from
+!!	that currently held in the editor, the current content is saved to the file
+!!	and TabSaved is updated.
 !   -- Auto-save loop --
 AutoSave:
     wait 500 millis
@@ -257,7 +286,12 @@ SaveFailed:
     fork to ClearStatus
     fork to AutoSave
     stop
+!! @hash a9c8ba92
+!!
 
+!!	Every 3 seconds, the curret file is re-read into FileContent
+!!	If this differs from what is currently held in TabSaved for this tab,
+!!	the editor content is updated and a message is displayed briefly.
 !   -- External change polling --
 PollFile:
     wait 3 seconds
@@ -289,7 +323,10 @@ PollFile:
 PollNext:
     fork to PollFile
     stop
+!! @hash b40404be
+!!
 
+!!	(explain)
 !   -- File browser with directory navigation --
 ShowBrowser:
     rest get FileList from `/list/` cat CurrentPath or go BrowserError
@@ -390,6 +427,29 @@ SelectEntry:
 CloseBrowser:
     set style `display` of Overlay to `none`
     stop
+!! @hash 90558828
+!!
+
+!!	This secttion is tab management; creating a new tab, opening a file,
+!!	selecting a tab and closing a tab.
+!   -- New empty tab --
+NewFile:
+    put TabCount into N
+    add 1 to TabCount
+    set the elements of TabPath to TabCount
+    set the elements of TabName to TabCount
+    set the elements of TabSaved to TabCount
+    set the elements of TabBtn to TabCount
+    set the elements of TabLabel to TabCount
+    set the elements of TabClose to TabCount
+    index TabPath to N
+    put `` into TabPath
+    index TabName to N
+    put `new` into TabName
+    index TabSaved to N
+    put `` into TabSaved
+    put N into ActiveTab
+    go to ActivateTab
 
 !   -- Open a file (TabItem=relative path, File=display name) --
 OpenFile:
@@ -480,9 +540,13 @@ ActivateTab:
     codemirror set content of ContentEditor to TabSaved
     gosub to RebuildTabBar
     stop
+!! @hash 14377e61
+!!
 
-!   -- Rebuild tab bar --
+!!	Rebuilding the tab bar is done by assigning styles to each tab
+!!	to indicate which one is current.
 RebuildTabBar:
+!   -- Rebuild tab bar --
     set the content of TabBar to ``
     put 0 into N
     while N is less than TabCount
@@ -510,7 +574,9 @@ RebuildTabBar:
         add 1 to N
     end
     return
-
+!! @hash 1347598c
+!!
+!!	Here are some utility functions.
 !   -- Find --
 DoFind:
     codemirror find in ContentEditor
@@ -521,3 +587,5 @@ ClearStatus:
     wait 3 seconds
     set the content of StatusSpan to ``
     stop
+!! @hash df75e3d8
+!!
