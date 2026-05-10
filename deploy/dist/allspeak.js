@@ -12577,13 +12577,10 @@ var AllSpeak_LanguagePack_en = {
       ]
     },
     "SUBTRACT": {
-      "keyword": "take",
+      "keyword": "take|subtract",
       "patterns": [
         "take {value} from {variable}",
         "take {value1} from {value2} giving {variable}"
-      ],
-      "aliases": [
-        "subtract"
       ]
     },
     "TOGGLE": {
@@ -12965,7 +12962,7 @@ var AllSpeak_LanguagePack_en = {
     "run": "run",
     "sanitize": "sanitize",
     "stop": "stop",
-    "take": "take",
+    "take": "take|subtract",
     "toggle": "toggle",
     "trace": "trace",
     "try": "try",

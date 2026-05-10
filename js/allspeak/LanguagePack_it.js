@@ -906,7 +906,7 @@ var AllSpeak_LanguagePack_it = {
       ]
     },
     "SUBTRACT": {
-      "keyword": "togli",
+      "keyword": "togli|sottrai",
       "patterns": [
         "togli {value} da {variable}",
         "togli {value1} da {value2} dando {variable}"
@@ -1233,7 +1233,7 @@ var AllSpeak_LanguagePack_it = {
     "run": "esegui",
     "sanitize": "sanifica",
     "stop": "ferma",
-    "take": "togli",
+    "take": "togli|sottrai",
     "toggle": "inverti",
     "trace": "traccia",
     "try": "prova",
