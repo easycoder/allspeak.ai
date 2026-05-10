@@ -147,10 +147,25 @@
     "flex-shrink": "0",
     "#": ["$BlocksTitle", "$BlocksPrev", "$BlocksNext", "$BlocksBadge", "$BlocksVerifyBtn"]
   },
+  "$BlocksToc": {
+    "#element": "div",
+    "@id": "se-blocks-toc",
+    "width": "200px",
+    "height": "100%",
+    "overflow-y": "auto",
+    "background": "#262626",
+    "color": "#ccc",
+    "font-family": "system-ui, sans-serif",
+    "font-size": "12px",
+    "padding": "4px 0",
+    "border-right": "1px solid #444",
+    "flex-shrink": "0",
+    "box-sizing": "border-box"
+  },
   "$BlocksCodePane": {
     "#element": "textarea",
     "@id": "se-blocks-code",
-    "flex": "1",
+    "flex": "0 0 60%",
     "height": "100%",
     "font-family": "monospace",
     "font-size": "13px",
@@ -160,15 +175,23 @@
     "resize": "none",
     "outline": "none"
   },
+  "$BlocksDivider": {
+    "#element": "div",
+    "@id": "se-blocks-divider",
+    "width": "6px",
+    "height": "100%",
+    "cursor": "col-resize",
+    "background": "#bbb",
+    "flex-shrink": "0"
+  },
   "$BlocksDocPane": {
     "#element": "textarea",
     "@id": "se-blocks-doc",
-    "flex": "1",
+    "flex": "1 1 0",
     "height": "100%",
     "font-family": "Georgia, serif",
     "font-size": "14px",
     "border": "none",
-    "border-left": "1px solid #ccc",
     "padding": "8px",
     "box-sizing": "border-box",
     "resize": "none",
@@ -181,7 +204,7 @@
     "display": "flex",
     "flex": "1",
     "overflow": "hidden",
-    "#": ["$BlocksCodePane", "$BlocksDocPane"]
+    "#": ["$BlocksToc", "$BlocksCodePane", "$BlocksDivider", "$BlocksDocPane"]
   },
   "$BlocksArea": {
     "#element": "div",

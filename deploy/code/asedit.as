@@ -5,7 +5,7 @@
     script ASEditor
 !! @hash 7ad312d2
 !!!
-!!	Variable declarations
+!! Variable declarations
 !! The script uses a lot of variables; they are grouped here by function.
 !   -- DOM --
     div Body
@@ -118,16 +118,33 @@
     variable NewCode       ! scratch: edited code pulled from BlocksCodePane
     variable OldProse      ! scratch: previously stored prose for this section
     variable OldCode       ! scratch: previously stored code for this section
-!! @hash 82dc7ca8
-!!!
 
-!!	The UI is described by a DOM element 'asedit-ui',
-!!	a <pre> element that contains all the DOM elements that go to make up the editor.
-!!	These are formatted using Webson, a JSON representation of any number of DOM elements,
-!!	which is rendered into an existing element using the 'render' command
-!!	'body' without a capital, is the HTML <body> element
-!!	'Body', where the first letter is a capital, is a variable that is attached to the page body
-!!	so that other elements - in this case those represented by the Webson -  can be added to it.
+!   -- Blocks: TOC + draggable divider --
+    div BlocksToc          ! left sidebar listing all blocks
+    div BlocksDivider      ! draggable splitter between code and doc panes
+    div TocRow             ! one row per block in the TOC
+    span TocLabel          ! the clickable label inside each TocRow
+    variable PickPos       ! pick coords at mousedown on divider
+    variable DragPos       ! drag coords during mousemove
+    variable PickX
+    variable DragX
+    variable CodeWidthAtPick
+    variable NewWidth
+    variable StoredWidth
+    variable FinalWidth
+    variable FirstLine     ! first prose line of a block (for TOC label)
+    variable NL
+    variable J
+!! @hash 74f1e5a5
+!! @verified 82dc7ca8
+!!!
+!! The UI is described by a DOM element 'asedit-ui',
+!! a <pre> element that contains all the DOM elements that go to make up the editor.
+!! These are formatted using Webson, a JSON representation of any number of DOM elements,
+!! which is rendered into an existing element using the 'render' command
+!! 'body' without a capital, is the HTML <body> element
+!! 'Body', where the first letter is a capital, is a variable that is attached to the page body
+!! so that other elements - in this case those represented by the Webson -  can be added to it.
 !   -- Build UI --
     attach Body to body
     attach UIPre to `asedit-ui`
@@ -152,10 +169,12 @@
     attach BlocksVerify to `se-blocks-verify`
     attach BlocksCodePane to `se-blocks-code`
     attach BlocksDocPane to `se-blocks-doc`
-!! @hash 9fa497ac
+    attach BlocksToc to `se-blocks-toc`
+    attach BlocksDivider to `se-blocks-divider`
+!! @hash 21eabec3
+!! @verified 9fa497ac
 !!!
-
-!!	Some general initialisation
+!! Some general initialisation
 !   -- CodeMirror --
     codemirror attach to ContentEditor
 
@@ -163,11 +182,11 @@
     put 0 into ActiveTab
     put `` into CurrentPath
 !! @hash 3a601096
+!! @verified 3a601096
 !!!
-
-!!	Language detection
-!!	The command 'language xx' switches the system to the given language (fr, de, it etc.)
-!!	and defaults to 'en'. All of the language-specific strings are then defined for each language.
+!! Language detection
+!! The command 'language xx' switches the system to the given language (fr, de, it etc.)
+!! and defaults to 'en'. All of the language-specific strings are then defined for each language.
 !   -- Detect language and set strings for each supported language --
     div LangDiv
     put `en` into Lang
@@ -250,11 +269,11 @@ SetStrings:
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
 !! @hash 57698f27
+!! @verified 57698f27
 !!!
-
-!!	The editor checks on startup and periodically for updates to itself.
-!!	(explain)
-!!	then 
+!! The editor checks on startup and periodically for updates to itself.
+!! (explain)
+!! then 
 !   -- Check for updates --
     rest get VersionResult from `/version` or go VersionDone
     if VersionResult is `updated`
@@ -280,13 +299,13 @@ SetStrings:
     end
 VersionDone:
 !! @hash 96465c41
+!! @verified 96465c41
 !!!
-
-!!	Set up click handlers for the various editor functions.
-!!	Blocks-mode handlers (toggle, navigate, mark verified) live alongside
-!!	the existing flat-mode handlers. The pane editor textareas have
-!!	keyboard input handlers wired in EnterBlocks so we can stop watching
-!!	them when the pane is hidden.
+!! Set up click handlers for the various editor functions.
+!! Blocks-mode handlers (toggle, navigate, mark verified) live alongside
+!! the existing flat-mode handlers. The pane editor textareas have
+!! keyboard input handlers wired in EnterBlocks so we can stop watching
+!! them when the pane is hidden.
 !   -- Handlers --
     on click OpenBtn go to ShowBrowser
     on click PlusBtn go to NewFile
@@ -295,25 +314,47 @@ VersionDone:
     on click BlocksPrev go to PrevBlock
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
+
+    on pick BlocksDivider
+    begin
+        put the pick position into PickPos
+        put property `x` of PickPos into PickX
+        put the width of BlocksCodePane into CodeWidthAtPick
+    end
+    on drag
+    begin
+        put the drag position into DragPos
+        put property `x` of DragPos into DragX
+        put DragX into NewWidth
+        take PickX from NewWidth
+        add CodeWidthAtPick to NewWidth
+        if NewWidth is less than 100 put 100 into NewWidth
+        set style `flex` of BlocksCodePane to `0 0 ` cat NewWidth cat `px`
+    end
+    on drop
+    begin
+        put the width of BlocksCodePane into FinalWidth
+        put FinalWidth into storage as `asedit-blocks-code-width`
+    end
+
     put 0 into BlocksMode
     put 0 into BlockDirty
-!! @hash d4e6253f
+!! @hash ef9f0fc0
+!! @verified d4e6253f
 !!!
-
-!!	While editor is running it periodically saves changes made by the user
-!!	and updates the display to show updates made externally.
-!!	This avoids the need for any Save mechanism.
+!! While editor is running it periodically saves changes made by the user
+!! and updates the display to show updates made externally.
+!! This avoids the need for any Save mechanism.
 !   -- Start background loops --
     fork to AutoSave
     fork to PollFile
     stop
 !! @hash f86feb98
+!! @verified f86feb98
 !!!
-
-!!	Every half-second, changes to the content are saved
-!!	TabSaved is an array of tab contents. If its content differs from
-!!	that currently held in the editor, the current content is saved to the file
-!!	and TabSaved is updated.
+!! Every half-second, changes to the content are saved.
+!!
+!! TabSaved is an array of tab contents. If its content differs from that currently held in the editor, the current content is saved to the file and TabSaved is updated.
 !   -- Auto-save loop --
 AutoSave:
     wait 500 millis
@@ -365,11 +406,11 @@ SaveFailed:
     fork to AutoSave
     stop
 !! @hash a9c8ba92
+!! @verified a9c8ba92
 !!!
-
-!!	Every 3 seconds, the curret file is re-read into FileContent
-!!	If this differs from what is currently held in TabSaved for this tab,
-!!	the editor content is updated and a message is displayed briefly.
+!! Every 3 seconds, the current file is re-read into FileContent.
+!!
+!! If this differs from what is currently held in TabSaved for this tab, the editor content is updated and a message is displayed briefly.
 !   -- External change polling --
 PollFile:
     wait 3 seconds
@@ -406,9 +447,9 @@ PollNext:
     fork to PollFile
     stop
 !! @hash 528a0f6d
+!! @verified 528a0f6d
 !!!
-
-!!	(explain)
+!! (explain)
 !   -- File browser with directory navigation --
 ShowBrowser:
     rest get FileList from `/list/` cat CurrentPath or go BrowserError
@@ -510,10 +551,9 @@ CloseBrowser:
     set style `display` of Overlay to `none`
     stop
 !! @hash 90558828
+!! @verified 90558828
 !!!
-
-!!	This secttion is tab management; creating a new tab, opening a file,
-!!	selecting a tab and closing a tab.
+!! This section is tab management; creating a new tab, opening a file, selecting a tab and closing a tab.
 !   -- New empty tab --
 NewFile:
     put TabCount into N
@@ -623,10 +663,9 @@ ActivateTab:
     gosub to RebuildTabBar
     stop
 !! @hash 14377e61
+!! @verified 14377e61
 !!!
-
-!!	Rebuilding the tab bar is done by assigning styles to each tab
-!!	to indicate which one is current.
+!! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
 RebuildTabBar:
 !   -- Rebuild tab bar --
     set the content of TabBar to ``
@@ -657,8 +696,9 @@ RebuildTabBar:
     end
     return
 !! @hash 1347598c
+!! @verified 1347598c
 !!!
-!!	Here are some utility functions.
+!! Here are some utility functions.
 !   -- Find --
 DoFind:
     codemirror find in ContentEditor
@@ -670,14 +710,11 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 !! @hash df75e3d8
+!! @verified df75e3d8
 !!!
-
-!! Blocks parser. Walks the current Source line-by-line and populates the
-!! per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState,
-!! VerifyState) plus the Outside-content array used to preserve text
-!! between sections during rebuild. Same classifier logic as
-!! tools/asdoc-check.as — the spec is one source of truth even though the
-!! code is duplicated here for the editor's in-process use.
+!! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.
+!!
+!! Same classifier logic as tools/asdoc-check.as — the spec is one source of truth even though the code is duplicated here for the editor's in-process use.
 ParseSource:
     put 0 into SecCount
     put 0 into InSection
@@ -705,7 +742,11 @@ ParseSource:
         ! Unclosed section — close synthetically so user can still see it.
         gosub to CloseSection
     end
-    ! Save trailing outside chunk
+    ! Save trailing outside chunk; need to grow Outside one past the last
+    ! per-section index allocated by OpenSection.
+    put SecCount into Tmp
+    add 1 to Tmp
+    set the elements of Outside to Tmp
     index Outside to SecCount
     put OutsideTmp into Outside
     return
@@ -727,6 +768,7 @@ InsideDispatch:
     else if Kind is `CODE` gosub to AppendCode
     return
 
+!   Classify the current line as code/comment or documentation
 Classify:
     put `CODE` into Kind
     if Line is `!!!`
@@ -749,6 +791,7 @@ Classify:
     end
     return
 
+!   Deal with @ (META)
 MaybeMeta:
     if LContent starts with `@`
     begin
@@ -858,19 +901,20 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash f4a217b2
+!! @hash 56254133
+!! @verified 56254133
 !!!
-
-!! Blocks view. ToggleBlocks switches between flat and Blocks panes;
-!! EnterBlocks parses the current source and shows block 0; ExitBlocks
-!! flushes pending edits and reveals the flat pane again. RenderBlock
-!! paints the textareas and the toolbar badge for the current section.
-!! UpdateBadge derives badge text/colour from the section's hash and
-!! verify states.
+!! Blocks view.
+!! ToggleBlocks switches between flat and Blocks panes.
+!! EnterBlocks parses the current source and shows block 0.
+!! ExitBlocks flushes pending edits and reveals the flat pane again.
+!! RenderBlock paints the textareas and the toolbar badge for the current section.
+!! UpdateBadge derives badge text/colour from the section's hash and verify states.
 ToggleBlocks:
     if BlocksMode is 0 go to EnterBlocks
     go to ExitBlocks
 
+!   Enter Blocks mode
 EnterBlocks:
     gosub to ParseSource
     if SecCount is 0
@@ -883,9 +927,18 @@ EnterBlocks:
     put 1 into BlocksMode
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `flex`
+    ! Restore divider position from previous session if persisted.
+    get StoredWidth from storage as `asedit-blocks-code-width`
+    if StoredWidth is `null` put 0 into StoredWidth
+    if StoredWidth is `undefined` put 0 into StoredWidth
+    if StoredWidth is empty put 0 into StoredWidth
+    if StoredWidth is greater than 100
+        set style `flex` of BlocksCodePane to `0 0 ` cat StoredWidth cat `px`
+    gosub to RenderToc
     gosub to RenderBlock
     stop
 
+!   Exit Blocks mode
 ExitBlocks:
     gosub to FlushBlock
     put 0 into BlocksMode
@@ -915,6 +968,7 @@ RenderBlock:
     index SecCode to CurBlock
     set the content of BlocksCodePane to SecCode
     gosub to UpdateBadge
+    gosub to RenderToc
     return
 
 UpdateBadge:
@@ -946,15 +1000,17 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash c82f1ba9
+!! @hash 47355e60
+!! @verified b94f2261
 !!!
-
-!! Blocks save. FlushBlock pushes the current pane edits back into the
+!! Blocks save.
+!! FlushBlock pushes the current pane edits back into the
 !! per-section arrays (recomputing the section's hash if its code changed)
 !! and rebuilds the full source by walking Outside + Section + Outside +
 !! ... etc. The new source is written to ContentEditor (CodeMirror), which
 !! the existing AutoSave loop persists to disk on its next iteration.
 !! No-op if neither pane changed.
+!!
 FlushBlock:
     if BlocksMode is 0 return
     put the text of BlocksDocPane into NewProse
@@ -1038,8 +1094,8 @@ BuildSectionText:
     put BlkText cat `!!!` into BlkText
     return
 !! @hash d3dbcc0b
+!! @verified d3dbcc0b
 !!!
-
 !! Mark verified — writes the current code's hash into the section's
 !! "@verified" slot, then flushes so the file picks it up. The badge turns
 !! green on the next render.
@@ -1061,4 +1117,45 @@ MarkVerified:
     fork to ClearStatus
     stop
 !! @hash f2067b60
+!! @verified f2067b60
+!!!
+!! Blocks TOC. Renders one row per parsed section in the BlocksToc
+!! sidebar, highlighting the current block. Each row's label is the
+!! first prose line of its section, truncated. Clicking a row flushes
+!! any pending edit and jumps to that block.
+RenderToc:
+    set the content of BlocksToc to ``
+    set the elements of TocRow to SecCount
+    set the elements of TocLabel to SecCount
+    put 0 into J
+    while J is less than SecCount
+    begin
+        index TocRow to J
+        create TocRow in BlocksToc
+        if J is CurBlock set the style of TocRow to `padding:4px 10px;cursor:pointer;background:#1e88e5;color:white`
+        else set the style of TocRow to `padding:4px 10px;cursor:pointer`
+        index SecProse to J
+        put SecProse into ProseSrc
+        put the position of newline in ProseSrc into NL
+        if NL is less than 0 put ProseSrc into FirstLine
+        else put left NL of ProseSrc into FirstLine
+        put J into Tmp
+        add 1 to Tmp
+        put Tmp cat `. ` cat FirstLine into FirstLine
+        index TocLabel to J
+        create TocLabel in TocRow
+        set the content of TocLabel to FirstLine
+        on click TocLabel go to JumpToBlock
+        add 1 to J
+    end
+    return
+
+JumpToBlock:
+    put the index of TocLabel into Tmp
+    if Tmp is CurBlock stop
+    gosub to FlushBlock
+    put Tmp into CurBlock
+    gosub to RenderBlock
+    stop
+!! @hash ed01e660
 !!!
