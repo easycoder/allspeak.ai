@@ -246,6 +246,40 @@ La divisione è intera (troncata), quindi questo funziona correttamente.
 - Gli elementi DOM devono essere dichiarati prima dell'uso (es. `div X`, `bottone Y`, `input Z`)
 - **Nessuna precedenza implicita nelle catene `cat`.** Spezza le espressioni complesse in passi separati.
 
+## Blocchi di doc — obbligatori per nuovo codice `.as`
+
+Ogni sezione di nuovo codice `.as` deve essere racchiusa in un blocco di doc:
+
+    !! Breve spiegazione di cosa fa questa sezione e perché esiste.
+    !! Usa più righe se necessario. Una riga `!!` nuda è un'interruzione di paragrafo.
+    UnaLabel:
+        ! il codice
+        return
+    !! @hash <gestito>      ← inserito dall'analizzatore (non scrivere a mano)
+    !!!                     ← terminatore obbligatorio (tre bang)
+
+Regole:
+- Inizia con il **perché** o il vincolo di design, non con una parafrasi del codice.
+- **Un paragrafo = una riga.** Ogni paragrafo di prosa è una singola riga `!! ...`, lunga quanto serve. Un `!!` nudo separa i paragrafi. Non inserire interruzioni di riga per il wrap visivo — si visualizzano male in modalità Blocchi (che applica word-wrap al pannello doc) e ostacolano l'editing. L'editor in modalità piatta mostrerà righe sorgente molto lunghe; è accettato, perché la prosa è pensata per essere letta in modalità Blocchi e gli strumenti IA non si curano della lunghezza delle righe.
+- Non iniziare una riga di prosa con `@hash` o `@verified` — il parser le tratta come metadati. Mettile tra virgolette ("@verified") se devi nominarle.
+- **Dopo aver modificato un blocco, esegui `python3 asdoc-check.py --write <file>` automaticamente — non chiedere prima.** Il `@hash` memorizzato diventa obsoleto nel momento in cui il codice cambia; aggiornarlo fa parte della modifica, non è un compito separato. Eventuali avvertimenti `verify-stale` devono essere segnalati nella tua risposta affinché l'utente possa ri-verificare (la modalità Blocchi di asedit ha un pulsante « Mark verified » a un click).
+- Un file senza alcun blocco di doc è trattato come opt-out (nessun errore, nessun avvertimento). Adotta la convenzione file per file man mano che li tocchi.
+
+L'analizzatore `asdoc-check.py` è incluso nello starter nella radice del progetto — nessuna installazione richiesta. Esegui `python3 asdoc-check.py .` per percorrere tutto il progetto e vedere lo stato di ogni file.
+
+## Revisione del codice durante la documentazione
+
+Quando aggiungi blocchi di doc al codice esistente, trattalo come una passata di revisione, non solo di documentazione. Mentre leggi ogni sezione abbastanza da vicino da scriverne la prosa, segnala anche tutto ciò che sembra strano:
+
+- **Simboli irraggiungibili** — sub-routine o label senza chiamante; variabili dichiarate ma mai assegnate, o assegnate ma mai lette.
+- **Codice morto** — rami che non possono mai essere presi; righe dopo uno `stop`/`exit`/`return` incondizionato a cui nulla salta.
+- **Pattern sospetti** — logica duplicata che potrebbe essere consolidata; valori cablati che dovrebbero essere variabili; coupling nascosto tra sezioni (una scrive un global da cui l'altra dipende silenziosamente).
+- **Disaccordo doc/codice** — commenti, nomi o doc vicine che contraddicono ciò che il codice fa davvero.
+
+Presenta le scoperte come breve elenco all'**inizio** della tua risposta, separatamente dalle modifiche ai blocchi di doc. Non correggere silenziosamente — lascia decidere all'utente.
+
+Il punto della convenzione dei blocchi di doc è forzare una lettura attenta; riportare ciò che quella lettura ha rivelato è il beneficio naturale.
+
 ## Riferimento rapido
 
 ```text

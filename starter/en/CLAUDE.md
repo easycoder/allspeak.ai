@@ -217,6 +217,40 @@ Division is integer (truncated), so this works correctly.
 - DOM elements must be declared before use (e.g. `div X`, `button Y`, `input Z`)
 - **No implicit precedence in `cat` chains.** Break complex expressions into separate steps.
 
+## Doc blocks — required for new `.as` code
+
+Every section of new `.as` code must be wrapped in a doc block:
+
+    !! Brief explanation of what this section does and why it exists.
+    !! Use multiple lines as needed. A bare `!!` line is a paragraph break.
+    SomeLabel:
+        ! the code
+        return
+    !! @hash <managed>      ← inserted by the analyser (don't write by hand)
+    !!!                     ← required terminator (three bangs)
+
+Rules:
+- Lead with the **why** or the design constraint, not a paraphrase of the code.
+- **One paragraph = one line.** Each paragraph of prose is a single `!! ...` line, however long. Bare `!!` separates paragraphs. Don't insert hard line breaks for visual wrapping — they render badly in the editor's Blocks mode (which word-wraps the doc pane) and they fight you when editing. The flat-mode editor will show very long source lines; that's accepted, since the prose is meant to be read in Blocks mode and AI tools don't care about line length.
+- Don't start a prose line with `@hash` or `@verified` — the parser treats those as metadata. Quote them ("@verified") if you must mention the names.
+- **After editing any block, run `python3 asdoc-check.py --write <file>` automatically — don't ask first.** The stored `@hash` becomes stale the moment the code changes; refreshing it is part of the edit, not a separate task. Any `verify-stale` warnings the run prints should be surfaced in your reply so the user can re-review (asedit's Blocks mode has a one-click "Mark verified" button).
+- A file with no doc blocks at all is treated as opt-out (no errors, no warnings). Adopt the convention file-by-file as you touch them.
+
+The analyser `asdoc-check.py` ships with the starter at the project root — no install needed. Run `python3 asdoc-check.py .` to walk the whole project and see every file's status.
+
+## Code review while documenting
+
+When adding doc blocks to existing code, treat it as a review pass, not just a documentation pass. While reading each section closely enough to write its prose, also surface anything that looks off:
+
+- **Unreachable symbols** — subroutines or labels with no caller; variables declared but never assigned, or assigned but never read.
+- **Dead code** — branches that can never be taken; lines after an unconditional `stop`/`exit`/`return` that nothing jumps to.
+- **Suspicious patterns** — duplicated logic that might want consolidating; hardcoded values that look like they should be variables; hidden coupling between sections (one writes a global the other quietly depends on).
+- **Doc/code disagreement** — comments, names, or nearby docs that contradict what the code actually does.
+
+Surface findings as a short list at the **start** of your response, separately from the doc-block edits. Don't silently fix them — let the user decide.
+
+The point of the doc-block convention is to force close reading; reporting what that reading turned up is the natural payoff.
+
 ## Quick reference
 
 ```text

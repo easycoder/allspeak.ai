@@ -246,6 +246,40 @@ La division est entière (tronquée), donc cela fonctionne correctement.
 - Les éléments DOM doivent être déclarés avant utilisation (ex. `div X`, `bouton Y`, `input Z`)
 - **Pas de précédence implicite dans les chaînes `cat`.** Découpe les expressions complexes en étapes séparées.
 
+## Blocs de doc — requis pour tout nouveau code `.as`
+
+Chaque section de nouveau code `.as` doit être enveloppée dans un bloc de doc :
+
+    !! Brève explication de ce que fait cette section et pourquoi elle existe.
+    !! Utilise plusieurs lignes au besoin. Une ligne `!!` nue est un saut de paragraphe.
+    UnLabel:
+        ! le code
+        return
+    !! @hash <géré>         ← inséré par l'analyseur (ne pas écrire à la main)
+    !!!                     ← terminateur obligatoire (trois bangs)
+
+Règles :
+- Commence par le **pourquoi** ou la contrainte de conception, pas par une paraphrase du code.
+- **Un paragraphe = une ligne.** Chaque paragraphe de prose est une seule ligne `!! ...`, aussi longue qu'il le faut. Un `!!` nu sépare les paragraphes. N'insère pas de retours à la ligne pour le rendu visuel — ils s'affichent mal en mode Blocs (qui enveloppe automatiquement le volet de doc) et compliquent l'édition. L'éditeur en mode plat affichera des lignes source très longues ; c'est accepté, car la prose est destinée à être lue en mode Blocs et les outils IA ne se soucient pas de la longueur des lignes.
+- Ne commence pas une ligne de prose par `@hash` ou `@verified` — l'analyseur les traite comme des métadonnées. Mets-les entre guillemets ("@verified") si tu dois en parler.
+- **Après avoir édité un bloc, exécute `python3 asdoc-check.py --write <fichier>` automatiquement — ne demande pas d'abord.** Le `@hash` stocké devient obsolète dès que le code change ; le rafraîchir fait partie de l'édition, ce n'est pas une tâche séparée. Les avertissements `verify-stale` éventuels doivent être signalés dans ta réponse pour que l'utilisateur puisse re-vérifier (le mode Blocs d'asedit a un bouton « Mark verified » en un clic).
+- Un fichier sans aucun bloc de doc est traité comme opt-out (pas d'erreurs, pas d'avertissements). Adopte la convention fichier par fichier au fur et à mesure que tu les touches.
+
+L'analyseur `asdoc-check.py` est livré avec le starter à la racine du projet — aucune installation requise. Exécute `python3 asdoc-check.py .` pour parcourir tout le projet et voir l'état de chaque fichier.
+
+## Revue de code pendant la documentation
+
+Lorsque tu ajoutes des blocs de doc à du code existant, traite-le comme une passe de revue, pas seulement une passe de documentation. Pendant que tu lis chaque section d'assez près pour en écrire la prose, signale aussi tout ce qui semble bizarre :
+
+- **Symboles inatteignables** — sous-routines ou labels sans appelant ; variables déclarées mais jamais assignées, ou assignées mais jamais lues.
+- **Code mort** — branches qui ne peuvent jamais être prises ; lignes après un `stop`/`exit`/`return` inconditionnel auxquelles rien ne saute.
+- **Motifs suspects** — logique dupliquée qui pourrait être consolidée ; valeurs codées en dur qui devraient être des variables ; couplage caché entre sections (l'une écrit un global dont l'autre dépend silencieusement).
+- **Désaccord doc/code** — commentaires, noms ou docs voisines qui contredisent ce que le code fait réellement.
+
+Présente les trouvailles sous forme d'une courte liste au **début** de ta réponse, séparément des modifications de blocs de doc. Ne corrige pas silencieusement — laisse l'utilisateur décider.
+
+L'intérêt de la convention des blocs de doc est de forcer une lecture attentive ; rapporter ce que cette lecture a révélé est le bénéfice naturel.
+
 ## Référence rapide
 
 ```text

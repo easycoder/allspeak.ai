@@ -246,6 +246,40 @@ Die Division ist ganzzahlig (abgeschnitten), daher funktioniert dies korrekt.
 - DOM-Elemente müssen vor ihrer Verwendung deklariert werden (z. B. `div X`, `knopf Y`, `input Z`)
 - **Keine implizite Rangfolge in `cat`-Ketten.** Zerlegen Sie komplexe Ausdrücke in separate Schritte.
 
+## Doc-Blöcke — erforderlich für neuen `.as`-Code
+
+Jeder Abschnitt von neuem `.as`-Code muss in einem Doc-Block eingehüllt werden:
+
+    !! Kurze Erklärung, was dieser Abschnitt macht und warum er existiert.
+    !! Verwende bei Bedarf mehrere Zeilen. Eine nackte `!!`-Zeile ist ein Absatzumbruch.
+    EinLabel:
+        ! der Code
+        return
+    !! @hash <verwaltet>    ← vom Analyser eingefügt (nicht von Hand schreiben)
+    !!!                     ← Pflicht-Terminator (drei Bangs)
+
+Regeln:
+- Beginne mit dem **Warum** oder der Design-Bedingung, nicht mit einer Paraphrase des Codes.
+- **Ein Absatz = eine Zeile.** Jeder Prosa-Absatz ist eine einzelne `!! ...`-Zeile, beliebig lang. Ein nacktes `!!` trennt Absätze. Füge keine harten Zeilenumbrüche für visuellen Wrap ein — sie sehen im Blocks-Modus schlecht aus (der das Doc-Panel automatisch umbricht) und erschweren das Editieren. Der Flat-Mode-Editor zeigt sehr lange Quellzeilen; das wird akzeptiert, da die Prosa für das Lesen im Blocks-Modus gedacht ist und KI-Tools sich nicht um Zeilenlängen kümmern.
+- Beginne keine Prosa-Zeile mit `@hash` oder `@verified` — der Parser behandelt sie als Metadaten. Setze sie in Anführungszeichen ("@verified"), wenn du sie erwähnen musst.
+- **Nach jeder Block-Änderung führe `python3 asdoc-check.py --write <datei>` automatisch aus — frage nicht erst nach.** Der gespeicherte `@hash` wird in dem Moment veraltet, in dem der Code sich ändert; ihn zu aktualisieren ist Teil der Änderung, keine separate Aufgabe. Etwaige `verify-stale`-Warnungen müssen in deiner Antwort erwähnt werden, damit der Benutzer erneut prüfen kann (asedits Blocks-Modus hat einen Ein-Klick-„Mark verified"-Button).
+- Eine Datei ohne jegliche Doc-Blöcke wird als Opt-out behandelt (keine Fehler, keine Warnungen). Übernimm die Konvention Datei für Datei, während du sie anfasst.
+
+Der Analyser `asdoc-check.py` wird mit dem Starter im Projekt-Root mitgeliefert — keine Installation nötig. Führe `python3 asdoc-check.py .` aus, um das ganze Projekt zu durchlaufen und den Status jeder Datei zu sehen.
+
+## Code-Review beim Dokumentieren
+
+Wenn du Doc-Blöcke zu bestehendem Code hinzufügst, behandle es als Review-Pass, nicht nur als Dokumentations-Pass. Während du jeden Abschnitt gründlich genug liest, um seine Prosa zu schreiben, melde auch alles, was komisch aussieht:
+
+- **Unerreichbare Symbole** — Subroutinen oder Labels ohne Aufrufer; Variablen, die deklariert, aber nie zugewiesen werden, oder zugewiesen, aber nie gelesen werden.
+- **Toter Code** — Branches, die nie genommen werden können; Zeilen nach einem unbedingten `stop`/`exit`/`return`, zu denen nichts springt.
+- **Verdächtige Muster** — duplizierte Logik, die konsolidiert werden könnte; hartcodierte Werte, die Variablen sein sollten; versteckte Kopplung zwischen Abschnitten (einer schreibt ein Global, von dem der andere stillschweigend abhängt).
+- **Doc/Code-Diskrepanz** — Kommentare, Namen oder benachbarte Docs, die dem widersprechen, was der Code tatsächlich tut.
+
+Präsentiere die Befunde als kurze Liste am **Anfang** deiner Antwort, getrennt von den Doc-Block-Änderungen. Korrigiere nicht stillschweigend — lass den Benutzer entscheiden.
+
+Der Sinn der Doc-Block-Konvention ist, sorgfältiges Lesen zu erzwingen; das, was dieses Lesen ergeben hat, zu berichten, ist der natürliche Gewinn.
+
 ## Kurzreferenz
 
 ```text
