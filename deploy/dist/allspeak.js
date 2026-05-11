@@ -1487,19 +1487,19 @@ const AllSpeak_Core = {
 	Release: {
 
 		compile: compiler => {
-			if (compiler.getToken()== `parent`) {
-					compiler.next();
-					compiler.addCommand({
-						domain: `core`,
-						keyword: `set`,
-						lino,
-						request: `setReady`
-					});
-					return true;
-				}
-				else {
-					return false
-				}
+			if (compiler.nextTokenIs(`parent`)) {
+				compiler.next();
+				compiler.addCommand({
+					domain: `core`,
+					keyword: `set`,
+					lino: compiler.getLino(),
+					request: `setReady`
+				});
+				return true;
+			}
+			else {
+				return false
+			}
 		}
 	},
 
@@ -4137,7 +4137,8 @@ const AllSpeak_Core = {
 			return false;
 		}
 	}
-};const AllSpeak_Browser = {
+};
+const AllSpeak_Browser = {
 
 	name: `AllSpeak_Browser`,
 

@@ -1487,11 +1487,12 @@ const AllSpeak_Core = {
 	Release: {
 
 		compile: compiler => {
-			if compiler.nextIs(`parent`) {
+			if (compiler.nextTokenIs(`parent`)) {
+				compiler.next();
 				compiler.addCommand({
 					domain: `core`,
 					keyword: `set`,
-					lino,
+					lino: compiler.getLino(),
 					request: `setReady`
 				});
 				return true;
