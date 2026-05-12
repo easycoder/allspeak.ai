@@ -4,26 +4,39 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Test</title>
-	<script src='dist/allspeak.js?ver=26033001'></script>
+	<script src='https://allspeak.ai/dist/allspeak.js'></script>
 </head>
 
 <body>
 	<pre id="allspeak-script" style="display:none">
+	script First
+	debug step
 	pre Second
 	module SecondModule
 	variable SecondScript
-	log `Hello`
-	exit
+	variable Reply
 	attach Second to `second-script`
 	put the content of Second into SecondScript
-	log SecondScript
+	run SecondScript as SecondModule
+	log `Sending message`
+	send `Hello` to SecondModule and assign reply to Reply
+	log Reply
+	wait 2
 	exit
-	run Second as Module
-	send `Hello` to SecondModule
 	</pre>
 
 	<pre id="second-script" style="display:none">
-        on message log the message
+        script Second
+        debug step
+        log `Second module starting`
+        on message
+        begin
+            log the message
+            send `Hi` to parent
+            wait 1
+            log `Reply sent`
+        end
+        release parent
         stop
 	</pre>
 </body>

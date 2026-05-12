@@ -1741,43 +1741,48 @@ const AllSpeak_Core = {
 			if (!compiler.nextIsWord(`to`)) {
 				message = compiler.getValue();
 			}
-			if (compiler.isWord(`to`)) {
-				let recipient;
-				let replyVar = null;
+			// Require an explicit `to <target>` clause. Previously a missing
+			// `to` silently compiled to no command, which masked typos like
+			// `send 'Hi` to parent` (mismatched quotes) — the line ran as
+			// nothing and the recipient's reply never arrived.
+			if (!compiler.isWord(`to`)) {
+				return false;
+			}
+			let recipient;
+			let replyVar = null;
+			compiler.next();
+			if ([`parent`, `sender`].includes(compiler.getToken())) {
+				recipient = compiler.getToken();
 				compiler.next();
-				if ([`parent`, `sender`].includes(compiler.getToken())) {
-					recipient = compiler.getToken();
-					compiler.next();
-				} else if (compiler.isSymbol()) {
-					const moduleRecord = compiler.getSymbolRecord();
-					if (moduleRecord.keyword !== `module`) {
-						return false;
-					}
-					recipient = moduleRecord.name;
-					compiler.next();
-				} else {
+			} else if (compiler.isSymbol()) {
+				const moduleRecord = compiler.getSymbolRecord();
+				if (moduleRecord.keyword !== `module`) {
 					return false;
 				}
-				if (compiler.isWord(`and`)) {
-					compiler.next();
-					if (!compiler.isWord(`assign`)) return false;
-					compiler.next();
-					if (!compiler.isWord(`reply`)) return false;
-					compiler.next();
-					if (!compiler.isWord(`to`)) return false;
-					if (!compiler.nextIsSymbol()) return false;
-					replyVar = compiler.getSymbolRecord().name;
-					compiler.next();
-				}
-				compiler.addCommand({
-					domain: `core`,
-					keyword: `send`,
-					lino,
-					message,
-					recipient,
-					replyVar
-				});
+				recipient = moduleRecord.name;
+				compiler.next();
+			} else {
+				return false;
 			}
+			if (compiler.isWord(`and`)) {
+				compiler.next();
+				if (!compiler.isWord(`assign`)) return false;
+				compiler.next();
+				if (!compiler.isWord(`reply`)) return false;
+				compiler.next();
+				if (!compiler.isWord(`to`)) return false;
+				if (!compiler.nextIsSymbol()) return false;
+				replyVar = compiler.getSymbolRecord().name;
+				compiler.next();
+			}
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `send`,
+				lino,
+				message,
+				recipient,
+				replyVar
+			});
 			return true;
 		},
 
@@ -1785,36 +1790,38 @@ const AllSpeak_Core = {
 			const command = program[program.pc];
 			const message = program.getValue(command.message);
 			let target = null;
+			// Helper: deliver a reply to a parked sender that's awaiting one,
+			// then resume it (queued onto its run-loop if still active, or
+			// kicked off as a fresh run if it has already parked).
+			const deliverReply = (sender, msg) => {
+				sender.message = msg;
+				const replyTarget = sender.getSymbolRecord(sender.replyVar);
+				replyTarget.value[replyTarget.index] = {
+					type: `constant`,
+					numeric: false,
+					content: msg
+				};
+				sender.replyVar = null;
+				const resume = sender.replyResume;
+				sender.replyResume = null;
+				if (resume) {
+					sender.run(resume);
+				}
+			};
 			if (command.recipient === `parent`) {
 				if (program.parent) {
 					target = AllSpeak.scripts[program.parent];
 				}
-				// Intercept: if the caller is awaiting a direct reply
 				if (target && target.replyVar) {
-					target.message = message;
-					const replyTarget = target.getSymbolRecord(target.replyVar);
-					replyTarget.value[replyTarget.index] = {
-						type: `text`,
-						numeric: false,
-						content: message
-					};
-					target.replyVar = null;
+					deliverReply(target, message);
 					return command.pc + 1;
 				}
 			} else if (command.recipient === `sender`) {
 				if (program.sender) {
 					target = AllSpeak.scripts[program.sender];
 				}
-				// Intercept: if the caller is awaiting a direct reply
 				if (target && target.replyVar) {
-					target.message = message;
-					const replyTarget = target.getSymbolRecord(target.replyVar);
-					replyTarget.value[replyTarget.index] = {
-						type: `text`,
-						numeric: false,
-						content: message
-					};
-					target.replyVar = null;
+					deliverReply(target, message);
 					return command.pc + 1;
 				}
 			} else {
@@ -1824,18 +1831,20 @@ const AllSpeak_Core = {
 				}
 			}
 			if (command.replyVar) {
-				program.replyVar = command.replyVar;
-				if (target && target.onMessage) {
-					target.sender = program.script;
-					target.message = message;
-					target.run(target.onMessage);
-				}
-				if (program.replyVar) {
-					program.replyVar = null;
-					program.runtimeError(command.lino, `No reply received from '${command.recipient}'`);
+				if (!target || !target.onMessage) {
+					program.runtimeError(command.lino, `Target '${command.recipient}' has no 'on message' handler`);
 					return 0;
 				}
-				return command.pc + 1;
+				// Park the sender until the reply arrives. The intercept above
+				// will clear replyVar and call program.run(replyResume) — which
+				// queues onto our run-loop if the handler replies synchronously,
+				// or starts a fresh run if it replies later (after wait/REST/etc).
+				program.replyVar = command.replyVar;
+				program.replyResume = command.pc + 1;
+				target.sender = program.script;
+				target.message = message;
+				target.run(target.onMessage);
+				return 0;
 			}
 			if (target && target.onMessage) {
 				target.sender = program.script;
