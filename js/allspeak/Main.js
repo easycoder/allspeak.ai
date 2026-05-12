@@ -406,51 +406,86 @@ const AllSpeak = {
 		const scriptLines = [];
 		const tokens = [];
 		let index = 0;
+		let token = ``;
+		let literal = false;
 		file.forEach(function (line, lino) {
 			scriptLines.push({
 				lino: lino + 1,
 				line
 			});
-			const len = line.length;
-			let token = ``;
-			let inSpace = true;
-			for (let n = 0; n < len; n++) {
-				const c = line[n];
-				if (c.trim().length == 0) {
-					if (inSpace) {
-						continue;
-					}
-					tokens.push({
-						index,
-						lino: lino + 1,
-						token
-					});
-					index++;
-					token = ``;
-					inSpace = true;
-					continue;
+			const length = line.length;
+			if (length === 0) {
+				if (literal) {
+					token += `\n`;
 				}
-				inSpace = false;
-				if (c === `\``) {
-					m = n;
-					while (++n < line.length) {
-						if (line[n] === `\``) {
-							break;
-						}
+				return;
+			}
+			// Find the first non-space
+			let n = 0;
+			while (n < length && line[n].trim().length === 0) {
+				n++;
+			}
+			// The whole line may be whitespace
+			if (n === length) {
+				if (literal) {
+					token += `\n`;
+				}
+				return;
+			}
+			// If in an unfinished literal, the first char must be a backtick to continue adding to it
+			if (literal) {
+				if (line[n] !== `\``) {
+					if (token.length > 0) {
+						tokens.push({
+							index,
+							lino: lino + 1,
+							token
+						});
+						index++;
+						token = ``;
+						literal = false;
 					}
-					token = line.substr(m, n - m + 1);
-				} else if (c == `!`) {
-					break;
+				}
+				n++;
+			}
+			for (; n < length; n++) {
+				const c = line[n];
+				if (!literal) {
+					if (c.trim().length === 0) {
+						if (token.length > 0) {
+							tokens.push({
+								index,
+								lino: lino + 1,
+								token
+							});
+							index++;
+							token = ``;
+						}
+						continue;
+					} else if (c === `!`) {
+						break;
+					}
+				}
+				if (c === `\``) {
+					if (literal) {
+						token += c;
+						literal = false;
+					} else {
+						token += c;
+						literal = true;
+					}
 				} else {
 					token += c;
 				}
 			}
-			if (token.length > 0) {
+			if (token.length > 0 && !literal) {
 				tokens.push({
 					index,
 					lino: lino + 1,
 					token
 				});
+				index++;
+				token = ``;
 			}
 		});
 		return {scriptLines, tokens};

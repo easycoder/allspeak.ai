@@ -492,6 +492,8 @@ class Program:
 			line = script.lines[lino]
 			length = len(line)
 			if length == 0:
+				if literal:
+					token += '\n'
 				continue
 			# Look for the first non-space
 			n = 0
@@ -534,12 +536,9 @@ class Program:
 						continue
 				else:
 					token += c
-			if len(token) > 0:
-				if literal:
-					token += '\n'
-				else:
-					script.tokens.append(Token(lino, token))
-					token = ''
+			if len(token) > 0 and not literal:
+				script.tokens.append(Token(lino, token))
+				token = ''
 		return
 
 	def releaseParent(self):
@@ -718,12 +717,9 @@ def showScriptInfo(name):
 					continue
 			else:
 				token += c
-		if len(token) > 0:
-			if literal:
-				token += '\n'
-			else:
-				script.tokens.append(Token(lino, token))
-				token = ''
+		if len(token) > 0 and not literal:
+			script.tokens.append(Token(lino, token))
+			token = ''
 	# Find the 'info' token and grab the next token as its text
 	for i, tok in enumerate(script.tokens):
 		if tok.token == 'info' and i + 1 < len(script.tokens):

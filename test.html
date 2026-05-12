@@ -9,35 +9,10 @@
 
 <body>
 	<pre id="allspeak-script" style="display:none">
-	script First
-	debug step
-	pre Second
-	module SecondModule
-	variable SecondScript
-	variable Reply
-	attach Second to `second-script`
-	put the content of Second into SecondScript
-	run SecondScript as SecondModule
-	log `Sending message`
-	send `Hello` to SecondModule and assign reply to Reply
-	log Reply
-	wait 2
+    print `This is a long text string
+        `that is split over several lines
+        ` to avoid horizontal scrolling.`
 	exit
-	</pre>
-
-	<pre id="second-script" style="display:none">
-        script Second
-        debug step
-        log `Second module starting`
-        on message
-        begin
-            log the message
-            send `Hi` to parent
-            wait 1
-            log `Reply sent`
-        end
-        release parent
-        stop
 	</pre>
 </body>
 </html>
