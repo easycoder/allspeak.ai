@@ -1,0 +1,118 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AllSpeak Learn</title>
+    <script type='text/javascript' src='../dist/allspeak.js'></script>
+    <style>
+        body { margin: 0; background: #fafafa; }
+        #toolbar button {
+            padding: 0.3em 0.8em;
+            font-size: 0.9em;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #0066cc;
+            font-family: inherit;
+        }
+        #toolbar button:disabled {
+            color: #999;
+            cursor: default;
+            background: #f5f5f5;
+            border-color: #e0e0e0;
+        }
+        #toolbar button:not(:disabled):hover {
+            background: #e7f0ff;
+            border-color: #99b8e0;
+        }
+        #content h1 {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin: 1.5em 0 0.5em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid #eee;
+        }
+        #content > h1:first-child { margin-top: 0; }
+        #content h2 {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin: 1.8em 0 0.5em;
+        }
+        #content h3 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 1.4em 0 0.4em;
+        }
+        #content p {
+            margin: 0.8em 0;
+        }
+        #content ul,
+        #content ol {
+            margin: 0.8em 0;
+            padding-left: 2em;
+        }
+        #content li {
+            margin: 0.35em 0;
+        }
+        #content a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        #content a:hover {
+            text-decoration: underline;
+        }
+        #content code {
+            background: #f0f0f0;
+            padding: 0.1em 0.35em;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.92em;
+        }
+        #content table {
+            margin: 1em 0;
+        }
+        #content blockquote {
+            margin: 1em 0;
+            padding: 0.3em 1em;
+            border-left: 3px solid #ddd;
+            color: #555;
+            background: #f7f7f7;
+        }
+        #content hr {
+            margin: 2em 0;
+            border: none;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+    <script>
+        // Click capture: intercept relative .md links inside #content and
+        // route to the AllSpeak script via a hidden div+button pair.
+        window.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('click', function (e) {
+                var a = e.target.closest && e.target.closest('a');
+                if (!a) return;
+                if (!a.closest('#content')) return;
+                var href = a.getAttribute('href');
+                if (!href) return;
+                if (href.indexOf('http://') === 0 || href.indexOf('https://') === 0) return;
+                if (href.slice(-3) !== '.md') return;
+                e.preventDefault();
+                // Strip directory, leading NN-, and .md → bare slug.
+                var slug = href.split('/').pop().replace(/\.md$/, '').replace(/^\d+-/, '');
+                var stash = document.getElementById('nav-target');
+                if (stash) stash.textContent = slug;
+                var trigger = document.getElementById('nav-trigger');
+                if (trigger) trigger.click();
+            });
+        });
+    </script>
+</head>
+<body>
+    <pre id="allspeak-script" style="display:none">
+    variable Script
+    rest get Script from `reader.as`
+    run Script
+    </pre>
+</body>
+</html>

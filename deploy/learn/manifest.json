@@ -1,0 +1,33 @@
+{
+    "#doc": "Ordered list of curriculum pages for prev/next navigation and slug resolution.",
+    "pages": [
+        { "slug": "structure", "path": "reference/01-structure.md", "title": "Structure" },
+        { "slug": "symbols-and-layout", "path": "reference/02-symbols-and-layout.md", "title": "Symbols and layout" },
+        { "slug": "variables-and-arrays", "path": "reference/03-variables-and-arrays.md", "title": "Variables and arrays" },
+        { "slug": "collections", "path": "reference/04-collections.md", "title": "Collections" },
+        { "slug": "values-and-types", "path": "reference/05-values-and-types.md", "title": "Values and types" },
+        { "slug": "conditions", "path": "reference/06-conditions.md", "title": "Conditions" },
+        { "slug": "arithmetic", "path": "reference/07-arithmetic.md", "title": "Arithmetic" },
+        { "slug": "strings-and-text", "path": "reference/08-strings-and-text.md", "title": "Strings and text" },
+        { "slug": "control-flow", "path": "reference/09-control-flow.md", "title": "Control flow" },
+        { "slug": "errors-and-recovery", "path": "reference/10-errors-and-recovery.md", "title": "Errors and recovery" },
+        { "slug": "cooperative-multitasking", "path": "reference/11-cooperative-multitasking.md", "title": "Cooperative multitasking" },
+        { "slug": "modules", "path": "reference/12-modules.md", "title": "Modules" },
+        { "slug": "plugins", "path": "reference/13-plugins.md", "title": "Plugins" },
+        { "slug": "browser-and-webson", "path": "reference/14-browser-and-webson.md", "title": "Browser and Webson" },
+        { "slug": "multilingual", "path": "reference/15-multilingual.md", "title": "Multilingual" },
+        { "slug": "doc-blocks", "path": "reference/16-doc-blocks.md", "title": "Doc blocks" },
+        { "slug": "cat-and-string-building", "path": "idioms/01-cat-and-string-building.md", "title": "cat and string building" },
+        { "slug": "event-handlers-and-array-index", "path": "idioms/02-event-handlers-and-array-index.md", "title": "Event handlers and array index" },
+        { "slug": "looping-patterns", "path": "idioms/03-looping-patterns.md", "title": "Looping patterns" },
+        { "slug": "picking-a-collection-shape", "path": "idioms/04-picking-a-collection-shape.md", "title": "Picking a collection shape" },
+        { "slug": "floats-and-scaled-integers", "path": "idioms/05-floats-and-scaled-integers.md", "title": "Floats and scaled integers" },
+        { "slug": "rest-and-async", "path": "idioms/06-rest-and-async.md", "title": "REST and async" },
+        { "slug": "mqtt-pubsub", "path": "idioms/07-mqtt-pubsub.md", "title": "MQTT pub/sub" },
+        { "slug": "webson-and-as-separation", "path": "idioms/08-webson-and-as-separation.md", "title": "Webson and AS separation" },
+        { "slug": "extracting-a-module", "path": "idioms/09-extracting-a-module.md", "title": "Extracting a module" },
+        { "slug": "writing-language-neutral", "path": "idioms/10-writing-language-neutral.md", "title": "Writing language-neutral" },
+        { "slug": "debugging-as", "path": "idioms/11-debugging-as.md", "title": "Debugging .as" },
+        { "slug": "working-with-ai", "path": "idioms/12-working-with-ai.md", "title": "Working with AI" }
+    ]
+}

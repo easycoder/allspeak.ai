@@ -3,6 +3,7 @@
 #
 # Run this after:
 #   - editing anything under codex/
+#   - editing anything under learn/
 #   - running ./build-allspeak (which rewrites dist/)
 #   - adding or regenerating docs under resources/doc/
 #
@@ -42,6 +43,7 @@ run_sync() {
 
 echo "Syncing source -> deploy/"
 run_sync "codex/"           "deploy/codex/"
+run_sync "learn/"           "deploy/learn/"
 run_sync "dist/"            "deploy/dist/"
 run_sync "resources/doc/"   "deploy/resources/doc/"
 echo "Done."

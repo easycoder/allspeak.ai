@@ -1,0 +1,71 @@
+{
+    "#doc": "AllSpeak curriculum reader — top-level layout",
+    "#element": "div",
+    "@id": "reader",
+    "font-family": "system-ui, -apple-system, sans-serif",
+    "max-width": "900px",
+    "margin": "0 auto",
+    "padding": "1em 1.5em 3em",
+    "color": "#222",
+    "#": ["$Header", "$Toolbar", "$Content"],
+
+    "$Header": {
+        "#element": "h1",
+        "@id": "header",
+        "#content": "AllSpeak Learn",
+        "font-size": "1.4em",
+        "font-weight": "600",
+        "margin": "0 0 0.25em 0",
+        "padding-bottom": "0.3em",
+        "border-bottom": "1px solid #ddd"
+    },
+
+    "$Toolbar": {
+        "#element": "div",
+        "@id": "toolbar",
+        "display": "flex",
+        "gap": "0.5em",
+        "align-items": "center",
+        "margin": "0.75em 0 1.5em",
+        "#": ["$PrevButton", "$ContentsButton", "$NextButton", "$NavTrigger", "$NavTarget"],
+
+        "$PrevButton": {
+            "#element": "button",
+            "@id": "prev-button",
+            "#content": "← Previous"
+        },
+
+        "$ContentsButton": {
+            "#element": "button",
+            "@id": "contents-button",
+            "#content": "Contents"
+        },
+
+        "$NextButton": {
+            "#element": "button",
+            "@id": "next-button",
+            "#content": "Next →"
+        },
+
+        "$NavTrigger": {
+            "#element": "button",
+            "@id": "nav-trigger",
+            "display": "none",
+            "#content": ""
+        },
+
+        "$NavTarget": {
+            "#element": "div",
+            "@id": "nav-target",
+            "display": "none",
+            "#content": ""
+        }
+    },
+
+    "$Content": {
+        "#element": "div",
+        "@id": "content",
+        "line-height": "1.55",
+        "font-size": "1em"
+    }
+}
