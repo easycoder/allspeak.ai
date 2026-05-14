@@ -143,7 +143,7 @@ Un projet GUI utilise trois fichiers :
 1. **Fixer les URL à une date.** Insérez `<AAMMJJ>/` entre `dist/` et le nom du fichier pour *chaque* URL `https://allspeak.ai/dist/...` du HTML — donc à la fois `dist/allspeak.js` et `dist/LanguagePack_fr.js` (par exemple `dist/260508/allspeak.js` et `dist/260508/LanguagePack_fr.js`). Ces URL servent les builds déployés ce jour-là et ne changeront pas. Pour mettre à niveau plus tard, changez un seul nombre dans toutes les URL après avoir testé.
 2. **Auto-héberger.** Copiez `dist/allspeak.js`, `dist/LanguagePack_*.js`, `dist/plugins/` (les plugins utilisés) et `dist/vendor/` sur le serveur de l'utilisateur, et modifiez l'URL `src=` pour qu'elle pointe vers cette copie.
 
-Les deux options sont documentées sur https://allspeak.ai/primer.html (onglet *Démarrer* → « Auto-hébergement pour la stabilité »).
+Les deux options sont documentées sur https://allspeak.ai/fr/primer.html (onglet *Démarrer* → « Auto-hébergement pour la stabilité »).
 
 ### `<projet>-main.as`
 

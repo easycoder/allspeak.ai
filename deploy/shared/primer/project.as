@@ -9,8 +9,6 @@
 
     div Body
     variable Mobile
-    variable H
-    variable N
 
     variable MainScreenWebson
 
@@ -46,7 +44,6 @@
     variable ManualOverviewContent
     variable ManualChapterContent
     variable ManualChapterPath
-    variable ActiveTab
     variable CurrentLocation
     variable Strings
     variable StrTitle
@@ -131,7 +128,6 @@ SetupScreen:
     clear StartLoaded
     clear ExampleLoaded
     clear ManualLoaded
-    put `start` into ActiveTab
 
     put the location into CurrentLocation
     gosub to RestoreFromLocation
@@ -227,7 +223,6 @@ SetupScreen:
     stop
 
 ShowStartTab:
-    put `start` into ActiveTab
     set style `display` of StartContainer to `flex`
     set style `display` of ExampleContainer to `none`
     set style `display` of ManualContainer to `none`
@@ -240,7 +235,6 @@ ShowStartTab:
     return
 
 ShowExampleTab:
-    put `example` into ActiveTab
     set style `display` of StartContainer to `none`
     set style `display` of ExampleContainer to `flex`
     set style `display` of ManualContainer to `none`
@@ -253,7 +247,6 @@ ShowExampleTab:
     return
 
 ShowManualTab:
-    put `manual` into ActiveTab
     set style `display` of StartContainer to `none`
     set style `display` of ExampleContainer to `none`
     set style `display` of ManualContainer to `flex`

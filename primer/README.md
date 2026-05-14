@@ -18,4 +18,4 @@ allspeak server.as?port={port}
 
 where {port} is some number such as 5500. Aim your browser at `http://localhost:{port}.
 
-See the instructions in our [Primer](https://allspeak.ai/primer.html).
+See the instructions in our [Primer](https://allspeak.ai/en/primer.html).

@@ -21,4 +21,4 @@ Note to developers: Throw away your preconceptions; this is unlike anything else
 
 ~ec~ is more than an easy language for beginners. It's also at the heart of AI-driven coding. It enables complex applications to be written without the need to learn advanced programming languages. It's more important that you understand the needs of your project. By doing the coding in ~ec~ it will be far easier to relate the code to the needs of the problem domain. This is in stark contrast to "vibe coding", which presents major obstacles to anyone not highy experienced in the coding language chosen.
 
-For more information, go to [Programming with AI](https://allspeak.ai/primer.html).
+For more information, go to [Programming with AI](https://allspeak.ai/en/primer.html).

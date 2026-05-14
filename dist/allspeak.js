@@ -74,14 +74,14 @@ const AllSpeak_Core = {
 				compiler.next();
 				// Check if a value holder is next
 				if (compiler.isSymbol()) {
-					const symbol = compiler.getSymbol();
-					const variable = compiler.getCommandAt(symbol.pc);
+					// getSymbolRecord both returns the record and marks `used`.
+					const variable = compiler.getSymbolRecord();
 					if (variable.isVHolder) {
 						if (compiler.peek() === AllSpeak_Language.word(`giving`)) {
 							// This variable must be treated as a second value
 							const value2 = compiler.getValue();
 							compiler.next();
-							const target = compiler.getToken();
+							const target = compiler.getSymbolRecord().name;
 							compiler.next();
 							compiler.addCommand({
 								domain: `core`,
@@ -93,7 +93,7 @@ const AllSpeak_Core = {
 							});
 						} else {
 							// Here the variable is the target.
-							const target = compiler.getToken();
+							const target = variable.name;
 							compiler.next();
 							compiler.addCommand({
 								domain: `core`,
@@ -542,9 +542,8 @@ const AllSpeak_Core = {
 			const lino = compiler.getLino();
 			let target;
 			if (compiler.nextIsSymbol()) {
-				// It may be the target
-				const symbol = compiler.getSymbol();
-				target = compiler.getCommandAt(symbol.pc).name;
+				// It may be the target — use getSymbolRecord so the `used` flag is set.
+				target = compiler.getSymbolRecord().name;
 			}
 			// Get the value even if we have a target
 			let value1;
@@ -563,8 +562,7 @@ const AllSpeak_Core = {
 				compiler.next();
 				// Get the target
 				if (compiler.isSymbol()) {
-					const symbol = compiler.getSymbol();
-					target = compiler.getCommandAt(symbol.pc).name;
+					target = compiler.getSymbolRecord().name;
 					compiler.next();
 					compiler.addCommand({
 						domain: `core`,
@@ -1142,9 +1140,8 @@ const AllSpeak_Core = {
 			compiler.next();
 			let target;
 			if (compiler.isSymbol()) {
-				// It may be the target
-				const symbol = compiler.getSymbol();
-				target = compiler.getCommandAt(symbol.pc).name;
+				// It may be the target — use getSymbolRecord so the `used` flag is set.
+				target = compiler.getSymbolRecord().name;
 			}
 			// Get the value even if we have a target
 			let value1;
@@ -1163,8 +1160,7 @@ const AllSpeak_Core = {
 				compiler.next();
 				// Get the target
 				if (compiler.isSymbol()) {
-					const symbol = compiler.getSymbol();
-					target = compiler.getCommandAt(symbol.pc).name;
+					target = compiler.getSymbolRecord().name;
 					compiler.next();
 					compiler.addCommand({
 						domain: `core`,
@@ -2355,14 +2351,14 @@ const AllSpeak_Core = {
 			if (compiler.isWord(`from`)) {
 				compiler.next();
 				if (compiler.isSymbol()) {
-					const symbol = compiler.getSymbol();
-					const variable = compiler.getCommandAt(symbol.pc);
+					// getSymbolRecord both returns the record and marks `used`.
+					const variable = compiler.getSymbolRecord();
 					if (variable.isVHolder) {
 						if (compiler.peek() === AllSpeak_Language.word(`giving`)) {
 							// This variable must be treated as a second value
 							const value2 = compiler.getValue();
 							compiler.next();
-							const target = compiler.getToken();
+							const target = compiler.getSymbolRecord().name;
 							compiler.next();
 							compiler.addCommand({
 								domain: `core`,
@@ -2374,7 +2370,7 @@ const AllSpeak_Core = {
 							});
 						} else {
 							// Here the variable is the target.
-							const target = compiler.getToken();
+							const target = variable.name;
 							compiler.next();
 							compiler.addCommand({
 								domain: `core`,

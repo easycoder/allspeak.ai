@@ -104,7 +104,7 @@ This separation keeps code and layout independent, and the JSON format is easy f
 1. **Date-pin the URL.** Replace `dist/allspeak.js` with `dist/<YYMMDD>/allspeak.js` (today's date as six digits, e.g. `dist/260508/allspeak.js`). That URL serves the build deployed on that day and won't change.
 2. **Self-host.** Copy `dist/allspeak.js`, `dist/LanguagePack_*.js`, `dist/plugins/` (whichever plugins are used) and `dist/vendor/` to the user's own server, and change the `src=` URL to point there.
 
-Both options are documented at https://allspeak.ai/primer.html (Start Here tab → "Self-hosting for stability").
+Both options are documented at https://allspeak.ai/en/primer.html (Start Here tab → "Self-hosting for stability").
 
 ### `<project>-main.as`
 

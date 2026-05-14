@@ -1,23 +1,29 @@
 # Example task (step-by-step)
 
-Build a TicTacToe game. Once you have set up your system (see the Start Here tab), submit these prompts one by one to your AI agent. The four stages — Foundation, Mechanics, Analysis, Strategy — recur in many projects, so the pattern is worth learning.
+Build an interactive colour grid. Once you have set up your system (see the Start Here tab), submit these prompts one by one to your AI agent. Each step adds one feature on top of the last.
 
-## Prompt 1: Foundation — Build the board
+![Colour Memory app showing a 4×3 grid of cells in mixed colours with a Reset button below](primer/color-memory.png)
 
-Create a TicTacToe game with a 3x3 grid of cells. The board should be centred on the screen, taking up about half the width. Each cell should be square with a visible border.
+When you have all four steps working, the page will look something like the one above — a 4×3 grid of cells, each in its own colour, with a Reset button that clears them all back to grey.
 
-## Prompt 2: Mechanics — Add turn-based play
+## Prompt 1: Foundation — Build the grid
 
-There are two players: the human and the computer. The starting player is chosen randomly. When it's the human's turn, tapping an empty cell claims it (shown in green). When it's the computer's turn, it pauses briefly to "think" then claims a cell (shown in red). Claimed cells can't be tapped again.
+Make a 3×4 grid of square cells centred on the page. Each cell should be plain grey with a thin black border. The grid should occupy about a third of the screen width. No clicks, no buttons — just the visual layout for now.
 
-## Prompt 3: Analysis — Detect a winner
+## Prompt 2: Interaction — Click to cycle
 
-After each move, check whether any row, column or diagonal is entirely one colour. If so, announce the winner. If all cells are filled with no winner, announce a draw.
+Make each cell change colour when clicked. Cycle through this sequence: grey, red, blue, green, yellow, purple, and back to grey. Each cell tracks its own colour independently of the others.
 
-## Prompt 4: Strategy — Try to win
+## Prompt 3: Control — Reset
 
-The computer currently picks cells at random. Give it a basic strategy: block the human from completing a line, and prefer moves that work towards completing its own line.
+Add a Reset button below the grid. Clicking it should clear every cell back to grey. Don't make the button full-width — just sensibly sized.
+
+## Prompt 4: Persistence — Survive a reload
+
+Make the grid state survive page reloads. When I refresh the page, each cell should still be the colour I last left it. The Reset button should also clear the saved state, so a refresh after Reset shows a clean grid.
 
 ## What to look for
 
 After each prompt, review what the AI created. You should be able to read the AllSpeak code and understand what it does — that's the point. If something isn't right, tell the AI what to fix in plain language.
+
+A few small things may need correcting on the first try — a missing variable declaration, an awkward layout choice, a colour you'd like adjusted. That's normal; the workflow is designed for the human to spot and steer, not the AI to produce perfect first drafts.

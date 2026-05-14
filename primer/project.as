@@ -9,8 +9,6 @@
 
     div Body
     variable Mobile
-    variable H
-    variable N
 
     variable MainScreenWebson
 
@@ -22,6 +20,7 @@
     button TabStart
     button TabExample
     button TabManual
+    button TabCodex
     div ManualStatus
     div ManualBody
     button RetryManualButton
@@ -45,16 +44,35 @@
     variable ManualOverviewContent
     variable ManualChapterContent
     variable ManualChapterPath
-    variable ActiveTab
     variable CurrentLocation
+    variable Strings
+    variable StrTitle
+    variable StrManualLoaded
+    variable StrManualLoading
+    variable StrManualFailed
+    variable StrChapterFailed
+    variable StrViewing
+    variable StrLang
 
 !    debug step
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!   Load localised strings
+    rest get Strings from `primer/strings.json?v=` cat now
+        or go to AbandonShip
+    put property `title` of Strings into StrTitle
+    put property `manualLoaded` of Strings into StrManualLoaded
+    put property `manualLoading` of Strings into StrManualLoading
+    put property `manualFailed` of Strings into StrManualFailed
+    put property `chapterFailed` of Strings into StrChapterFailed
+    put property `viewing` of Strings into StrViewing
+    put property `lang` of Strings into StrLang
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !   Set up the main screen
 SetupScreen:
 
-    set the title to `AllSpeak Primer`
+    set the title to StrTitle
 
     clear Mobile
     if mobile
@@ -66,21 +84,16 @@ SetupScreen:
     end
 
 	create Body
+    set style `max-width` of Body to `800px`
+    set style `margin` of Body to `0 auto`
+    set style `padding` of Body to `0`
+    set style `min-height` of Body to `100vh`
+    set style `background` of body to `#0f1923`
     if Mobile
     begin
-    	set style `width` of Body to `100%`
+        set style `width` of Body to `100%`
         set style `overscroll-behavior-y` of Body to `none`
     end
-    else
-    begin
-        put the height of the window into H
-        multiply H by 9 giving N
-        divide N by 16
-    	set style `width` of Body to N cat `px`
-        set style `margin` of Body to `0 auto`
-        set style `border` of Body to `1px solid lightgray`
-    end
-    set style `height` of Body to `calc(100vh - 1em)`
 
 !	Render the main screen layout
     rest get MainScreenWebson from `primer/project.json?v=` cat now
@@ -97,6 +110,7 @@ SetupScreen:
     attach TabStart to `TabStart` or go to AbandonShip
     attach TabExample to `TabExample` or go to AbandonShip
     attach TabManual to `TabManual` or go to AbandonShip
+    attach TabCodex to `TabCodex` or go to AbandonShip
     attach ManualStatus to `ManualStatus` or go to AbandonShip
     attach ManualBody to `ManualBody` or go to AbandonShip
     attach RetryManualButton to `RetryManualButton` or go to AbandonShip
@@ -114,7 +128,6 @@ SetupScreen:
     clear StartLoaded
     clear ExampleLoaded
     clear ManualLoaded
-    put `start` into ActiveTab
 
     put the location into CurrentLocation
     gosub to RestoreFromLocation
@@ -136,6 +149,11 @@ SetupScreen:
         gosub to ShowManualTab
         history push url `#manual/overview`
         gosub to EnsureManualLoaded
+    end
+
+    on click TabCodex
+    begin
+        location `../codex.html?lang=` cat StrLang
     end
 
     on click ManualBackButton
@@ -205,37 +223,37 @@ SetupScreen:
     stop
 
 ShowStartTab:
-    put `start` into ActiveTab
     set style `display` of StartContainer to `flex`
     set style `display` of ExampleContainer to `none`
     set style `display` of ManualContainer to `none`
-    set style `background` of TabStart to `#23345e`
-    set style `background` of TabExample to `#0d1220`
-    set style `background` of TabManual to `#0d1220`
+    set style `background` of TabStart to `#1e3450`
+    set style `background` of TabExample to `#0b1018`
+    set style `background` of TabManual to `#0b1018`
+    set style `background` of TabCodex to `#0b1018`
     set style `display` of RetryManualButton to `none`
     gosub to EnsureStartLoaded
     return
 
 ShowExampleTab:
-    put `example` into ActiveTab
     set style `display` of StartContainer to `none`
     set style `display` of ExampleContainer to `flex`
     set style `display` of ManualContainer to `none`
-    set style `background` of TabStart to `#0d1220`
-    set style `background` of TabExample to `#23345e`
-    set style `background` of TabManual to `#0d1220`
+    set style `background` of TabStart to `#0b1018`
+    set style `background` of TabExample to `#1e3450`
+    set style `background` of TabManual to `#0b1018`
+    set style `background` of TabCodex to `#0b1018`
     set style `display` of RetryManualButton to `none`
     gosub to EnsureExampleLoaded
     return
 
 ShowManualTab:
-    put `manual` into ActiveTab
     set style `display` of StartContainer to `none`
     set style `display` of ExampleContainer to `none`
     set style `display` of ManualContainer to `flex`
-    set style `background` of TabStart to `#0d1220`
-    set style `background` of TabExample to `#0d1220`
-    set style `background` of TabManual to `#23345e`
+    set style `background` of TabStart to `#0b1018`
+    set style `background` of TabExample to `#0b1018`
+    set style `background` of TabManual to `#1e3450`
+    set style `background` of TabCodex to `#0b1018`
     return
 
 EnsureStartLoaded:
@@ -263,26 +281,25 @@ EnsureExampleLoaded:
 EnsureManualLoaded:
     if ManualLoaded
     begin
-        set the content of ManualStatus to `AI manual loaded. Select a chapter.`
+        set the content of ManualStatus to StrManualLoaded
         set style `display` of RetryManualButton to `none`
         gosub to ShowManualOverview
         return
     end
-    set the content of ManualStatus to `Loading AI manual...`
+    set the content of ManualStatus to StrManualLoading
     set style `display` of RetryManualButton to `none`
     set style `display` of ManualBackButton to `none`
     set style `display` of ManualChapterList to `flex`
     rest get ManualMarkdown from `primer/tab3.md?v=` cat now
         or begin
-            set the content of ManualStatus to
-                `AI manual is not reachable from this server context.`
+            set the content of ManualStatus to StrManualFailed
             set style `display` of RetryManualButton to `block`
             return
         end
     put ManualMarkdown into ManualOverviewContent
     set the content of ManualBody to ManualOverviewContent
     set ManualLoaded
-    set the content of ManualStatus to `AI manual loaded. Select a chapter.`
+    set the content of ManualStatus to StrManualLoaded
     set style `display` of RetryManualButton to `none`
     return
 
@@ -291,7 +308,7 @@ ShowManualOverview:
     set style `display` of ManualBackButton to `none`
     if ManualOverviewContent is not empty
         set the content of ManualBody to ManualOverviewContent
-    set the content of ManualStatus to `AI manual loaded. Select a chapter.`
+    set the content of ManualStatus to StrManualLoaded
     return
 
 OpenManualChapter:
@@ -310,7 +327,7 @@ LoadManualChapter:
     rest get ManualChapterContent from ManualChapterPath cat `?v=` cat now
         or begin
             set the content of ManualStatus to
-                `Chapter could not be loaded: ` cat ManualChapterPath
+                StrChapterFailed cat ManualChapterPath
             set style `display` of RetryManualButton to `block`
             return
         end
@@ -318,7 +335,7 @@ LoadManualChapter:
     set style `display` of ManualBackButton to `block`
     set style `display` of RetryManualButton to `none`
     set the content of ManualBody to ManualChapterContent
-    set the content of ManualStatus to `Viewing ` cat ManualChapterPath
+    set the content of ManualStatus to StrViewing cat ManualChapterPath
     return
 
 RestoreFromLocation:

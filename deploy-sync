@@ -31,15 +31,17 @@ fi
 run_sync() {
     src="$1"
     dst="$2"
+    shift 2
     if [ ! -d "$src" ]; then
         echo "  skip: $src does not exist"
         return
     fi
     mkdir -p "$dst"
     if [ "$SYNC" = "cp_r_clobber" ]; then
+        # NOTE: the cp_r_clobber fallback path does not honour rsync excludes.
         cp_r_clobber "$src" "$dst"
     else
-        $SYNC "$src" "$dst"
+        $SYNC "$@" "$src" "$dst"
     fi
     echo "  synced: $src -> $dst"
 }
@@ -58,11 +60,20 @@ copy_file() {
 echo "Syncing source -> deploy/"
 run_sync "codex/"           "deploy/codex/"
 run_sync "learn/"           "deploy/learn/"
-run_sync "primer/"          "deploy/primer/"
+# The English-language Primer reads its assets from /en/primer/. Source primer/
+# is the single source of truth (project.as is the feature-rich script,
+# strings.json is the English locale, duckthink.png is present, project.json
+# has deploy-friendly paths). The de/, fr/, it/ directories hold translated
+# copies and are NOT touched here — translate them as a separate pass.
+# README.md is dev-only. project.as is excluded because /en/primer.html loads
+# /shared/primer/project.as, not /en/primer/project.as — copying it here would
+# leave an unused duplicate.
+run_sync "primer/"          "deploy/en/primer/" --exclude=README.md --exclude=project.as
 run_sync "dist/"            "deploy/dist/"
 run_sync "resources/doc/"   "deploy/resources/doc/"
 
-# Root HTML files used as entry points.
-copy_file "primer.html"     "deploy/primer.html"
+# The four language Primer pages all load /shared/primer/project.as. Keep that
+# single file in sync with source so we have one canonical script.
+copy_file "primer/project.as" "deploy/shared/primer/project.as"
 
 echo "Done."

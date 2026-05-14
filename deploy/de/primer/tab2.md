@@ -1,23 +1,29 @@
 # Beispielaufgabe (Schritt für Schritt)
 
-Bauen Sie ein Tic-Tac-Toe-Spiel. Sobald Ihr System eingerichtet ist (siehe Register *Start*), geben Sie diese Prompts einen nach dem anderen an Ihren KI-Agenten. Die vier Phasen — Fundament, Mechanik, Analyse, Strategie — wiederholen sich in vielen Projekten, das Muster ist also lernenswert.
+Bauen Sie ein interaktives Farbraster. Sobald Ihr System eingerichtet ist (siehe Register *Start*), geben Sie diese Prompts einen nach dem anderen an Ihren KI-Agenten. Jeder Schritt fügt dem vorherigen eine Funktion hinzu.
 
-## Prompt 1: Fundament — Das Spielfeld bauen
+![Colour-Memory-App mit einem 4×3-Raster aus Zellen in gemischten Farben und einem Reset-Button darunter](primer/color-memory.png)
 
-Erstelle ein Tic-Tac-Toe-Spiel mit einem 3×3-Raster. Das Spielfeld soll auf dem Bildschirm mittig sein und etwa die halbe Breite einnehmen. Jedes Feld soll quadratisch mit sichtbarem Rahmen sein.
+Wenn alle vier Schritte funktionieren, sieht die Seite etwa so aus wie oben — ein 4×3-Raster aus Zellen, jede in eigener Farbe, mit einem Reset-Button, der sie alle wieder auf Grau setzt.
 
-## Prompt 2: Mechanik — Zugweises Spielen hinzufügen
+## Prompt 1: Fundament — Das Raster bauen
 
-Es gibt zwei Spieler: den Menschen und den Computer. Wer beginnt, wird zufällig gewählt. Wenn der Mensch am Zug ist, belegt das Antippen eines leeren Feldes dieses Feld (grün dargestellt). Wenn der Computer am Zug ist, macht er kurz Pause zum „Nachdenken" und belegt dann ein Feld (rot dargestellt). Belegte Felder können nicht erneut angetippt werden.
+Erstelle ein 3×4-Raster aus quadratischen Zellen, mittig auf der Seite. Jede Zelle soll schlicht grau sein, mit einem dünnen schwarzen Rand. Das Raster soll etwa ein Drittel der Bildschirmbreite einnehmen. Keine Klicks, keine Buttons — zunächst nur das visuelle Layout.
 
-## Prompt 3: Analyse — Einen Gewinner erkennen
+## Prompt 2: Interaktion — Klick zum Durchschalten
 
-Prüfe nach jedem Zug, ob eine Zeile, Spalte oder Diagonale vollständig einfarbig ist. Wenn ja, verkünde den Gewinner. Wenn alle Felder belegt sind und es keinen Gewinner gibt, verkünde ein Unentschieden.
+Sorge dafür, dass jede Zelle bei einem Klick die Farbe wechselt. Durchlaufe diese Reihenfolge: grau, rot, blau, grün, gelb, lila und zurück zu grau. Jede Zelle führt ihre eigene Farbe unabhängig von den anderen.
 
-## Prompt 4: Strategie — Auf Sieg spielen
+## Prompt 3: Steuerung — Reset
 
-Der Computer wählt seine Felder derzeit zufällig. Gib ihm eine einfache Strategie: den Menschen blockieren, wenn er kurz vor einer vollständigen Linie steht, und Züge bevorzugen, die seine eigene Linie voranbringen.
+Füge unter dem Raster einen Reset-Button hinzu. Ein Klick darauf soll alle Zellen wieder auf Grau setzen. Mach den Button nicht über die volle Breite — nur sinnvoll dimensioniert.
+
+## Prompt 4: Persistenz — Seitenneuladen überstehen
+
+Sorge dafür, dass der Rasterzustand das Neuladen der Seite übersteht. Wenn ich die Seite aktualisiere, soll jede Zelle noch die Farbe haben, die ich zuletzt eingestellt habe. Der Reset-Button soll auch den gespeicherten Zustand löschen, sodass ein Neuladen nach dem Reset ein sauberes Raster zeigt.
 
 ## Worauf Sie achten sollten
 
 Prüfen Sie nach jedem Prompt, was die KI erstellt hat. Sie sollten den AllSpeak-Code lesen und verstehen können — das ist der Sinn. Falls etwas nicht stimmt, sagen Sie der KI in normalen Worten, was sie korrigieren soll.
+
+Einige Kleinigkeiten müssen beim ersten Versuch eventuell korrigiert werden — eine fehlende Variablendeklaration, eine ungeschickte Layout-Entscheidung, eine Farbe, die Sie anpassen möchten. Das ist normal; der Workflow ist darauf ausgelegt, dass der Mensch erkennt und steuert, nicht dass die KI auf Anhieb perfekte Entwürfe liefert.

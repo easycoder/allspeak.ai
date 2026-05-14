@@ -28,4 +28,4 @@ To use with Claude Code:
 
 Claude will read `CLAUDE.md` and guide you through project setup.
 
-See the instructions in our [Primer](https://allspeak.ai/primer.html).
+See the instructions in our [Primer](https://allspeak.ai/en/primer.html).

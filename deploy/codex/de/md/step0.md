@@ -22,4 +22,4 @@ Hinweis für Entwickler: Werfen Sie Ihre Vorurteile über Bord; dies ist anders 
 
 ~ec~ ist mehr als nur eine einfache Sprache für Anfänger. Es steht auch im Herzen der KI-gesteuerten Programmierung. Es ermöglicht, komplexe Anwendungen zu schreiben, ohne fortgeschrittene Programmiersprachen erlernen zu müssen. Wichtiger ist, dass Sie die Anforderungen Ihres Projekts verstehen. Durch das Programmieren in ~ec~ wird es viel einfacher sein, den Code mit den Anforderungen der Problemdomäne in Beziehung zu setzen. Dies steht in starkem Kontrast zu „Vibe Coding", das jedem, der nicht hochgradig in der gewählten Programmiersprache erfahren ist, erhebliche Hürden in den Weg legt.
 
-Weitere Informationen finden Sie unter [Programming with AI](https://allspeak.ai/primer.html).
+Weitere Informationen finden Sie unter [Programming with AI](https://allspeak.ai/de/primer.html).

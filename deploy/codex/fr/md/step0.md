@@ -22,4 +22,4 @@ Note aux développeurs : mets de côté tes préjugés ; ce n'est comparable à 
 
 ~ec~ est plus qu'un langage facile pour débutants. Il est aussi au cœur du développement piloté par IA. Il permet d'écrire des applications complexes sans avoir besoin d'apprendre des langages de programmation avancés. Il est plus important que tu comprennes les besoins de ton projet. En faisant le code en ~ec~, il sera bien plus facile de relier le code aux besoins du domaine du problème. Cela contraste fortement avec le « vibe coding », qui présente des obstacles majeurs à toute personne peu expérimentée dans le langage de programmation choisi.
 
-Pour plus d'informations, rends-toi sur [Programmer avec l'IA](https://allspeak.ai/primer.html).
+Pour plus d'informations, rends-toi sur [Programmer avec l'IA](https://allspeak.ai/fr/primer.html).

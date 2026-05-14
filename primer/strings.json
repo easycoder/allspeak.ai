@@ -1,0 +1,9 @@
+{
+  "lang": "en",
+  "title": "AllSpeak Primer",
+  "manualLoaded": "AI manual loaded. Select a chapter.",
+  "manualLoading": "Loading AI manual...",
+  "manualFailed": "AI manual failed to load.",
+  "chapterFailed": "Chapter could not be loaded: ",
+  "viewing": "Viewing "
+}

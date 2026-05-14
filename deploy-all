@@ -1,9 +1,9 @@
 #!/bin/sh
-# deploy-all: full source -> deploy/ refresh for AllSpeak.
+# deploy-all: full source -> deploy/ refresh AND push to allspeak.ai.
 #
 # Runs every build/sync step in the right order so deploy/ ends up matching
-# source. Each underlying script is idempotent, so re-running is cheap if
-# nothing has changed.
+# source, then rsyncs the result to the live site. Each underlying step is
+# idempotent — re-running is cheap if nothing has changed.
 #
 # Steps:
 #   1. ./sync-language-packs  — write js/allspeak/LanguagePack_<lang>.js out
@@ -15,26 +15,51 @@
 #   4. ./deploy-sync          — mirror codex/, learn/, primer/, dist/,
 #                               resources/doc/, and tracked root HTML files
 #                               into deploy/.
+#   5. rsync deploy/          — push the local deploy/ tree to allspeak.ai.
+#                               Snapshot dist/<YYMMDD>/ directories on the
+#                               server are protected from --delete.
+#   6. snapshot dist/         — copy today's dist/ to dist/<YYMMDD>/ on the
+#                               server as a versioned archive.
 #
-# For partial refreshes, run any single script on its own.
+# The push assumes your SSH config can reach allspeak@allspeak.ai out of the
+# box. If you need a specific key or host alias, configure it in ~/.ssh/config
+# rather than hard-coding it here.
+#
+# For partial refreshes, run any single script on its own. To skip the live
+# push (e.g. for a dry local build), use ./deploy-sync directly.
 
 set -eu
 cd "$(dirname "$0")"
 
-echo "=== 1/4 sync-language-packs ==="
+echo "=== 1/6 sync-language-packs ==="
 ./sync-language-packs
 
 echo
-echo "=== 2/4 build-allspeak ==="
+echo "=== 2/6 build-allspeak ==="
 ./build-allspeak
 
 echo
-echo "=== 3/4 build-starters ==="
+echo "=== 3/6 build-starters ==="
 ./build-starters
 
 echo
-echo "=== 4/4 deploy-sync ==="
+echo "=== 4/6 deploy-sync ==="
 ./deploy-sync
+
+echo
+echo "=== 5/6 push deploy/ to allspeak.ai ==="
+rsync -avz --delete \
+    --filter='P /dist/[0-9]*' \
+    deploy/ \
+    allspeak@allspeak.ai:allspeak.ai/
+
+echo
+echo "=== 6/6 snapshot dist/ to dated path ==="
+VERSION="$(date +%y%m%d)"
+echo "Snapshotting dist/ to dist/${VERSION}/"
+rsync -avz \
+    dist/ \
+    allspeak@allspeak.ai:allspeak.ai/dist/${VERSION}/
 
 echo
 echo "Deploy complete."
