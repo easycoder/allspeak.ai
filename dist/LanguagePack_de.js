@@ -1032,6 +1032,7 @@ var AllSpeak_LanguagePack_de = {
     "newline": "zeilenumbruch",
     "tab": "tabulator|tab",
     "backtick": "backtick",
+    "break": "umbruch",
     "empty": "leer",
     "uuid": "uuid",
     "date": "datum",

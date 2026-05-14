@@ -1104,6 +1104,7 @@ var AllSpeak_LanguagePack_en = {
     "newline": "newline",
     "tab": "tab",
     "backtick": "backtick",
+    "break": "break",
     "empty": "empty",
     "uuid": "uuid",
     "date": "date",

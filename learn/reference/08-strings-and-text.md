@@ -116,7 +116,7 @@ To embed an actual newline, tab, or backtick character, use the value keywords w
 put `Line 1` cat newline cat `Line 2` into Two
 ```
 
-See [symbols-and-layout](symbols-and-layout.md) and [cat-and-string-building](../idioms/cat-and-string-building.md) for the full story.
+`newline`, `tab`, and `backtick` are three of a small closed set of bare-value keywords — `empty`, `now`/`timestamp`, `today`, `break`, and `uuid` are the others. See [values-and-types](values-and-types.md#special-value-keywords) for the complete list, and [symbols-and-layout](symbols-and-layout.md) and [cat-and-string-building](../idioms/cat-and-string-building.md) for `cat` patterns.
 
 ## Strings and numbers
 

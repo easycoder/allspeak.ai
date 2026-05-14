@@ -62,6 +62,33 @@ Conversion is one-way per operation — the variable's stored value isn't perman
 
 Within a `cat` chain, individual operands keep their type identities all the way through; conversion to text happens once, when the chain is collapsed into a single string. This matters most for values produced at runtime — `the timestamp`, `the content of Input`, `the index of X` — which evaluate to a typed value and only become text at the boundary, not at each `cat` step.
 
+## Special value keywords
+
+A small closed set of bare keywords evaluates to a value of its own — no operand, no leading variable. Use them wherever a value is expected: as the right-hand side of `put`/`set`, inside a `cat` chain, in a condition. The optional filler `the` is accepted before any of them (`the timestamp`, `the today`).
+
+| Keyword | Kind | Value |
+|---|---|---|
+| `empty` | string | The empty string. Equivalent to `` `` ``, but reads more naturally in conditions: `if Name is empty …`. |
+| `now`, `timestamp` | number | Current Unix time in milliseconds. The two are aliases. |
+| `time` | number | Milliseconds since midnight today (local time). |
+| `today` | number | Unix timestamp of midnight today, in milliseconds. |
+| `newline` | string | A single `\n` character. |
+| `tab` | string | A single `\t` character. |
+| `backtick` | string | A single `` ` `` character. |
+| `break` | string | The HTML fragment `<br />`. For building text destined for a DOM element. |
+| `uuid` | string | A freshly-generated UUID. Each evaluation returns a new one. |
+
+`date X` is a related construct but takes an operand — it parses an ISO date string into a Unix timestamp. See [arithmetic](arithmetic.md) for time-component accessors (`the year of …`, `the month of …`, etc.).
+
+The string-flavoured keywords exist because backtick literals have no escape syntax. To put a newline, tab, or literal backtick inside a string, `cat` the keyword in:
+
+```as
+put `Press the ` cat backtick cat `~` cat backtick cat ` key.` into Message
+put `Line 1` cat newline cat `Line 2` into TwoLines
+```
+
+These are the only way to get those characters into a string literal.
+
 ## When automatic conversion isn't enough
 
 For decimal-looking strings (`3.14`), conversion is not automatic — arithmetic is integer-first, and `3.14` stays a string. See [arithmetic](arithmetic.md) and [floats-and-scaled-integers](../idioms/floats-and-scaled-integers.md).

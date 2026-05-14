@@ -48,7 +48,7 @@ There is no escape syntax inside backticks. To include a literal newline, tab, o
 put `Line 1` cat newline cat `Line 2` into Message
 ```
 
-See [strings-and-text](strings-and-text.md) for `cat` patterns.
+`newline`, `tab`, and `backtick` are part of a wider set of bare-value keywords (also including `empty`, `now`/`timestamp`, `today`, `break`, `uuid`); see [values-and-types](values-and-types.md#special-value-keywords) for the full list. See [strings-and-text](strings-and-text.md) for `cat` patterns.
 
 ## Labels
 

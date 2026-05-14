@@ -1036,6 +1036,7 @@ var AllSpeak_LanguagePack_fr = {
     "newline": "nouvelleligne",
     "tab": "tabulation|tab",
     "backtick": "backtick",
+    "break": "saut",
     "empty": "vide",
     "uuid": "uuid",
     "date": "date",

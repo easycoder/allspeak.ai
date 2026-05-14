@@ -78,6 +78,14 @@ put `Line 1` cat newline cat `Line 2` into Output
 
 `Output` is now two lines separated by an actual newline character. There is no `\n` notation inside backticks; this `cat`-with-keyword pattern is canonical.
 
+For embedding a literal backtick — easy to forget because the keyword names *are* the escape:
+
+```as
+put `Press ` cat backtick cat `Enter` cat backtick cat ` to continue.` into Prompt
+```
+
+`newline`, `tab`, and `backtick` are part of a wider set of bare-value keywords — also `empty`, `now`/`timestamp`, `today`, `break`, `uuid`. See [values-and-types](../reference/values-and-types.md#special-value-keywords) for the full list.
+
 ## Multi-line backtick literals
 
 For long constant strings, a multi-line backtick literal can substitute for several `cat`-joined fragments:
