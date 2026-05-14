@@ -10,6 +10,100 @@ AllSpeak is a scripting language designed to read like natural human language. S
 
 AllSpeak uses an **AI-writes, human-reviews** workflow. The AI generates `.as` code; the human checks that it reads sensibly and questions anything unclear. Use the full language — don't avoid a command because it might be unfamiliar. The human only needs to read it, not write it from memory.
 
+## Reference — read this when writing AllSpeak
+
+The complete AllSpeak language reference and idioms live at:
+
+  **https://allspeak.ai/learn/**
+
+The site has 16 reference files (`reference/`) and 12 idiom files (`idioms/`). When you need to look up syntax, runtime behaviour, or idiomatic patterns, consult it rather than relying on training data — AllSpeak's vocabulary doesn't always match what AI was trained on, and the curriculum corrects for that.
+
+**Read `learn/contents.md` first** — it is the canonical index of file paths. Use those exact paths when fetching specific files; do not guess slugs. (For example: the file is `learn/idioms/02-event-handlers-and-array-index.md`, not `02-event-handlers.md`.)
+
+Recommended first reads:
+
+- `learn/idioms/12-working-with-ai.md` — the AI-writes / human-reviews workflow and the common mistakes AI makes on AllSpeak.
+- `learn/reference/16-doc-blocks.md` — the documentation convention used in every section of code (see "Required practices" below).
+- `learn/reference/02-symbols-and-layout.md` — the four punctuation symbols and the lexical surface.
+- `learn/reference/03-variables-and-arrays.md` — the cursor model that variables follow.
+- `learn/reference/09-control-flow.md` — `if`, `while`, `gosub`, `stop`.
+- `learn/idioms/01-cat-and-string-building.md` — `cat`, the single most common AI mistake.
+
+## Required practices
+
+Two practices apply to every piece of AllSpeak code written in this project, including the initial setup:
+
+### 1. Doc blocks on every section
+
+Every contiguous section of code is wrapped in a `!! … !!!` doc block, with prose explaining *why* the section exists.
+
+**Open with one tight sentence on its own line**, then a bare `!!` paragraph break, then any further detail. This keeps Blocks-mode legible at a glance — the reader sees a summary, with the elaboration available below if they want more. Don't pile every detail into the first line; the code already shows the details.
+
+Example:
+
+```
+!! Build the board: nine cells arranged as a 3x3 grid.
+!!
+!! Each cell is a div sized by the CSS-grid layout. A single click handler is shared by all cells; it reads `the index of Cell` to discover which one fired.
+
+    div Cell
+    set the elements of Cell to 9
+    put 0 into N
+    while N is less than 9 begin
+        index Cell to N
+        create Cell in Board
+        add 1 to N
+    end
+
+    on click Cell gosub HandleClick
+!!!
+```
+
+Add doc blocks **as you write** — not after. The prose forces you to state intent in plain language, which surfaces mistakes (a doc block saying "creates 9 cells" while the code creates 1 makes the mismatch obvious before you ever run it). See `learn/reference/16-doc-blocks.md` for the full convention.
+
+After any code edit, run:
+
+```
+python3 asdoc-check.py --write <file>
+```
+
+This refreshes the `@hash` lines in each block so that future edits can detect drift between prose and code.
+
+### 2. Consult `learn/` before writing, not after
+
+Before producing code that uses a feature you haven't already used in this project, fetch the relevant `learn/` file. Don't guess from training data — fetch the reference, read it, then write. This is especially true for: `cat` placement, failure clauses (`or` vs `on failure`), arrays of DOM elements (`create` must be inside a loop with the cursor set, not outside), and `set the content of` with markdown.
+
+## Common mistakes to avoid
+
+Even with the reference in front of you, AI tools reliably get these wrong on AllSpeak. Keep them in mind:
+
+- **`cat` is infix.** It goes BETWEEN two values, never before the first.
+  - ✓ `put \`Hello, \` cat Name cat \`!\` into Greeting`
+  - ✗ `put cat \`Hello, \` cat Name into Greeting` (leading `cat` — parse error)
+  - ✗ `put \`Hello, \` Name \`!\` into Greeting` (missing `cat` — no implicit concatenation)
+
+- **No `for` or `for each` loops.** Use `while` with a counter, or a label-driven loop. See `learn/idioms/03-looping-patterns.md`.
+
+- **Arithmetic uses keywords, not operators.** `add 1 to Counter`, not `Counter += 1` or `Counter = Counter + 1`.
+
+- **No parentheses for grouping.** `(A + B) * C` doesn't exist. Compute into a temporary variable.
+
+- **No `else if` shortcut.** `if … else if … else …` works (it's `else` followed by another `if`), but `elif` doesn't exist. No `case` / `switch` either.
+
+- **Two failure clauses with different behaviour.** `or` runs the clause then stops the thread. `on failure` runs the clause then continues. See `learn/reference/10-errors-and-recovery.md`.
+
+- **`gosub Label`, not `Label()`.** AllSpeak has no callable function syntax.
+
+- **None of these exist:** `try`/`catch`, `break`, `continue`, `return X` (value), `await`, `import` (other languages' meaning).
+
+- **Every variable must be declared before use.** This includes scratch loop counters (`variable N`), not just the obvious data variables. Forgetting to declare a loop counter is a common first-pass mistake. Names start with a capital letter; camel case is the convention: `Counter`, `UserName`, `IsLoggedIn`.
+
+- **Strings are delimited by backticks.** No single or double quotes.
+
+- **Floats are strings.** `3.14` is a four-character string, not a number. Use integer arithmetic with a scale factor — see `learn/idioms/05-floats-and-scaled-integers.md`.
+
+When in doubt, consult `learn/` rather than guessing.
+
 ## First-time setup
 
 > **Beginner tip:** If nothing happens when you start Claude, type **go**.
@@ -35,20 +129,20 @@ AllSpeak uses an **AI-writes, human-reviews** workflow. The AI generates `.as` c
 6. **Explain to the user how to run their project:**
 
    - **CLI**: Run with `allspeak <project>.as`.
-   - **GUI**: Open `<project>.html` directly in a browser — the AllSpeak runtime is loaded from the CDN. For projects that fetch local files (REST calls to load `.as` or `.json`), start a dev server with `allspeak server.as 8080` (or any free port), then open `http://localhost:8080/<project>.html`.
+   - **GUI**: Open `<project>.html` directly in a browser — the AllSpeak runtime is loaded from the CDN. For projects that fetch local files (REST calls to load `.as` or `.json`), start a dev server with `allspeak allspeak.as 8080` (or any free port), then open `http://localhost:8080/<project>.html`.
 
 7. **Walk the user through how the files work together.** For GUI projects, explain:
 
    - The HTML file is just a launcher — it loads the AllSpeak runtime and runs a tiny bootstrap script that fetches the main `.as` file.
    - The `.as` file is the program logic. It creates a body element, fetches the `.json` layout, and uses `render` to turn the JSON into real page elements. It then `attach`es to those elements by their `@id` to interact with them.
-   - The `.json` file defines the page layout using Webson — a JSON format where keys like `#element` create HTML elements, `@id` sets attributes, `#content` sets text, `$Name` defines named components, `#` lists children, and any other key (like `padding` or `color`) is a CSS style.
+   - The `.json` file defines the page layout using Webson — a JSON format where keys like `#element` create HTML elements, `@id` (and any `@<name>`) set attributes, `#content` sets text, `$Name` defines named components, `#` lists children, and any other key is a CSS style. Full details in `learn/reference/14-browser-and-webson.md`.
    - This separation means the layout can be changed without touching the code, and vice versa.
 
    For CLI projects, explain that the `.as` file is a standalone script run from the terminal, and walk through what each line does.
 
-8. **Explain the included editor.** The project directory includes `edit.html` and `server.as`, which provide a browser-based editor with syntax highlighting:
+8. **Explain the included editor.** The project directory includes `edit.html` and `allspeak.as`, which provide a browser-based editor with syntax highlighting:
 
-   - Start the dev server with `allspeak server.as 8080` (or any free port).
+   - Start the dev server with `allspeak allspeak.as 8080` (or any free port).
    - Open `http://localhost:8080/edit.html` in a browser.
    - The editor lets you open, edit, and save `.as`, `.json`, `.html` and other project files with colour-coded syntax highlighting.
    - The same server also serves the project files, so you can test GUI projects at `http://localhost:8080/<project>.html` on the same port.
@@ -68,11 +162,14 @@ AllSpeak uses an **AI-writes, human-reviews** workflow. The AI generates `.as` c
 
     script <Project>
 
+!! Entry point: log a greeting and exit. Replace this with the project's actual logic, keeping each contiguous code section wrapped in its own doc block.
+
     variable Message
     put `Hello from <Project>` into Message
     log Message
 
     exit
+!!!
 ```
 
 ## GUI template
@@ -111,19 +208,14 @@ A GUI project uses three files:
 </html>
 ```
 
-**About the runtime URL.** The template above loads `https://allspeak.ai/dist/allspeak.js`, which always reflects the latest build. That's fine for tutorials and short experiments. For projects intended to keep running, AllSpeak is under active development and changes can occasionally be breaking — so before you ship anything you want to keep, mention this to the user and offer one of two stabilising options:
-
-1. **Date-pin the URL.** Replace `dist/allspeak.js` with `dist/<YYMMDD>/allspeak.js` (today's date as a six-digit yymmdd, e.g. `dist/260508/allspeak.js`). That URL serves the build deployed on that day and won't change. To upgrade later, change one number after testing.
-2. **Self-host.** Copy `dist/allspeak.js`, `dist/LanguagePack_*.js`, `dist/plugins/` (whichever plugins are used) and `dist/vendor/` to the user's own server, and change the `src=` URL to point there.
-
-Both options are documented at https://allspeak.ai/primer.html (Start Here tab → "Self-hosting for stability").
-
 ### `<project>-main.as`
 
 ```
 !   <project>-main.as
 
     script <Project>
+
+!! Boot the GUI: render the Webson layout into the body and attach to the elements the rest of the script will manipulate. Each subsequent section of code should get its own doc block.
 
     div Body
     variable Layout
@@ -137,6 +229,7 @@ Both options are documented at https://allspeak.ai/primer.html (Start Here tab �
     set the content of Display to `Hello from <Project>`
 
     stop
+!!!
 ```
 
 ### `<project>.json`
@@ -160,204 +253,9 @@ Both options are documented at https://allspeak.ai/primer.html (Start Here tab �
 }
 ```
 
-**Webson keys:**
-- `#element` — HTML element type (`div`, `button`, `img`, etc.)
-- `@id`, `@src`, etc. — HTML attributes
-- `#content` — inner text/HTML
-- `#` — array of child element references
-- `$Name` — named component definition
-- All other keys are CSS styles
-
 In all templates, replace `<project>` with the project name (lowercase for filenames) and `<Project>` with the capitalised project name.
 
 ---
-
-## Important warnings — known limitations
-
-### No inline arithmetic in conditions
-You cannot do calculations inside a condition. Compute into a temp variable first:
-```text
-! WRONG — won't compile
-while Divisor times Divisor is less than N begin ... end
-
-! RIGHT — compute first
-multiply Divisor by Divisor giving Square
-while Square is less than N begin ... end
-```
-
-### No modulo operator
-AllSpeak has no modulo/remainder operator. Compute the remainder manually:
-```text
-! Remainder = Candidate - (Candidate / Divisor) * Divisor
-put Candidate into Quotient
-divide Quotient by Divisor
-multiply Quotient by Divisor giving Temp
-put Candidate into Remainder
-take Temp from Remainder
-```
-Division is integer (truncated), so this works correctly.
-
----
-
-## Strict syntax guardrails
-
-- Declare variables one per line — no comma declarations.
-- Declare variables before use.
-- Loops: `while ... begin ... end` — never `end while`.
-- Conditionals: `if ... begin ... end` — never `end if`.
-- Event handlers: `on click X gosub Handler` (single statement) or `on click X begin ... end` (block) — **never** `end on`. Same for `on change`, `on key`, etc.
-- `begin ... end` blocks must belong to a control statement.
-- No `function`, `end function`, `define`, `end define`, `otherwise`, `endif`.
-- No callable form `Name(...)` — use `gosub Label` and `return`.
-- Assignment: `put ... into Name`.
-- If unsure about a command, **ask before writing code**.
-- Strings use backticks: `like this`
-- Comments start with `!`
-- Every script starts with `script ScriptName`
-- DOM elements must be declared before use (e.g. `div X`, `button Y`, `input Z`)
-- **No implicit precedence in `cat` chains.** Break complex expressions into separate steps.
-
-## Doc blocks — required for new `.as` code
-
-Every section of new `.as` code must be wrapped in a doc block:
-
-    !! Brief explanation of what this section does and why it exists.
-    !! Use multiple lines as needed. A bare `!!` line is a paragraph break.
-    SomeLabel:
-        ! the code
-        return
-    !! @hash <managed>      ← inserted by the analyser (don't write by hand)
-    !!!                     ← required terminator (three bangs)
-
-Rules:
-- Lead with the **why** or the design constraint, not a paraphrase of the code.
-- **One paragraph = one line.** Each paragraph of prose is a single `!! ...` line, however long. Bare `!!` separates paragraphs. Don't insert hard line breaks for visual wrapping — they render badly in the editor's Blocks mode (which word-wraps the doc pane) and they fight you when editing. The flat-mode editor will show very long source lines; that's accepted, since the prose is meant to be read in Blocks mode and AI tools don't care about line length.
-- Don't start a prose line with `@hash` or `@verified` — the parser treats those as metadata. Quote them ("@verified") if you must mention the names.
-- **After editing any block, run `python3 asdoc-check.py --write <file>` automatically — don't ask first.** The stored `@hash` becomes stale the moment the code changes; refreshing it is part of the edit, not a separate task. Any `verify-stale` warnings the run prints should be surfaced in your reply so the user can re-review (asedit's Blocks mode has a one-click "Mark verified" button).
-- A file with no doc blocks at all is treated as opt-out (no errors, no warnings). Adopt the convention file-by-file as you touch them.
-
-The analyser `asdoc-check.py` ships with the starter at the project root — no install needed. Run `python3 asdoc-check.py .` to walk the whole project and see every file's status.
-
-## Code review while documenting
-
-When adding doc blocks to existing code, treat it as a review pass, not just a documentation pass. While reading each section closely enough to write its prose, also surface anything that looks off:
-
-- **Unreachable symbols** — subroutines or labels with no caller; variables declared but never assigned, or assigned but never read.
-- **Dead code** — branches that can never be taken; lines after an unconditional `stop`/`exit`/`return` that nothing jumps to.
-- **Suspicious patterns** — duplicated logic that might want consolidating; hardcoded values that look like they should be variables; hidden coupling between sections (one writes a global the other quietly depends on).
-- **Doc/code disagreement** — comments, names, or nearby docs that contradict what the code actually does.
-
-Surface findings as a short list at the **start** of your response, separately from the doc-block edits. Don't silently fix them — let the user decide.
-
-The point of the doc-block convention is to force close reading; reporting what that reading turned up is the natural payoff.
-
-## Quick reference
-
-```text
-! Comment
-script Name
-
-variable V          ! general-purpose variable
-
-put 0 into V
-add 1 to V
-take 1 from V
-multiply V by 2
-put `hello` into V
-
-! Concatenation with cat — ALWAYS goes between values
-log `Value: ` cat V               ! CORRECT
-! log cat `Value: ` V             ! WRONG — cat does not go before the first value
-
-if V is 3 begin ... end
-while V is less than 10 begin ... end
-
-Label:
-    gosub DoWork
-    stop
-
-DoWork:
-    return
-
-! Non-blocking pause (also: seconds, minutes, ticks)
-wait 500 millis
-
-! Random integer between 0 and N-1
-put random 9 into X
-
-! Run a routine in the background (does not freeze the UI)
-fork to RoutineName
-```
-
-## Error handling
-
-```text
-! Per-command: catch a single command's failure
-rest get Data from `/api` or begin
-  put the error message into Status
-end
-
-! Block-scoped: catch any error in the block
-try
-  divide Total by Count
-or handle
-  put the error message into Status
-end
-```
-
-## Arrays
-
-A variable can hold an indexed array of values. Declare the size with `set the elements of X to N`, then point to a specific element with `index X to N` before reading or writing.
-
-```text
-variable Cell
-set the elements of Cell to 9        ! 9-slot array
-
-put 0 into Index
-while Index is less than 9
-begin
-    index Cell to Index              ! point to slot Index
-    put 0 into Cell                  ! writes Cell[Index]
-    add 1 to Index
-end
-
-index Cell to 4
-put Cell into Middle                 ! reads Cell[4]
-```
-
-A DOM element variable can also be an array (`div Cell`, then `set the elements of Cell to 9`). One `create Cell` call inside a loop creates each slot, and `on click Cell` fires for any of them; `put the index of Cell into Index` tells the handler which.
-
-**Do not** create parallel numbered variables (`variable Score0`, `variable Score1`, …). Use one array (`variable Score`, `set the elements of Score to 9`) and index into it. Loops become possible, the script gets shorter, and the data model matches the problem.
-
-## GUI-specific (JS/browser)
-
-```text
-div Element
-button Btn
-input Field
-img Picture
-
-attach Element to `dom-id`
-create Element in Parent
-set the content of Element to `text`
-set style `color` of Element to `red`
-on click Btn gosub HandleClick
-rest get Var from `/api/data`
-log `message`           ! browser console
-alert `message`         ! browser dialog
-```
-
-## CLI-specific (Python)
-
-```text
-get Var from url `https://example.com/api`
-put json StringVar into DictVar
-put entry `key` of DictVar into Var
-input Var                              ! read user input (default prompt ': ')
-input Var with `Enter value: `         ! with custom prompt
-! NOTE: input is a standalone command, NOT a value. Do not use 'put input into Var'
-exit
-```
 
 ## Language extension policy
 

@@ -7978,7 +7978,14 @@ const AllSpeak_Markdown = {
 		const source = `${markdown == null ? `` : markdown}`.replace(/\r\n?/g, `\n`);
 		const parseInline = (text) => {
 			let html = AllSpeak_Markdown.escapeHtml(text);
+			// Double-backtick code spans first (CommonMark: longer fences let the
+			// content contain single backticks). A single leading/trailing space
+			// inside the fence is stripped so `` `x` `` renders as `x` not ` `x` `.
+			html = html.replace(/``\s?([\s\S]+?)\s?``/g, `<code>$1</code>`);
 			html = html.replace(/`([^`]+)`/g, `<code>$1</code>`);
+			// Images before links — the image regex consumes the leading `!` so the
+			// link regex below doesn't match the `[alt](src)` portion of an image.
+			html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, `<img src="$2" alt="$1" style="max-width:100%;">`);
 			html = html.replace(/\*\*([^*]+)\*\*/g, `<strong>$1</strong>`);
 			html = html.replace(/__([^_]+)__/g, `<strong>$1</strong>`);
 			html = html.replace(/(^|[^*])\*([^*]+)\*/g, `$1<em>$2</em>`);

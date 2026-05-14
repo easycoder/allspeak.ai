@@ -35,6 +35,22 @@ Lead with the **why**, the design constraint, or the non-obvious context — not
 
 Avoid restating the obvious. Avoid line-by-line commentary; that's what `!` end-of-line comments are for, when they're needed at all.
 
+**First sentence on its own line, with a paragraph break after it.** The opening sentence should stand alone as a one-line summary of what the section is for. Follow it with a bare `!!` (paragraph break), then any further detail. This makes Blocks mode legible at a glance — the reader sees one tight sentence beside the code, with the elaboration available below for when more is needed.
+
+```
+!! Build the 4x3 grid: create 12 cells and prime each one's colour state.
+!!
+!! Attach to Board, then loop 12 times — `index Cell to N` followed by `create Cell in Board` builds the Nth cell. Parallel ColourIndex array starts every cell at 0 (grey).
+```
+
+Not:
+
+```
+!! Build the 4x3 grid and prime per-cell state. Attach to Board, create 12 plain Cell divs as its children — each gets a grey background, a thin black border, and aspect-ratio 1 to stay square — and initialise the parallel ColourIndex array to 0 for every cell so all start in the grey state. Finally, register one shared click handler …
+```
+
+The wall-of-text form pushes detail that's already visible in the code (the colour, the border, the array initialisation) and crowds out the *why*. The two-line form gives the reader a summary they can use without reading further.
+
 **One paragraph = one line.** Each paragraph of prose is a single `!!` line, however long. Don't insert hard line breaks for visual wrapping — they render badly in Blocks mode (which word-wraps automatically) and fight you when editing. Use a bare `!!` to break paragraphs.
 
 Don't start a prose line with `@hash` or `@verified`; those are reserved metadata tokens. Quote them ("`@verified`") if you must mention the names.

@@ -57,7 +57,7 @@ So:
 put left 4 of `Hello!` cat newline into Result
 ```
 
-does **not** mean `(left 4 of \`Hello!\`) cat newline`. The parser reads `` `Hello!` `` `cat newline` as one combined value, then applies `left 4 of` to it. `Result` ends up as `Hell`, with no newline — the newline was already inside the value that `left 4 of` then truncated.
+does **not** mean ``(left 4 of `Hello!`) cat newline``. The parser reads `` `Hello!` ` cat newline` `` as one combined value, then applies `left 4 of` to it. `Result` ends up as `Hell`, with no newline — the newline was already inside the value that `left 4 of` then truncated.
 
 To force the intended order, assign to a temporary first:
 

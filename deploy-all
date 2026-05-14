@@ -1,0 +1,40 @@
+#!/bin/sh
+# deploy-all: full source -> deploy/ refresh for AllSpeak.
+#
+# Runs every build/sync step in the right order so deploy/ ends up matching
+# source. Each underlying script is idempotent, so re-running is cheap if
+# nothing has changed.
+#
+# Steps:
+#   1. ./sync-language-packs  — write js/allspeak/LanguagePack_<lang>.js out
+#                               as allspeak-py/allspeak/languages/<lang>.json
+#                               (so Python and JS see the same vocabulary).
+#   2. ./build-allspeak       — concatenate + minify JS into dist/.
+#   3. ./build-starters       — rebuild deploy/allspeak-<lang>.zip from
+#                               starter/<lang>/, asedit.*, and asdoc-check.py.
+#   4. ./deploy-sync          — mirror codex/, learn/, primer/, dist/,
+#                               resources/doc/, and tracked root HTML files
+#                               into deploy/.
+#
+# For partial refreshes, run any single script on its own.
+
+set -eu
+cd "$(dirname "$0")"
+
+echo "=== 1/4 sync-language-packs ==="
+./sync-language-packs
+
+echo
+echo "=== 2/4 build-allspeak ==="
+./build-allspeak
+
+echo
+echo "=== 3/4 build-starters ==="
+./build-starters
+
+echo
+echo "=== 4/4 deploy-sync ==="
+./deploy-sync
+
+echo
+echo "Deploy complete."

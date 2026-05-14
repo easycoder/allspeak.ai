@@ -141,6 +141,35 @@ on click Item gosub HandleClick
 
 This is the canonical pattern for "many similar elements". See [event-handlers-and-array-index](../idioms/event-handlers-and-array-index.md) and [picking-a-collection-shape](../idioms/picking-a-collection-shape.md).
 
+## Browser-local storage
+
+The browser provides a small persistent key/value store that survives page reloads. AllSpeak exposes it via three keywords:
+
+```as
+put Lang into storage as `app.lang`           ! write
+get Lang from storage as `app.lang`           ! read
+remove `app.lang` from storage                ! delete a single key
+put empty into storage as `app.lang`          ! also clears the value
+```
+
+Reads return empty (`empty`) if the key isn't present, so a missing entry on first load doesn't need an explicit check before reading — the variable just receives empty. Keys are arbitrary strings; convention is to namespace them with your script's name to avoid collisions with other AllSpeak apps on the same origin.
+
+Values are strings as far as storage is concerned. To persist a structured shape (a list, a dictionary), serialise it first with the JSON keywords; deserialise on read.
+
+```as
+! Save an integer array (12 small ints) as JSON, then read it back.
+variable State
+set State to array
+! ... populate State[0..11] with element-setters ...
+put State into storage as `cells.state`
+
+! Later, on page load:
+get State from storage as `cells.state`
+if State is empty set State to array       ! initialise on first load
+```
+
+Storage is browser-only. The Python runtime does not have this vocabulary; for the CLI, use `read` / `write` on a file instead.
+
 ## Webson renderer vs Browser domain
 
 The Webson renderer (which turns Webson JSON into DOM) is a companion tool — it's not part of the AllSpeak language. The Browser domain provides the language vocabulary (`button`, `attach`, `on click`); the renderer emits the elements that `attach` then binds. See [structure](structure.md) for the place of companion tools.

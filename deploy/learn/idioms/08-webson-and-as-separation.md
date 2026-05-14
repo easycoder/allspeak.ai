@@ -111,16 +111,16 @@ The script declares each typed variable, attaches it to the rendered element, an
 
 ## Create-then-index for arrays of elements
 
-When a UI has a repeating element rendered N times, declare an array on the AllSpeak side and index through it as you populate or read:
+When a UI has a repeating element rendered N times, declare an array on the AllSpeak side, **then create each element inside a loop while the cursor is set**:
 
 ```as
 button Tab
 set the elements of Tab to 5
-create Tab in TabBar
 
 set N to 0
 while N is less than 5 begin
     index Tab to N
+    create Tab in TabBar
     set the content of Tab to element N of TabNames
     add 1 to N
 end
@@ -128,7 +128,7 @@ end
 on click Tab gosub TabClicked
 ```
 
-`create Tab in TabBar` on an array allocates the right number of button elements; each `index Tab to N` selects one for property-setting. The handler reads `the index of Tab` to discover which fired (see [event-handlers-and-array-index](event-handlers-and-array-index.md)).
+`set the elements of Tab to 5` reserves five slots. Each `index Tab to N` followed by `create Tab in TabBar` builds the element at slot N and inserts it into the container. A single `create` outside the loop would only build one element — not five — so the `create` must be inside the loop. The handler reads `the index of Tab` to discover which fired (see [event-handlers-and-array-index](event-handlers-and-array-index.md)).
 
 This is the same array-plus-cursor pattern that applies to scalar arrays, extended to DOM elements.
 

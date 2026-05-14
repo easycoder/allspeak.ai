@@ -2,13 +2,16 @@
 # deploy-sync: mirror source-tree changes into deploy/ for serving.
 #
 # Run this after:
-#   - editing anything under codex/
-#   - editing anything under learn/
+#   - editing anything under codex/, learn/, primer/
+#   - editing primer.html (or any tracked root HTML file)
 #   - running ./build-allspeak (which rewrites dist/)
 #   - adding or regenerating docs under resources/doc/
 #
 # Uses rsync when available (preserves timestamps, only copies changes)
 # and falls back to cp -r. Safe to re-run at any time.
+#
+# For a full end-to-end refresh (sync packs + build JS + build zips + sync),
+# use ./deploy instead.
 
 set -eu
 cd "$(dirname "$0")"
@@ -41,9 +44,25 @@ run_sync() {
     echo "  synced: $src -> $dst"
 }
 
+copy_file() {
+    src="$1"
+    dst="$2"
+    if [ ! -f "$src" ]; then
+        echo "  skip: $src does not exist"
+        return
+    fi
+    cp -p "$src" "$dst"
+    echo "  copied: $src -> $dst"
+}
+
 echo "Syncing source -> deploy/"
 run_sync "codex/"           "deploy/codex/"
 run_sync "learn/"           "deploy/learn/"
+run_sync "primer/"          "deploy/primer/"
 run_sync "dist/"            "deploy/dist/"
 run_sync "resources/doc/"   "deploy/resources/doc/"
+
+# Root HTML files used as entry points.
+copy_file "primer.html"     "deploy/primer.html"
+
 echo "Done."
