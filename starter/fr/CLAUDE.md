@@ -47,10 +47,10 @@ Les réponses de l'IA (explications, questions, commentaires dans le code) seron
 
 5. **Crée `.allspeak-init`** contenant le nom du projet et le type (cli/gui/both) pour ne pas répéter la configuration.
 
-6. **Explique à l'utilisateur comment exécuter son projet :**
+6. **Lance l'app (GUI) ou explique comment l'exécuter (CLI).**
 
-   - **CLI** : Exécute avec `allspeak <projet>.as`.
-   - **GUI** : Ouvre `<projet>.html` directement dans un navigateur — le runtime AllSpeak est chargé depuis le CDN. Pour les projets qui récupèrent des fichiers locaux (appels REST pour charger des `.as` ou `.json`), démarre un serveur de développement avec `allspeak server.as 8080` (ou n'importe quel port libre), puis ouvre `http://localhost:8080/<projet>.html`.
+   - **GUI** : Exécute immédiatement `allspeak server.as -t edit,<projet>` en arrière-plan. Cela démarre le serveur de développement et ouvre deux onglets du navigateur : l'éditeur (`edit.html`) et la page du projet de l'utilisateur (`<projet>.html`). Traite le serveur comme l'application — les onglets du navigateur sont son interface. Dis à l'utilisateur : « J'ai démarré l'app — l'éditeur et ta page de projet devraient maintenant être ouverts dans des onglets du navigateur. Le serveur tourne dans ce terminal ; appuie sur Ctrl+C pour l'arrêter. »
+   - **CLI** : Dis à l'utilisateur d'exécuter son script avec `allspeak <projet>.as`. S'il veut éditer via l'éditeur dans le navigateur au lieu de son éditeur habituel, il peut exécuter `allspeak server.as -t edit` séparément — cela ouvre `edit.html` dans un onglet avec le serveur servant les fichiers depuis ce répertoire.
 
 7. **Guide l'utilisateur à travers la façon dont les fichiers fonctionnent ensemble.** Pour les projets GUI, explique :
 
@@ -61,12 +61,7 @@ Les réponses de l'IA (explications, questions, commentaires dans le code) seron
 
    Pour les projets CLI, explique que le fichier `.as` est un script autonome exécuté depuis le terminal, et décris ce que fait chaque ligne.
 
-8. **Explique l'éditeur inclus.** Le répertoire du projet inclut `edit.html` et `server.as`, qui fournissent un éditeur dans le navigateur avec coloration syntaxique :
-
-   - Démarre le serveur de développement avec `allspeak server.as 8080` (ou n'importe quel port libre).
-   - Ouvre `http://localhost:8080/edit.html` dans un navigateur.
-   - L'éditeur permet d'ouvrir, de modifier et d'enregistrer des fichiers `.as`, `.json`, `.html` et d'autres fichiers du projet avec coloration syntaxique.
-   - Le même serveur sert aussi les fichiers du projet, donc tu peux tester les projets GUI sur `http://localhost:8080/<projet>.html` sur le même port.
+8. **À propos de l'éditeur.** L'éditeur dans le navigateur (`edit.html`) fournit l'édition avec coloration syntaxique pour les fichiers `.as`, `.json`, `.html` et autres fichiers du projet. Pour les projets GUI il s'est ouvert automatiquement à l'étape 6 ; pour les projets CLI, démarre-le manuellement avec `allspeak server.as -t edit`.
 
 9. **Demande ce que l'utilisateur aimerait construire.** À partir de là, réponds simplement à ce que l'utilisateur veut.
 

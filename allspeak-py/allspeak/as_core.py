@@ -1,4 +1,4 @@
-import json, math, hashlib, threading, os, shutil, subprocess, time
+import json, math, hashlib, threading, os, shutil, subprocess, time, webbrowser
 import base64, binascii, random, requests, paramiko, uuid
 from copy import deepcopy
 from datetime import datetime
@@ -235,6 +235,22 @@ class Core(Handler):
             return self.nextPC()
         else:
             return self.compileFromHere(['end'])
+
+    # Open a URL in the user's default browser
+    # browse {url}
+    def k_browse(self, command):
+        command['url'] = self.nextValue()
+        if command['url'] != None:
+            self.add(command)
+            return True
+        FatalError(self.compiler, 'browse: expected a URL value')
+        return False
+
+    def r_browse(self, command):
+        url = self.textify(command['url'])
+        if url != None:
+            webbrowser.open(url)
+        return self.nextPC()
 
     # clear {variable}
     # clear entry {name} of {dictionary}

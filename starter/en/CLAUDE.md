@@ -126,10 +126,10 @@ When in doubt, consult `learn/` rather than guessing.
 
 5. **Create `.allspeak-init`** containing the project name and type (cli/gui/both) so this setup is not repeated.
 
-6. **Explain to the user how to run their project:**
+6. **Launch the app (GUI) or explain how to run it (CLI).**
 
-   - **CLI**: Run with `allspeak <project>.as`.
-   - **GUI**: Open `<project>.html` directly in a browser — the AllSpeak runtime is loaded from the CDN. For projects that fetch local files (REST calls to load `.as` or `.json`), start a dev server with `allspeak allspeak.as 8080` (or any free port), then open `http://localhost:8080/<project>.html`.
+   - **GUI**: Immediately run `allspeak server.as -t edit,<project>` in the background. This starts the dev server and opens two browser tabs: the editor (`edit.html`) and the user's project page (`<project>.html`). Treat the server as the application — the browser tabs are its UI. Tell the user: "I've started the app — the editor and your project page should now be open in browser tabs. The server is running in this terminal; press Ctrl+C to stop it."
+   - **CLI**: Tell the user to run their script with `allspeak <project>.as`. If they want to edit through the browser-based editor instead of their usual editor, they can run `allspeak server.as -t edit` separately — that opens `edit.html` in a tab with the server serving files from this directory.
 
 7. **Walk the user through how the files work together.** For GUI projects, explain:
 
@@ -140,12 +140,7 @@ When in doubt, consult `learn/` rather than guessing.
 
    For CLI projects, explain that the `.as` file is a standalone script run from the terminal, and walk through what each line does.
 
-8. **Explain the included editor.** The project directory includes `edit.html` and `allspeak.as`, which provide a browser-based editor with syntax highlighting:
-
-   - Start the dev server with `allspeak allspeak.as 8080` (or any free port).
-   - Open `http://localhost:8080/edit.html` in a browser.
-   - The editor lets you open, edit, and save `.as`, `.json`, `.html` and other project files with colour-coded syntax highlighting.
-   - The same server also serves the project files, so you can test GUI projects at `http://localhost:8080/<project>.html` on the same port.
+8. **About the editor.** The browser-based editor (`edit.html`) provides syntax-highlighted editing for `.as`, `.json`, `.html` and other project files. For GUI projects it opened automatically in step 6; for CLI projects, start it manually with `allspeak server.as -t edit`.
 
 9. **Ask what they'd like to build.** From here, just respond to what the user wants.
 
