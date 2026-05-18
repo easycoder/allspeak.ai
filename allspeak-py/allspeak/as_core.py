@@ -2731,6 +2731,8 @@ class Core(Handler):
     def v_entries(self, v):
         path = self.textify(v.target)
         filter_ext = self.textify(v.filter) if v.filter else None
+        if not os.path.isdir(path):
+            return ECValue(type=str, content='[]')
         result = []
         for name in sorted(os.listdir(path)):
             full = os.path.join(path, name)
@@ -2750,6 +2752,8 @@ class Core(Handler):
     def v_files(self, v):
         path = self.textify(v.target)
         filter_ext = self.textify(v.filter) if v.filter else None
+        if not os.path.isdir(path):
+            return ECValue(type=str, content='[]')
         entries = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
         if filter_ext:
             exts = {e.strip().lstrip('.') for e in filter_ext.split(',')}

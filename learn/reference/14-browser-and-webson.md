@@ -27,7 +27,7 @@ A typed variable like `button SaveButton` declares the variable; the element doe
 
 Every common HTML element has an AllSpeak type. As of today: `a`, `audioclip`, `blockquote`, `button`, `canvas`, `div`, `file`, `fieldset`, `form`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, `hr`, `image` (alias for `img`), `img`, `input`, `label`, `legend`, `li`, `option`, `p`, `pre`, `progress`, `section`, `select`, `span`, `table`, `td`, `textarea`, `th`, `tr`, `ul`.
 
-Each declares a variable bound to that HTML tag — `table Log`, `tr HeaderRow`, `td Cell`, etc. They all participate in the same `create` / `attach` / `set property` / `set style` model as `div` and `button`. If you need an element type not in this list, build it with a `div` and an `@element` override in Webson, or extend the language pack.
+Each declares a variable bound to that HTML tag — `table Log`, `tr HeaderRow`, `td Cell`, etc. They all participate in the same `create` / `attach` / `set attribute` / `set style` model as `div` and `button`. If you need an element type not in this list, build it with a `div` and an `@element` override in Webson, or extend the language pack.
 
 ## Two paths to a live element
 
@@ -80,11 +80,23 @@ set the content of X to `Hello`            ! text content of the element
 set the text of X to `Hello`               ! synonym for content
 set the style of X to `color:red; font-weight:bold`
 set style `width` of X to `90%`            ! one CSS property at a time
-set property `data-id` of X to `42`        ! arbitrary HTML attribute
+set attribute `href` of X to `https://example.com`   ! HTML attribute on the DOM element
+set attribute `data-id` of X to `42`       ! arbitrary attribute, same form
 get the content of X into V                ! read back
 ```
 
-`set the style of X` is bulk inline CSS; `set style `width` of X` writes a single property. `set property` reaches for HTML attributes other than style.
+`set the style of X` is bulk inline CSS; `set style \`name\` of X` writes a single CSS property. `set attribute \`name\` of X` writes an HTML attribute on the live DOM element by calling `element.setAttribute(name, value)`.
+
+### `set attribute` vs `set property` — they are not the same
+
+This trap bites AI agents reliably and humans occasionally:
+
+- **`set attribute \`name\` of X to V`** writes to the **DOM element**. Use this for `href`, `target`, `title`, `src`, `type`, `checked`, `data-*`, ARIA attributes — anything that needs to live on the live HTML element so the browser acts on it.
+- **`set property \`name\` of X to V`** writes to a **JSON dictionary stored in the variable's data slot**. It does *not* touch the DOM. Use this for application-level metadata you want to carry alongside the element (e.g. a row's record ID for your own event handlers to read back via `property \`name\` of X`).
+
+The two have similar surface syntax but completely different effects. A common symptom of the mix-up: `set property \`href\` of LinkAnchor to URL` runs without error, but the link doesn't navigate when clicked — because the DOM `<a>` never got the `href`; only the variable's data dict did. The fix is to change `property` to `attribute`.
+
+If your goal is "make the browser act on this", reach for `attribute`. If your goal is "remember this fact about the element for my own code to read later", reach for `property`.
 
 ## Events
 
