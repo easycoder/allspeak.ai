@@ -23,7 +23,11 @@ label NameLabel
 
 A typed variable like `button SaveButton` declares the variable; the element doesn't exist in the DOM until you create it or attach it to a rendered one.
 
-The full set of types lives in the Browser domain's vocabulary — every common HTML element has an AllSpeak type.
+### The full set of element types
+
+Every common HTML element has an AllSpeak type. As of today: `a`, `audioclip`, `blockquote`, `button`, `canvas`, `div`, `file`, `fieldset`, `form`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, `hr`, `image` (alias for `img`), `img`, `input`, `label`, `legend`, `li`, `option`, `p`, `pre`, `progress`, `section`, `select`, `span`, `table`, `td`, `textarea`, `th`, `tr`, `ul`.
+
+Each declares a variable bound to that HTML tag — `table Log`, `tr HeaderRow`, `td Cell`, etc. They all participate in the same `create` / `attach` / `set property` / `set style` model as `div` and `button`. If you need an element type not in this list, build it with a `div` and an `@element` override in Webson, or extend the language pack.
 
 ## Two paths to a live element
 
@@ -93,6 +97,26 @@ on submit Form gosub Submit
 ```
 
 The handler is a thread; the cursor on the element variable is set to the firing instance before the handler runs. See [event-handlers-and-array-index](../idioms/event-handlers-and-array-index.md) for the canonical pattern with arrays of elements.
+
+## Native browser dialogs
+
+Two keywords route to the browser's built-in modal dialogs. Both block the page until the user dismisses them, so use sparingly — for substantive UI, build a modal in Webson and a normal element-based form.
+
+`alert` shows an informational message:
+
+```as
+alert `Saved.`
+```
+
+`confirm` shows an OK/Cancel dialog and branches on the user's choice via `gosub`:
+
+```as
+confirm `Delete this booking?` gosub OnYes or gosub OnNo
+```
+
+The `or gosub <Label>` clause is optional — if you only care about the OK case, drop it; on Cancel the script just continues to the next command. Both branches behave as ordinary `gosub` calls: they push a return PC and the called subroutine ends with `return`, so execution resumes at the next command regardless of which branch ran.
+
+The displayed text is whatever string value you pass — it's not affected by the language pack, so translate it yourself.
 
 ## Webson
 

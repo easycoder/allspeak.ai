@@ -23,6 +23,8 @@ A practical guide to writing idiomatic AllSpeak. Two tiers:
 14. [Browser and Webson](reference/14-browser-and-webson.md) — DOM types, `attach`, the Webson layout dialect.
 15. [Multilingual](reference/15-multilingual.md) — the `language` directive and the pack model.
 16. [Doc blocks](reference/16-doc-blocks.md) — the `!!` / `!!!` convention; `asdoc-check`.
+17. [Dev-environment commands](reference/17-dev-environment.md) — Python-runtime `system`, `download`, `browse` for shell, fetch, and tab-launch.
+18. [JSON](reference/18-json.md) — `save` auto-encodes dict/list; `append … to json file`; `json of` for parsing; the parent-dir caveat.
 
 ## Idioms
 
@@ -38,3 +40,4 @@ A practical guide to writing idiomatic AllSpeak. Two tiers:
 10. [Writing language-neutral](idioms/10-writing-language-neutral.md) — what the language pack doesn't translate.
 11. [Debugging .as](idioms/11-debugging-as.md) — `print`, `log`, tracer, `dummy`.
 12. [Working with AI](idioms/12-working-with-ai.md) — the AI-writes / human-reviews workflow.
+13. [Server as application](idioms/13-server-as-application.md) — running `server.as -t edit,<project>` so the server *is* the app and the browser tabs are its UI.

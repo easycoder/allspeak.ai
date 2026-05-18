@@ -132,6 +132,52 @@ on click Tab gosub TabClicked
 
 This is the same array-plus-cursor pattern that applies to scalar arrays, extended to DOM elements.
 
+## Data-driven content: Webson for the frame, script for the rows
+
+The Webson + attach pattern stops being sufficient when the shape isn't known at template time. Webson is a template language: every element is declared statically, every `#content` is a literal string in the JSON. Two things in particular don't fit:
+
+- **Variable element counts.** Webson can declare a fixed number of rows; it can't declare "one row per record in the data file".
+- **Element content sourced from a script value.** `#content` takes a string literal, not an expression — there's no way to say "the value of `Row.amount` for this iteration".
+
+The fix is to split the page by which axis varies. Use Webson for the parts whose shape is fixed at template time — page chrome, header bar, table header row, modal forms. Use script for the parts whose shape comes from data — body rows, monthly subtotals, computed totals. `asedit.as` does this for its file-list: a Webson-attached scroller container with script-created entries inside; the layout knows nothing about how many files there might be.
+
+### A data-driven table
+
+For a log table whose rows come from a JSON file:
+
+```as
+div TableBody
+attach TableBody to `table-body`
+
+variable Grid
+put `40px 1fr 100px 100px` into Grid
+
+variable Rows
+rest get Rows from `/data/2024-25/04.json`
+
+div Row
+set the elements of Row to the count of Rows
+set N to 0
+while N is less than the count of Rows begin
+    index Row to N
+    create Row in TableBody
+    set the style of Row to `display:grid; grid-template-columns:` cat Grid
+    set the content of Row to (element 0 of element N of Rows) cat `,` cat (element 1 of element N of Rows)
+    add 1 to N
+end
+
+on click Row gosub HandleRowClick
+```
+
+The Webson `app.json` declares the table chrome — outer container, header row with the same `grid-template-columns: 40px 1fr 100px 100px`, attach point `table-body`. Everything below that point is built by the script.
+
+The repeated `grid-template-columns` string is the one cost: the header row in Webson and the data rows in script must agree on it. That's cheap enough that introducing a Webson primitive for templated row generation isn't worth it. Pull the column template into a script constant (here `Grid`), and refer to the same value in the Webson layout as a literal.
+
+### Alternatives considered (and when they apply)
+
+- **HTML `<table>` via Webson.** `table`, `tr`, `td`, `th` are declarable AllSpeak types (see [browser-and-webson](../reference/browser-and-webson.md)), so this is technically possible. The grid pattern wins for most UI tables because per-row hover/click styling and responsive widths are easier on a grid div than on `tr`/`td`. Reach for `<table>` when you need semantic HTML for accessibility, print/PDF export, or screen-reader navigation.
+- **One grid container with `display: contents` row wrappers.** Lets all cells share a single grid template, but `display: contents` removes the row from the box tree — there's no styleable row element to attach hover or click to. Useful when rows are purely visual; awkward when rows are clickable units. The per-row grid div pattern above keeps each row as its own styleable, clickable element.
+
 ## Anti-pattern: styling in the script
 
 ```as

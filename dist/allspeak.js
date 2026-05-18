@@ -4188,6 +4188,54 @@ const AllSpeak_Browser = {
 		}
 	},
 
+	Confirm: {
+
+		compile: (compiler) => {
+			const lino = compiler.getLino();
+			const value = compiler.getNextValue();
+			let yesLabel = null;
+			let noLabel = null;
+			if (AllSpeak_Language.reverseWord(compiler.getToken()) === `gosub`) {
+				compiler.next();
+				yesLabel = compiler.getToken();
+				compiler.next();
+				if (AllSpeak_Language.reverseWord(compiler.getToken()) === `or`) {
+					compiler.next();
+					if (AllSpeak_Language.reverseWord(compiler.getToken()) === `gosub`) {
+						compiler.next();
+						noLabel = compiler.getToken();
+						compiler.next();
+					}
+				}
+			}
+			compiler.addCommand({
+				domain: `browser`,
+				keyword: `confirm`,
+				lino,
+				value,
+				yesLabel,
+				noLabel
+			});
+			return true;
+		},
+
+		run: (program) => {
+			const command = program[program.pc];
+			const prompt = program.getFormattedValue(command.value);
+			const result = window.confirm(prompt);
+			const label = result ? command.yesLabel : command.noLabel;
+			if (label) {
+				if (program.verifySymbol(label)) {
+					program.programStack.push(program.pc + 1);
+					return program.symbols[label].pc;
+				}
+				program.runtimeError(command.lino, `Unknown symbol '${label}'`);
+				return 0;
+			}
+			return command.pc + 1;
+		}
+	},
+
 	Attach: {
 
 		nowMs: () => {
@@ -7069,6 +7117,7 @@ const AllSpeak_Browser = {
 
 			// Navigation
 			ALERT: this.Alert,
+			CONFIRM: this.Confirm,
 			NAVIGATE: this.Location,
 			HISTORY_PUSH: this.History,
 			HISTORY_SET: this.History,
@@ -11705,6 +11754,13 @@ var AllSpeak_LanguagePack_en = {
       "keyword": "alert",
       "patterns": [
         "alert {value}"
+      ]
+    },
+    "CONFIRM": {
+      "keyword": "confirm",
+      "patterns": [
+        "confirm {value} gosub {label}",
+        "confirm {value} gosub {label} or gosub {label}"
       ]
     },
     "APPEND": {

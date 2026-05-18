@@ -21,6 +21,13 @@ var AllSpeak_LanguagePack_fr = {
         "alerte {value}"
       ]
     },
+    "CONFIRM": {
+      "keyword": "confirme",
+      "patterns": [
+        "confirme {value} vasous {label}",
+        "confirme {value} vasous {label} ou vasous {label}"
+      ]
+    },
     "APPEND": {
       "keyword": "accole",
       "patterns": [

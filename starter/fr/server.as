@@ -74,25 +74,6 @@
     print `Serving files from ` cat BaseDir
     print `Press Ctrl+C to stop`
 
-    ! Open requested browser tabs (-t/--tabs flag)
-    if TabList is not empty
-    begin
-        split TabList on `,`
-        put 0 into TabIndex
-        while TabIndex is less than the elements of TabList
-        begin
-            index TabList to TabIndex
-            put TabList into TabName
-            if TabName is not empty
-            begin
-                put `http://localhost:` cat Port cat `/` cat TabName cat `.html` into TabUrl
-                print `Opening ` cat TabUrl
-                browse TabUrl
-            end
-            increment TabIndex
-        end
-    end
-
     ! Check for updates at startup
     get RemoteVersion from url RepoBase cat `code-version` or begin
         print `Warning: could not check for updates`
@@ -206,5 +187,26 @@
                 return `Not found` to Files with status 404
             end
             return Content to Files with type MimeType
+        end
+    end
+
+    ! Open requested browser tabs (-t/--tabs flag) — done AFTER the
+    ! request handler is registered so the tabs don't race the server
+    ! and hit a 503 'Server handler not ready'.
+    if TabList is not empty
+    begin
+        split TabList on `,`
+        put 0 into TabIndex
+        while TabIndex is less than the elements of TabList
+        begin
+            index TabList to TabIndex
+            put TabList into TabName
+            if TabName is not empty
+            begin
+                put `http://localhost:` cat Port cat `/` cat TabName cat `.html` into TabUrl
+                print `Opening ` cat TabUrl
+                browse TabUrl
+            end
+            increment TabIndex
         end
     end

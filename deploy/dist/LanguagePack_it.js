@@ -21,6 +21,13 @@ var AllSpeak_LanguagePack_it = {
         "avviso {value}"
       ]
     },
+    "CONFIRM": {
+      "keyword": "conferma",
+      "patterns": [
+        "conferma {value} vaisub {label}",
+        "conferma {value} vaisub {label} oppure vaisub {label}"
+      ]
+    },
     "APPEND": {
       "keyword": "accoda",
       "patterns": [

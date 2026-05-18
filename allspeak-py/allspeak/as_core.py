@@ -603,6 +603,8 @@ class Core(Handler):
                     return command['or']
                 RuntimeError(self.program, self.program.errorMessage)
             local_path = self.resolveLocalPath(path)
+            parent = os.path.dirname(local_path)
+            if parent: os.makedirs(parent, exist_ok=True)
             with open(local_path, mode) as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk: f.write(chunk if binary else chunk.decode('utf-8'))
@@ -1528,7 +1530,11 @@ class Core(Handler):
             ssh = self.getVariable(command['ssh'])
             path = self.textify(command['path'])
             sftp = ssh['sftp']
-            if path.endswith('.json'): content = json.dumps(content)
+            if isinstance(content, (dict, list)):
+                content = json.dumps(content, indent=2)
+            elif isinstance(content, str) and path.lower().endswith('.json'):
+                try: content = json.dumps(json.loads(content), indent=2)
+                except: pass
             try:
                 with sftp.open(path, 'w') as remote_file: remote_file.write(content)
             except:
@@ -1545,10 +1551,15 @@ class Core(Handler):
                 if content == None:
                     content = ''
                 elif isinstance(content, dict) or isinstance(content, list):
-                    content = json.dumps(content)
+                    content = json.dumps(content, indent=2)
                 elif not isinstance(content, str):
                     content = self.textify(content)
+                if isinstance(content, str) and filename.lower().endswith('.json'):
+                    try: content = json.dumps(json.loads(content), indent=2)
+                    except: pass
                 path = self.resolveLocalPath(filename)
+                parent = os.path.dirname(path)
+                if parent: os.makedirs(parent, exist_ok=True)
                 with open(path, 'w') as f: f.write(content)
             except Exception as e:
                 errorReason = f'Unable to write to {filename}: {str(e)}'

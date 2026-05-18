@@ -21,6 +21,13 @@ var AllSpeak_LanguagePack_en = {
         "alert {value}"
       ]
     },
+    "CONFIRM": {
+      "keyword": "confirm",
+      "patterns": [
+        "confirm {value} gosub {label}",
+        "confirm {value} gosub {label} or gosub {label}"
+      ]
+    },
     "APPEND": {
       "keyword": "append",
       "patterns": [

@@ -82,6 +82,39 @@ set element 1 of Items to `second`
 put element 0 of Items into First
 ```
 
+## Trap: don't mix the cursor model with `set X to array` / `set X to object`
+
+The two patterns look adjacent but are different layers. `set the elements of X to N` makes X a multi-slot variable and the cursor selects which slot you're operating on. `set X to array` (or `set X to object`) sets the *current slot's value* to a JSON container. These are independent. Mixing them is where AI-written code most often goes wrong:
+
+```as
+! WRONG — looks reasonable, doesn't do what you'd expect
+variable Bucket
+set Bucket to array               ! cursor slot = []
+set the elements of Bucket to 1   ! no-op; the slot still holds []
+index Bucket to 0
+put Row into Bucket               ! cursor slot is now Row (the [] is gone)
+rest post Bucket to URL           ! posts Row, not [Row]
+```
+
+`put V into X` writes V into the cursor slot, replacing whatever was there — exactly as if X had been an unused variable. The runtime treats every slot uniformly; it does not know or care that you previously initialised the slot to an array. To add to a JSON array held in the cursor slot, use the array-aware keyword:
+
+```as
+! RIGHT — keep the array intact
+variable Bucket
+set Bucket to array
+json add Row to Bucket            ! cursor slot = [Row]
+rest post Bucket to URL           ! posts [Row]
+```
+
+Or, when you need positional control:
+
+```as
+set element 0 of Bucket to Row    ! cursor slot = [Row]
+set element 1 of Bucket to OtherRow
+```
+
+The cursor (`index X to N`) addresses *slots of X*. The element/property keywords (`set element N of`, `set property K of`, `json add … to`) address *inside the JSON value held by the current slot*. They never overlap.
+
 ## Picking a shape
 
 The choice usually comes down to access pattern:

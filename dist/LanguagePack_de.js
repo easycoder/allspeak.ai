@@ -21,6 +21,13 @@ var AllSpeak_LanguagePack_de = {
         "alarm {value}"
       ]
     },
+    "CONFIRM": {
+      "keyword": "bestätige|bestaetige",
+      "patterns": [
+        "bestätige {value} gosub {label}",
+        "bestätige {value} gosub {label} oder gosub {label}"
+      ]
+    },
     "APPEND": {
       "keyword": "ergänze|ergaenze",
       "patterns": [

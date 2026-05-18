@@ -10,6 +10,6 @@
 `clear` sets the value of the [variable](variable.md) to the Boolean value `false`. See also [set](set.md).
 
 Next: [close](close.md)  
-Prev: [begin](begin.md)
+Prev: [browse](browse.md)
 
 [Back](../../README.md)

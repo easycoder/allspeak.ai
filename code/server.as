@@ -1,6 +1,8 @@
 !   server.as
 !   AllSpeak development server.
-!   Usage: allspeak server.as [port]    (default: 8080)
+!   Usage: allspeak server.as [-t|--tabs page1,page2,...] [port]    (default port: 8080)
+!   Example: allspeak server.as -t edit,test 8080
+!     opens edit.html and test.html in the default browser at localhost:8080
 !
 !   Serves two purposes:
 !     1. Hosts the AllSpeak editor at localhost:<port>/edit.html
@@ -36,10 +38,29 @@
 
     put cwd into BaseDir
     variable ArgCount
+    variable ArgIndex
+    variable CurrentArg
+    variable TabList
+    variable TabName
+    variable TabIndex
+    variable TabUrl
     put argc into ArgCount
     put `8080` into Port
-    if ArgCount is greater than 0
-        put arg 0 into Port
+    put empty into TabList
+    put 0 into ArgIndex
+    while ArgIndex is less than ArgCount
+    begin
+        put arg ArgIndex into CurrentArg
+        if CurrentArg is `-t` or CurrentArg is `--tabs`
+        begin
+            increment ArgIndex
+            if ArgIndex is less than ArgCount
+                put arg ArgIndex into TabList
+        end
+        else
+            put CurrentArg into Port
+        increment ArgIndex
+    end
 
     ! Ensure .code-version exists
     if file BaseDir cat `/.code-version` does not exist
@@ -129,6 +150,11 @@
                 return `Forbidden` to Files with status 403
             end
             load Content from BaseDir cat `/` cat FilePath
+            	on failure
+            	begin
+                	log `Could not open ` cat BaseDir cat  `/` cat FilePath
+                    put empty into Content
+                end
             return Content to Files
         end
         else if FullPath starts with `/write/`
@@ -161,5 +187,26 @@
                 return `Not found` to Files with status 404
             end
             return Content to Files with type MimeType
+        end
+    end
+
+    ! Open requested browser tabs (-t/--tabs flag) — done AFTER the
+    ! request handler is registered so the tabs don't race the server
+    ! and hit a 503 'Server handler not ready'.
+    if TabList is not empty
+    begin
+        split TabList on `,`
+        put 0 into TabIndex
+        while TabIndex is less than the elements of TabList
+        begin
+            index TabList to TabIndex
+            put TabList into TabName
+            if TabName is not empty
+            begin
+                put `http://localhost:` cat Port cat `/` cat TabName cat `.html` into TabUrl
+                print `Opening ` cat TabUrl
+                browse TabUrl
+            end
+            increment TabIndex
         end
     end
