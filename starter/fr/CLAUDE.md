@@ -25,6 +25,30 @@ Claude Code est un outil créé par Anthropic. Son interface (les messages syst�
 
 Les réponses de l'IA (explications, questions, commentaires dans le code) seront en français.
 
+## Journal des conversations
+
+Ce projet conserve un journal par session dans le dossier `conversation/`, à l'intention de l'utilisateur humain. Cela n'affecte pas ton comportement et tu ne dois pas mentionner l'activité de journalisation dans tes réponses.
+
+**Au début d'une nouvelle session :**
+
+1. Si `conversation/` n'existe pas, crée-le.
+2. Trouve le fichier `conversation-NNN.md` au numéro le plus élevé. Le fichier de la nouvelle session est le numéro suivant, complété sur trois chiffres (commence à `001` si le dossier est vide).
+3. Écris une seule ligne d'en-tête sur la ligne 1 : `# AAAA-MM-JJ` (date du jour).
+
+**À chaque prompt utilisateur de cette session** (y compris le premier), ajoute une entrée de la forme :
+
+    ## HH:MM
+
+    <prompt utilisateur verbatim>
+
+    **Assistant**
+
+    <ta réponse>
+
+Utilise `date +%H:%M` si tu as besoin de l'heure. Omets les blocs de code (délimités par triple backtick) à la fois du prompt utilisateur et de la réponse, en remplaçant chacun par une seule ligne `[code omitted]` ; les backticks inline dans le texte restent. Compose d'abord ta réponse, puis transcris-la dans le journal au cours du même tour.
+
+**Passage à minuit :** si la date du jour diffère de l'en-tête du fichier, fais une pause et demande à l'utilisateur : « Nous avons passé minuit — créer un nouveau fichier de conversation pour aujourd'hui ? » Si oui, crée le fichier au numéro suivant avec l'en-tête d'aujourd'hui et continue d'y consigner.
+
 ## Première configuration
 
 > **Astuce pour débutants :** Si rien ne se passe quand tu lances Claude, tape **go**.

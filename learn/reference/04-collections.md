@@ -34,7 +34,7 @@ Properties are key-value metadata attached to an object. Use them for sparse, se
 
 ### 3. Key/value collections (dictionaries)
 
-For a map from string keys to values, AllSpeak offers a dictionary shape. The spelling differs by runtime:
+For a map from string keys to values, AllSpeak offers a dictionary shape. **The two runtimes use different keywords, and they are not interchangeable.**
 
 **Python** — typed `dictionary` declaration, `entry` keyword:
 
@@ -46,7 +46,7 @@ set entry `colour` of Spec to `blue`
 put entry `width` of Spec into Width
 ```
 
-**JS** — generic `variable` initialised as an object, `property` keyword:
+**JS** — generic `variable` initialised as an object, `property` keyword (JS has no `dictionary` declaration):
 
 ```as
 variable Spec
@@ -56,7 +56,11 @@ set property `colour` of Spec to `blue`
 put property `width` of Spec into Width
 ```
 
-The mental model is the same. Both runtimes accept nested structures — a value can itself be another dictionary or list.
+The mental model is the same — a map of keys to values, accepting nested structures — but the surface syntax is runtime-specific. **Don't bring JS-style `variable X` + `set property K of X` into Python scripts.** It may appear to work because Python's `set property` *also* writes into an auto-created dict on the variable, but: (a) the type is undeclared so the runtime can't catch mistakes early, (b) `property` on Python is also a metadata layer (see row 4 of the JS-vs-Python table below), which means the same keyword does two things at once and reads back in unexpected ways, and (c) it ignores the canonical Python idiom that tooling and review expect.
+
+On Python: write `dictionary X; reset X; set entry K of X to V`. On JS: write `variable X; set X to object; set property K of X to V`.
+
+To iterate a dictionary, materialise its keys into a list first and walk the list. There is no direct `index` access on dictionaries; see [iterating a dictionary](../idioms/03-looping-patterns.md#iterating-a-dictionary) for the canonical pattern.
 
 ### 4. Ordered sequences (lists)
 
@@ -136,6 +140,8 @@ A common confusion: variable arrays look like lists but aren't. Variable arrays 
 | Object property | `set property K of X to V` — same mechanism as dictionary access; variable must be set as object | `set property K of X to V` — a separate metadata layer, independent of any value the variable holds |
 
 Python has more explicit type declarations, a dedicated `entry` keyword for dictionary access, and treats object properties as a layer that coexists with the variable's value. JS stores dictionary and list contents as JSON-shaped data inside a `variable` and uses `property` for key access; there's no distinction in JS between a dictionary entry and an object property. Both implementations support arbitrarily nested structures.
+
+Critically, **the JS column is not a valid fallback when writing Python**, and vice versa. The runtimes only overlap on row 1 (variable arrays). If you're writing a Python script and reach for `variable X; set X to object; set property K of X to V`, you've imported the JS pattern: it may execute without error but the resulting code is untyped, behaves unexpectedly around the metadata-property layer, and won't read back the way the Python `entry` form does. Pick the column for your runtime and stay in it.
 
 ## Related
 

@@ -25,6 +25,30 @@ Claude Code ist ein von Anthropic entwickeltes Werkzeug. Seine Oberfläche (Syst
 
 Die Antworten der KI (Erklärungen, Fragen, Kommentare im Code) werden auf Deutsch verfasst.
 
+## Konversationsprotokoll
+
+Dieses Projekt führt pro Sitzung ein Protokoll im Ordner `conversation/`, zur Einsicht des menschlichen Benutzers. Es beeinflusst Ihr Verhalten nicht, und Sie sollten die Protokollierung in Antworten nicht erwähnen.
+
+**Zu Beginn einer neuen Sitzung:**
+
+1. Wenn `conversation/` nicht existiert, legen Sie den Ordner an.
+2. Finden Sie die `conversation-NNN.md`-Datei mit der höchsten Nummer. Die Datei der neuen Sitzung ist die nächste Nummer, auf drei Stellen mit führenden Nullen (beginnen Sie bei `001`, falls der Ordner leer ist).
+3. Schreiben Sie eine einzelne Kopfzeile in Zeile 1: `# JJJJ-MM-TT` (heutiges Datum).
+
+**Bei jedem Benutzerprompt in dieser Sitzung** (einschließlich des ersten), fügen Sie einen Eintrag in dieser Form an:
+
+    ## HH:MM
+
+    <Benutzerprompt wörtlich>
+
+    **Assistant**
+
+    <Ihre Antwort>
+
+Verwenden Sie `date +%H:%M`, wenn Sie die Uhrzeit brauchen. Lassen Sie eingegrenzte Codeblöcke (Triple-Backtick-Blöcke) sowohl im Benutzerprompt als auch in der Antwort weg und ersetzen Sie jeden durch eine einzelne Zeile `[code omitted]`; einfache Backticks in Fließtext bleiben erhalten. Verfassen Sie zuerst Ihre Antwort und tragen Sie diese dann im selben Turn ins Protokoll ein.
+
+**Mitternachtswechsel:** Wenn das heutige Datum vom Datumskopf der Datei abweicht, halten Sie inne und fragen Sie den Benutzer: „Wir haben Mitternacht überschritten — eine neue Konversationsdatei für heute beginnen?" Bei Ja erstellen Sie die nächstnummerierte Datei mit dem heutigen Datumskopf und protokollieren dort weiter.
+
 ## Erste Einrichtung
 
 > **Hinweis für Einsteiger:** Wenn beim Start von Claude nichts geschieht, geben Sie **go** ein.

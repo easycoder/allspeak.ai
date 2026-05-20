@@ -104,6 +104,30 @@ end
 
 This is the idiomatic AllSpeak shape for record-by-position access (see [picking-a-collection-shape](picking-a-collection-shape.md)).
 
+## Iterating a dictionary
+
+A dictionary has no built-in iteration shape. There is no "for each entry" form, and you cannot `index` a dictionary directly the way you can a variable array. **The canonical pattern is: pull the keys into a list first, then iterate that list and look up each value by key.**
+
+```as
+put the keys of Config into Keys
+put 0 into K
+while K is less than the count of Keys begin
+    put item K of Keys into Name
+    put entry Name of Config into Value
+    ! ... work using Name (the key) and Value (the entry) ...
+    add 1 to K
+end
+```
+
+The two lookups inside the loop are the load-bearing part:
+
+- `item K of Keys` is positional access into the *keys list* — that's why the cursor pattern works there. `Keys` is an ordinary list once you materialise it.
+- `entry Name of Config` is the dictionary read by key. (On JS, it's `property Name of Config`; see the runtime split in [collections](../reference/collections.md).)
+
+Don't try to write `index Config to K` and read out values that way — `index` walks slots of a multi-slot variable, not entries of a dictionary; the two are different shapes. A dictionary's keys are unordered as a data type, but the list produced by `the keys of` is a frozen ordered snapshot at the moment you call it, which is what makes the counted-iteration pattern work.
+
+If you only need the values (rare), the same skeleton applies — materialise `the keys of` once, iterate by index, read each value by key. There is no `the values of` shortcut.
+
 ## Polling
 
 Wait for a flag with a yield in the body:

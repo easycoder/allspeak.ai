@@ -408,6 +408,7 @@ const AllSpeak = {
 		let index = 0;
 		let token = ``;
 		let literal = false;
+		let literalOpenLino = -1;
 		file.forEach(function (line, lino) {
 			scriptLines.push({
 				lino: lino + 1,
@@ -420,33 +421,23 @@ const AllSpeak = {
 				}
 				return;
 			}
-			// Find the first non-space
-			let n = 0;
-			while (n < length && line[n].trim().length === 0) {
-				n++;
-			}
-			// The whole line may be whitespace
-			if (n === length) {
-				if (literal) {
-					token += `\n`;
-				}
-				return;
-			}
-			// If in an unfinished literal, the first char must be a backtick to continue adding to it
+			let n;
 			if (literal) {
-				if (line[n] !== `\``) {
-					if (token.length > 0) {
-						tokens.push({
-							index,
-							lino: lino + 1,
-							token
-						});
-						index++;
-						token = ``;
-						literal = false;
-					}
+				// Continuing a multi-line literal: every char including leading
+				// whitespace is part of the content. Append the newline crossed,
+				// then parse from column 0.
+				token += `\n`;
+				n = 0;
+			} else {
+				// Find the first non-space
+				n = 0;
+				while (n < length && line[n].trim().length === 0) {
+					n++;
 				}
-				n++;
+				// The whole line may be whitespace
+				if (n === length) {
+					return;
+				}
 			}
 			for (; n < length; n++) {
 				const c = line[n];
@@ -473,6 +464,7 @@ const AllSpeak = {
 					} else {
 						token += c;
 						literal = true;
+						literalOpenLino = lino;
 					}
 				} else {
 					token += c;
@@ -488,6 +480,11 @@ const AllSpeak = {
 				token = ``;
 			}
 		});
+		if (literal) {
+			const msg = `Compile error at line ${literalOpenLino + 1}: Unclosed \`…\` literal — the opening backtick is here but no closing backtick was found before end of file. If the string spans multiple lines, that is now allowed; check that you typed the trailing backtick.`;
+			AllSpeak.writeToDebugConsole(msg);
+			throw new Error(msg);
+		}
 		return {scriptLines, tokens};
 	},
 

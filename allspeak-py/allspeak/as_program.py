@@ -488,6 +488,7 @@ class Program:
 	def tokenise(self, script):
 		token = ''
 		literal = False
+		literal_open_lino = -1
 		for lino in range(0, len(script.lines)):
 			line = script.lines[lino]
 			length = len(line)
@@ -495,25 +496,22 @@ class Program:
 				if literal:
 					token += '\n'
 				continue
-			# Look for the first non-space
-			n = 0
-			while n < length and line[n].isspace():
-				n += 1
-			# The whole line may be empty
-			if n == length:
-				if literal:
-					token += '\n'
-				continue
-			# If in an unfinished literal, the first char must be a backtick to continue adding to it
 			if literal:
-				if line[n] != '`':
-					# Close the current token
-					if len(token) > 0:
-						script.tokens.append(Token(lino, token))
-						token = ''
-						literal = False
-				n += 1
-			for n in range(n, length):
+				# Continuing a multi-line literal: every char including leading
+				# whitespace is part of the content. Append the newline crossed,
+				# then parse from column 0.
+				token += '\n'
+				start = 0
+			else:
+				# Look for the first non-space
+				n = 0
+				while n < length and line[n].isspace():
+					n += 1
+				# The whole line may be blank
+				if n == length:
+					continue
+				start = n
+			for n in range(start, length):
 				c = line[n]
 				# Test if we are in a literal
 				if not literal:
@@ -532,13 +530,16 @@ class Program:
 					else:
 						token += c
 						literal = True
-						m = n
+						literal_open_lino = lino
 						continue
 				else:
 					token += c
 			if len(token) > 0 and not literal:
 				script.tokens.append(Token(lino, token))
 				token = ''
+		if literal:
+			print(f'Compile error in {self.name} at line {literal_open_lino + 1}:\n-> Unclosed `…` literal — the opening backtick is here but no closing backtick was found before end of file. If the string spans multiple lines, that is now allowed; check that you typed the trailing backtick.')
+			sys.exit()
 		return
 
 	def releaseParent(self):

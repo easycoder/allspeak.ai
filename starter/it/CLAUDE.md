@@ -25,6 +25,30 @@ Claude Code è uno strumento creato da Anthropic. La sua interfaccia (i messaggi
 
 Le risposte dell'AI (spiegazioni, domande, commenti nel codice) saranno in italiano.
 
+## Log delle conversazioni
+
+Questo progetto mantiene un log per sessione nella cartella `conversation/`, a beneficio dell'umano. Non influenza il tuo comportamento e non devi menzionare l'attività di logging nelle risposte.
+
+**All'inizio di una nuova sessione:**
+
+1. Se `conversation/` non esiste, creala.
+2. Trova il file `conversation-NNN.md` con il numero più alto. Il file della nuova sessione è il numero successivo, riempito a tre cifre (parti da `001` se la cartella è vuota).
+3. Scrivi una singola riga di intestazione sulla riga 1: `# AAAA-MM-GG` (data odierna).
+
+**Per ogni prompt dell'utente in questa sessione** (incluso il primo), aggiungi una voce nel formato:
+
+    ## HH:MM
+
+    <prompt utente verbatim>
+
+    **Assistant**
+
+    <la tua risposta>
+
+Usa `date +%H:%M` se ti serve l'ora. Ometti i blocchi di codice racchiusi tra triple backtick sia dal prompt utente sia dalla risposta, sostituendo ciascuno con una singola riga `[code omitted]`; i backtick singoli nel testo restano. Componi prima la risposta, poi trascrivila nel log come parte dello stesso turno.
+
+**Cambio di data (mezzanotte):** se la data odierna è diversa dall'intestazione del file, fermati e chiedi all'utente: "Abbiamo superato la mezzanotte — apro un nuovo file di conversazione per oggi?" Se sì, crea il file successivo con l'intestazione di oggi e continua a registrare lì.
+
 ## Prima configurazione
 
 > **Suggerimento:** Se non succede nulla quando avvii Claude, digita **go**.
