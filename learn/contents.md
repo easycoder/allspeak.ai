@@ -5,6 +5,8 @@ A practical guide to writing idiomatic AllSpeak. Two tiers:
 - **Reference** answers *what is this thing in AllSpeak?* — symbols, variables, control flow, modules. Stable, encyclopedic.
 - **Idioms** answers *how do I do X the AllSpeak way?* — patterns with worked examples and explicit anti-patterns.
 
+See [README.md](README.md) for how to view this curriculum and how to add or edit a page.
+
 ## Reference
 
 1. [Structure](reference/01-structure.md) — domains, the compiler-tries-each-domain model, how plugins extend vocabulary.
