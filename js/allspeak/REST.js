@@ -188,7 +188,7 @@ const AllSpeak_REST = {
 
 			switch (command.request) {
 			case `get`:
-				fetch(path)
+				fetch(path, { credentials: `include` })
 					.then(response => {
 						if (response.ok) {
 							return response.text().then(text => onSuccess(text.trim()));
@@ -211,6 +211,7 @@ const AllSpeak_REST = {
 				}
 				fetch(path, {
 					method: `POST`,
+					credentials: `include`,
 					headers,
 					body: postValue
 				})
