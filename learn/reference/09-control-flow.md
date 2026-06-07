@@ -123,7 +123,59 @@ Render:
 
 Both `gosub Label` and `gosub to Label` are accepted; the codex examples use `gosub to`. Pick one and stay consistent.
 
-Subroutines have no parameters and no local variables. To pass data in, write the relevant globals before `gosub`; to return a result, the subroutine writes globals before `return`. This is rough by modern standards, deliberately mirroring natural language — for anything bigger than a few-line helper, reach for a [module](modules.md), which provides private variables, message-passing, and concurrency.
+### Passing parameters with `gosub … with`
+
+Use `gosub … with` to pass values and `param` to read them by position:
+
+```as
+Main:
+    gosub JsonAddString with `slug`
+    gosub FormatDate with Year and Month and Day
+    stop
+
+JsonAddString:
+    param 0 into Key
+    put `{"` cat Key cat `":` into BodyText
+    ...
+    return
+
+FormatDate:
+    param 0 into Y
+    param 1 into M
+    param 2 into D
+    ...
+    return
+```
+
+`gosub Label with Expr1 and Expr2 …` accepts anything `getValue()` can parse — variables, literals, `cat` chains, `count of`, etc. Parameters are zero-indexed; `param 0 into Var` reads the first value passed.
+
+If a subroutine is called without `with`, `param` returns `0` (numeric) — existing subroutines are unaffected.
+
+### Failure handling
+
+A `gosub … with` call can have an `or` / `on failure` clause:
+
+```as
+gosub FetchData with Url or gosub OnError
+```
+
+### The call-args stack
+
+Parameters live on an implicit stack created when `with` is used and discarded when the subroutine `return`s. Nested calls work correctly:
+
+```as
+gosub Outer with A
+  ...
+  gosub Inner with X and Y   ! new frame pushed
+  param 0 into Z             ! reads X (Inner's frame)
+  ...
+  return                      ! Inner's frame popped
+  param 0 into W             ! reads A (Outer's frame)
+  ...
+  return                      ! Outer's frame popped
+```
+
+The stack is thread-local (per the cooperative-multitasking model). For anything bigger than a few helpers, consider a [module](modules.md), which provides private variables, message-passing, and concurrency.
 
 ## `stack`, `push`, and `pop`
 

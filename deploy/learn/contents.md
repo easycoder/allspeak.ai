@@ -17,7 +17,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 6. [Conditions](reference/06-conditions.md) — equality, comparison, presence; combining with `and` / `or`.
 7. [Arithmetic](reference/07-arithmetic.md) — integer-first model; scaled-integer pattern; trigonometry.
 8. [Strings and text](reference/08-strings-and-text.md) — `length of`, slicing, `position of`, `replace`.
-9. [Control flow](reference/09-control-flow.md) — `if`, `while`, `gosub`, `stack`, `stop`, `exit`.
+9. [Control flow](reference/09-control-flow.md) — `if`, `while`, `gosub` with parameters, `param`, `stack`, `stop`, `exit`.
 10. [Errors and recovery](reference/10-errors-and-recovery.md) — `or` (stop) vs `on failure` (continue).
 11. [Cooperative multitasking](reference/11-cooperative-multitasking.md) — `fork`, `wait`, never-interrupted-mid-statement.
 12. [Modules](reference/12-modules.md) — `run`, `release parent`, message passing.
