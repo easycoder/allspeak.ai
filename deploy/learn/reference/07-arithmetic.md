@@ -2,131 +2,112 @@
 
 AllSpeak's arithmetic is **integer-first**. There are no floating-point literals at the language level; all arithmetic operates on integers. Numbers that look like floats (`3.14`) are strings, not numeric values. When fractional precision is needed, use the scaled-integer pattern (below).
 
-The vocabulary is keyword-driven, mirroring natural English:
+## Operators
 
-```as
+All arithmetic is keyword-driven — there are no infix operators like `+`, `-`, `*`, `/`.
+
+Binary:
+
+```
 add A to B
 add A to B giving C
-take A from B            ! `subtract` is also accepted
-take A from B giving C
+subtract A from B
+subtract A from B giving C
 multiply A by B
 multiply A by B giving C
 divide A by B
 divide A by B giving C
-negate A
-negate A giving B
 ```
 
-## Two forms: in-place and `giving`
+Unary:
 
-Every operation has two forms:
+```
+negate X
+negate X giving Y
+```
 
-- **In-place** writes the result back into the target:
+`giving` writes the result to a new variable without modifying the source.
 
-  ```as
-  add 1 to Counter         ! Counter is now Counter + 1
-  negate Height            ! Height is now -Height
-  ```
-
-- **`giving`** writes the result to a third variable, leaving the operands alone:
-
-  ```as
-  add 1 to Counter giving NewCounter
-  negate Height giving Result   ! Height stays intact, Result is -Height
-  ```
-
-Use in-place when you're updating the target; `giving` when the operands need to stay intact.
-
-## Negation
-
-`negate` flips the sign of a numeric value. It has two forms:
-
-**In-place** negates the variable itself:
+## Examples
 
 ```as
-put 100 into Height
-negate Height       ! Height is now -100
+add 1 to Counter         ! Counter is now Counter + 1
+subtract 5 from Total    ! Total is now Total - 5
+multiply Width by 2      ! Width is now Width × 2
+divide Total by 100      ! Total is now Total ÷ 100 (integer division)
+add 1 to Counter giving NewCounter   ! Counter unchanged, NewCounter = Counter + 1
+negate Height            ! Height is now -Height
+negate Balance giving Opposite       ! Balance unchanged, Opposite = -Balance
 ```
 
-**`giving`** negates the source and writes the result to a target, leaving the source unchanged:
+## What counts as a numeric value
+
+Arithmetic only works on **true numeric values**. A value produced by a **string operation** (`left N of`, `right N of`, `from N of`, `cat`, `the content of`) is a string — even if the string contains only digits. Arithmetic on such a value may be rejected or produce unexpected results.
+
+To convert a numeric-looking string to a true number, use `the value of`:
 
 ```as
-put 100 into Height
-negate Height giving Result   ! Height stays 100, Result is -100
+put left 4 of BookingDate into FY          ! FY = "2025" (string)
+add 1 to FY                                 ! may fail — FY is a string
+put the value of FY into NextYr             ! NextYr = 2025 (number)
+add 1 to NextYr                             ! NextYr = 2026 (number) ✓
 ```
 
-Negative literals are written with the `-` prefix; see [symbols-and-layout](symbols-and-layout.md).
+`the value of` is documented in [values-and-types](values-and-types.md).
 
-## Modulo
+## Scaled integers
 
-`modulo` is an expression operator, not a statement. It produces a value, so it appears in conditions or as part of a value:
+For money, percentages, measurements, and other quantities that conceptually have fractional precision, store the value as an integer multiplied by a scale factor, and divide out only when displaying.
 
 ```as
-if Index modulo 3 is 0 ...
-put N modulo 7 into Row
+! Store £12.50 as 1250 pence
+put 1250 into Price
+
+! Display as "£12.50"
+divide Price by 100 giving Pounds
+put Price modulo 100 into Pence
 ```
 
-There is no `divide A by B giving Q remainder R` form. To get both quotient and remainder, compute them in two steps:
+The scaled-integer pattern is covered in detail in [floats-and-scaled-integers](../idioms/floats-and-scaled-integers.md).
+
+## Division trivia
+
+Integer division truncates toward zero:
 
 ```as
-divide N by 7 giving Q
-put N modulo 7 into R
+divide 10 by 3         ! 3
+divide -10 by 3        ! -3
 ```
 
-## Integer-first arithmetic and floats
-
-All arithmetic produces an integer result. Inputs that look like floats are strings, not numbers, and don't participate in arithmetic. Trying `multiply 3.14 by 2` will not work the way it would in other languages — `3.14` here is just a string.
-
-To work with fractional quantities, **scale to integers**. Two patterns are common:
-
-**Pence / cents for money.** Store amounts in the smallest unit. £1.23 becomes `123`. Arithmetic stays exact:
+For remainder, use `modulo`:
 
 ```as
-put 1250 into PriceA    ! £12.50 stored as pence
-put 875 into PriceB     ! £8.75
-add PriceA to PriceB giving Total
-! Total is 2125, i.e. £21.25
-! Format on display: 21.25
+put 10 modulo 3 into R    ! R = 1
 ```
 
-**Fixed-precision via a scale factor.** For percentages, ratios, or angles, multiply by a chosen scale, do the maths in integers, divide out at the end:
+`modulo` works with the `put … into` / `set … to` syntax.
+
+## Time components
+
+`the year of X`, `the month of X`, `the day of X`, `the hour of X`, `the minute of X`, `the second of X` extract components from a Unix timestamp (milliseconds since epoch). They always return a number:
 
 ```as
-multiply Width by 90    ! 90% of Width, scaled by 100
-divide Width by 100
+put the timestamp into Now
+put the year of Now into YYYY               ! e.g. 2026
+put the month of Now into MM                ! 1-12
+put the day of Now into DD                  ! 1-31
 ```
 
-See [floats-and-scaled-integers](../idioms/floats-and-scaled-integers.md) for worked patterns.
-
-## Trigonometry
-
-The trig functions take an angle in degrees and a scaling factor (the "radius"):
+Alternatively, parse an ISO date string with `date X`:
 
 ```as
-put sin Angle radius 100 into Height
-put cos Angle radius 100 into Width
+put date `2026-05-15` into Stamp
+put the month of Stamp into MM              ! 5
 ```
-
-`sin Angle radius R` returns an integer in the range −R..R — i.e. R × sin(angle). The radius is what scales the otherwise-fractional sine into an integer. Pick R to match the precision you need (100 is a common choice for 1% precision).
-
-## Why integer-first
-
-The model trades expressive range for guaranteed exact results. Benefits:
-
-- No floating-point quirks (no `0.1 + 0.2 != 0.3`).
-- No precision drift in long arithmetic.
-- Equality tests on numbers are reliable.
-
-Costs:
-
-- The author has to think about scale.
-- Some natural expressions need rewriting (`3.14159 * radius` becomes `radius * 314159 / 100000`, or — better — uses `sin` / `cos` with a chosen radius).
-
-For most AllSpeak use cases — UI layout in pixels, percentages, monetary amounts, control systems, simple physics — integer-first is a good fit. For heavy numerical work (statistics, fluid simulation), AllSpeak isn't the tool on its own. It can however provide an effective and simple-to-maintain user interface, with the numerical and specialised graphical work handled by a plug-in.
 
 ## Related
 
-- [values-and-types](values-and-types.md) — what counts as a number; the numeric/non-numeric flag.
-- [floats-and-scaled-integers](../idioms/floats-and-scaled-integers.md) — worked patterns for fractional quantities.
+- [values-and-types](values-and-types.md) — what counts as a number; the numeric/non-numeric flag; `the value of`.
+- [floats-and-scaled-integers](../idioms/floats-and-scaled-integers.md) — scaled-integer pattern for fractional values.
 - [conditions](conditions.md) — `is even`, `is odd`, `is numeric`.
 - [symbols-and-layout](symbols-and-layout.md) — `-` as numeric prefix.
