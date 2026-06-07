@@ -1231,6 +1231,21 @@ const AllSpeak_Core = {
 			if (compiler.isSymbol()) {
 				const symbol = compiler.getToken();
 				compiler.next();
+				// Check for 'giving' variant: negate <source> giving <target>
+				if (compiler.isWord(`giving`)) {
+					compiler.next();
+					const target = compiler.getSymbolRecord().name;
+					compiler.next();
+					compiler.addCommand({
+						domain: `core`,
+						keyword: `negate`,
+						lino,
+						value: { type: `variable`, name: symbol },
+						target
+					});
+					return true;
+				}
+				// Original in-place: negate <variable>
 				compiler.addCommand({
 					domain: `core`,
 					keyword: `negate`,
@@ -1244,15 +1259,31 @@ const AllSpeak_Core = {
 
 		run: program => {
 			const command = program[program.pc];
-			const symbol = program.getSymbolRecord(command.symbol);
-			if (symbol.isVHolder) {
-				symbol.value[symbol.index] = {
-					type: `constant`,
-					numeric: true,
-					content: -symbol.value[symbol.index].content
-				};
+			if (command.value) {
+				// New-style: negate <value> giving <variable>
+				const value = program.getValue(command.value);
+				const target = program.getSymbolRecord(command.target);
+				if (target.isVHolder) {
+					target.value[target.index] = {
+						type: `constant`,
+						numeric: true,
+						content: -value
+					};
+				} else {
+					program.variableDoesNotHoldAValueError(command.lino, target.name);
+				}
 			} else {
-				program.variableDoesNotHoldAValueError(command.lino, symbol.name);
+				// Original-style: negate <variable> (in-place)
+				const symbol = program.getSymbolRecord(command.symbol);
+				if (symbol.isVHolder) {
+					symbol.value[symbol.index] = {
+						type: `constant`,
+						numeric: true,
+						content: -symbol.value[symbol.index].content
+					};
+				} else {
+					program.variableDoesNotHoldAValueError(command.lino, symbol.name);
+				}
 			}
 			return command.pc + 1;
 		}

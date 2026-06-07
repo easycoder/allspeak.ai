@@ -504,7 +504,8 @@ var AllSpeak_LanguagePack_en = {
     "NEGATE": {
       "keyword": "negate",
       "patterns": [
-        "negate {variable}"
+        "negate {variable}",
+        "negate {value} giving {variable}"
       ]
     },
     "ON_BROWSER_BACK": {

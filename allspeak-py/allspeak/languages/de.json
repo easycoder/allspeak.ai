@@ -494,7 +494,8 @@
     "NEGATE": {
       "keyword": "negiere",
       "patterns": [
-        "negiere {variable}"
+        "negiere {variable}",
+        "negiere {value} ergibt {variable}"
       ]
     },
     "ON_BROWSER_BACK": {

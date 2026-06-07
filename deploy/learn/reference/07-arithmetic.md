@@ -13,6 +13,8 @@ multiply A by B
 multiply A by B giving C
 divide A by B
 divide A by B giving C
+negate A
+negate A giving B
 ```
 
 ## Two forms: in-place and `giving`
@@ -23,23 +25,34 @@ Every operation has two forms:
 
   ```as
   add 1 to Counter         ! Counter is now Counter + 1
+  negate Height            ! Height is now -Height
   ```
 
 - **`giving`** writes the result to a third variable, leaving the operands alone:
 
   ```as
   add 1 to Counter giving NewCounter
+  negate Height giving Result   ! Height stays intact, Result is -Height
   ```
 
 Use in-place when you're updating the target; `giving` when the operands need to stay intact.
 
 ## Negation
 
-`negate X` flips the sign of X in place:
+`negate` flips the sign of a numeric value. It has two forms:
+
+**In-place** negates the variable itself:
 
 ```as
 put 100 into Height
 negate Height       ! Height is now -100
+```
+
+**`giving`** negates the source and writes the result to a target, leaving the source unchanged:
+
+```as
+put 100 into Height
+negate Height giving Result   ! Height stays 100, Result is -100
 ```
 
 Negative literals are written with the `-` prefix; see [symbols-and-layout](symbols-and-layout.md).

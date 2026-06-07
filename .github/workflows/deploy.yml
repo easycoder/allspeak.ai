@@ -23,7 +23,7 @@ jobs:
 
       - name: Prepare deploy/ directory
         run: |
-          rsync -a --delete dist/ deploy/dist/
+          # build-allspeak already writes directly to deploy/dist/
           cp asedit.as asedit.json code/server.as code/edit.html code/code-version deploy/code/
           ./build-starters
 
@@ -48,8 +48,8 @@ jobs:
       - name: Snapshot dist/ to dated path
         run: |
           VERSION="$(date +%y%m%d)"
-          echo "Snapshotting dist/ to dist/${VERSION}/"
+          echo "Snapshotting deploy/dist/ to dist/${VERSION}/"
           rsync -avz \
             -e "ssh -i ~/.ssh/id_ed25519" \
-            dist/ \
+            deploy/dist/ \
             allspeak@allspeak.ai:allspeak.ai/dist/${VERSION}/

@@ -496,7 +496,8 @@ var AllSpeak_LanguagePack_de = {
     "NEGATE": {
       "keyword": "negiere",
       "patterns": [
-        "negiere {variable}"
+        "negiere {variable}",
+        "negiere {value} ergibt {variable}"
       ]
     },
     "ON_BROWSER_BACK": {

@@ -4,7 +4,7 @@
 # Run this after:
 #   - editing anything under codex/, learn/, primer/
 #   - editing primer.html (or any tracked root HTML file)
-#   - running ./build-allspeak (which rewrites dist/)
+#   - running ./build-allspeak (which rewrites deploy/dist/)
 #   - adding or regenerating docs under resources/doc/
 #
 # Uses rsync when available (preserves timestamps, only copies changes)
@@ -69,7 +69,7 @@ run_sync "learn/"           "deploy/learn/"
 # /shared/primer/project.as, not /en/primer/project.as — copying it here would
 # leave an unused duplicate.
 run_sync "primer/"          "deploy/en/primer/" --exclude=README.md --exclude=project.as
-run_sync "dist/"            "deploy/dist/"
+# dist/ is now built directly into deploy/dist/ by build-allspeak, so no sync needed.
 run_sync "resources/doc/"   "deploy/resources/doc/"
 
 # The four language Primer pages all load /shared/primer/project.as. Keep that

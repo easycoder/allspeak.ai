@@ -1070,10 +1070,23 @@ class Core(Handler):
             RuntimeError(self.program, msg)
 
     # Negate a variable
+    # negate {variable}
+    # negate {variable} giving {variable}
     def k_negate(self, command):
         if self.nextIsSymbol():
             record = self.getSymbolRecord()
-            if record['hasValue']:
+            # Check for 'giving' variant: negate <source> giving <target>
+            if language.reverse_word(self.peek()) == 'giving':
+                command['value'] = ECValue(type='symbol', name=record['name'])
+                self.nextToken()
+                if self.nextIsSymbol():
+                    record = self.getSymbolRecord()
+                    self.checkObjectType(record, ECVariable)
+                    command['target'] = record['name']
+                    self.add(command)
+                    return True
+            elif record['hasValue']:
+                # Original in-place: negate <variable>
                 command['target'] = self.getToken()
                 self.add(command)
                 return True
@@ -1081,15 +1094,24 @@ class Core(Handler):
         return False
 
     def r_negate(self, command):
-        record = self.getVariable(command['target'])
-        if not record['hasValue']:
-            NoValueRuntimeError(self.program, record)
-            return None
-        value = self.getSymbolValue(record)
-        if value == None:
-            RuntimeError(self.program, f'{record["name"]} has not been initialised')
-        value.setContent(value.getContent() * -1)
-        self.putSymbolValue(record, value)
+        if 'value' in command:
+            # New-style: negate <value> giving <variable>
+            value = self.textify(command['value'])
+            target = self.getVariable(command['target'])
+            self.checkObjectType(target, ECVariable)
+            targetValue = ECValue(type=int, content=int(value) * -1)
+            self.putSymbolValue(target, targetValue)
+        else:
+            # Original-style: negate <variable> (in-place)
+            record = self.getVariable(command['target'])
+            if not record['hasValue']:
+                NoValueRuntimeError(self.program, record)
+                return None
+            value = self.getSymbolValue(record)
+            if value == None:
+                RuntimeError(self.program, f'{record["name"]} has not been initialised')
+            value.setContent(value.getContent() * -1)
+            self.putSymbolValue(record, value)
         return self.nextPC()
 
     # on message {action}

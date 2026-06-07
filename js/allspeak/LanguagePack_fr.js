@@ -496,7 +496,8 @@ var AllSpeak_LanguagePack_fr = {
     "NEGATE": {
       "keyword": "oppose",
       "patterns": [
-        "oppose {variable}"
+        "oppose {variable}",
+        "oppose {value} donnant {variable}"
       ]
     },
     "ON_BROWSER_BACK": {

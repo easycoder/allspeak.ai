@@ -24,12 +24,40 @@ put from 7 of `Hello, world!` into C         ! "world!"   (from position 7 to en
 put from 7 to 12 of `Hello, world!` into D   ! "world"    (positions 7..11, end exclusive)
 ```
 
-- `left N of X` — the first N characters.
-- `right N of X` — the last N characters.
+- `left N of X` — the first N characters. N must be a non-negative integer.
+- `right N of X` — the last N characters. N must be a non-negative integer.
 - `from N of X` — everything from position N to the end.
 - `from N to M of X` — the substring covering positions N..M (M exclusive).
 
 Position indices are 0-based.
+
+### Common slicing mistakes
+
+**❌ Negative N with `left`/`right`**
+
+AllSpeak does **not** support negative counts. `left -2 of X` is not valid — it is not treated as "all but the last 2 characters".
+
+To get **all but the last N characters**, use length arithmetic with `from`:
+
+```as
+! Split "1998" into pounds="19" and pence="98"
+put `1998` into MoneyStr
+put the length of MoneyStr into MoneyLen  ! 4
+put MoneyLen into Pos
+subtract 2 from Pos                       ! Pos = 2
+put from 0 to Pos of MoneyStr into Whole  ! "19"   (positions 0..1)
+put from Pos of MoneyStr into Cents       ! "98"   (positions 2..3)
+```
+
+Or equivalently with `left` plus `right`:
+
+```as
+put `1998` into MoneyStr
+put the length of MoneyStr into MoneyLen  ! 4
+subtract 2 from MoneyLen                  ! MoneyLen = 2
+put left MoneyLen of MoneyStr into Whole  ! "19"
+put right 2 of MoneyStr into Cents        ! "98"
+```
 
 ## Position search
 

@@ -3,16 +3,15 @@
 # Local equivalent of the GitHub workflow at .github/workflows/deploy.yml.
 #
 # Steps:
-#   1. ./build-allspeak       — rebuild dist/allspeak.js + minified bundle
-#   2. ./deploy-sync          — mirror codex/, dist/, resources/doc/ → deploy/
+#   1. ./build-allspeak       — rebuild deploy/dist/allspeak.js + minified bundle
+#   2. ./deploy-sync          — mirror codex/, docs/, primer/ → deploy/
 #   3. Refresh deploy/code/   — asedit, server, edit, version
 #   4. ./build-starters       — rebuild deploy/allspeak-<lang>.zip
 #   5. rsync deploy/ → server (with --delete; protects snapshot dirs)
-#   6. rsync dist/ → server's dist/<YYMMDD>/ (additive snapshot)
+#   6. rsync deploy/dist/ → server's dist/<YYMMDD>/ (additive snapshot)
 #
-# Order note: deploy-sync runs AFTER build-allspeak so the freshly-built
-# dist/ is what lands in deploy/dist/ in one pass. Putting it first would
-# sync the pre-build dist and force a second sync after the build.
+# Order note: build-allspeak writes directly to deploy/dist/, so step 5
+# picks it up for the rolling path and step 6 publishes the dated snapshot.
 #
 # Snapshot note: each deploy also publishes the current dist/ under a
 # date-stamped path (https://allspeak.ai/dist/<YYMMDD>/allspeak.js).
@@ -55,8 +54,8 @@ rsync -avz --delete --no-perms \
     -e "$SSH_OPTS" \
     deploy/ "$REMOTE"
 
-echo "==> 6/6 snapshot dist/ to ${REMOTE}dist/${VERSION}/"
-rsync -avz --no-perms -e "$SSH_OPTS" dist/ "${REMOTE}dist/${VERSION}/"
+echo "==> 6/6 snapshot deploy/dist/ to ${REMOTE}dist/${VERSION}/"
+rsync -avz --no-perms -e "$SSH_OPTS" deploy/dist/ "${REMOTE}dist/${VERSION}/"
 
 echo "Done. Rolling: https://allspeak.ai/dist/allspeak.js"
 echo "      Pinned:  https://allspeak.ai/dist/${VERSION}/allspeak.js"
