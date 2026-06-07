@@ -304,7 +304,8 @@ var AllSpeak_LanguagePack_it = {
     "GOSUB": {
       "keyword": "vaisub",
       "patterns": [
-        "vaisub [a] {label}"
+        "vaisub [a] {label}",
+        "vaisub [a] {label} con {value}"
       ]
     },
     "GOTO": {
@@ -1229,6 +1230,7 @@ var AllSpeak_LanguagePack_it = {
     "negate": "nega",
     "increment": "incrementa",
     "decrement": "decrementa",
+    "param": "param",
     "play": "riproduci",
     "pop": "estrai",
     "print": "stampa",

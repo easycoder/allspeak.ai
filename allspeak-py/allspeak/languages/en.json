@@ -295,7 +295,8 @@
     "GOSUB": {
       "keyword": "gosub",
       "patterns": [
-        "gosub [to] {label}"
+        "gosub [to] {label}",
+        "gosub [to] {label} with {value}"
       ]
     },
     "GOTO": {
@@ -607,6 +608,12 @@
       "keyword": "play",
       "patterns": [
         "play {audioclip}"
+      ]
+    },
+    "PARAM": {
+      "keyword": "param",
+      "patterns": [
+        "param {number} into {variable}"
       ]
     },
     "POP": {
@@ -1289,6 +1296,7 @@
     "negate": "negate",
     "increment": "increment",
     "decrement": "decrement",
+    "param": "param",
     "play": "play",
     "pop": "pop",
     "print": "print",

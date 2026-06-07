@@ -301,7 +301,8 @@ var AllSpeak_LanguagePack_de = {
     "GOSUB": {
       "keyword": "gosub",
       "patterns": [
-        "gosub [zu] {label}"
+        "gosub [zu] {label}",
+        "gosub [zu] {label} mit {value}"
       ]
     },
     "GOTO": {
@@ -1223,6 +1224,7 @@ var AllSpeak_LanguagePack_de = {
     "send": "sende",
     "multiply": "multipliziere",
     "negate": "negiere",
+    "param": "param",
     "play": "spiele",
     "pop": "entnehme",
     "print": "drucke",

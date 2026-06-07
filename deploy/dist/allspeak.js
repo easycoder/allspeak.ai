@@ -896,18 +896,50 @@ const AllSpeak_Core = {
 			}
 			const label = compiler.getToken();
 			compiler.next();
-			compiler.addCommand({
+			const command = {
 				domain: `core`,
 				keyword: `gosub`,
 				lino,
 				label
-			});
+			};
+			// Parse optional with-args: gosub LABEL with EXPR1 [and EXPR2 ...]
+			if (compiler.isWord(`with`)) {
+				compiler.next();
+				const args = [];
+				while (true) {
+					const value = compiler.getValue();
+					if (!value) break;
+					args.push(value);
+					if (!compiler.isWord(`and`)) break;
+					compiler.next();
+				}
+				command.args = args;
+				// Parse optional or/on failure clause
+				command.onError = 0;
+				const pc = compiler.getPc();
+				if (compiler.consumeFailureClause()) {
+					compiler.getCommandAt(pc).onError = compiler.getPc() + 1;
+					compiler.completeHandler();
+				}
+			}
+			compiler.addCommand(command);
 			return true;
 		},
 
 		run: program => {
 			const command = program[program.pc];
 			if (program.verifySymbol(command.label)) {
+				if (command.args) {
+					// Evaluate and push args as a new frame
+					const frame = [];
+					for (const arg of command.args) {
+						frame.push(program.getValue(arg));
+					}
+					if (!program.callArgs) {
+						program.callArgs = [];
+					}
+					program.callArgs.push(frame);
+				}
 				program.programStack.push(program.pc + 1);
 				return program.symbols[command.label].pc;
 			}
@@ -1630,7 +1662,80 @@ const AllSpeak_Core = {
 		// runtime
 
 		run: program => {
+			// Pop the call-args frame if one was pushed by gosub with.
+			if (program.callArgs && program.callArgs.length > 0) {
+				program.callArgs.pop();
+			}
 			return program.programStack.pop();
+		}
+	},
+
+	// gosub with parameter passing
+	// param N into Var
+	Param: {
+
+		compile: compiler => {
+			const lino = compiler.getLino();
+			compiler.next();
+			// Get the numeric index
+			const indexToken = compiler.getToken();
+			const index = parseInt(indexToken);
+			if (isNaN(index)) {
+				return false;
+			}
+			compiler.next();
+			if (compiler.isWord(`into`)) {
+				compiler.next();
+				if (compiler.isSymbol()) {
+					const target = compiler.getSymbolRecord().name;
+					compiler.next();
+					compiler.addCommand({
+						domain: `core`,
+						keyword: `param`,
+						lino,
+						index,
+						target
+					});
+					return true;
+				}
+			}
+			return false;
+		},
+
+		// runtime
+
+		run: program => {
+			const command = program[program.pc];
+			const frame = program.callArgs && program.callArgs.length > 0
+				? program.callArgs[program.callArgs.length - 1]
+				: null;
+			const target = program.getSymbolRecord(command.target);
+			let content = 0;
+			let numeric = true;
+			if (frame && command.index < frame.length) {
+				const val = frame[command.index];
+				if (typeof val === `number`) {
+					content = val;
+					numeric = true;
+				} else if (typeof val === `string`) {
+					content = val;
+					numeric = false;
+				} else {
+					content = val !== null && val !== undefined ? val.content : 0;
+					numeric = val ? val.numeric : true;
+				}
+			} else {
+				content = 0;
+				numeric = true;
+			}
+			if (target.isVHolder) {
+				target.value[target.index] = {
+					type: `constant`,
+					numeric,
+					content
+				};
+			}
+			return command.pc + 1;
 		}
 	},
 
@@ -2743,6 +2848,7 @@ const AllSpeak_Core = {
 		handlers[lang.word(`goto`)] = this.Go;           // alias for go
 		handlers[lang.word(`subtract`)] = this.Take;     // alias for take
 		handlers[lang.word(`endTry`)] = this.EndTry;     // internal
+		handlers[lang.word(`param`)] = this.Param;
 		this._compileHandlers = handlers;
 	},
 
@@ -2825,6 +2931,7 @@ const AllSpeak_Core = {
 			CLOSE_MODULE: this.Close,
 			DUMMY: this.Dummy,
 			NO_CACHE: this.No,
+			PARAM: this.Param,
 			TEST: this.Test,
 			BEGIN: this.Begin,
 			END: this.End,
@@ -11122,6 +11229,9 @@ const AllSpeak_Run = {
 		if (!program.runQueue) {
 			program.runQueue = [];
 		}
+		if (!program.callArgs) {
+			program.callArgs = [];
+		}
 		if (typeof program.runningQueue === `undefined`) {
 			program.runningQueue = false;
 		}
@@ -11400,6 +11510,7 @@ const AllSpeak_Opcodes = {
 		case `go`:        return `GOTO`;
 		case `gosub`:     return `GOSUB`;
 		case `return`:    return `RETURN`;
+		case `param`:     return `PARAM`;
 		case `fork`:      return `FORK`;
 		case `exit`:      return `EXIT`;
 		case `stop`:      return `STOP`;
@@ -12094,7 +12205,8 @@ var AllSpeak_LanguagePack_en = {
     "GOSUB": {
       "keyword": "gosub",
       "patterns": [
-        "gosub [to] {label}"
+        "gosub [to] {label}",
+        "gosub [to] {label} with {value}"
       ]
     },
     "GOTO": {
@@ -12406,6 +12518,12 @@ var AllSpeak_LanguagePack_en = {
       "keyword": "play",
       "patterns": [
         "play {audioclip}"
+      ]
+    },
+    "PARAM": {
+      "keyword": "param",
+      "patterns": [
+        "param {number} into {variable}"
       ]
     },
     "POP": {
@@ -13088,6 +13206,7 @@ var AllSpeak_LanguagePack_en = {
     "negate": "negate",
     "increment": "increment",
     "decrement": "decrement",
+    "param": "param",
     "play": "play",
     "pop": "pop",
     "print": "print",

@@ -67,6 +67,7 @@ const AllSpeak_Opcodes = {
 		case `go`:        return `GOTO`;
 		case `gosub`:     return `GOSUB`;
 		case `return`:    return `RETURN`;
+		case `param`:     return `PARAM`;
 		case `fork`:      return `FORK`;
 		case `exit`:      return `EXIT`;
 		case `stop`:      return `STOP`;

@@ -22,6 +22,9 @@ const AllSpeak_Run = {
 		if (!program.runQueue) {
 			program.runQueue = [];
 		}
+		if (!program.callArgs) {
+			program.callArgs = [];
+		}
 		if (typeof program.runningQueue === `undefined`) {
 			program.runningQueue = false;
 		}

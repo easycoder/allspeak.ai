@@ -297,7 +297,8 @@ var AllSpeak_LanguagePack_en = {
     "GOSUB": {
       "keyword": "gosub",
       "patterns": [
-        "gosub [to] {label}"
+        "gosub [to] {label}",
+        "gosub [to] {label} with {value}"
       ]
     },
     "GOTO": {
@@ -609,6 +610,12 @@ var AllSpeak_LanguagePack_en = {
       "keyword": "play",
       "patterns": [
         "play {audioclip}"
+      ]
+    },
+    "PARAM": {
+      "keyword": "param",
+      "patterns": [
+        "param {number} into {variable}"
       ]
     },
     "POP": {
@@ -1291,6 +1298,7 @@ var AllSpeak_LanguagePack_en = {
     "negate": "negate",
     "increment": "increment",
     "decrement": "decrement",
+    "param": "param",
     "play": "play",
     "pop": "pop",
     "print": "print",

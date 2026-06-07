@@ -301,7 +301,8 @@ var AllSpeak_LanguagePack_fr = {
     "GOSUB": {
       "keyword": "vasous",
       "patterns": [
-        "vasous [à] {label}"
+        "vasous [à] {label}",
+        "vasous [à] {label} avec {value}"
       ]
     },
     "GOTO": {
@@ -1225,6 +1226,7 @@ var AllSpeak_LanguagePack_fr = {
     "send": "envoie",
     "multiply": "multiplie",
     "negate": "oppose",
+    "param": "param",
     "play": "joue",
     "pop": "dépile|depile",
     "print": "imprime",

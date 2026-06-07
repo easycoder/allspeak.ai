@@ -740,18 +740,40 @@ class Core(Handler):
 
     # Call a subroutine
     # gosub [to] {label}
+    # gosub [to] {label} with {value1} [and {value2} ...]
     def k_gosub(self, command):
         self.skipWord('to')  # Optional 'to' (core-reserved keyword, plugin-safe)
         command['gosub'] = self.nextToken()
+        # Parse optional with-args
+        if language.reverse_word(self.peek()) == 'with':
+            self.nextToken()
+            args = []
+            while True:
+                value = self.getValue()
+                if value is None:
+                    break
+                args.append(value)
+                if language.reverse_word(self.peek()) != 'and':
+                    break
+                self.nextToken()
+            if args:
+                command['args'] = args
         self.add(command)
         return True
 
     def r_gosub(self, command):
         label = command['gosub'] + ':'
         if label in self.symbols:
-            address = self.symbols[label]
+            if 'args' in command:
+                # Evaluate and push args as a new frame
+                frame = []
+                for arg in command['args']:
+                    frame.append(self.textify(arg))
+                if not hasattr(self.program, 'callArgs'):
+                    self.program.callArgs = []
+                self.program.callArgs.append(frame)
             self.stack.append(self.nextPC())
-            return address
+            return self.symbols[label]
         RuntimeError(self.program, f'There is no label "{label}"')
         return None
 
@@ -1477,7 +1499,43 @@ class Core(Handler):
 
     def r_return(self, command):
         self.program.debugSkip = False
+        # Pop the call-args frame if one was pushed by gosub with
+        if hasattr(self.program, 'callArgs') and self.program.callArgs:
+            self.program.callArgs.pop()
         return self.stack.pop()
+
+    # param {number} into {variable}
+    def k_param(self, command):
+        index_token = self.nextToken()
+        try:
+            command['index'] = int(index_token)
+        except ValueError:
+            return False
+        if self.nextIsWord('into'):
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                command['target'] = record['name']
+                self.add(command)
+                return True
+        return False
+
+    def r_param(self, command):
+        index = command['index']
+        frame = (self.program.callArgs[-1]
+                 if hasattr(self.program, 'callArgs') and self.program.callArgs
+                 else None)
+        target = self.getVariable(command['target'])
+        if frame and index < len(frame):
+            value = frame[index]
+            if isinstance(value, ECValue):
+                targetValue = ECValue(type=value.type, content=value.content)
+            else:
+                targetValue = ECValue(type=int if isinstance(value, int) else str,
+                                      content=value)
+        else:
+            targetValue = ECValue(type=int, content=0)
+        self.putSymbolValue(target, targetValue)
+        return self.nextPC()
 
     # Compile and run a script
     # run {path} [as {module}] [with {variable} [and {variable}...]]
