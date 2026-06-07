@@ -30,6 +30,35 @@ HandleClick:
 
 The runtime sets the cursor on `Button` to the firing element's index *before* entering the handler. `the index of Button` inside `HandleClick` is the correct slot.
 
+## Size the array first
+
+Before you can use `index` or respond to clicks on an array, you **must** size it with `set the elements of`:
+
+```as
+set the elements of Button to 5    ! slots [0]..[4]
+```
+
+Every variable starts with exactly one element (slot 0). Without sizing, `index Button to N` fails for N > 0, and `on click` events only ever see slot 0.
+
+A common pattern is to determine the count first (from a data fetch or layout), then size the array:
+
+```as
+rest get Bookings from `bookings.php`
+put json count of Bookings into Count
+set the elements of RowDivs to Count
+```
+
+## Set the cursor before `create`
+
+When building DOM elements into an array, move the cursor to the target slot **before** calling `create`:
+
+```as
+index RowDivs to I           ! ✅ cursor to slot I
+create RowDivs in TableBody   ! element goes into slot I
+```
+
+If you create first and then index, the element is in slot 0 and the cursor move doesn't retroactively reassign it.
+
 ## What a handler is
 
 A handler is a thread that runs to completion when its event occurs. The `on …` registration is just setup; the thread starts when the event fires and ends when the handler's last statement is reached. Nothing waits on its return value because nothing called it.
@@ -37,6 +66,8 @@ A handler is a thread that runs to completion when its event occurs. The `on …
 ## Why this works
 
 `gosub HandleClick` is any statement or block. The `on` runtime has already determined the source of the event and has set the index of the variable to that of the triggering element. Often this will be 0, but as in the example above, the variable can have any number of elements. The handler only sees the element that triggered the event — the same cursor model used everywhere else (see [variables-and-arrays](../reference/variables-and-arrays.md)).
+
+Note: this works with **any** variable type that supports the cursor model, including `div X`, `button X`, `input X`, etc. The declaration prefix (`div`, `button`, `file`) controls what `create X` produces, but the underlying cursor model is the same as `variable X`.
 
 ## Anti-pattern: separate variables per element
 
