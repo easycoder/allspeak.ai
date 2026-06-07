@@ -1,6 +1,6 @@
 # Conditions
 
-A condition is something that evaluates to true or false. AllSpeak uses keyword-driven conditions; there are no infix comparison operators (`==`, `>`, `<` etc.).
+A condition is something that evaluates to true or false. AllSpeak uses keyword-driven conditions; there are no infix comparison operators (`==`, `!=`, `>`, `<`, `>=`, `<=`) — in fact virtually all punctuation symbols are disallowed by design. AllSpeak aims to be **speakable**: every construct reads as conversational English.
 
 This file lists Core's condition vocabulary, which is what `if` and `while` consume. Domains and plugins can contribute their own conditions — see [structure](structure.md).
 
@@ -33,6 +33,48 @@ if Score is not less than 60 ...        ! ≥ 60
 if Items is not greater than Max ...    ! ≤ Max
 ```
 
+## Common mistakes with C-style operators
+
+AllSpeak uses English keyword conditions. C-style operators are **not valid**:
+
+| Wrong (C-style) | Correct (AllSpeak) |
+|---|---|
+| `if X == 0` | `if X is 0` |
+| `if X != 0` | `if X is not 0` |
+| `if X > 5` | `if X is greater than 5` |
+| `if X < 5` | `if X is less than 5` |
+| `if X >= 5` | `if X is not less than 5` |
+| `if X <= 5` | `if X is not greater than 5` |
+
+The keyword forms read left to right in natural English. An AI writer that defaults to C-style operators will produce invalid code — always use the keyword forms.
+
+## Common mistakes with string vs number comparison
+
+`is` compares values as text by default. When comparing a string like `"04"` with a number, the comparison is lexical (character-by-character), not numeric:
+
+```as
+if Mm is not less than `04`     ! string comparison — works for "05" but breaks for "10" < "04"
+```
+
+To compare numerically, use `the value of` to convert the string to a number first:
+
+```as
+if the value of Mm is not less than 4    ! numeric comparison — works for all values
+```
+
+`the value of X` is documented in [values-and-types](values-and-types.md).
+
+## Negation
+
+Negate a condition with `not` at the start, or use `is not` within the condition:
+
+```as
+if not Clicked ...
+if Count is not 0 ...
+```
+
+There is no parentheses-based negation — `if not (Count is 0)` is not valid AllSpeak. Use `if Count is not 0` instead.
+
 ## Boolean tests
 
 A bare value is a truthy test:
@@ -49,71 +91,64 @@ if Clicked is true ...
 if Clicked is false ...
 ```
 
-Use these when the variable's role is specifically a flag and you want the test self-documenting.
+## Type tests
 
-To negate a value-as-condition:
+`is numeric` tests whether a value can be used as a number:
 
 ```as
-if not Found ...                    ! true if Found is falsy
+if Input is numeric ...
 ```
 
-## Type and shape tests
+`is an array` and `is an object` test whether a value holds a JSON-shaped collection:
 
 ```as
-if Value is numeric ...             ! parses as a number
-if Value is even ...
-if Value is odd ...
-if Value is an array ...            ! JSON-shaped
-if Value is an object ...           ! JSON-shaped
+if Response is an array ...
+if Config is an object ...
 ```
 
-## String tests
+`is even` and `is odd` test parity:
 
 ```as
-if Path starts with `/api/` ...
+if Counter is even ...
+```
+
+## String conditions
+
+`includes` tests substring presence:
+
+```as
+if Path includes `/api/` ...
+if Email includes `@` ...
+```
+
+`starts with` and `ends with` test prefix/suffix:
+
+```as
+if Name starts with `Dr ` ...
 if File ends with `.json` ...
-if Text includes `error` ...
 ```
 
-`includes` doubles as the membership test for collection contents (substring in a string, element in a JSON array).
+## Compound conditions
 
-## Presence tests
+`and` and `or` join two conditions:
 
 ```as
-if Dict has property `width` ...
-if List has element 3 ...
-if Spec has entry `colour` ...
-if Dict has no property `legacy` ...
+if Count is greater than 0 and Count is less than 100 ...
+if Status is `error` or Status is `timeout` ...
 ```
 
-Use the access keyword that matches the collection shape — `property` for object-shaped variables, `element` for array-shaped, `entry` for Python dictionaries. See [collections](collections.md).
+There is no operator precedence between `and` and `or` — use separate `if` statements or nested `begin`/`end` blocks to disambiguate complex logic.
 
-## Combining
-
-`and` binds tighter than `or`:
+A two-condition chain is usually readable. For three or more, consider extracting conditions into boolean variables:
 
 ```as
-if A is 1 and B is 2 ...
-if A is 1 or B is 2 and C is 3 ...     ! parses as: A is 1 OR (B is 2 AND C is 3)
+if Count is greater than 0
+    and Count is less than 100
+    and Status is not `error` ...
 ```
-
-There are no parentheses for grouping. If the precedence isn't what you want, restructure with a nested `if` or assign an interim flag to a temporary variable.
-
-## Module and runtime state
-
-```as
-if MyModule is running ...
-if MyModule is not running ...
-if tracing ...                      ! the runtime trace flag is on
-if not tracing ...
-```
-
-## Domain conditions
-
-Each domain contributes its own conditions on the objects in its vocabulary. The Browser domain has tests like `if Checkbox is checked` and `if Element is hidden`; the MQTT domain has connectivity tests on subscribers. See the domain's language pack — or the AllSpeak reference for that domain — for the specific vocabulary.
 
 ## Related
 
-- [control-flow](control-flow.md) — `if`, `else`, `while` — what consumes a condition.
-- [values-and-types](values-and-types.md) — what sits on either side of `is`.
-- [collections](collections.md) — `property`, `element`, `entry` access keywords.
+- [values-and-types](values-and-types.md) — truthy/falsey rules, the numeric flag, `the value of`.
+- [strings-and-text](strings-and-text.md) — `includes`, `starts with`, `ends with`.
+- [control-flow](control-flow.md) — `if`, `while`, `begin`/`end`.

@@ -68,7 +68,7 @@ A small closed set of bare keywords evaluates to a value of its own — no opera
 
 | Keyword | Kind | Value |
 |---|---|---|
-| `empty` | string | The empty string. Equivalent to `` `` ``, but reads more naturally in conditions: `if Name is empty …`. |
+| `empty` | string | The empty string. Equivalent to `` ``, but reads more naturally in conditions: `if Name is empty …`. |
 | `now`, `timestamp` | number | Current Unix time in milliseconds. The two are aliases. |
 | `time` | number | Milliseconds since midnight today (local time). |
 | `today` | number | Unix timestamp of midnight today, in milliseconds. |
@@ -91,7 +91,31 @@ These are the only way to get those characters into a string literal.
 
 ## When automatic conversion isn't enough
 
+### `the value of` — explicit string-to-number conversion
+
+`the value of X` converts a string to its numeric value. Use this when a string looks like a number but isn't auto-converting in a condition:
+
+```as
+put `04` into Mm
+if the value of Mm is not less than 4 ...   ! numeric comparison, true
+if Mm is not less than `04` ...             ! string comparison — breaks for "10" < "04"
+```
+
+Without `the value of`, the `is` operator compares values as text. `"04"` and `"10"` compared as strings treats `"0"` < `"1"` and gives the wrong answer. `the value of` ensures a proper numeric comparison.
+
+`the value of` also works with chained string operations:
+
+```as
+if the value of left 2 of from 5 of BookingDate is not less than 4 ...
+```
+
+This reads left to right: take `BookingDate`, get `from position 5`, take `left 2`, then convert to value. The chaining works because AllSpeak evaluates left to right — natural for English, unusual for most programming languages.
+
+### Decimal strings
+
 For decimal-looking strings (`3.14`), conversion is not automatic — arithmetic is integer-first, and `3.14` stays a string. See [arithmetic](arithmetic.md) and [floats-and-scaled-integers](../idioms/floats-and-scaled-integers.md).
+
+### Type inspection
 
 For inspection, the type tests are conditions:
 

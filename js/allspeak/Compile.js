@@ -427,9 +427,27 @@ const AllSpeak_Compiler = {
 			next: 0
 		});
 		//    console.log('Symbols: ' + JSON.stringify(this.symbols, null, 2));
+		// Scan compiled commands for actual symbol references. We can't rely on
+		// the compile-time `used` flag because many read contexts (value reads,
+		// index targets, condition values, cat parts, set-style values, count of,
+		// while comparisons, etc.) read the symbol name via getToken() without
+		// calling getSymbolRecord(). Instead, stringify each command and check
+		// for the symbol name as a quoted string — catches all field structures
+		// regardless of shape.
 		for (const symbol in this.symbols) {
 			const record = this.program[this.symbols[symbol].pc];
-			if (record.isSymbol && !record.used && !record.exporter) {
+			if (!record.isSymbol || record.exporter) {
+				continue;
+			}
+			let referenced = false;
+			for (let pc = 0; pc < this.program.length; pc++) {
+				const cmdStr = JSON.stringify(this.program[pc]);
+				if (cmdStr.includes(`"${symbol}"`)) {
+					referenced = true;
+					break;
+				}
+			}
+			if (!referenced) {
 				AllSpeak.writeToDebugConsole(`Symbol '${record.name}' has not been used.`);
 			}
 		}

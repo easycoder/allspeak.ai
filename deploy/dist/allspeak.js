@@ -8624,10 +8624,40 @@ const AllSpeak_Markdown = {
                             console.log(`Attribute ${aName}: ${JSON.stringify(value, 0, 0)} -> ${aValue}`);
                         }
                     } else if (key[0] === `$`) {
-                        const userVal = AllSpeak_Webson.expand(element, value, symbols);
-                        symbols[key] = userVal;
+                        // If the value is a definition object (has #element), it may be
+                        // a component that should be rendered. Check whether to auto-build:
+                        //   - skip if listed in the current node's own # array (avoids
+                        //     duplicates when # processes it after the property loop)
+                        //   - skip if a sibling $ component's # array references it
+                        //     (the sibling's # processing will nest it correctly)
+                        const isDefinition = typeof value === `object`
+                            && !Array.isArray(value) && value !== null
+                            && typeof value[`#element`] !== `undefined`;
+                        let skipAutoBuild = false;
+                        if (isDefinition) {
+                            const ownChildren = items[`#`];
+                            if (Array.isArray(ownChildren) && ownChildren.includes(key)) {
+                                skipAutoBuild = true;
+                            } else {
+                                for (const k of Object.keys(items)) {
+                                    const v = items[k];
+                                    if (k[0] === `$` && k !== key && typeof v === `object`
+                                        && v !== null && Array.isArray(v[`#`])
+                                        && v[`#`].includes(key)) {
+                                        skipAutoBuild = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (isDefinition && !skipAutoBuild) {
+                            await AllSpeak_Webson.build(element, key, symbols[key], symbols);
+                        } else {
+                            const userVal = AllSpeak_Webson.expand(element, value, symbols);
+                            symbols[key] = userVal;
+                        }
                         if (symbols[`#debug`] >= 2) {
-                            console.log(`Variable ${key}: ${JSON.stringify(value, 0, 0)} -> ${userVal}`);
+                            console.log(`Variable ${key}: ${JSON.stringify(value, 0, 0)} -> ${symbols[key]}`);
                         }
                     } else {
                         const styleVal = AllSpeak_Webson.expand(element, value, symbols);
@@ -13588,9 +13618,27 @@ const AllSpeak_Compiler = {
 			next: 0
 		});
 		//    console.log('Symbols: ' + JSON.stringify(this.symbols, null, 2));
+		// Scan compiled commands for actual symbol references. We can't rely on
+		// the compile-time `used` flag because many read contexts (value reads,
+		// index targets, condition values, cat parts, set-style values, count of,
+		// while comparisons, etc.) read the symbol name via getToken() without
+		// calling getSymbolRecord(). Instead, stringify each command and check
+		// for the symbol name as a quoted string — catches all field structures
+		// regardless of shape.
 		for (const symbol in this.symbols) {
 			const record = this.program[this.symbols[symbol].pc];
-			if (record.isSymbol && !record.used && !record.exporter) {
+			if (!record.isSymbol || record.exporter) {
+				continue;
+			}
+			let referenced = false;
+			for (let pc = 0; pc < this.program.length; pc++) {
+				const cmdStr = JSON.stringify(this.program[pc]);
+				if (cmdStr.includes(`"${symbol}"`)) {
+					referenced = true;
+					break;
+				}
+			}
+			if (!referenced) {
 				AllSpeak.writeToDebugConsole(`Symbol '${record.name}' has not been used.`);
 			}
 		}
