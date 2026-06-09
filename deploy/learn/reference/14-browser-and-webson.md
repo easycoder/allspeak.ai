@@ -25,48 +25,29 @@ A typed variable like `button SaveButton` declares the variable; the element doe
 
 ### The full set of element types
 
-Every common HTML element has an AllSpeak type. As of today: `a`, `audioclip`, `blockquote`, `button`, `canvas`, `div`, `file`, `fieldset`, `form`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, `hr`, `image` (alias for `img`), `img`, `input`, `label`, `legend`, `li`, `option`, `p`, `pre`, `progress`, `section`, `select`, `span`, `table`, `td`, `textarea`, `th`, `tr`, `ul`.
+Every common HTML element has an AllSpeak type. As of today: `a`, `audioclip`, `blockquote`, `button`, `canvas`, `div`, `file`, `fieldset`, `form`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, `hr`, `image` (alias for `img`), `img`, `input`, `label`, `legend`, `li`, `option`, `p`, `pre`, `progress`, `select`, `span`, `table`, `textarea`, `td`, `th`, `tr`, `video`. If you need an element type not in this list, declare it as `div` and use `set attribute` to give it the right tag — the Browser domain doesn't limit what the renderer can create.
 
-Each declares a variable bound to that HTML tag — `table Log`, `tr HeaderRow`, `td Cell`, etc. They all participate in the same `create` / `attach` / `set attribute` / `set style` model as `div` and `button`. If you need an element type not in this list, build it with a `div` and an `@element` override in Webson, or extend the language pack.
+## `attach` — binding script to layout
 
-## Two paths to a live element
-
-There are two ways to put an element on the page.
-
-**Create in code.** Suitable for small UIs or for elements built dynamically:
+`attach` connects a script variable to a rendered DOM element by its HTML `id`:
 
 ```as
-button Save
-create Save in Container
-set the content of Save to `Save`
-set the style of Save to `padding:0.5em; background:#48f`
-on click Save gosub HandleSave
-```
-
-`create X in Container` builds the element and inserts it as a child of `Container`. `set the content of X` sets the text inside; `set the style of X` sets the inline CSS.
-
-**Attach to a rendered layout.** Suitable for larger UIs where the layout is described in Webson:
-
-```as
-variable Layout
 create Body
 rest get Layout from `app.json`
 render Layout in Body
 
-attach Save to `save-button`
-attach Container to `main-panel`
-on click Save gosub HandleSave
+attach LoginPanel to `login-panel`
+attach UsernameField to `username-input`
+attach LoginButton to `login-button`
 ```
 
-The Webson JSON describes the layout (positions, styling, element IDs); `render` builds the DOM tree from the JSON; `attach` binds AllSpeak variables to elements by their HTML `id`. From there, the variables work the same as if they had been created directly.
+After `attach`, the variable refers to the live DOM element — `set the content of`, `on click`, `set the style of`, etc. all work on it.
 
-## `attach`
-
-`attach <variable> to <id-string>` finds an element in the live DOM by ID and binds it to the variable:
+Attach can also find elements inside a rendered component by passing the element to search within:
 
 ```as
-attach Status to `status`
-attach LoginPanel to `login-panel`
+attach Panel to `side-panel`
+attach Button to `save-btn` inside Panel
 ```
 
 The variable's type should match the element kind in the layout — a `div` variable to a `div`, a `button` to a `button`.
@@ -155,13 +136,241 @@ Webson is a JSON dialect that describes HTML/CSS layout. It uses its own convent
 }
 ```
 
-- `#element` names the HTML tag.
-- `@<name>` sets an HTML attribute — "@ is for @ttribute". `@id` is the most common (the handle that AllSpeak `attach` looks up), but the same prefix works for any attribute: `@href`, `@checked`, `@width`, `@src`, `@type`, etc.
-- `#content` is the text content.
-- `#` is an ordered list of child references, named with a `$` prefix.
-- Plain keys (`padding`, `font-family`, …) become CSS properties.
-
 `render Layout in Body` walks the Webson tree and emits real DOM. The point of the dialect is separation: the layout is a static `.json` resource that can be edited (or translated) without touching the AllSpeak. For a worked discussion of the split, see [webson-and-as-separation](../idioms/webson-and-as-separation.md).
+
+### Key reference
+
+Every key in a Webson object falls into one of these categories:
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `#element` | HTML tag name | `"div"`, `"button"`, `"h1"` |
+| `#content` | Text content | `"Welcome"` |
+| `#doc` | Documentation — ignored by renderer | any string |
+| `#` | Ordered list of child references | `["$Title", "$SaveButton"]` |
+| `@<name>` | HTML attribute | `@id`, `@class`, `@href`, `@type` |
+| `$<name>` | Named child definition | `$Title`, `$SaveButton` |
+| plain key | CSS property | `padding`, `font-family`, `color` |
+
+### `#element` — the HTML tag
+
+Required on every element. Value is the tag name as a string: `"div"`, `"button"`, `"input"`, `"h1"`, `"textarea"`, `"img"`, `"a"`, `"span"`, `"label"`, `"select"`, `"option"`, `"form"`, `"p"`, `"pre"`, `"ul"`, `"ol"`, `"li"`, `"table"`, `"tr"`, `"td"`, `"th"`, `"hr"`, `"br"`, `"fieldset"`, `"legend"`.
+
+### `#content` — text content
+
+The element's inner text. Can coexist with children (`#`) — content is rendered first, then children.
+
+```json
+{
+    "#element": "p",
+    "#content": "Total: ",
+    "#": ["$ValueSpan"]
+}
+```
+
+### `#` — the children array
+
+An ordered list of `$`-prefixed names. The renderer creates child elements in this order. **Without `#`, no children render** — even if the object has `$`-prefixed keys defined below.
+
+```json
+{
+    "#element": "div",
+    "#": ["$Label", "$Input"],    ← Label renders first, Input second
+
+    "$Label": { ... },
+    "$Input": { ... }
+}
+```
+
+A `$` name referenced in `#` must exist somewhere in resolution scope (see below), but it does not need to be nested in the same object — it can be defined at a parent or root level.
+
+### `$<name>` — named child definitions
+
+`$`-prefixed keys define elements that `#` references. They can appear at any level in the tree — the renderer resolves them by searching upward.
+
+**Resolution order** (where the renderer looks for `$ModalForm` when `$Modal`'s `#` references it):
+
+1. **Same object** — keys of the element whose `#` contains the reference
+2. **Parent object** — keys of the element's parent in the Webson tree
+3. **Root object** — keys of the top-level object (the file root)
+
+This means a child definition can live at a parent scope:
+
+```json
+{
+    "#element": "div",
+    "#": ["$Outer"],
+
+    "$Outer": {
+        "#element": "div",
+        "#": ["$Inner"]
+        ← $Inner is NOT defined here — the renderer looks up
+    },
+
+    "$Inner": {                   ← Found here (parent scope)
+        "#element": "span",
+        "#content": "Hello"
+    }
+}
+```
+
+This is useful for sharing common elements across siblings without repeating their definition.
+
+### `@<name>` — HTML attributes
+
+Keys starting with `@` set HTML attributes on the DOM element. `"@" is for "@ttribute"`:
+
+```json
+{
+    "@id": "save-btn",
+    "@class": "primary",
+    "@type": "checkbox",
+    "@checked": true,
+    "@placeholder": "Enter name",
+    "@href": "https://example.com",
+    "@src": "logo.png",
+    "@autocomplete": "username",
+    "@disabled": true,
+    "@rows": "3"
+}
+```
+
+`@id` is the most common — it's the handle that AllSpeak's `attach` command looks up after `render`.
+
+### CSS properties
+
+Any key that doesn't start with `#`, `@`, or `$` is treated as a CSS property. Hyphenated names go straight through:
+
+```json
+{
+    "font-family": "sans-serif",
+    "font-size": "14px",
+    "color": "#333",
+    "margin": "1em 0",
+    "display": "flex",
+    "align-items": "center",
+    "gap": "0.5em",
+    "grid-template-columns": "1fr 1fr"
+}
+```
+
+Key order among CSS properties does not matter — the renderer collects them all and sets them on the element's `style` attribute.
+
+### `#doc` — documentation
+
+A documentation-only key. The renderer ignores it entirely. Use it for inline notes:
+
+```json
+{
+    "#doc": "This panel is shown after login.",
+    "#element": "div",
+    ...
+}
+```
+
+### Key order does not matter
+
+The renderer identifies keys by their prefix, not their position in the object. This works:
+
+```json
+{
+    "$Modal": { ... },
+    "#element": "div",
+    "@id": "page",
+    "background": "#f5f5f5",
+    "#": ["$Modal"]
+}
+```
+
+But by convention, most layouts list keys in this order for readability:
+
+1. `#doc` (if present)
+2. `#element`
+3. `@id`
+4. CSS properties
+5. `#` (children array)
+6. `$`-prefixed child definitions
+
+### Worked example: modal overlay with scope resolution
+
+A modal dialog where the overlay div, the modal wrapper, and the form fields are each separate objects, demonstrating `$` resolution across scopes:
+
+```json
+{
+    "#element": "div",
+    "@id": "page",
+    "#": ["$Overlay"],
+
+    "$Overlay": {
+        "#element": "div",
+        "@id": "overlay",
+        "display": "none",
+        "position": "fixed",
+        "top": "0", "left": "0", "right": "0", "bottom": "0",
+        "background": "rgba(0,0,0,0.5)",
+        "#": ["$Modal"],
+
+        "$Modal": {
+            "#element": "div",
+            "background": "white",
+            "border-radius": "8px",
+            "padding": "1.5em",
+            "#": ["$ModalForm"]
+            ← $ModalForm is NOT defined here
+        }
+    },
+
+    "$ModalForm": {         ← Resolved from root (parent-of-parent scope)
+        "#element": "div",
+        "@id": "modal-form",
+        "#": ["$Title", "$Fields"],
+
+        "$Title": {
+            "#element": "h2",
+            "@id": "modal-title",
+            "#content": "Edit booking"
+        },
+
+        "$Fields": {
+            "#element": "div",
+            "@id": "form-fields",
+            "display": "flex",
+            "flex-direction": "column",
+            "gap": "0.5em",
+            "#": ["$DateRow"],
+
+            "$DateRow": {
+                "#element": "div",
+                "display": "flex",
+                "align-items": "center",
+                "gap": "0.5em",
+                "#": ["$DateLabel", "$DateInput"],
+
+                "$DateLabel": {
+                    "#element": "label",
+                    "#content": "Date",
+                    "width": "120px",
+                    "flex-shrink": "0"
+                },
+                "$DateInput": {
+                    "#element": "input",
+                    "@id": "date-input",
+                    "@type": "date",
+                    "flex": "1",
+                    "min-width": "0"
+                }
+            }
+        }
+    }
+}
+```
+
+Key points in this example:
+
+- **`$Modal`'s `#` references `$ModalForm`**, which is defined two levels up (at the root). The renderer searches: same object ($Modal → not found) → parent ($Overlay → not found) → root (found).
+- **`$ModalForm` is defined once** but referenced from `$Modal`'s `#`. It does not need to be nested inside `$Modal`.
+- **`#` controls render order.** The page renders Overlay (via `#: ["$Overlay"]`), which renders Modal (via its `#`), which renders ModalForm (via its `#`). Without any of those `#` arrays, the children would be defined but invisible.
+- **Each row is a flex container** with a fixed-width label and a flex-fill input — the standard pattern for tabular forms.
 
 ## Arrays of DOM elements
 
@@ -179,24 +388,9 @@ This is the canonical pattern for "many similar elements". See [event-handlers-a
 
 ## Browser-local storage
 
-The browser provides a small persistent key/value store that survives page reloads. AllSpeak exposes it via three keywords:
+AllSpeak for the browser provides `storage` — an interface to the browser's `localStorage` API:
 
 ```as
-put Lang into storage as `app.lang`           ! write
-get Lang from storage as `app.lang`           ! read
-remove `app.lang` from storage                ! delete a single key
-put empty into storage as `app.lang`          ! also clears the value
-```
-
-Reads return empty (`empty`) if the key isn't present, so a missing entry on first load doesn't need an explicit check before reading — the variable just receives empty. Keys are arbitrary strings; convention is to namespace them with your script's name to avoid collisions with other AllSpeak apps on the same origin.
-
-Values are strings as far as storage is concerned. To persist a structured shape (a list, a dictionary), serialise it first with the JSON keywords; deserialise on read.
-
-```as
-! Save an integer array (12 small ints) as JSON, then read it back.
-variable State
-set State to array
-! ... populate State[0..11] with element-setters ...
 put State into storage as `cells.state`
 
 ! Later, on page load:
