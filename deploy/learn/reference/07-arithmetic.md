@@ -89,13 +89,24 @@ put 10 modulo 3 into R    ! R = 1
 
 ## Time components
 
-`the year of X`, `the month of X`, `the day of X`, `the hour of X`, `the minute of X`, `the second of X` extract components from a Unix timestamp (milliseconds since epoch). They always return a number:
+`the year of X`, `the month of X`, `the day of X`, `the day number of X`, `the hour of X`, `the minute of X`, `the second of X` extract components from a Unix timestamp (seconds since epoch). They always return a number:
+
+| Accessor | Returns | Range |
+|---|---|---|
+| `the year of` | Full year | e.g. 2026 |
+| `the month of` | Month number, 0-indexed | 0–11 |
+| `the day of` | Day of the week | 0–6 (0=Sunday) |
+| `the day number of` | Day of the month | 1–31 |
+| `the hour of` | Hour of the day | 0–23 |
+| `the minute of` | Minute within the hour | 0–59 |
+| `the second of` | Second within the minute | 0–59 |
 
 ```as
 put the timestamp into Now
 put the year of Now into YYYY               ! e.g. 2026
-put the month of Now into MM                ! 1-12
-put the day of Now into DD                  ! 1-31
+put the month of Now into MM                ! 0=Jan, 5=Jun (0-indexed)
+add 1 to MM                                 ! convert to 1-indexed
+put the day number of Now into DD            ! day of month, 1-31
 ```
 
 Alternatively, parse an ISO date string with `date X`:

@@ -1221,6 +1221,7 @@ var AllSpeak_LanguagePack_fr = {
     "if": "si",
     "import": "importe",
     "log": "journalise",
+    "ulog": "ulog",
     "mail": "courriel",
     "mqtt": "mqtt",
     "send": "envoie",

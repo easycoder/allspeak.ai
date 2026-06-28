@@ -1153,6 +1153,23 @@ const AllSpeak_Core = {
 		}
 	},
 
+	Ulog: {
+
+		compile: compiler => {
+			const lino = compiler.getLino();
+			compiler.next();
+			const value = compiler.getValue();
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `print`,
+				lino,
+				value,
+				log: true
+			});
+			return true;
+		}
+	},
+
 	Module: {
 
 		compile: compiler => {
@@ -2841,6 +2858,7 @@ const AllSpeak_Core = {
 		handlers[lang.word(`end`)] = this.End;
 		handlers[lang.word(`script`)] = this.Script;
 		handlers[lang.word(`log`)] = this.Log;           // compiles to PRINT with log flag
+		handlers['ulog'] = this.Ulog;                 // compiles to PRINT with log flag (untranslated — for user debug)
 		handlers[lang.word(`release`)] = this.Release;   // compiles to SET_READY
 		handlers[lang.word(`continue`)] = this.Continue; // sets compiler flag
 		handlers[lang.word(`no`)] = this.No;             // no cache directive
@@ -8745,6 +8763,8 @@ const AllSpeak_Markdown = {
                             const ownChildren = items[`#`];
                             if (Array.isArray(ownChildren) && ownChildren.includes(key)) {
                                 skipAutoBuild = true;
+                            } else if (!Array.isArray(ownChildren) && typeof ownChildren === `string` && ownChildren[0] === `$` && ownChildren === key) {
+                                skipAutoBuild = true;
                             } else {
                                 for (const k of Object.keys(items)) {
                                     const v = items[k];
@@ -13199,6 +13219,7 @@ var AllSpeak_LanguagePack_en = {
     "if": "if",
     "import": "import",
     "log": "log",
+    "ulog": "ulog",
     "mail": "mail",
     "mqtt": "mqtt",
     "send": "send",

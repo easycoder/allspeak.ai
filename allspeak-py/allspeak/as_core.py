@@ -1026,6 +1026,12 @@ class Core(Handler):
         command['keyword'] = 'print'
         return self.k_print(command)
 
+    # User debug log (untranslated — same in all languages)
+    def k_ulog(self, command):
+        command['log'] = True
+        command['keyword'] = 'print'
+        return self.k_print(command)
+
     # Declare a module variable
     def k_module(self, command):
         self.compiler.addValueType()

@@ -1153,6 +1153,23 @@ const AllSpeak_Core = {
 		}
 	},
 
+	Ulog: {
+
+		compile: compiler => {
+			const lino = compiler.getLino();
+			compiler.next();
+			const value = compiler.getValue();
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `print`,
+				lino,
+				value,
+				log: true
+			});
+			return true;
+		}
+	},
+
 	Module: {
 
 		compile: compiler => {
@@ -2841,6 +2858,7 @@ const AllSpeak_Core = {
 		handlers[lang.word(`end`)] = this.End;
 		handlers[lang.word(`script`)] = this.Script;
 		handlers[lang.word(`log`)] = this.Log;           // compiles to PRINT with log flag
+		handlers['ulog'] = this.Ulog;                 // compiles to PRINT with log flag (untranslated — for user debug)
 		handlers[lang.word(`release`)] = this.Release;   // compiles to SET_READY
 		handlers[lang.word(`continue`)] = this.Continue; // sets compiler flag
 		handlers[lang.word(`no`)] = this.No;             // no cache directive

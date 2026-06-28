@@ -102,7 +102,7 @@ on click LoginButton gosub HandleLogin
 stop
 
 HandleLogin:
-    get the content of Username into Name
+    put the content of Username into Name
     ! ... validate, etc ...
     return
 ```

@@ -419,6 +419,8 @@
                             const ownChildren = items[`#`];
                             if (Array.isArray(ownChildren) && ownChildren.includes(key)) {
                                 skipAutoBuild = true;
+                            } else if (!Array.isArray(ownChildren) && typeof ownChildren === `string` && ownChildren[0] === `$` && ownChildren === key) {
+                                skipAutoBuild = true;
                             } else {
                                 for (const k of Object.keys(items)) {
                                     const v = items[k];

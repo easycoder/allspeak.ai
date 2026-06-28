@@ -63,7 +63,7 @@ set the style of X to `color:red; font-weight:bold`
 set style `width` of X to `90%`            ! one CSS property at a time
 set attribute `href` of X to `https://example.com`   ! HTML attribute on the DOM element
 set attribute `data-id` of X to `42`       ! arbitrary attribute, same form
-get the content of X into V                ! read back
+put the content of X into V                ! read back
 ```
 
 `set the style of X` is bulk inline CSS; `set style \`name\` of X` writes a single CSS property. `set attribute \`name\` of X` writes an HTML attribute on the live DOM element by calling `element.setAttribute(name, value)`.

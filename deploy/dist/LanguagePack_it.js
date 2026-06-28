@@ -1223,6 +1223,7 @@ var AllSpeak_LanguagePack_it = {
     "if": "se",
     "import": "importa",
     "log": "registra",
+    "ulog": "ulog",
     "mail": "email",
     "mqtt": "mqtt",
     "send": "invia",

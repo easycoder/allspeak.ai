@@ -1219,6 +1219,7 @@ var AllSpeak_LanguagePack_de = {
     "if": "wenn",
     "import": "importiere",
     "log": "logge",
+    "ulog": "ulog",
     "mail": "mail",
     "mqtt": "mqtt",
     "send": "sende",
