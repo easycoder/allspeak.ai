@@ -299,7 +299,8 @@
     "GOSUB": {
       "keyword": "vasous",
       "patterns": [
-        "vasous [à] {label}"
+        "vasous [à] {label}",
+        "vasous [à] {label} avec {value}"
       ]
     },
     "GOTO": {
@@ -1224,6 +1225,7 @@
     "send": "envoie",
     "multiply": "multiplie",
     "negate": "oppose",
+    "param": "param",
     "play": "joue",
     "pop": "dépile|depile",
     "print": "imprime",

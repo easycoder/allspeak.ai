@@ -90,6 +90,9 @@ const AllSpeak_JSON = {
 			case `sort`:
 			case `shuffle`:
 			case `format`:
+				if (compiler.isWord(`of`)) {
+					compiler.next();
+				}
 				if (compiler.nextIsSymbol()) {
 					const targetRecord = compiler.getSymbolRecord();
 					if (targetRecord.keyword === `variable`) {
@@ -614,9 +617,12 @@ const AllSpeak_JSON = {
 						}
 					}
 				}
-				// Fallback: `json <value>` — pass-through wrapper that lets the
+				// Fallback: `json [of] <value>` — pass-through wrapper that lets the
 				// caller use a JSON literal/variable where a value is expected.
 				compiler.rewindTo(startIdx + 1);
+				if (compiler.isWord(`of`)) {
+					compiler.next();
+				}
 				const inner = compiler.getValue();
 				if (inner) {
 					return {

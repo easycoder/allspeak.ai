@@ -8,7 +8,7 @@ Wenn alle vier Schritte funktionieren, sieht die Seite etwa so aus wie oben — 
 
 ## Prompt 1: Fundament — Das Raster bauen
 
-Erstelle ein 3×4-Raster aus quadratischen Zellen, mittig auf der Seite. Jede Zelle soll schlicht grau sein, mit einem dünnen schwarzen Rand. Das Raster soll etwa ein Drittel der Bildschirmbreite einnehmen. Keine Klicks, keine Buttons — zunächst nur das visuelle Layout.
+Erstelle ein Raster mit 4 Spalten und 3 Zeilen aus quadratischen Zellen, mittig auf der Seite. Jede Zelle soll schlicht grau sein, mit einem dünnen schwarzen Rand. Das Raster soll etwa ein Drittel der Bildschirmbreite einnehmen. Keine Klicks, keine Buttons — zunächst nur das visuelle Layout.
 
 ## Prompt 2: Interaktion — Klick zum Durchschalten
 

@@ -100,6 +100,8 @@ put `[10, 20, 30]` into X       ! slot 0 now holds a JSON array
 put element 1 of X into N      ! N = 20 (inside the JSON value)
 ```
 
+A common AI mistake is treating `item N of X` as a write target: `put V into item N of X`. This is **not valid AllSpeak** — the only `put` targets are `into {variable}` and `into storage`. The correct pattern for writing to a variable-array slot is `index X to N` then `put V into X`. The `item` keyword is for *reading* from JSON arrays held inside a slot, not for writing to variable slots.
+
 See [collections](collections.md) for more.
 
 ## Mixed types within an array

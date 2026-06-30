@@ -32,13 +32,17 @@ Things AI tools reliably get wrong:
 - **`cat` placement.** AI puts `cat` before the first value or omits it between values. AllSpeak's `cat` is infix only — see [cat-and-string-building](cat-and-string-building.md).
 - **Imperative operators.** `Counter += 1` or `Counter = Counter + 1`. AllSpeak uses `add 1 to Counter`.
 - **`for` loops.** AllSpeak has no `for` or `for each`; iteration is `while` or label-driven. See [looping-patterns](looping-patterns.md).
+- **JSON-style array indexing (`put into item N`).** AllSpeak uses a cursor model: `index X to N` selects the slot, then `put V into X` writes to it. `put V into item N of X` is not a valid `put` target. `item N of X` reads from inside a JSON array held in the current slot — a completely separate mechanism. AI often confuses these, writing `put V into item N of Colors` (wrong) instead of `index Colors to N; put V into Colors` (right). See [variables-and-arrays](../reference/03-variables-and-arrays.md).
 - **Float arithmetic.** `multiply 3.14 by 2`. `3.14` is a string, not a number. See [floats-and-scaled-integers](floats-and-scaled-integers.md).
 - **Parentheses for grouping.** `(A + B) * C`. No grouping syntax; use a temporary variable.
 - **`elif` and `case`/`switch`.** AllSpeak has neither. `if … else if … else …` is fine (it's just `else` followed by another `if`), but the shortcut `elif` doesn't exist, and there's no `case` / `switch` statement — use a chain of `if`/`else if` or a labelled dispatch.
 - **`or` vs `on failure` confusion.** Different post-clause behaviour — `or` stops, `on failure` continues. See [errors-and-recovery](../reference/errors-and-recovery.md).
-- **Invented keywords.** `return X`, `break`, `continue`, `try`/`catch`, `await`. None of these exist in AllSpeak.
+- **Webson `#` arrays with inline objects.** Webson's `#` array expects `$Name` string references, not raw JSON objects. `"#": [{ "#element": "div", ... }]` will fail at runtime with `build: [object Object] has no properties`. Define named `$Block` entries and reference them in `#`: `"#": ["$Block"]` with `"$Block": { "#element": "div", ... }` defined nearby. See [browser-and-webson](../reference/14-browser-and-webson.md).
+- **Invented `set the properties` pre-init.** Properties on array elements auto-initialize on first write — there is no pre-initialization command. `set the properties of Cell to array for \`color\`` is not valid AllSpeak. The correct approach is `set property \`color\` of Cell to 0` inside the creation loop; the per-element JSON dictionary is created automatically. See [browser-and-webson](../reference/14-browser-and-webson.md).
+- **`get` used as an assignment keyword.** `get property \`name\` of X into V` is not valid AllSpeak. AllSpeak has no `get` keyword for assignment — the universal read pattern is `put <source> into <target>`, including properties: `put property \`name\` of X into V`. This is a common AI hybrid of `get` (from JavaScript/Python) and `put … into …` (from AllSpeak). See [browser-and-webson](../reference/14-browser-and-webson.md).
+- **Invented keywords.** `return X`, `break`, `continue`, `try`/`catch`, `await`, `get X into Y`. None of these exist in AllSpeak.
 
-The `cat` placement and `for`/`for each` mistakes are the most common; the others are sporadic.
+The `cat` placement, `for`/`for each`, JSON-style-array-indexing, `#`-array-inline-objects, and invented-property-init mistakes are the most common; the others are sporadic.
 
 ## Ask-it-to-explain before ask-it-to-rewrite
 

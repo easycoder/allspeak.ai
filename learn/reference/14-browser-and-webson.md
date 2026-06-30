@@ -63,7 +63,9 @@ set the style of X to `color:red; font-weight:bold`
 set style `width` of X to `90%`            ! one CSS property at a time
 set attribute `href` of X to `https://example.com`   ! HTML attribute on the DOM element
 set attribute `data-id` of X to `42`       ! arbitrary attribute, same form
+set property `color` of X to `#ff0000`      ! write a JSON property on the element
 put the content of X into V                ! read back
+put property `color` of X into V            ! read back a property
 ```
 
 `set the style of X` is bulk inline CSS; `set style \`name\` of X` writes a single CSS property. `set attribute \`name\` of X` writes an HTML attribute on the live DOM element by calling `element.setAttribute(name, value)`.
@@ -73,11 +75,13 @@ put the content of X into V                ! read back
 This trap bites AI agents reliably and humans occasionally:
 
 - **`set attribute \`name\` of X to V`** writes to the **DOM element**. Use this for `href`, `target`, `title`, `src`, `type`, `checked`, `data-*`, ARIA attributes — anything that needs to live on the live HTML element so the browser acts on it.
-- **`set property \`name\` of X to V`** writes to a **JSON dictionary stored in the variable's data slot**. It does *not* touch the DOM. Use this for application-level metadata you want to carry alongside the element (e.g. a row's record ID for your own event handlers to read back via `property \`name\` of X`).
+- **`set property \`name\` of X to V`** writes to a **per-element JSON dictionary stored on the variable**. Works on any typed variable — `variable`, `div`, `button`, `input`, etc. It does *not* touch the DOM. Use this for application-level metadata you want to carry alongside the element (e.g. a row's record ID for your own event handlers to read back via `property \`name\` of X`).
 
 The two have similar surface syntax but completely different effects. A common symptom of the mix-up: `set property \`href\` of LinkAnchor to URL` runs without error, but the link doesn't navigate when clicked — because the DOM `<a>` never got the `href`; only the variable's data dict did. The fix is to change `property` to `attribute`.
 
 If your goal is "make the browser act on this", reach for `attribute`. If your goal is "remember this fact about the element for my own code to read later", reach for `property`.
+
+Properties on array elements **auto-initialize on first write** — there is no `set the properties of X to array` command. Just `set property \`name\` of X to V` inside the creation loop; the per-element JSON dictionary is created automatically. AI agents often invent a pre-initialization step like `set the properties of Cell to array for \`color\`` — that is not valid AllSpeak.
 
 ## Events
 
@@ -170,7 +174,7 @@ The element's inner text. Can coexist with children (`#`) — content is rendere
 
 ### `#` — the children array
 
-An ordered list of `$`-prefixed names. The renderer creates child elements in this order. **Without `#`, no children render** — even if the object has `$`-prefixed keys defined below.
+An ordered list of `$`-prefixed name strings. The renderer creates child elements in this order. **Without `#`, no children render** — even if the object has `$`-prefixed keys defined below.
 
 ```json
 {
@@ -183,6 +187,25 @@ An ordered list of `$`-prefixed names. The renderer creates child elements in th
 ```
 
 A `$` name referenced in `#` must exist somewhere in resolution scope (see below), but it does not need to be nested in the same object — it can be defined at a parent or root level.
+
+**The entries must be `$Name` strings, not inline JSON objects.** This is the most common AI mistake with Webson:
+
+```json
+// WRONG — inline objects in the # array:
+"#": [
+    { "#element": "div", "background-color": "#ccc" },
+    { "#element": "div", "background-color": "#ccc" }
+]
+
+// RIGHT — $Name references to named blocks:
+"#": ["$Cell", "$Cell"],
+"$Cell": {
+    "#element": "div",
+    "background-color": "#ccc"
+}
+```
+
+Inline-object `#` entries fail at runtime with the error `build: [object Object] has no properties` because the renderer tries to use the object as a string key to look up the symbol table. Always define a `$Name` block and reference it by name.
 
 ### `$<name>` — named child definitions
 

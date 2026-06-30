@@ -2104,29 +2104,29 @@ const AllSpeak_Core = {
 					}
 				}
 				break;
-			case `property`:
-				name = compiler.getNextValue();
-				if (compiler.isWord(`of`)) {
-					if (compiler.nextIsSymbol()) {
-						const targetRecord = compiler.getSymbolRecord();
-						if (targetRecord.keyword === `variable`) {
-							if (compiler.nextIsWord(`to`)) {
-								const value = compiler.getNextValue();
-								compiler.addCommand({
-									domain: `core`,
-									keyword: `set`,
-									lino,
-									request: `setProperty`,
-									target: targetRecord.name,
-									name,
-									value
-								});
-								return true;
-							}
+		case `property`:
+			name = compiler.getNextValue();
+			if (compiler.isWord(`of`)) {
+				if (compiler.nextIsSymbol()) {
+					const targetRecord = compiler.getSymbolRecord();
+					if (targetRecord.keyword === `variable` || targetRecord.extra === `dom`) {
+						if (compiler.nextIsWord(`to`)) {
+							const value = compiler.getNextValue();
+							compiler.addCommand({
+								domain: `core`,
+								keyword: `set`,
+								lino,
+								request: `setProperty`,
+								target: targetRecord.name,
+								name,
+								value
+							});
+							return true;
 						}
 					}
 				}
-				break;
+			}
+			break;
 			case `arg`:
 				name = compiler.getNextValue();
 				if (compiler.isWord(`of`)) {
@@ -2288,7 +2288,7 @@ const AllSpeak_Core = {
 				// Get the existing JSON
 				if (!targetValue.numeric) {
 					let content = targetValue.content;
-					if (content === ``) {
+					if (content === `` || content === undefined) {
 						content = {};
 					}
 					else if (program.isJsonString(content)) {
@@ -3210,7 +3210,7 @@ const AllSpeak_Core = {
 					if (compiler.nextIsSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
 						compiler.next();
-						if (symbolRecord.keyword === `variable`) {
+						if (symbolRecord.keyword === `variable` || symbolRecord.extra === `dom`) {
 							return {
 								domain: `core`,
 								type: `property`,

@@ -26,7 +26,9 @@ The secret is that AI doesn't care what language it writes in. Give it a capable
 
 ## How to get started
 
-The fastest route is **AllSpeak + Claude Code**. Claude Code is an AI coding agent that runs in your terminal. Combined with our starter pack, it will set up a working project for you in under five minutes — complete with an explanation of every file it creates.
+You have two fast routes, depending on which AI assistant you prefer. Both use the same starter pack — just choose your tool.
+
+**AllSpeak + Claude Code.** Claude Code is an AI coding agent that runs in your terminal. Combined with our starter pack, it will set up a working project for you in under five minutes — complete with an explanation of every file it creates.
 
 Here's all you do:
 
@@ -34,10 +36,28 @@ Here's all you do:
 2. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into that folder.
 3. Install AllSpeak: `pip install -U allspeak-ai`
 4. Install Claude Code (see [claude.ai/code](https://claude.ai/code)).
-5. Open a terminal in that folder and type `claude`.
-6. When Claude starts, type **go**.
+5. Start the AllSpeak file server: open a second terminal in the project folder and type `allspeak server.as`. Keep this terminal running — it serves your files while you work.
+6. Open a terminal in that folder and type `claude`.
+7. When Claude starts, type **go**.
 
 Claude will ask you a couple of questions, create your project files, and walk you through how everything fits together. From there, just tell it what you want to build.
+
+---
+
+**AllSpeak + CodeWhale.** CodeWhale is a terminal-based AI coding agent that uses DeepSeek models. Combined with our starter pack, it will set up a working project for you in under five minutes.
+
+Here's all you do:
+
+1. Create an empty folder for your project.
+2. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into that folder.
+3. Install AllSpeak: `pip install -U allspeak-ai`
+4. Install CodeWhale: `npm install -g codewhale`
+5. Set up your API key: `codewhale auth set --provider deepseek` (get a key from [platform.deepseek.com](https://platform.deepseek.com)).
+6. Start the AllSpeak file server: open a second terminal in the project folder and type `allspeak server.as`. Keep this terminal running — it serves your files while you work.
+7. Open a terminal in that folder and type `codewhale`.
+8. Tell CodeWhale what you'd like to build.
+
+CodeWhale will ask you a couple of questions, create your project files, and walk you through how everything fits together. From there, just tell it what you want next.
 
 ## Learn more
 

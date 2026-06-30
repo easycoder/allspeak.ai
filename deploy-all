@@ -58,7 +58,7 @@ echo "=== 6/6 snapshot dist/ to dated path ==="
 VERSION="$(date +%y%m%d)"
 echo "Snapshotting dist/ to dist/${VERSION}/"
 rsync -avz \
-    dist/ \
+    deploy/dist/ \
     allspeak@allspeak.ai:allspeak.ai/dist/${VERSION}/
 
 echo

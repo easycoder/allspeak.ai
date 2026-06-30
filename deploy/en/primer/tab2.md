@@ -8,7 +8,7 @@ When you have all four steps working, the page will look something like the one 
 
 ## Prompt 1: Foundation — Build the grid
 
-Make a 3×4 grid of square cells centred on the page. Each cell should be plain grey with a thin black border. The grid should occupy about a third of the screen width. No clicks, no buttons — just the visual layout for now.
+Make a 4‑column by 3‑row grid of square cells centred on the page. Each cell should be plain grey with a thin black border. The grid should occupy about a third of the screen width. No clicks, no buttons — just the visual layout for now.
 
 ## Prompt 2: Interaction — Click to cycle
 

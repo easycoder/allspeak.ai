@@ -2,7 +2,7 @@
 # build-starters: rebuild deploy/allspeak-<lang>.zip from starter/<lang>/.
 #
 # Each starter zip bundles the language-specific bootstrap files
-# (CLAUDE.md, server.as, edit.html) with the shared editor
+# (CLAUDE.md, AGENTS.md, server.as, edit.html) with the shared editor
 # (asedit.as, asedit.json) and the doc-block analyser (asdoc-check.py),
 # all at the zip root.
 #
@@ -48,11 +48,22 @@ for dir in starter/*/; do
     work="$STAGE/$lang"
     mkdir -p "$work"
     cp -p "$dir"CLAUDE.md "$dir"server.as "$dir"edit.html "$work/"
+    for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
+        if [ -f "$dir$extra" ]; then
+            cp -p "$dir$extra" "$work/"
+        fi
+    done
     cp -p asedit.as asedit.json tools/asdoc-check.py "$work/"
 
     out="$PWD/deploy/allspeak-$lang.zip"
     rm -f "$out"
-    ( cd "$work" && zip -q "$out" CLAUDE.md server.as edit.html asedit.json asedit.as asdoc-check.py )
+    zip_files="CLAUDE.md server.as edit.html asedit.json asedit.as asdoc-check.py"
+    for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
+        if [ -f "$work/$extra" ]; then
+            zip_files="$zip_files $extra"
+        fi
+    done
+    ( cd "$work" && zip -q "$out" $zip_files )
 
     echo "  built: deploy/allspeak-$lang.zip"
     built=$((built + 1))

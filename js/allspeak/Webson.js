@@ -460,10 +460,16 @@
         if (typeof items[`#`] !== `undefined`) {
             const data = items[`#`];
             if (Array.isArray(data)) {
-                for (const childName of data) {
-                    await AllSpeak_Webson.build(element, childName, symbols[childName], symbols);
+                for (let idx = 0; idx < data.length; idx++) {
+                    const child = data[idx];
+                    if (typeof child === `string` && child[0] === `$`) {
+                        await AllSpeak_Webson.build(element, child, symbols[child], symbols);
+                    } else if (typeof child === `object` && child !== null) {
+                        const childName = child[`@id`] || `#${idx}`;
+                        await AllSpeak_Webson.build(element, childName, child, symbols);
+                    }
                 }
-            } else if (data[0] === `$`) {
+            } else if (typeof data === `string` && data[0] === `$`) {
                 await AllSpeak_Webson.build(element, data, symbols[data], symbols);
             }
         }

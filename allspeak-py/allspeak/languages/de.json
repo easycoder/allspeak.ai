@@ -299,7 +299,8 @@
     "GOSUB": {
       "keyword": "gosub",
       "patterns": [
-        "gosub [zu] {label}"
+        "gosub [zu] {label}",
+        "gosub [zu] {label} mit {value}"
       ]
     },
     "GOTO": {
@@ -1222,6 +1223,7 @@
     "send": "sende",
     "multiply": "multipliziere",
     "negate": "negiere",
+    "param": "param",
     "play": "spiele",
     "pop": "entnehme",
     "print": "drucke",

@@ -418,10 +418,16 @@ AllSpeak.domain.webson = AllSpeak_Webson;
         if (typeof items[`#`] !== `undefined`) {
             const data = items[`#`];
             if (Array.isArray(data)) {
-                data.forEach(function(name) {
-                    Webson.build(element, name, symbols[name], symbols);
-                });
-            } else if (data[0] === `$`) {
+                for (let idx = 0; idx < data.length; idx++) {
+                    const child = data[idx];
+                    if (typeof child === `string` && child[0] === `$`) {
+                        Webson.build(element, child, symbols[child], symbols);
+                    } else if (typeof child === `object` && child !== null) {
+                        const childName = child[`@id`] || `#${idx}`;
+                        Webson.build(element, childName, child, symbols);
+                    }
+                }
+            } else if (typeof data === `string` && data[0] === `$`) {
                 Webson.build(element, data, symbols[data], symbols);
             }
         }

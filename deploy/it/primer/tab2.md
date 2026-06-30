@@ -8,7 +8,7 @@ Quando tutti e quattro i passi funzioneranno, la pagina apparirà più o meno co
 
 ## Prompt 1: Fondamenta — Costruisci la griglia
 
-Crea una griglia 3×4 di celle quadrate centrata nella pagina. Ogni cella deve essere grigia con un sottile bordo nero. La griglia deve occupare circa un terzo della larghezza dello schermo. Niente clic, niente pulsanti — solo il layout visivo per ora.
+Crea una griglia di 4 colonne per 3 righe di celle quadrate centrata nella pagina. Ogni cella deve essere grigia con un sottile bordo nero. La griglia deve occupare circa un terzo della larghezza dello schermo. Niente clic, niente pulsanti — solo il layout visivo per ora.
 
 ## Prompt 2: Interazione — Clic per cambiare ciclicamente
 

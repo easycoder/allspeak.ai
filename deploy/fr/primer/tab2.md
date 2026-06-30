@@ -8,7 +8,7 @@ Lorsque les quatre étapes fonctionnent, la page ressemblera à peu près à cel
 
 ## Prompt 1 : Fondations — Construire la grille
 
-Crée une grille 3×4 de cellules carrées centrée sur la page. Chaque cellule doit être grise unie avec une fine bordure noire. La grille doit occuper environ un tiers de la largeur de l'écran. Pas de clics, pas de boutons — juste la disposition visuelle pour l'instant.
+Crée une grille de 4 colonnes sur 3 rangées de cellules carrées centrée sur la page. Chaque cellule doit être grise unie avec une fine bordure noire. La grille doit occuper environ un tiers de la largeur de l'écran. Pas de clics, pas de boutons — juste la disposition visuelle pour l'instant.
 
 ## Prompt 2 : Interaction — Clic pour cycler
 

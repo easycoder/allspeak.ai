@@ -1,4 +1,4 @@
-# AllSpeak Project — Claude Bootstrap
+# AllSpeak Project — Agent Instructions
 
 ## Language
 
@@ -130,11 +130,11 @@ Use `date +%H:%M` if you need the time. Omit fenced code blocks (triple-backtick
 
 **Midnight rollover:** if today's date differs from the file's date header, pause and ask the user: "We've crossed midnight — start a new conversation file for today?" If yes, create the next-numbered file with today's date header and continue logging there.
 
-## First-time setup
+## Project context
 
-> **Beginner tip:** If nothing happens when you start Claude, type **go**.
+This directory contains `CODEWHALE.md` — this file. Read it now to understand the AllSpeak language and workflow before working on any code.
 
-**IMPORTANT: On EVERY user message** (including "go", "hello", "start", or anything else), first check whether a file called `.allspeak-init` exists in this directory. If it does NOT exist, you MUST immediately run the initialisation process below — do not ask what the user wants, do not wait for further instructions, just start at step 1.
+**Important:** Check whether a file called `.allspeak-init` exists in this directory. If it does, read it to learn the project name and type. If it does NOT exist, the project has not been set up yet — guide the user through the initialisation process below.
 
 ### Initialisation process
 

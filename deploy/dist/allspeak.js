@@ -2104,29 +2104,29 @@ const AllSpeak_Core = {
 					}
 				}
 				break;
-			case `property`:
-				name = compiler.getNextValue();
-				if (compiler.isWord(`of`)) {
-					if (compiler.nextIsSymbol()) {
-						const targetRecord = compiler.getSymbolRecord();
-						if (targetRecord.keyword === `variable`) {
-							if (compiler.nextIsWord(`to`)) {
-								const value = compiler.getNextValue();
-								compiler.addCommand({
-									domain: `core`,
-									keyword: `set`,
-									lino,
-									request: `setProperty`,
-									target: targetRecord.name,
-									name,
-									value
-								});
-								return true;
-							}
+		case `property`:
+			name = compiler.getNextValue();
+			if (compiler.isWord(`of`)) {
+				if (compiler.nextIsSymbol()) {
+					const targetRecord = compiler.getSymbolRecord();
+					if (targetRecord.keyword === `variable` || targetRecord.extra === `dom`) {
+						if (compiler.nextIsWord(`to`)) {
+							const value = compiler.getNextValue();
+							compiler.addCommand({
+								domain: `core`,
+								keyword: `set`,
+								lino,
+								request: `setProperty`,
+								target: targetRecord.name,
+								name,
+								value
+							});
+							return true;
 						}
 					}
 				}
-				break;
+			}
+			break;
 			case `arg`:
 				name = compiler.getNextValue();
 				if (compiler.isWord(`of`)) {
@@ -2288,7 +2288,7 @@ const AllSpeak_Core = {
 				// Get the existing JSON
 				if (!targetValue.numeric) {
 					let content = targetValue.content;
-					if (content === ``) {
+					if (content === `` || content === undefined) {
 						content = {};
 					}
 					else if (program.isJsonString(content)) {
@@ -3210,7 +3210,7 @@ const AllSpeak_Core = {
 					if (compiler.nextIsSymbol()) {
 						const symbolRecord = compiler.getSymbolRecord();
 						compiler.next();
-						if (symbolRecord.keyword === `variable`) {
+						if (symbolRecord.keyword === `variable` || symbolRecord.extra === `dom`) {
 							return {
 								domain: `core`,
 								type: `property`,
@@ -8804,10 +8804,16 @@ const AllSpeak_Markdown = {
         if (typeof items[`#`] !== `undefined`) {
             const data = items[`#`];
             if (Array.isArray(data)) {
-                for (const childName of data) {
-                    await AllSpeak_Webson.build(element, childName, symbols[childName], symbols);
+                for (let idx = 0; idx < data.length; idx++) {
+                    const child = data[idx];
+                    if (typeof child === `string` && child[0] === `$`) {
+                        await AllSpeak_Webson.build(element, child, symbols[child], symbols);
+                    } else if (typeof child === `object` && child !== null) {
+                        const childName = child[`@id`] || `#${idx}`;
+                        await AllSpeak_Webson.build(element, childName, child, symbols);
+                    }
                 }
-            } else if (data[0] === `$`) {
+            } else if (typeof data === `string` && data[0] === `$`) {
                 await AllSpeak_Webson.build(element, data, symbols[data], symbols);
             }
         }
@@ -8935,6 +8941,9 @@ const AllSpeak_JSON = {
 			case `sort`:
 			case `shuffle`:
 			case `format`:
+				if (compiler.isWord(`of`)) {
+					compiler.next();
+				}
 				if (compiler.nextIsSymbol()) {
 					const targetRecord = compiler.getSymbolRecord();
 					if (targetRecord.keyword === `variable`) {
@@ -9459,9 +9468,12 @@ const AllSpeak_JSON = {
 						}
 					}
 				}
-				// Fallback: `json <value>` — pass-through wrapper that lets the
+				// Fallback: `json [of] <value>` — pass-through wrapper that lets the
 				// caller use a JSON literal/variable where a value is expected.
 				compiler.rewindTo(startIdx + 1);
+				if (compiler.isWord(`of`)) {
+					compiler.next();
+				}
 				const inner = compiler.getValue();
 				if (inner) {
 					return {
