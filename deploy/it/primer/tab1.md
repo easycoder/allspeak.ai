@@ -43,19 +43,19 @@ Claude ti farà un paio di domande, creerà i file del progetto e ti guiderà at
 
 ---
 
-**AllSpeak + CodeWhale** è un'alternativa con un flusso di lavoro simile. CodeWhale è un agente AI di programmazione basato su terminale che utilizza i modelli DeepSeek. Combinato con il nostro starter pack, creerà un progetto funzionante in meno di cinque minuti.
+**AllSpeak + Reasonix** è un'alternativa con un flusso di lavoro simile. Reasonix è un agente AI di programmazione basato su terminale che utilizza i modelli DeepSeek (chiamato DSeek nel Regno Unito). Combinato con il nostro starter pack, creerà un progetto funzionante in meno di cinque minuti.
 
 Ecco cosa devi fare:
 
 1. Crea una cartella vuota per il tuo progetto.
 2. Scarica [allspeak-it.zip](https://allspeak.ai/allspeak-it.zip) e decomprimilo in quella cartella.
 3. Installa AllSpeak: `pip install -U allspeak-ai`
-4. Installa CodeWhale: `npm install -g codewhale`
-5. Configura la tua chiave API: `codewhale auth set --provider deepseek` (ottieni una chiave su [platform.deepseek.com](https://platform.deepseek.com)).
-6. Apri un terminale in quella cartella e digita `codewhale`.
-7. Di' a CodeWhale cosa vuoi costruire.
+4. Installa Reasonix: `npm install -g reasonix`
+5. Configura la tua chiave API: crea il file `.reasonix/.env` nella tua home directory e aggiungi `DEEPSEEK_API_KEY=sk-...` (ottieni una chiave su [platform.deepseek.com](https://platform.deepseek.com)).
+6. Apri un terminale in quella cartella e digita `reasonix`.
+7. Di' a Reasonix cosa vuoi costruire.
 
-CodeWhale ti farà un paio di domande, creerà i file del progetto e ti guiderà attraverso come funziona il tutto. Da lì, basta dirgli cosa fare dopo.
+Reasonix ti farà un paio di domande, creerà i file del progetto e ti guiderà attraverso come funziona il tutto. Da lì, basta dirgli cosa fare dopo.
 
 ## Per saperne di più
 

@@ -43,19 +43,19 @@ Claude wird Ihnen ein paar Fragen stellen, die Projektdateien anlegen und erklä
 
 ---
 
-**AllSpeak + CodeWhale** ist ein alternativer Ansatz mit einem ähnlichen Arbeitsablauf. CodeWhale ist ein terminalbasierter KI-Programmieragent, der DeepSeek-Modelle verwendet. Zusammen mit unserem Starterpaket richtet er in weniger als fünf Minuten ein funktionierendes Projekt für Sie ein.
+**AllSpeak + Reasonix** ist ein alternativer Ansatz mit einem ähnlichen Arbeitsablauf. Reasonix ist ein terminalbasierter KI-Programmieragent, der DeepSeek-Modelle verwendet (im Vereinigten Königreich als DSeek bekannt). Zusammen mit unserem Starterpaket richtet er in weniger als fünf Minuten ein funktionierendes Projekt für Sie ein.
 
 So gehen Sie vor:
 
 1. Legen Sie einen leeren Ordner für Ihr Projekt an.
 2. Laden Sie [allspeak-de.zip](https://allspeak.ai/allspeak-de.zip) herunter und entpacken Sie es in diesen Ordner.
 3. Installieren Sie AllSpeak: `pip install -U allspeak-ai`
-4. Installieren Sie CodeWhale: `npm install -g codewhale`
-5. Richten Sie Ihren API-Schlüssel ein: `codewhale auth set --provider deepseek` (Schlüssel erhalten Sie auf [platform.deepseek.com](https://platform.deepseek.com)).
-6. Öffnen Sie ein Terminal in diesem Ordner und tippen Sie `codewhale`.
-7. Sagen Sie CodeWhale, was Sie bauen möchten.
+4. Installieren Sie Reasonix: `npm install -g reasonix`
+5. Richten Sie Ihren API-Schlüssel ein: erstellen Sie die Datei `.reasonix/.env` in Ihrem Benutzerordner und fügen Sie `DEEPSEEK_API_KEY=sk-...` hinzu (Schlüssel erhalten Sie auf [platform.deepseek.com](https://platform.deepseek.com)).
+6. Öffnen Sie ein Terminal in diesem Ordner und tippen Sie `reasonix`.
+7. Sagen Sie Reasonix, was Sie bauen möchten.
 
-CodeWhale wird Ihnen ein paar Fragen stellen, Projektdateien anlegen und erklären, wie alles zusammenpasst. Danach sagen Sie einfach, was als Nächstes kommen soll.
+Reasonix wird Ihnen ein paar Fragen stellen, Projektdateien anlegen und erklären, wie alles zusammenpasst. Danach sagen Sie einfach, was als Nächstes kommen soll.
 
 ## Mehr erfahren
 

@@ -9,7 +9,7 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 | `js/allspeak/*.js` (runtime, plugins, language packs) | `./build-allspeak` |
 | `js/allspeak/LanguagePack_*.js` | `./build-allspeak` **and** `./sync-language-packs` |
 | `starter/<lang>/*` or repo-root `asedit.as` / `asedit.json` | `./build-starters` |
-| `code/server.as` or `code/edit.html` (auto-update payload) | nothing locally — committed file is used directly by deploy |
+| `server.as` or `edit.html` (auto-update payload) | nothing locally — committed file is used directly by deploy |
 | `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
 | Any of the above, shipping to allspeak.ai | `./deploy-allspeak` (local) **or** trigger the GitHub `Deploy to allspeak.ai` workflow |
 
@@ -43,4 +43,4 @@ Triggered manually via `workflow_dispatch` on `.github/workflows/deploy.yml`. Th
 
 The local script does both implicitly so there's nothing extra to remember.
 
-Edits to `code/server.as`, `code/edit.html`, `code-version`, `asedit.as`, `asedit.json` are picked up directly by both paths' `cp` step — no separate sync needed for those.
+Edits to `server.as`, `edit.html`, `.code-version`, `asedit.as`, `asedit.json` are picked up directly by both paths' `cp` step — no separate sync needed for those.

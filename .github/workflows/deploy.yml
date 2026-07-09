@@ -24,7 +24,7 @@ jobs:
       - name: Prepare deploy/ directory
         run: |
           # build-allspeak already writes directly to deploy/dist/
-          cp asedit.as asedit.json code/server.as code/edit.html code/code-version deploy/code/
+          cp asedit.as asedit.json server.as edit.html .code-version deploy/code/
           ./build-starters
 
       - name: Set up SSH
