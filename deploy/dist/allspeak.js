@@ -830,25 +830,53 @@ const AllSpeak_Core = {
 			if (compiler.nextIsWord(`to`)) {
 				compiler.next();
 			}
-			const label = compiler.getToken();
-			compiler.next();
-			compiler.addCommand({
-				domain: `core`,
-				keyword: `fork`,
-				lino,
-				label
-			});
+			// Computed fork: fork [to] label <expr>
+			if (compiler.isWord(`label`)) {
+				compiler.next();
+				const expr = compiler.getValue();
+				if (!expr) {
+					throw new Error(`Expected expression after 'label'`);
+				}
+				compiler.addCommand({
+					domain: `core`,
+					keyword: `fork`,
+					lino,
+					gotoExpr: expr
+				});
+			} else {
+				const label = compiler.getToken();
+				compiler.next();
+				compiler.addCommand({
+					domain: `core`,
+					keyword: `fork`,
+					lino,
+					label
+				});
+			}
 			return true;
 		},
 
 		run: program => {
 			const command = program[program.pc];
-			try {
-				program.run(program.symbols[command.label].pc);
-			} catch (err) {
-				AllSpeak.writeToDebugConsole(err.message);
-				alert(err.message);
+			// Resolve the label — static or computed
+			let label;
+			if (command.gotoExpr) {
+				label = program.getValue(command.gotoExpr);
+			} else if (command.label) {
+				label = command.label;
+			} else {
+				return command.pc + 1;
 			}
+			if (program.verifySymbol(label) && program.symbols[label]) {
+				try {
+					program.run(program.symbols[label].pc);
+				} catch (err) {
+					AllSpeak.writeToDebugConsole(err.message);
+					alert(err.message);
+				}
+				return command.pc + 1;
+			}
+			program.runtimeError(command.lino, `Unknown symbol '${label}'`);
 			return command.pc + 1;
 		}
 	},
@@ -860,19 +888,45 @@ const AllSpeak_Core = {
 			if (compiler.nextIsWord(`to`)) {
 				compiler.next();
 			}
-			const label = compiler.getToken();
-			compiler.next();
-			compiler.addCommand({
-				domain: `core`,
-				keyword: `go`,
-				lino,
-				label
-			});
+			// Computed goto: go [to] label <expr>
+			if (compiler.isWord(`label`)) {
+				compiler.next();
+				const expr = compiler.getValue();
+				if (!expr) {
+					throw new Error(`Expected expression after 'label'`);
+				}
+				compiler.addCommand({
+					domain: `core`,
+					keyword: `go`,
+					lino,
+					gotoExpr: expr
+				});
+			} else {
+				const label = compiler.getToken();
+				compiler.next();
+				compiler.addCommand({
+					domain: `core`,
+					keyword: `go`,
+					lino,
+					label
+				});
+			}
 			return true;
 		},
 
 		run: program => {
 			const command = program[program.pc];
+			if (command.gotoExpr) {
+				const label = program.getValue(command.gotoExpr);
+				if (program.verifySymbol(label)) {
+					const pc = program.symbols[label];
+					if (pc) {
+						return pc.pc;
+					}
+				}
+				program.runtimeError(command.lino, `Unknown symbol '${label}'`);
+				return 0;
+			}
 			if (command.label) {
 				if (program.verifySymbol(command.label)) {
 					const pc = program.symbols[command.label];
@@ -894,14 +948,30 @@ const AllSpeak_Core = {
 			if (compiler.nextIsWord(`to`)) {
 				compiler.next();
 			}
-			const label = compiler.getToken();
-			compiler.next();
-			const command = {
-				domain: `core`,
-				keyword: `gosub`,
-				lino,
-				label
-			};
+			let command;
+			// Computed gosub: gosub [to] label <expr> [with ...]
+			if (compiler.isWord(`label`)) {
+				compiler.next();
+				const expr = compiler.getValue();
+				if (!expr) {
+					throw new Error(`Expected expression after 'label'`);
+				}
+				command = {
+					domain: `core`,
+					keyword: `gosub`,
+					lino,
+					gotoExpr: expr
+				};
+			} else {
+				const label = compiler.getToken();
+				compiler.next();
+				command = {
+					domain: `core`,
+					keyword: `gosub`,
+					lino,
+					label
+				};
+			}
 			// Parse optional with-args: gosub LABEL with EXPR1 [and EXPR2 ...]
 			if (compiler.isWord(`with`)) {
 				compiler.next();
@@ -928,7 +998,14 @@ const AllSpeak_Core = {
 
 		run: program => {
 			const command = program[program.pc];
-			if (program.verifySymbol(command.label)) {
+			// Resolve the label — static or computed
+			let label;
+			if (command.gotoExpr) {
+				label = program.getValue(command.gotoExpr);
+			} else {
+				label = command.label;
+			}
+			if (program.verifySymbol(label)) {
 				if (command.args) {
 					// Evaluate and push args as a new frame
 					const frame = [];
@@ -941,9 +1018,9 @@ const AllSpeak_Core = {
 					program.callArgs.push(frame);
 				}
 				program.programStack.push(program.pc + 1);
-				return program.symbols[command.label].pc;
+				return program.symbols[label].pc;
 			}
-			program.runtimeError(command.lino, `Unknown symbol '${command.label}'`);
+			program.runtimeError(command.lino, `Unknown symbol '${label}'`);
 			return 0;
 		}
 	},

@@ -102,6 +102,25 @@ Loop:
 
 `go to` transfers control unconditionally and does not push a return address. The destination runs until it hits its own `stop`, `exit`, or another `go to` — whatever it does next is the new flow.
 
+### Computed label (`go to label <expr>`)
+
+When an `if … else` chain grows long, you can compute the label name at runtime instead:
+
+```as
+variable Outcome
+gosub to ComputeOutcome      ! sets Outcome to e.g. `Edit`, `Save`, `Delete`
+go to label Outcome          ! jumps to whatever label the string names
+```
+
+The expression after `label` can be any value expression — a variable, a string literal, or a `cat` chain:
+
+```as
+gosub to label `Option` cat N     ! jumps to Option1, Option2, …
+go to label `SharedHandler`       ! constant string
+```
+
+The label is resolved at runtime — if no matching label exists, a runtime error is reported. There is no compile-time validation, so spelling a non-existent label name is safe (it will error at runtime where you can catch it with an `on failure` clause on `gosub`).
+
 ## `gosub` and `return`
 
 A subroutine call: push return address, jump to label, run until `return`, pop return address.
@@ -122,6 +141,17 @@ Render:
 ```
 
 Both `gosub Label` and `gosub to Label` are accepted; the codex examples use `gosub to`. Pick one and stay consistent.
+
+### Computed gosub (`gosub to label <expr>`)
+
+Same computed-label syntax works with `gosub` and `fork`:
+
+```as
+gosub to label `Handler` cat Event      ! computed subroutine call
+fork to label `Task` cat N              ! computed parallel fork
+```
+
+`fork to label <expr>` behaves identically: it evaluates the expression, resolves the label, and spawns a parallel thread there. As with `go to label`, the label is resolved at runtime and errors if missing.
 
 ### Passing parameters with `gosub … with`
 
@@ -207,6 +237,7 @@ Two ways to end something:
 - A single conditional action → `if`.
 - A repeating action → `while`.
 - A reusable block called from several places → `gosub` to a label.
+- A multi-way dispatch that would need a chain of `if … else` → **`go to label`** (computed goto). See [the computed-label section](#computed-label-go-to-label-expr).
 - A piece of logic large enough to need private state → a module ([modules](modules.md)).
 - An asynchronous-looking flow on a UI event → an `on …` registration that `gosub`s a handler ([event-handlers-and-array-index](../idioms/event-handlers-and-array-index.md)).
 

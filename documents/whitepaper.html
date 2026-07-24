@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>whitepaper</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2.5cm 2cm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h1 {
+    font-size: 20pt;
+    text-align: center;
+    margin-top: 3cm;
+    margin-bottom: 0.3cm;
+    line-height: 1.3;
+  }
+  h1 + p {
+    text-align: center;
+    font-size: 10pt;
+    color: #555;
+  }
+  h2 {
+    font-size: 14pt;
+    margin-top: 1.5cm;
+    margin-bottom: 0.5cm;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 4px;
+  }
+  h3 {
+    font-size: 12pt;
+    margin-top: 1cm;
+    margin-bottom: 0.3cm;
+  }
+  h4 {
+    font-size: 11pt;
+    margin-top: 0.7cm;
+    margin-bottom: 0.2cm;
+  }
+  p { margin: 0.4cm 0; text-align: justify; }
+  blockquote {
+    border-left: 3px solid #999;
+    margin: 0.5cm 0;
+    padding: 0.2cm 0.8cm;
+    color: #444;
+    font-style: italic;
+  }
+  code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #f4f4f4;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    font-size: 9pt;
+    line-height: 1.4;
+  }
+  pre code { background: none; padding: 0; border-radius: 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.5cm 0;
+    font-size: 10pt;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 5px 8px;
+    text-align: left;
+  }
+  th { background: #f0f0f0; font-weight: bold; }
+  ul, ol { margin: 0.3cm 0; padding-left: 1.5em; }
+  li { margin: 0.15cm 0; }
+  hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 1cm 0;
+  }
+  em { font-style: italic; }
+  strong { font-weight: bold; }
+  a { color: #1a5276; text-decoration: underline; }
+  @media print {
+    body { padding: 0; max-width: none; }
+    h1 { margin-top: 2cm; }
+    pre { page-break-inside: avoid; }
+    table { page-break-inside: avoid; }
+    h2, h3 { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1>AllSpeak: A Language-Agnostic Runtime for Computational Literacy in Multilingual Communities</h1>
+<p><strong>Working Paper — May 2026</strong></p>
+<p><strong>Author:</strong> Graham T. (independent developer)</p>
+<p><strong>Correspondence:</strong> info@allspeak.ai</p>
+<p><strong>Project repository:</strong> https://github.com/easycoder/allspeak.ai</p>
+<hr>
+<h2>Abstract</h2>
+<p>Language is the foundation of human development. It is what enables us to convey ideas, share knowledge, and build on the discoveries of those who came before us. Since the industrial age, we have extended language into new forms—programming languages that instruct and control the machines we build to serve us. Software engineering, expressed in these languages, now underpins the whole of modern society.</p>
+<p>We are now creating new forms of intelligence, expected before long to transform every part of our existence. If humans are to retain a relevant role, we must learn to interact usefully with these entities. The traditional programming languages cannot serve this purpose alone: they exclude most of the world&rsquo;s population from the process, because they are expressed in English and designed for human authors, not human readers.</p>
+<p>AllSpeak is an open-source runtime designed to be a lingua franca—a common language comprehensible to both humans and AI, available in any human tongue. Its programs are intentionally simple, constrained, and readable, not because the problems they address are trivial, but because legibility is the design goal that makes human oversight possible. A codebase that no human can meaningfully inspect is not a managed system; it is an autonomous one, operating on trust. In high-stakes domains—automation, finance, health, infrastructure—that is a governance problem as much as a technical one.</p>
+<p>This paper describes AllSpeak&rsquo;s architecture, its current implementation in four languages, and the methodology developed for extending it to new linguistic communities. It argues that as AI-generated code becomes ubiquitous, the humans who need to understand it will be a different population from those who once wrote it—less technically trained, more linguistically diverse—and that the tools available to them should reflect that reality.</p>
+<p><strong>Keywords:</strong> computational literacy, multilingual programming, AI-assisted development, digital inclusion, language-agnostic runtime, code comprehension, open source</p>
+<hr>
+<h2>1. Introduction</h2>
+<p>The global expansion of coding education over the past two decades has been built on a single unstated assumption: that the people learning to code will be the people writing it. Tools, curricula, and communities have been designed accordingly—for the authorship of code, in programming languages that are structurally rooted in English.</p>
+<p>That assumption is now being tested. AI systems capable of generating functional code from natural language descriptions are in widespread professional use. GitHub Copilot, launched in 2022, reported over 1.8 million paid subscribers by February 2025 and is integrated into the daily workflow of a substantial proportion of professional developers (GitHub, 2025). The question of who writes code, and whether that skill remains the primary measure of computational literacy, is open in a way it was not five years ago.</p>
+<p>AllSpeak is an open-source scripting language designed for a different assumption: that the more important skill, going forward, is the ability to read, understand, and meaningfully engage with code—and that this skill should be available to people regardless of their technical background or native language.</p>
+<p>This paper describes AllSpeak&rsquo;s architecture, its current implementation in four languages, and the methodology developed for extending it to new linguistic communities. It also addresses directly the question that any honest treatment must confront: in an era of AI-generated code, what is the continuing value of a human-readable coding layer?</p>
+<h3>A precise definition</h3>
+<blockquote>
+<p>&ldquo;AllSpeak is a linguistically inclusive computational literacy layer—sitting between human understanding and executable logic, regardless of whether a human or an AI generated the underlying code.&rdquo;</p>
+</blockquote>
+<p>This framing locates AllSpeak in the technology stack without making claims about who is above or below it. It is not a competitor to Python or JavaScript; it occupies a different functional space—one where human comprehension of what the code does is a design requirement, not an afterthought.</p>
+<h3>Vocabulary over syntax: the &ldquo;laser&rdquo; principle</h3>
+<p>There is a recurring reaction when AllSpeak is shown to professional programmers: doubt that something this simple could possibly handle real-world complexity. It looks like a toy language for toy projects. The doubt is understandable, and it misses the point.</p>
+<p>Consider the word &ldquo;laser.&rdquo; Almost everyone has a working understanding of what a laser does—it produces a concentrated beam of light. Almost no one understands the quantum physics of stimulated emission that makes it work. The word &ldquo;laser&rdquo; is a vocabulary item that hides a universe of complexity behind a simple, intuitive label. We don&rsquo;t need to understand the physics to use the tool effectively.</p>
+<p>AllSpeak applies the same principle to code. Its vocabulary items—<code>put</code>, <code>create</code>, <code>append</code>, <code>rest get</code>, <code>on click</code>—are the &ldquo;lasers&rdquo; of the system. They hide the underlying complexity of HTTP requests, DOM manipulation, and data flow behind words that anyone can read and understand. The engine beneath them can be arbitrarily sophisticated—and it is, with 127 opcodes, concurrency via fork/wait/every, a full JSON processing pipeline, and plugin extensibility for graphics, maps, MQTT, and more.</p>
+<p>A tool is not limited by the simplicity of its vocabulary. It is limited by the breadth of what that vocabulary can express. AllSpeak&rsquo;s vocabulary covers the full range of application logic—flow control, data manipulation, event handling, network communication, storage, concurrency—in a form so readable that a non-programmer can follow it. That is not a limitation. That is the entire point.</p>
+<p>This principle is central to AllSpeak&rsquo;s design and should be understood from the outset: the project is not about making programming languages simpler because the problems they solve are trivial. It is about making the expression of logic accessible to human readers, regardless of the complexity of the underlying machinery.</p>
+<hr>
+<h2>2. The Shifting Role of Code Literacy</h2>
+<h3>2.1 What is already changing</h3>
+<p>The signals are not predictions—they are present-tense observations. GitHub Copilot, the most widely deployed AI coding assistant, was estimated to be responsible for approximately 30% of new code written on the GitHub platform by mid-2025 (GitHub, 2025). No-code and low-code platforms have expanded the population of people deploying functional software without writing conventional code, with the global market projected to reach $187 billion by 2030 (Forrester Research, 2024). &ldquo;Prompt engineering&rdquo; has emerged as a recognised professional role, listed on major job platforms and commanding salaries comparable to junior developers in some markets.</p>
+<p>Within the AllSpeak project&rsquo;s own observations, the pattern is visible in the declining attendance at traditional coding meetups and the shift towards AI-assisted development tools among professionals. A series of &ldquo;learn to code&rdquo; meetups has seen steady attendance decline over the past year; when the same organiser rebranded an event as an &ldquo;AI mini unconference,&rdquo; attendance surged. Professional coders who honed their skills over decades report those skills atrophying through disuse—not because they can no longer understand code, but because they are unaccustomed to writing it.</p>
+<p>This does not mean people are learning less. A study of a large university coding course found that when AI chat tools were introduced, traditional engagement metrics—homework completion, section attendance—dropped significantly, yet exam performance for those who adopted the tools actually improved (Stanford HAI, 2025). The students were making a calculated choice to learn more efficiently, not opting out of learning altogether.</p>
+<p>These trends do not represent the end of programming. They represent a shift in where human skill and attention is applied in the development process. The practical question is what follows from that shift.</p>
+<h3>2.2 The handwriting parallel</h3>
+<p>An analogy is offered here not as a prediction but as a frame for thinking. When mechanical text reproduction became widely available—the typewriter, then the word processor—the teaching and practice of handwriting changed fundamentally. The ability to read handwritten text did not disappear; the ability to produce it fluently and elegantly largely did, because it was no longer the primary medium of written expression and was no longer systematically taught.</p>
+<p>Whether code authorship follows a similar trajectory is a question reasonable people can disagree on. What is harder to dispute is that the population actively practising code writing is likely to shrink relative to the population that needs to engage with code in some way—reading it, questioning it, modifying it, deciding whether to trust it.</p>
+<p>The handwriting analogy has a limit worth naming: handwriting loss is largely benign, whereas code comprehension loss has systemic consequences. A generation that could not produce beautiful handwriting got along fine. A generation that cannot meaningfully inspect the code running their heating systems, financial transactions, and medical devices faces a different kind of vulnerability.</p>
+<h3>2.3 Reading versus writing</h3>
+<p>Whatever one believes about the future of code authorship, the need to read and reason about code is not diminishing. The volume of code requiring inspection, validation, and maintenance is increasing. The population capable of performing that inspection is not growing proportionally, and the tools available to support it have not kept pace with the tools available for generating code.</p>
+<p>This is a present-tense problem, not a future one. The gap between the rate of code generation and the rate of meaningful human review is already observable in professional contexts. It is likely to widen.</p>
+<p>Notably, the same &ldquo;GPT Surprise&rdquo; finding—students who used AI tools attended fewer classes but performed better on exams (Stanford HAI, 2025)—reinforces this argument from a different angle. The students were not rejecting the material; they were rejecting the traditional <em>production-oriented</em> path through it. They learned the same concepts, tested against the same outcomes, but via a route that minimised conventional code-writing. This is precisely the shift this paper describes: the skill that matters is comprehension of the result, not facility with the process that produces it.</p>
+<h3>2.4 The closed loop problem</h3>
+<p>A system in which code is generated, deployed, and operated without meaningful human inspection is, in systems terms, an open loop: functional until it fails, with no internal mechanism for course correction short of that failure. In low-stakes contexts—generating a form letter, producing a data summary—this may be acceptable. In domains where the consequences of error are significant—home automation, financial calculation, medical scheduling, infrastructure control—it is a governance problem.</p>
+<p>Constrained, legible runtimes are one class of response to this problem. A language with a small, consistent vocabulary and no syntactic ambiguity is not only easier for humans to read; AI systems themselves make fewer mistakes when generating code in constrained grammars. The simplicity is a feature for both the producer and the reviewer.</p>
+<p>AllSpeak is designed for exactly this space. It does not replace general-purpose languages; it occupies the layer where human comprehension is the priority.</p>
+<p>It is worth emphasising that this is not a competition. AllSpeak is implemented <em>in</em> JavaScript and Python—it depends on them for its very existence. What AllSpeak does is package complex functionality as vocabulary items, so that domain-specific logic can be expressed without requiring the reader to understand the underlying implementation. The general-purpose languages handle the machinery; AllSpeak handles the legibility. Both have to exist, because both serve different parts of the same problem: one enables the complexity to be built, the other enables it to be understood.</p>
+<h3>2.5 The language dimension</h3>
+<p>If code literacy—reading, not writing—is the relevant skill for an expanding population, the language in which code is expressed becomes newly important. The population that needs to inspect and reason about AI-generated programs is not primarily composed of English-speaking developers. It includes teachers, community organisers, local administrators, and householders in communities where English is a second or third language.</p>
+<p>Presenting code to these readers in English is not a neutral choice. It is a barrier. There are roughly 1.5 billion English speakers in the world and roughly 6.5 billion who are not (Ethnologue, 2025). Every mainstream programming language uses English keywords. AllSpeak addresses this at the syntactic level: the code itself is in the reader&rsquo;s language, not merely the documentation around it.</p>
+<hr>
+<h2>3. Architecture and Approach</h2>
+<h3>3.1 The opcode model</h3>
+<p>AllSpeak is built around <strong>127 canonical opcodes</strong>—the fixed, language-independent instruction set of the runtime. These opcodes cover the full range of operations: flow control (<code>WHILE</code>, <code>IF</code>, <code>GOSUB</code>), data manipulation (<code>PUT</code>, <code>APPEND</code>, <code>SET_PROPERTY</code>), DOM interaction (<code>CREATE_ELEMENT</code>, <code>SET_STYLE</code>, <code>ON_CLICK</code>), arithmetic (<code>ADD</code>, <code>MULTIPLY</code>, <code>DIVIDE</code>), JSON handling (<code>JSON_PARSE</code>, <code>JSON_SET_LIST</code>, <code>JSON_SORT</code>), event handling (<code>ON_CLICK</code>, <code>ON_CHANGE</code>, <code>ON_SWIPE</code>), concurrency (<code>FORK</code>, <code>WAIT</code>, <code>EVERY</code>), and utility operations (<code>LOG</code>, <code>ALERT</code>, <code>FILTER</code>, <code>SORT</code>, <code>INDEX</code>).</p>
+<p>Each opcode maps to a surface keyword in each language pack. A program written in Italian and a program written in German compile to identical opcode sequences; the execution engine sees only opcodes, never the source language.</p>
+<h3>3.2 The language pack architecture</h3>
+<p>Language packs are JavaScript files that export a structured object with the following components:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Purpose</th>
+<th>Size (EN reference)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>meta</code></td>
+<td>Language identifier, label, version</td>
+<td>3 fields</td>
+</tr>
+<tr>
+<td><code>opcodes</code></td>
+<td>127 opcode definitions, each with keyword and grammar patterns</td>
+<td>~970 lines</td>
+</tr>
+<tr>
+<td><code>connectors</code></td>
+<td>Connective words (to, into, from, with, by, of, in, as, on, and, or, giving, the)</td>
+<td>13 entries</td>
+</tr>
+<tr>
+<td><code>literals</code></td>
+<td>Boolean and string-type names (true, false, body, array, object, storage, parent, sender, ready, nowait)</td>
+<td>10 entries</td>
+</tr>
+<tr>
+<td><code>timeUnits</code></td>
+<td>Time units for wait/every (second, minute, tick)</td>
+<td>6 entries</td>
+</tr>
+<tr>
+<td><code>conditions</code></td>
+<td>Comparison and type-check words (is, not, greater, less, than, includes, starts, ends, empty, numeric, even, odd)</td>
+<td>12 entries</td>
+</tr>
+<tr>
+<td><code>diagnostics</code></td>
+<td>Translated error message templates</td>
+<td>7 templates</td>
+</tr>
+<tr>
+<td><code>words</code></td>
+<td>Bidirectional vocabulary map (~360 entries) connecting every surface word to its canonical form</td>
+<td>~360 entries</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>words</code> section is the heart of the system. Every canonical term in the engine has one or more surface forms in the language; the engine resolves user-facing tokens through a reverse lookup. This is what enables a French user to write <code>mets</code> instead of <code>put</code>, and an Italian user to write <code>variabile</code> instead of <code>variable</code>—both map to the same internal opcode.</p>
+<h3>3.3 Compilation through the language layer</h3>
+<p>The compilation pipeline works as follows:</p>
+<ol>
+<li><strong>Script parsing:</strong> The source text is tokenized by the compiler (<code>Compile.js</code>).</li>
+<li><strong>Language directive detection:</strong> If the script begins with <code>language fr</code> (or <code>language it</code>, <code>language de</code>), the compiler loads the corresponding language pack (<code>AllSpeak_LanguagePack_fr</code>) and initialises the language layer (<code>AllSpeak_Language.init(pack)</code>).</li>
+<li><strong>Keyword dispatch:</strong> Each token is looked up in the active language pack&rsquo;s <code>words</code> map to determine its canonical form. The compiler then dispatches to the appropriate opcode handler (defined in <code>Core.js</code> for core operations, <code>Browser.js</code> for DOM operations, <code>REST.js</code> for HTTP requests, <code>MQTT.js</code> for messaging).</li>
+<li><strong>Token comparison:</strong> Throughout compilation, keywords such as <code>giving</code>, <code>into</code>, <code>end</code>, <code>then</code>, <code>or</code> are resolved through <code>AllSpeak_Language.word('giving')</code>, which returns the active language&rsquo;s surface form. There are approximately 50 such call sites in <code>Core.js</code> alone, plus more in <code>Compile.js</code>, <code>Browser.js</code>, <code>JSON.js</code>, <code>MQTT.js</code>, and <code>REST.js</code>.</li>
+<li><strong>Bytecode generation:</strong> Each parsed statement is compiled into a command object stamped with its domain and keyword, then resolved through <code>AllSpeak_Opcodes.resolve()</code> into the canonical opcode string. The execution engine (<code>Run.js</code>) processes these opcodes without reference to the original language.</li>
+</ol>
+<h3>3.4 The JS/JSON split</h3>
+<p>Language packs are implemented as JavaScript for structural and behavioural logic. A companion tool (<code>sync-language-packs</code>) extracts the JSON vocabulary data from each JS pack and writes it to JSON files for the Python runtime, ensuring parity across implementations. This separation makes community contribution tractable: a translator working on a new language pack can contribute vocabulary and pattern data without engaging with the engine internals.</p>
+<h3>3.5 The Weblate integration</h3>
+<p>Community translation and validation is managed through Weblate, hosted at <code>translate.codeberg.org</code>. This provides a structured workflow for native-speaker review, version control for language pack changes, and an audit trail for translation decisions. Each language pack is managed as a separate component, with proposed changes tracked through the Weblate review workflow before being merged into the main repository.</p>
+<hr>
+<h2>4. Current Implementation</h2>
+<p>AllSpeak is currently operational in <strong>four languages</strong>: English (the reference implementation), French, German, and Italian. All four implementations share a single execution engine; they differ only in their language packs.</p>
+<p>The three non-English implementations are <strong>functional</strong>—programs can be written and executed correctly—but have not yet undergone formal linguistic validation by native-speaker educators.</p>
+<p>This distinction matters. Functional translation means the opcodes map correctly and programs execute as expected. Validated translation means a native speaker with relevant educational experience has confirmed that the vocabulary choices are natural, unambiguous, and appropriate for the target audience. The validation step is a prerequisite for any serious claim of community suitability.</p>
+<h3>4.1 Validation methodology (proposed)</h3>
+<p>Validation of a language pack consists of four steps, designed to be carried out by a native speaker with basic programming familiarity:</p>
+<ol>
+<li>
+<p><strong>Vocabulary review:</strong> Each of the 127 opcode keywords, 13 connectors, and ~360 word-map entries is reviewed for naturalness, consistency, and absence of ambiguity in the target language.</p>
+</li>
+<li>
+<p><strong>Codex walkthrough:</strong> The validator executes the full Codex tutorial sequence (20 steps) in the target language, verifying that every script runs correctly and every explanation reads naturally.</p>
+</li>
+<li>
+<p><strong>AI collaboration test:</strong> The validator uses an AI coding assistant to generate AllSpeak programs in the target language, verifying that the AI&rsquo;s output is syntactically correct and uses natural vocabulary.</p>
+</li>
+<li>
+<p><strong>Educator assessment:</strong> A classroom educator or curriculum designer reviews the materials for age-appropriateness, pedagogical suitability, and cultural context.</p>
+</li>
+</ol>
+<p>The validation timeline is estimated at 2–4 weeks per language, depending on the availability of the validator.</p>
+<h3>4.2 Known i18n gaps</h3>
+<p>Several minor internationalisation gaps have been identified and documented. None are compile-or-crash blockers for the existing four languages:</p>
+<ul>
+<li>
+<p><strong>Uninitialised variable display:</strong> The runtime displays the English word <code>undefined</code> when an unassigned variable is interpolated into a string. This should ideally display the localised equivalent (e.g., <code>non défini</code>, <code>nicht definiert</code>, <code>non definito</code>).</p>
+</li>
+<li>
+<p><strong>Compiler diagnostic strings:</strong> Some error messages bypass the language pack&rsquo;s diagnostics system and emit English text (<code>Compile error in '...'</code>, <code>Warnings:</code>, <code>Unrecognised syntax in '...'</code>). These are known and tracked for resolution.</p>
+</li>
+<li>
+<p><strong>Starter-zip UI strings:</strong> The per-language starter zips bundle three shared files (<code>server.as</code>, <code>asedit.as</code>, <code>asedit.json</code>) whose user-visible strings are currently English across all language packs. This is non-blocking because the agent-facing <code>AGENTS.md</code> guide—which is what instructs the AI coding assistant—is fully translated.</p>
+</li>
+</ul>
+<hr>
+<h2>5. The Multilingual Challenge</h2>
+<h3>5.1 Beyond vocabulary</h3>
+<p>Translating a programming language is not the same as translating a document. Vocabulary is the least of it. The deeper challenges arise from structural differences between languages:</p>
+<ul>
+<li>
+<p><strong>Grammatical gender:</strong> In French, German, and Italian, keywords that function as adjectives or participles must agree in gender with their nouns. The language pack must handle multiple forms where English uses a single form.</p>
+</li>
+<li>
+<p><strong>Verb conjugation:</strong> Where English uses the imperative form consistently (<code>put</code>, <code>take</code>, <code>set</code>), other languages may require different conjugations depending on the formality or grammatical construction.</p>
+</li>
+<li>
+<p><strong>Word order:</strong> Sentence-final constructions in German (where the verb moves to the end in subordinate clauses) vs. sentence-medial in English and French. The language pack patterns describe these structural variations.</p>
+</li>
+<li>
+<p><strong>Script:</strong> The most fundamental challenge. Languages using non-Latin scripts (Cyrillic, Arabic, Devanagari, Chinese characters) require the runtime to handle extended character sets, right-to-left text, and potentially collation issues.</p>
+</li>
+</ul>
+<p>AllSpeak&rsquo;s language pack architecture handles these through the <code>patterns</code> field in each opcode definition, which describes the accepted grammatical structure for that language, and the <code>words</code> map, which handles vocabulary variants including accented forms.</p>
+<h3>5.2 Non-Latin scripts: roadmap toward a proof point</h3>
+<p>The inclusion of a non-Latin-script language in AllSpeak is a recognised priority, not yet implemented. Bulgarian (Cyrillic script) has been identified as a strong candidate for this proof point for several reasons:</p>
+<ul>
+<li>
+<p><strong>Alphabetic script:</strong> As a Cyrillic alphabet language, Bulgarian represents a step-change from Latin scripts without introducing the additional complexity of logographic or abjad writing systems (which would be the next phase after Cyrillic).</p>
+</li>
+<li>
+<p><strong>EU member state:</strong> Bulgarian is an official language of the European Union, providing a clear use case for multilingual education and administration within an existing policy framework.</p>
+</li>
+</ul>
+<p>The key architectural question for Cyrillic (and for all non-Latin scripts) is whether to:
+1. Support the native script directly in the runtime (allowing keywords like <code>постави</code>, <code>вземи</code>, <code>ако</code> for put, take, if),
+2. Use Latin transliteration (allowing Bulgarian speakers to type their language in Latin characters), or
+3. Offer both options.</p>
+<p>The preferred approach is option (1) for the language pack itself, with transliteration available as a fallback for keyboard environments where Cyrillic input is impractical. The runtime already handles Unicode throughout, and existing language packs include accented characters (French <code>é</code>, German <code>ß</code>, Italian <code>à</code>), so the character-encoding infrastructure is in place. What remains is implementation work: creating the Bulgarian language pack, testing it against the Codex, and documenting the methodology for future non-Latin languages including Arabic, Devanagari, Chinese, and others.</p>
+<h3>5.3 Lessons from existing translations</h3>
+<p>The three existing non-English translations have already surfaced important patterns:</p>
+<ul>
+<li>
+<p><strong>French</strong> required handling the joiner word <code>que</code> in multi-word constructs like <code>tant que X</code> (equivalent to <code>while X</code> in English), solved by adding an optional <code>skipWord('that')</code> between the keyword and the condition in the <code>While.compile</code> handler.</p>
+</li>
+<li>
+<p><strong>German</strong> exposed a wrong-canonical mismatch: the <code>attach</code> command&rsquo;s pattern declared the connective word <code>an</code>, but the internal handler expected the canonical <code>to</code> form. Fixed by extending the German word map to support <code>"to": "zu|an"</code>.</p>
+</li>
+<li>
+<p><strong>Italian</strong> demonstrated that a single knowledgeable person with AI assistance can produce a complete language pack in approximately one day, reinforcing the viability of the methodology described in Section 6.</p>
+</li>
+</ul>
+<hr>
+<h2>6. Methodology for Language Onboarding</h2>
+<p>The following describes a replicable process for extending AllSpeak to a new language. It is designed to be executable by a small team—potentially a single motivated individual with AI assistance and access to native-speaker review.</p>
+<h3>6.1 AI-assisted initial translation</h3>
+<p>The reference English implementation provides the source material. An AI language model is used to produce an initial draft translation of the 127 opcode keywords, 13 connectors, 12 conditions, 10 literals, 6 time units, and vocabulary for the word map. The AI is instructed to produce natural, idiomatic keywords appropriate for a programming context in the target language.</p>
+<p>This draft is explicitly a starting point, not a finished product. AI translation of technical vocabulary into natural-sounding keywords requires human review—and the quality of AI translation varies by language, being generally weaker for lower-resource languages. The methodology depends on human review precisely for this reason.</p>
+<h3>6.2 Community review via Weblate</h3>
+<p>The draft translation is submitted to the project&rsquo;s Weblate instance at <code>translate.codeberg.org</code> for community review. Contributors with relevant language expertise can propose alternatives, flag unnatural choices, and discuss edge cases. The Weblate interface provides:
+- Per-component translation proposals (opcodes, connectors, diagnostics, etc.)
+- Version-controlled history of all changes
+- Comment threads for discussion of specific translation choices
+- Quality checks for consistency across the language pack</p>
+<h3>6.3 Testing against the Codex</h3>
+<p>Before any language pack is accepted for distribution, it must pass the Codex validation suite. The AllSpeak Codex—a 20-step tutorial introducing the language incrementally—serves a dual purpose. For learners, it is an on-ramp. For validators, it is a test instrument: a language pack that cannot support a fluent Codex walkthrough is not ready for community use.</p>
+<p>The Codex steps are:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Step</th>
+<th>#</th>
+<th>Step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Hello World</td>
+<td>11</td>
+<td>Interactive applications</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Basic arithmetic</td>
+<td>12</td>
+<td>Game development (TicTacToe)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>String handling</td>
+<td>13</td>
+<td>List manipulation</td>
+</tr>
+<tr>
+<td>4</td>
+<td>DOM introduction</td>
+<td>14</td>
+<td>Advanced sorting</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Styling and CSS</td>
+<td>15</td>
+<td>List filtering</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Image handling</td>
+<td>16</td>
+<td>Geospatial (Google Maps)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Simple animation</td>
+<td>17</td>
+<td>Drag and drop</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Physics simulation</td>
+<td>18</td>
+<td>Card game (Solitaire)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Visual effects</td>
+<td>19</td>
+<td>Pan and zoom</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Debugging tools</td>
+<td>20</td>
+<td>Image transitions (Ken Burns effect)</td>
+</tr>
+</tbody>
+</table>
+<p>Each step exists as a complete, runnable <code>.as</code> script across all four existing languages, plus accompanying tutorial text in <code>codex/&lt;lang&gt;/md/</code>.</p>
+<h3>6.4 Educator validation</h3>
+<p>The reviewed and tested translation is then assessed by at least one native-speaker educator with experience in the target community. Validation criteria include:
+- Naturalness of vocabulary choices
+- Absence of ambiguity in technical contexts
+- Suitability for the intended age range and educational setting
+- Appropriate register (formal enough for learning materials, natural enough for everyday use)
+- Successful execution of all Codex tutorial scripts</p>
+<h3>6.5 Publication and maintenance</h3>
+<p>Once validated, the language pack is:
+1. Merged into the main repository under <code>js/allspeak/LanguagePack_&lt;lang&gt;.js</code>
+2. Published in the <code>dist/</code> build for browser use
+3. Synced to the Python runtime (<code>allspeak-py/allspeak/languages/&lt;lang&gt;.json</code>)
+4. Bundled into a starter zip with translated <code>AGENTS.md</code> and editor interface
+5. Listed on the AllSpeak website as an available language</p>
+<p>Estimated time for a single motivated individual with AI assistance to produce a validated language pack: <strong>3–8 weeks</strong>, depending on language complexity and reviewer availability.</p>
+<hr>
+<h2>7. Educational and Community Applications</h2>
+<h3>7.1 The Codex: computational literacy in days</h3>
+<p>A consistent finding in programming education is that the barrier to entry is not intellectual but temporal and psychological. Learners who cannot experience meaningful progress within hours or days rarely continue. The Codex is designed around this reality: twenty steps, each producing a visible result, each building on the last, with no assumed prior knowledge.</p>
+<p>The four-step prompt series for building a simple graphical application extends this: a learner who has completed the Codex can, within a single session, produce something they can show to others. This is not trivial. The experience of producing something real is a significant determinant of whether learning continues.</p>
+<p>The Codex is available in all four current languages (EN, FR, DE, IT), with identical pedagogical structure and language-appropriate explanations in each. A learner in French does not receive a translation of the English tutorial; they receive a tutorial written in French, using French keywords, with culturally appropriate examples.</p>
+<h3>7.2 AllSpeak in practice: the Account application</h3>
+<p>AllSpeak is not only an educational tool. It serves as the runtime for a deployed business application: the Account system, a spreadsheet-replacement application for a one-person event live-streaming service (<code>https://github.com/easycoder/stream</code>).</p>
+<p>The application demonstrates that the AllSpeak model can handle real business requirements:
+- <strong>Spreadsheet replacement:</strong> The application tracks service bookings, expenses, mileage, and fees—precisely the kind of data a small business would manage in a spreadsheet. Unlike a spreadsheet, the data is stored as structured monthly JSON files, eliminating the risk of accidental formula corruption or cell misalignment that plagues spreadsheet-based record-keeping.
+- <strong>Hidden fields:</strong> The data model includes fields computed or carried as context that never appear in the user-facing table—reducing visual noise while keeping the full record intact for reporting and export.
+- <strong>Full application size:</strong> The production codebase comprises approximately 4,500 lines of AllSpeak spread across multiple modules (<code>account-main.as</code>, <code>admin-main.as</code>, <code>index-main.as</code>, <code>build.as</code>, <code>seed.as</code>), demonstrating that the language scales well beyond the &ldquo;small demo&rdquo; category.
+- <strong>Real deployment:</strong> The application is in daily use, managing real bookings and financial records. It is not a prototype or a proof of concept—it is a production system.</p>
+<p>The Account system is a concrete demonstration that AllSpeak&rsquo;s constrained, readable vocabulary is not a limitation. The language that can express a booking system, an admin panel, and a data-import pipeline for a real small business can express a great deal. The readability is not bought at the cost of power.</p>
+<h3>7.3 The dev.to article: public positioning</h3>
+<p>An accompanying article, &ldquo;AI Doesn&rsquo;t Need Your Programming Language&rdquo; (published on <code>dev.to</code>), presents AllSpeak&rsquo;s argument to a developer audience. The article positions AllSpeak not as a replacement for mainstream languages but as a tool for the era of AI-generated code, where the primary human skill is review rather than authorship. It has served as the primary public-facing introduction to the project&rsquo;s philosophy.</p>
+<hr>
+<h2>8. Open Questions and Limitations</h2>
+<h3>8.1 Single-maintainer risk</h3>
+<p>AllSpeak&rsquo;s current development depends substantially on a single technical maintainer. This is a genuine vulnerability for any project seeking to position itself as community infrastructure. Mitigation strategies—contributor onboarding, documentation improvement, institutional partnership—are recognised priorities.</p>
+<h3>8.2 Language pack governance</h3>
+<p>As the number of language packs grows, governance questions arise:
+- Who has authority to accept or reject changes to a language pack?
+- How are disputes between contributors resolved?
+- What happens to a language pack whose community contributors become inactive?</p>
+<p>These questions do not have settled answers and will require governance structures proportionate to the project&rsquo;s scale. A lightweight model based on language pack maintainers (analogous to Debian&rsquo;s package maintainers or GNOME&rsquo;s translation teams) is the current working proposal.</p>
+<h3>8.3 Sustainability and succession</h3>
+<p>The long-term future of a project like this does not rest on funding alone. It rests on finding people who see the same problem and want to work on it. The author is an individual developer who has built AllSpeak privately over years and is now seeking the collaboration needed to take it further—or, if necessary, to see it adopted by someone able to carry it forward.</p>
+<p>Funding is relevant only insofar as it enables collaboration: covering the costs of validator time, server infrastructure, and—most importantly—making it possible for people in different places and different language communities to contribute without bearing the full cost themselves. Travel, coordination, and community building all have associated costs that a small grant (€20k–€50k) would meaningfully address.</p>
+<p>But the primary objective is not financial. It is to find the people—linguists, educators, developers, community organisers—who recognise the problem of linguistic exclusion in computational literacy and want to help solve it. The project is open source. Its codebase, its documentation, its methodology, and its full construction history (including the AI-assisted build transcripts preserved in the repository) are available for anyone to inspect, adopt, or extend. The author would prefer to remain involved but is prepared for the possibility that stewardship passes to others, so long as the project continues to serve its purpose.</p>
+<h3>8.4 The AI dependency</h3>
+<p>The translation methodology described here relies substantially on AI language model capabilities. This is a practical efficiency, but it introduces a dependency that should be acknowledged: the quality of AI-assisted translation varies by language, and is generally poorer for lower-resource languages—precisely those where AllSpeak&rsquo;s inclusion argument is strongest. Human review is not optional; it is the quality control mechanism that makes AI-assisted translation viable.</p>
+<h3>8.5 Evidence base</h3>
+<p>The working paper&rsquo;s claims about declining coding meetup attendance, shifting developer skill profiles, and growing code-review gaps are based on observable patterns and the author&rsquo;s professional experience rather than formal published research. A more rigorous evidence base—survey data, published studies, institutional reports—would strengthen the argument and is a recognised priority for future iterations.</p>
+<hr>
+<h2>9. Conclusion: An Invitation, Not a Pitch</h2>
+<p>AllSpeak represents one response to a set of questions that the computing community is only beginning to take seriously: what does computational literacy mean when AI writes the code? Who needs to understand that code, and in what language? What tools exist to support them?</p>
+<p>The project is at an early stage. Four languages are operational; three await validation by native speakers. A real business application is running on the runtime. The methodology for language onboarding is documented and replicable.</p>
+<p>But none of this will matter unless it reaches people who can use it. The author is not an organisation with a grants team and a marketing budget. He is an individual who has worked on this idea privately for a long time, leveraging AI to build something he could not have built alone, and is now putting it forward in the hope that others see its value.</p>
+<p>The invitation is straightforward. If you are:</p>
+<ul>
+<li><strong>A linguist</strong> who understands that programming languages are languages too, and that excluding the world&rsquo;s 6.5 billion non-English speakers from computational literacy is a solvable problem;</li>
+<li><strong>An educator</strong> who has watched learners bounce off the English keyword barrier and wishes there were another way;</li>
+<li><strong>A developer</strong> who senses that the era of AI-generated code is going to demand new kinds of reading and verification skills, and that the tools we have are not the tools we will need;</li>
+<li><strong>A funder or institution</strong> committed to digital inclusion and linguistic diversity, who sees in AllSpeak a concrete, working instrument rather than a proposal;</li>
+<li><strong>Anyone</strong> who simply thinks the world should not have to learn English to tell a computer what to do—</li>
+</ul>
+<p>Then this is your invitation to get involved.</p>
+<p>What does &ldquo;get involved&rdquo; mean? It could mean reviewing a language pack for a few hours. It could meanspending an afternoon working through the Codex to see if the pedagogical approach holds up. It could mean contributing code, filing issues, starting a conversation in your own language community, or—if the circumstances align—taking stewardship of the project in your own direction.</p>
+<p>AllSpeak is open source. Its full construction history—including the AI-assisted build transcripts that show every dead end, refactor, and decision along the way—is preserved in the repository. There is no hidden agenda, no commercial play, no organisation to join. There is only a working tool and an open question: can we make computational literacy available in every language, for everyone who needs it?</p>
+<p>If that question resonates, the repository is at <code>https://github.com/easycoder/allspeak.ai</code>. Correspondence can be directed to <code>info@allspeak.ai</code>. The rest is up to the people who choose to pick this up.</p>
+<hr>
+<h2>References</h2>
+<p>Ethnologue. (2025). <em>What is the most spoken language?</em> Ethnologue, 27th Edition. SIL International. https://www.ethnologue.com/</p>
+<p>Forrester Research. (2024). <em>The No-Code/Low-Code Market Will Reach $187 Billion By 2030</em>. Forrester Research, Inc.</p>
+<p>GitHub. (2025). <em>GitHub Copilot: Two years in, two million paid subscribers</em>. GitHub Blog. https://github.blog/news-insights/product-news/github-copilot-two-years/</p>
+<p>NLnet Foundation. (2025). <em>Request for Proposals: Digital Commons, Open Source, and Internet Technologies</em>. NLnet Foundation. https://nlnet.nl/</p>
+<p>Scratch Foundation. (2024). <em>Scratch in Education: Localization and International Impact</em>. MIT Media Lab. https://scratch.mit.edu/</p>
+<p>UNESCO. (2023). <em>International Fund for Cultural Diversity: Project Guidelines</em>. UNESCO. https://en.unesco.org/creativity/ifcd</p>
+<p>UNESCO. (2024). <em>AI and the Future of Learning: Policy Recommendations</em>. UNESCO Digital Library. https://unesdoc.unesco.org/</p>
+<p>Resnick, M. et al. (2009). <em>Scratch: Programming for All</em>. Communications of the ACM, 52(11), 60–67. https://doi.org/10.1145/1592761.1592779</p>
+<p>Solomon, C. (1986). <em>Computer Environments for Children: A Reflection on Theories of Learning and Education</em>. MIT Press. (Logo language and educational computing.)</p>
+<p>Stanford HAI. (2025). <em>The GPT Surprise: How AI Chat Tools Changed Engagement in a Large Coding Course</em>. Stanford Institute for Human-Centered AI. https://hai.stanford.edu/</p>
+<hr>
+<h2>Appendix: Technical Notes</h2>
+<h3>A.1 Complete opcode reference (127 opcodes)</h3>
+<p><strong>Flow control:</strong> <code>WHILE</code>, <code>IF</code>, <code>GOSUB</code>, <code>RETURN</code>, <code>STOP</code>, <code>EXIT</code>, <code>CONTINUE</code>, <code>FORK</code>, <code>WAIT</code>, <code>EVERY</code>, <code>TRY</code>, <code>END_TRY</code>, <code>ON_ERROR</code></p>
+<p><strong>Data manipulation:</strong> <code>PUT</code>, <code>APPEND</code>, <code>CLEAR</code>, <code>SET_DEFAULT</code>, <code>SET_BOOLEAN</code>, <code>SET_VAR_TYPE</code>, <code>SET_ARRAY</code>, <code>SET_ELEMENTS</code>, <code>INCREMENT</code>, <code>DECREMENT</code>, <code>ADD</code>, <code>SUBTRACT</code>, <code>MULTIPLY</code>, <code>DIVIDE</code>, <code>NEGATE</code>, <code>SORT</code>, <code>SPLIT</code>, <code>FILTER</code>, <code>CONVERT</code>, <code>ENCODE</code>, <code>DECODE</code>, <code>INDEX</code>, <code>POP</code>, <code>PUSH</code>, <code>REPLACE</code>, <code>TOGGLE</code>, <code>DELETE</code>, <code>TAKE</code></p>
+<p><strong>DOM interaction:</strong> <code>CREATE_ELEMENT</code>, <code>ATTACH_ELEMENT</code>, <code>REMOVE_ELEMENT</code>, <code>CLEAR_ELEMENT</code>, <code>SET_CONTENT</code>, <code>SET_CONTENT_VAR</code>, <code>SET_STYLE</code>, <code>SET_STYLES</code>, <code>SET_ATTRIBUTE</code>, <code>SET_ATTRIBUTES</code>, <code>REMOVE_ATTRIBUTE</code>, <code>SET_CLASS</code>, <code>SET_SIZE</code>, <code>SET_ID</code>, <code>SET_ELEMENT_VALUE</code>, <code>ENABLE_ELEMENT</code>, <code>DISABLE_ELEMENT</code>, <code>FOCUS_ELEMENT</code>, <code>FOCUS_ELEMENT</code>, <code>CLICK_ELEMENT</code>, <code>HIGHLIGHT_ELEMENT</code>, <code>SCROLL</code>, <code>RENDER</code>, <code>SET_TITLE</code>, <code>SET_BODY_STYLE</code>, <code>SET_HEAD_STYLE</code>, <code>SET_TEXT</code>, <code>GET_FORM</code>, <code>GET_OPTION</code></p>
+<p><strong>Event handling:</strong> <code>ON_CLICK</code>, <code>ON_CHANGE</code>, <code>ON_DRAG</code>, <code>ON_DROP</code>, <code>ON_KEY</code>, <code>ON_LEAVE</code>, <code>ON_PICK</code>, <code>ON_RESUME</code>, <code>ON_SWIPE</code>, <code>ON_CLICK_DOCUMENT</code>, <code>ON_WINDOW_RESIZE</code>, <code>ON_CLOSE</code>, <code>ON_BROWSER_BACK</code>, <code>ON_MESSAGE</code>, <code>ON_CALLBACK</code></p>
+<p><strong>HTTP/API:</strong> <code>REST_GET</code>, <code>REST_POST</code>, <code>REST_PATH</code>, <code>SET_PAYLOAD</code>, <code>SET_ENCODING</code>, <code>PARAM</code>, <code>IMPORT</code>, <code>UPLOAD_FILE</code></p>
+<p><strong>JSON:</strong> <code>JSON_PARSE</code>, <code>JSON_FORMAT</code>, <code>JSON_SET_LIST</code>, <code>JSON_SET_VAR</code>, <code>JSON_ADD</code>, <code>JSON_DELETE</code>, <code>JSON_REPLACE</code>, <code>JSON_RENAME</code>, <code>JSON_SORT</code>, <code>JSON_SHUFFLE</code>, <code>JSON_SPLIT</code></p>
+<p><strong>MQTT messaging:</strong> <code>MQTT_CONNECT</code>, <code>MQTT_DISCONNECT</code>, <code>MQTT_SUBSCRIBE</code>, <code>MQTT_SEND</code>, <code>MQTT_ON_CONNECT</code>, <code>MQTT_ON_MESSAGE</code>, <code>MQTT_TOPIC_INIT</code></p>
+<p><strong>Storage:</strong> <code>GET_STORAGE</code>, <code>PUT_STORAGE</code>, <code>REMOVE_STORAGE</code>, <code>LIST_STORAGE</code></p>
+<p><strong>History/navigation:</strong> <code>HISTORY_BACK</code>, <code>HISTORY_FORWARD</code>, <code>HISTORY_PUSH</code>, <code>HISTORY_REPLACE</code>, <code>HISTORY_SET</code>, <code>NAVIGATE</code></p>
+<p><strong>Debugging:</strong> <code>DEBUG_PROGRAM</code>, <code>DEBUG_STEP</code>, <code>DEBUG_STOP</code>, <code>DEBUG_SYMBOL</code>, <code>DEBUG_SYMBOLS</code>, <code>TRACE_RUN</code>, <code>TRACE_SETUP</code>, <code>SET_TRACER_ROWS</code></p>
+<p><strong>Module system:</strong> <code>DECLARE_MODULE</code>, <code>RUN_MODULE</code>, <code>CLOSE_MODULE</code>, <code>DECLARE_ALIAS</code>, <code>DECLARE_CALLBACK</code>, <code>DECLARE_SYMBOL</code>, <code>DECLARE_VARIABLE</code>, <code>DECLARE_ELEMENT</code>, <code>IMPORT</code></p>
+<p><strong>Media:</strong> <code>PLAY_AUDIO</code>, <code>FULLSCREEN</code></p>
+<p><strong>UI elements:</strong> <code>GET_FORM</code>, <code>GET_OPTION</code>, <code>SET_SELECT</code>, <code>SET_DEFAULT</code>, <code>SANITIZE</code></p>
+<p><strong>Utility:</strong> <code>LOG</code>, <code>ALERT</code>, <code>CONFIRM</code>, <code>PRINT</code>, <code>MAIL</code>, <code>COPY_TO_CLIPBOARD</code>, <code>DUMMY</code></p>
+<p><strong>Other:</strong> <code>SEND_MESSAGE</code>, <code>SET_READY</code>, <code>SET_PROPERTY</code>, <code>SET_ARG</code>, <code>SET_PAYLOAD</code>, <code>GET_ARG</code>, <code>REQUIRE</code></p>
+<h3>A.2 Language pack structure specification</h3>
+<p>A language pack file is a JavaScript file defining a single global variable <code>AllSpeak_LanguagePack_&lt;code&gt;</code> containing an object with the following top-level keys:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;meta&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fr&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Français&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.1.0&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;opcodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ADD&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;keyword&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ajouter&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;patterns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;ajouter {valeur} à {variable}&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="err">...</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;connectors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;à&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;into&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dans&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;literals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;true&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;vrai&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;false&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;faux&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;timeUnits&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;second&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;seconde|secondes&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;conditions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;is&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;est&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;greater&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plus grand|supérieur&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;diagnostics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;undeclaredVariable&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Variable non déclarée &#39;{name}&#39;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="err">...</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;words&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;giving&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;donnant&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;add&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ajouter&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="err">...</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The <code>words</code> section maps every canonical term to one or more surface forms, separated by <code>|</code>. Multiple variants support gender agreement, verb conjugation, and orthographic variation (e.g., accented/unaccented forms).</p>
+<h3>A.3 Cross-referencing: mapping opcodes to source files</h3>
+<table>
+<thead>
+<tr>
+<th>Opcode domain</th>
+<th>Handler file</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Core operations</td>
+<td><code>js/allspeak/Core.js</code></td>
+<td>ADD, PUT, WHILE, IF, GOSUB</td>
+</tr>
+<tr>
+<td>DOM/browser</td>
+<td><code>js/allspeak/Browser.js</code></td>
+<td>CREATE_ELEMENT, ON_CLICK, SET_STYLE</td>
+</tr>
+<tr>
+<td>HTTP/REST</td>
+<td><code>js/allspeak/REST.js</code></td>
+<td>REST_GET, REST_POST, REST_PATH</td>
+</tr>
+<tr>
+<td>JSON manipulation</td>
+<td><code>js/allspeak/JSON.js</code></td>
+<td>JSON_PARSE, JSON_SORT, JSON_ADD</td>
+</tr>
+<tr>
+<td>MQTT messaging</td>
+<td><code>js/allspeak/MQTT.js</code></td>
+<td>MQTT_CONNECT, MQTT_SEND</td>
+</tr>
+<tr>
+<td>Conditions</td>
+<td><code>js/allspeak/Condition.js</code></td>
+<td>Condition resolution for IF/WHILE</td>
+</tr>
+<tr>
+<td>Values</td>
+<td><code>js/allspeak/Value.js</code></td>
+<td>Value resolution and type conversion</td>
+</tr>
+<tr>
+<td>Runtime execution</td>
+<td><code>js/allspeak/Run.js</code></td>
+<td>Opcode execution, variable management</td>
+</tr>
+<tr>
+<td>Compilation</td>
+<td><code>js/allspeak/Compile.js</code></td>
+<td>Tokenisation, language directive, handler dispatch</td>
+</tr>
+<tr>
+<td>Language layer</td>
+<td><code>js/allspeak/Language.js</code></td>
+<td>Word resolution, diagnostics lookup</td>
+</tr>
+</tbody>
+</table>
+<h3>A.4 Weblate workflow</h3>
+<ol>
+<li>A new language is requested or proposed via the project repository</li>
+<li>A component is created in the Weblate instance for the language</li>
+<li>The reference English pack is loaded as the source</li>
+<li>AI-assisted initial translation is imported as the starting draft</li>
+<li>Community reviewers propose, discuss, and approve changes</li>
+<li>When the translation reaches the defined quality threshold, a pull request is created against the main repository</li>
+<li>The language pack is merged, built, and released</li>
+</ol>
+<hr>
+<p><em>This working paper is a living document. The latest version is maintained at <code>docs/whitepaper.md</code> in the AllSpeak repository. For citation purposes, please reference the versioned PDF available via the project&rsquo;s Codeberg repository.</em></p>
+</body>
+</html>

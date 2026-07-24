@@ -642,16 +642,26 @@ class Core(Handler):
         return self.nextPC()
 
     # Fork to a label
-    # fork [to] {label}
+    # fork [to] {label} | fork [to] label <expr>
     def k_fork(self, command):
         self.skipWord('to')  # Optional 'to' (core-reserved keyword, plugin-safe)
-        command['fork'] = self.nextToken()
+        # Computed fork: fork [to] label <expr>
+        if self.peek() and language.matches_word(self.peek(), 'label'):
+            self.nextToken()  # advance past 'go'/'to' to 'label'
+            self.nextToken()  # advance past 'label' to expression
+            command['forkExpr'] = self.getValue()
+            self.nextToken()  # advance past the expression
+        else:
+            command['fork'] = self.nextToken()
         self.add(command)
         return True
 
     def r_fork(self, command):
         next = self.nextPC()
-        label = command['fork']
+        if 'forkExpr' in command:
+            label = str(self.textify(command['forkExpr']))
+        else:
+            label = command['fork']
         try:
             label = self.symbols[label + ':']
         except:
@@ -714,19 +724,38 @@ class Core(Handler):
         return self.nextPC()
 
     # Go to a label
-    # go [to] {label}
+    # go [to] {label} | go [to] label <expr>
     def k_go(self, command):
         self.skipWord('to')  # Optional 'to' (core-reserved keyword, plugin-safe)
-        return self.k_goto(command)
+        # Computed goto: go [to] label <expr>
+        if self.peek() and language.matches_word(self.peek(), 'label'):
+            self.nextToken()  # advance past 'go'/'to' to 'label'
+            self.nextToken()  # advance past 'label' to expression
+            command['keyword'] = 'goto'
+            command['gotoExpr'] = self.getValue()
+            self.nextToken()  # advance past the expression
+            self.add(command)
+            return True
+        return self.k_goto(command)    
 
     def k_goto(self, command):
         command['keyword'] = 'goto'
-        command['goto'] = self.nextToken()
+        if self.peek() and language.matches_word(self.peek(), 'label'):
+            self.nextToken()  # advance past 'goto' to 'label'
+            self.nextToken()  # advance past 'label' to expression
+            command['gotoExpr'] = self.getValue()
+            self.nextToken()  # advance past the expression
+        else:
+            command['goto'] = self.nextToken()
         self.add(command)
         return True
 
     def r_goto(self, command):
-        label = f'{command["goto"]}:'
+        if 'gotoExpr' in command:
+            label = str(self.textify(command['gotoExpr']))
+        else:
+            label = command['goto']
+        label = f'{label}:'
         try:
             if self.symbols[label]:
                 return self.symbols[label]
@@ -739,11 +768,18 @@ class Core(Handler):
         return command['goto']
 
     # Call a subroutine
-    # gosub [to] {label}
+    # gosub [to] {label} | gosub [to] label <expr>
     # gosub [to] {label} with {value1} [and {value2} ...]
     def k_gosub(self, command):
         self.skipWord('to')  # Optional 'to' (core-reserved keyword, plugin-safe)
-        command['gosub'] = self.nextToken()
+        # Computed gosub: gosub [to] label <expr>
+        if self.peek() and language.matches_word(self.peek(), 'label'):
+            self.nextToken()  # advance past 'go'/'to' to 'label'
+            self.nextToken()  # advance past 'label' to expression
+            command['gosubExpr'] = self.getValue()
+            # Don't advance here — the 'with' check below uses peek()
+        else:
+            command['gosub'] = self.nextToken()
         # Parse optional with-args
         if language.reverse_word(self.peek()) == 'with':
             self.nextToken()
@@ -762,7 +798,10 @@ class Core(Handler):
         return True
 
     def r_gosub(self, command):
-        label = command['gosub'] + ':'
+        if 'gosubExpr' in command:
+            label = str(self.textify(command['gosubExpr'])) + ':'
+        else:
+            label = command['gosub'] + ':'
         if label in self.symbols:
             if 'args' in command:
                 # Evaluate and push args as a new frame
