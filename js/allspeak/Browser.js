@@ -2013,11 +2013,32 @@ const AllSpeak_Browser = {
 				});
 				return true;
 			}
+			if (compiler.isWord(`into`)) {
+				if (compiler.nextIsWord(`view`)) {
+					compiler.next();
+					compiler.addCommand({
+						domain: `browser`,
+						keyword: `scroll`,
+						lino,
+						name,
+						type: `intoView`
+					});
+					return true;
+				}
+			}
 			return false;
 		},
 
 		run: (program) => {
 			const command = program[program.pc];
+			if (command.type === `intoView`) {
+				// Bring a named element into view inside its scrollable ancestor
+				// (e.g. reveal the current block's row in the Blocks TOC).
+				const symbolRecord = program.getSymbolRecord(command.name);
+				const element = symbolRecord.element[symbolRecord.index];
+				element.scrollIntoView({ block: `nearest`, behavior: `smooth` });
+				return command.pc + 1;
+			}
 			const to = program.getValue(command.to);
 			if (command.name) {
 				const symbolRecord = program.getSymbolRecord(command.name);

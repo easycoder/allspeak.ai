@@ -912,7 +912,7 @@ ScoreWithCode:
 !!!
 !! Blocks view.
 !! ToggleBlocks switches between flat and Blocks panes.
-!! EnterBlocks parses the current source and opens the block containing the flat editor's cursor line, so the pane lands where you were working.
+!! EnterBlocks parses the current source, opens the block containing the flat editor's cursor line (so the pane lands where you were working), and scrolls the TOC to that block.
 !! ExitBlocks flushes pending edits, reveals the flat pane again, and scrolls it to the start of the block just viewed; the work is in DoExitBlocks so ShowBrowser can call it as a subroutine before opening a tab.
 !! RenderBlock paints the textareas and the toolbar badge for the current section.
 !! UpdateBadge derives badge text/colour from the section's hash and verify states.
@@ -956,6 +956,9 @@ EnterBlocks:
     if StoredWidth is greater than 100
         set style `flex` of BlocksCodePane to `0 0 ` cat StoredWidth cat `px`
     gosub to RenderToc
+    ! Reveal the current block's row in the TOC sidebar.
+    index TocRow to CurBlock
+    scroll TocRow into view
     gosub to RenderBlock
     stop
 
@@ -1045,7 +1048,7 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash 1f600f90
+!! @hash 654c6d02
 !! @verified b94f2261
 !!!
 !! Blocks save.
@@ -1211,7 +1214,7 @@ MarkAllVerified:
 !! sidebar, highlighting the current block. Each row's label is the
 !! first prose line of its section, truncated. Clicking a row flushes
 !! any pending edit and jumps to that block.
-!! Rows are shaded dark by verification state — green = verified, brown = stale, grey = unverified — so the blue current row stands out at a glance.
+!! Rows are shaded dark by verification state — green = verified, amber = stale, grey = unverified — so the blue current row stands out at a glance.
 RenderToc:
     set the content of BlocksToc to ``
     set the elements of TocRow to SecCount
@@ -1228,7 +1231,7 @@ RenderToc:
             index SecVerifyState to J
             put SecVerifyState into VerifyState
             if VerifyState is `verified-fresh` put Tmp cat `;background:#1b5e20` into Tmp
-            else if VerifyState is `verified-stale` put Tmp cat `;background:#5d4037` into Tmp
+            else if VerifyState is `verified-stale` put Tmp cat `;background:#a26d18` into Tmp
             else put Tmp cat `;background:#3f3f3f` into Tmp
         end
         set the style of TocRow to Tmp
@@ -1255,5 +1258,5 @@ JumpToBlock:
     put Tmp into CurBlock
     gosub to RenderBlock
     stop
-!! @hash de3b41a0
+!! @hash 426884b9
 !!!
