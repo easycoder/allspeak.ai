@@ -1130,6 +1130,7 @@ var AllSpeak_LanguagePack_fr = {
     "width": "largeur",
     "height": "hauteur",
     "scroll": "défile|defile",
+    "cursor": "curseur",
     "parent": "parent",
     "history": "historique",
     "pick": "choisi",

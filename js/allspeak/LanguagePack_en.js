@@ -1199,6 +1199,7 @@ var AllSpeak_LanguagePack_en = {
     "width": "width",
     "height": "height",
     "scroll": "scroll",
+    "cursor": "cursor",
     "parent": "parent",
     "history": "history",
     "pick": "pick",

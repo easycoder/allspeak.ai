@@ -909,8 +909,8 @@ ScoreWithCode:
 !!!
 !! Blocks view.
 !! ToggleBlocks switches between flat and Blocks panes.
-!! EnterBlocks parses the current source and shows block 0.
-!! ExitBlocks flushes pending edits and reveals the flat pane again; the work is in DoExitBlocks so ShowBrowser can call it as a subroutine before opening a tab.
+!! EnterBlocks parses the current source and opens the block containing the flat editor's cursor line, so the pane lands where you were working.
+!! ExitBlocks flushes pending edits, reveals the flat pane again, and scrolls it to the start of the block just viewed; the work is in DoExitBlocks so ShowBrowser can call it as a subroutine before opening a tab.
 !! RenderBlock paints the textareas and the toolbar badge for the current section.
 !! UpdateBadge derives badge text/colour from the section's hash and verify states.
 ToggleBlocks:
@@ -926,7 +926,20 @@ EnterBlocks:
         fork to ClearStatus
         stop
     end
+    ! Open the block containing the flat editor's cursor: the last section
+    ! whose opener line is at or above the cursor's line, so a cursor in the
+    ! gap between two blocks lands on the block above. Falls back to block 0
+    ! when the cursor is above the first section.
+    codemirror get cursor of ContentEditor into Tmp
+    add 1 to Tmp
     put 0 into CurBlock
+    put 0 into I
+    while I is less than SecCount
+    begin
+        index SecStart to I
+        if SecStart is not greater than Tmp put I into CurBlock
+        add 1 to I
+    end
     put 1 into BlocksMode
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `flex`
@@ -949,9 +962,26 @@ ExitBlocks:
 !   Exit Blocks mode (callable as a subroutine -- e.g. from ShowBrowser)
 DoExitBlocks:
     gosub to FlushBlock
+    ! Re-parse so SecStart reflects any line shifts from the flush rebuild.
+    gosub to ParseSource
     put 0 into BlocksMode
     set style `display` of BlocksArea to `none`
     set style `display` of EditorArea to `block`
+    ! Scroll the flat editor so the start of the block just viewed is visible.
+    if SecCount is greater than 0
+    begin
+        ! Guard against a stale CurBlock (e.g. tab switched while in Blocks mode).
+        if CurBlock is not less than SecCount
+        begin
+            put SecCount into Tmp
+            take 1 from Tmp
+            put Tmp into CurBlock
+        end
+        index SecStart to CurBlock
+        put SecStart into Tmp
+        take 1 from Tmp
+        codemirror scroll to line Tmp in ContentEditor
+    end
     return
 
 NextBlock:
@@ -1008,7 +1038,7 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash e2a65195
+!! @hash dfa5de37
 !! @verified b94f2261
 !!!
 !! Blocks save.

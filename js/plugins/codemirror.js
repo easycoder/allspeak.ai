@@ -118,6 +118,54 @@ const AllSpeak_CodeMirror = {
 						}
 					}
 				}
+				// The failed nextIsWord above leaves the index on `cursor` —
+				// check it without advancing, then continue as before.
+				if (compiler.isWord(`cursor`)) {
+					if (compiler.nextIsWord(`of`)) {
+						if (compiler.nextIsSymbol()) {
+							const editor = compiler.getSymbolRecord();
+							if (compiler.nextIsWord(`into`)) {
+								if (compiler.nextIsSymbol()) {
+									const target = compiler.getSymbolRecord();
+									compiler.next();
+									compiler.addCommand({
+										domain: `codemirror`,
+										keyword: `codemirror`,
+										lino,
+										action: `getCursor`,
+										editor: editor.name,
+										target: target.name
+									});
+									return true;
+								}
+							}
+						}
+					}
+				}
+				return false;
+			case `scroll`:
+				if (compiler.nextIsWord(`to`)) {
+					if (compiler.nextIsWord(`line`)) {
+						const line = compiler.getNextValue();
+						// Value compilation consumes the expression, so `in`
+						// sits at the current index — check without advancing.
+						if (compiler.isWord(`in`)) {
+							if (compiler.nextIsSymbol()) {
+								const editor = compiler.getSymbolRecord();
+								compiler.next();
+								compiler.addCommand({
+									domain: `codemirror`,
+									keyword: `codemirror`,
+									lino,
+									action: `scrollToLine`,
+									editor: editor.name,
+									line
+								});
+								return true;
+							}
+						}
+					}
+				}
 				return false;
 			default:
 				throw new Error(`Unrecognized action '${action}'`);
@@ -184,6 +232,26 @@ const AllSpeak_CodeMirror = {
 					content
 				};
 				targetRecord.used = true;
+				break;
+			case `getCursor`:
+				editor = program.getSymbolRecord(command.editor);
+				const cursorPos = editor.editor.getCursor();
+				const cursorTarget = program.getSymbolRecord(command.target);
+				cursorTarget.value[cursorTarget.index] = {
+					type: `constant`,
+					numeric: true,
+					content: cursorPos.line
+				};
+				cursorTarget.used = true;
+				break;
+			case `scrollToLine`:
+				editor = program.getSymbolRecord(command.editor);
+				const scrollLine = program.getValue(command.line);
+				// The editor may have been hidden since its last measure (e.g.
+				// Blocks mode) — refresh so the coordinates are current.
+				editor.editor.refresh();
+				const lineTop = editor.editor.charCoords({ line: scrollLine, ch: 0 }, `local`).top;
+				editor.editor.scrollTo(null, Math.max(lineTop - 20, 0));
 				break;
 			}
 			return command.pc + 1;

@@ -1127,6 +1127,7 @@ var AllSpeak_LanguagePack_de = {
     "width": "breite",
     "height": "höhe|hoehe",
     "scroll": "scrolle",
+    "cursor": "cursor",
     "parent": "elternteil",
     "history": "verlauf",
     "pick": "wähle|waehle",
