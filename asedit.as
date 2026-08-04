@@ -29,6 +29,7 @@
     button BlocksPrev
     button BlocksNext
     button BlocksVerify
+    button BlocksVerifyAll
     button CloseBtn
     img PlusBtn
     img TabClose
@@ -135,7 +136,7 @@
     variable FirstLine     ! first prose line of a block (for TOC label)
     variable NL
     variable J
-!! @hash 74f1e5a5
+!! @hash 04ce5b0b
 !! @verified 82dc7ca8
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -167,11 +168,12 @@
     attach BlocksNext to `se-blocks-next`
     attach BlocksBadge to `se-blocks-badge`
     attach BlocksVerify to `se-blocks-verify`
+    attach BlocksVerifyAll to `se-blocks-verify-all`
     attach BlocksCodePane to `se-blocks-code`
     attach BlocksDocPane to `se-blocks-doc`
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
-!! @hash 21eabec3
+!! @hash e1a4268e
 !! @verified 9fa497ac
 !!!
 !! Some general initialisation
@@ -314,6 +316,7 @@ VersionDone:
     on click BlocksPrev go to PrevBlock
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
+    on click BlocksVerifyAll go to MarkAllVerified
 
     on pick BlocksDivider
     begin
@@ -339,7 +342,7 @@ VersionDone:
 
     put 0 into BlocksMode
     put 0 into BlockDirty
-!! @hash ef9f0fc0
+!! @hash 562a8033
 !! @verified d4e6253f
 !!!
 !! While editor is running it periodically saves changes made by the user
@@ -1141,6 +1144,9 @@ BuildSectionText:
 !! Mark verified — writes the current code's hash into the section's
 !! "@verified" slot, then flushes so the file picks it up. The badge turns
 !! green on the next render.
+!! MarkAllVerified does the same for every code-bearing section in one pass.
+!! It is a bulk, self-attestation action, so it asks for confirmation first —
+!! a single misclick would otherwise wipe the file's granular verification record.
 MarkVerified:
     if BlocksMode is 0 stop
     gosub to FlushBlock      ! ensure SecHash reflects current code first
@@ -1158,7 +1164,47 @@ MarkVerified:
     set the content of StatusSpan to `Marked verified`
     fork to ClearStatus
     stop
-!! @hash f2067b60
+
+MarkAllVerified:
+    if BlocksMode is 0 stop
+    gosub to FlushBlock      ! ensure the current block's hash is current too
+    ! Count the code-bearing sections; only those can carry a @verified mark.
+    put 0 into N
+    put 0 into I
+    while I is less than SecCount
+    begin
+        index SecHash to I
+        if SecHash is not empty add 1 to N
+        add 1 to I
+    end
+    if N is 0 stop
+    if N is 1 put `Mark 1 block as verified?` into Tmp
+    else put `Mark all ` cat N cat ` blocks as verified?` into Tmp
+    if confirm Tmp
+    begin
+        put 0 into I
+        while I is less than SecCount
+        begin
+            index SecHash to I
+            if SecHash is not empty
+            begin
+                index SecVerified to I
+                put SecHash into SecVerified
+                index SecVerifyState to I
+                put `verified-fresh` into SecVerifyState
+            end
+            add 1 to I
+        end
+        gosub to RebuildSource
+        codemirror set content of ContentEditor to Source
+        gosub to RenderBlock
+        if N is 1 put `Marked 1 block verified` into Tmp
+        else put `Marked ` cat N cat ` blocks verified` into Tmp
+        set the content of StatusSpan to Tmp
+        fork to ClearStatus
+    end
+    stop
+!! @hash b0f5bf9f
 !! @verified f2067b60
 !!!
 !! Blocks TOC. Renders one row per parsed section in the BlocksToc

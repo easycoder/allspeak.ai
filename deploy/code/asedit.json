@@ -134,6 +134,13 @@
     "padding": "2px 10px",
     "cursor": "pointer"
   },
+  "$BlocksVerifyAllBtn": {
+    "#element": "button",
+    "@id": "se-blocks-verify-all",
+    "#content": "Mark all verified",
+    "padding": "2px 10px",
+    "cursor": "pointer"
+  },
   "$BlocksToolbar": {
     "#element": "div",
     "@id": "se-blocks-toolbar",
@@ -145,7 +152,7 @@
     "color": "#ddd",
     "font-size": "0.9em",
     "flex-shrink": "0",
-    "#": ["$BlocksTitle", "$BlocksPrev", "$BlocksNext", "$BlocksBadge", "$BlocksVerifyBtn"]
+    "#": ["$BlocksTitle", "$BlocksPrev", "$BlocksNext", "$BlocksBadge", "$BlocksVerifyBtn", "$BlocksVerifyAllBtn"]
   },
   "$BlocksToc": {
     "#element": "div",
