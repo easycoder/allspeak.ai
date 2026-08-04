@@ -3077,17 +3077,11 @@ const AllSpeak_Core = {
 					};
 				case `variable`:
 					const nextTok = compiler.nextToken();
-					let type = AllSpeak_Language.reverseWord(nextTok);
-					if (AllSpeak_Language.matchesWord(nextTok, `modulo`)) {
-						type = `modulo`;
-					} else if (AllSpeak_Language.matchesWord(nextTok, `format`)) {
-						type = `format`;
-					}
-					if ([`format`, `modulo`].includes(type)) {
+					if (AllSpeak_Language.matchesWord(nextTok, `format`)) {
 						const value = compiler.getNextValue();
 						return {
 							domain: `core`,
-							type,
+							type: `format`,
 							name,
 							value
 						};
@@ -3662,14 +3656,6 @@ const AllSpeak_Core = {
 					type: `constant`,
 					numeric: false,
 					content: program.getSymbolRecord(value.callback).payload
-				};
-			case `modulo`:
-				const symbolRecord = program.getSymbolRecord(value.name);
-				const modval = program.evaluate(value.value);
-				return {
-					type: `constant`,
-					numeric: true,
-					content: symbolRecord.value[symbolRecord.index].content % modval.content
 				};
 			case `format`:
 				const fmtRecord = program.getSymbolRecord(value.name);

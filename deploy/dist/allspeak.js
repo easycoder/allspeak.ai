@@ -3077,17 +3077,11 @@ const AllSpeak_Core = {
 					};
 				case `variable`:
 					const nextTok = compiler.nextToken();
-					let type = AllSpeak_Language.reverseWord(nextTok);
-					if (AllSpeak_Language.matchesWord(nextTok, `modulo`)) {
-						type = `modulo`;
-					} else if (AllSpeak_Language.matchesWord(nextTok, `format`)) {
-						type = `format`;
-					}
-					if ([`format`, `modulo`].includes(type)) {
+					if (AllSpeak_Language.matchesWord(nextTok, `format`)) {
 						const value = compiler.getNextValue();
 						return {
 							domain: `core`,
-							type,
+							type: `format`,
 							name,
 							value
 						};
@@ -3662,14 +3656,6 @@ const AllSpeak_Core = {
 					type: `constant`,
 					numeric: false,
 					content: program.getSymbolRecord(value.callback).payload
-				};
-			case `modulo`:
-				const symbolRecord = program.getSymbolRecord(value.name);
-				const modval = program.evaluate(value.value);
-				return {
-					type: `constant`,
-					numeric: true,
-					content: symbolRecord.value[symbolRecord.index].content % modval.content
 				};
 			case `format`:
 				const fmtRecord = program.getSymbolRecord(value.name);
@@ -7595,6 +7581,15 @@ const AllSpeak_Browser = {
 								};
 							}
 						}
+					} else if (arg === `text`) {
+						// Bare `the selected text` (no element): the active
+						// element's selection, falling back to the document selection.
+						return {
+							domain: `browser`,
+							type: `selected`,
+							symbol: null,
+							arg: `text`
+						};
 					}
 				}
 				break;
@@ -7949,6 +7944,21 @@ const AllSpeak_Browser = {
 					content
 				};
 			case `selected`:
+				if (!value.symbol) {
+					// Bare `the selected text`: the active editable's selection,
+					// falling back to the document selection.
+					const activeEl = document.activeElement;
+					if (activeEl && (activeEl.tagName === `TEXTAREA` || activeEl.tagName === `INPUT`)) {
+						content = activeEl.value.substring(activeEl.selectionStart, activeEl.selectionEnd);
+					} else {
+						content = window.getSelection ? window.getSelection().toString() : ``;
+					}
+					return {
+						type: `constant`,
+						numeric: false,
+						content
+					};
+				}
 				symbolRecord = program.getSymbolRecord(value.symbol);
 				target = symbolRecord.element[symbolRecord.index];
 				// textarea/input: return the highlighted substring
@@ -11236,6 +11246,21 @@ const AllSpeak_Value = {
 			return value;
 		}
 
+		// Binary modulo: <value> modulo <value> (left operand may be any value)
+		if (compiler.isWord(`modulo`)) {
+			compiler.next();
+			const divisor = AllSpeak_Value.getItem(compiler);
+			if (!divisor) {
+				throw new Error(`Undefined value: '${token}'`);
+			}
+			return {
+				type: `modulo`,
+				numeric: true,
+				left: item,
+				right: divisor
+			};
+		}
+
 		return item;
 	},
 
@@ -11285,6 +11310,14 @@ const AllSpeak_Value = {
 					let value = AllSpeak_Value.doValue(program, part);
 					return acc + (value ? value.content : ``);
 				}, ``)
+			};
+		case `modulo`:
+			const moduloLeft = AllSpeak_Value.doValue(program, value.left);
+			const moduloRight = AllSpeak_Value.doValue(program, value.right);
+			return {
+				type: `constant`,
+				numeric: true,
+				content: moduloLeft ? moduloLeft.content % moduloRight.content : 0
 			};
 		case `boolean`:
 		case `constant`:

@@ -3217,6 +3217,15 @@ const AllSpeak_Browser = {
 								};
 							}
 						}
+					} else if (arg === `text`) {
+						// Bare `the selected text` (no element): the active
+						// element's selection, falling back to the document selection.
+						return {
+							domain: `browser`,
+							type: `selected`,
+							symbol: null,
+							arg: `text`
+						};
 					}
 				}
 				break;
@@ -3571,6 +3580,21 @@ const AllSpeak_Browser = {
 					content
 				};
 			case `selected`:
+				if (!value.symbol) {
+					// Bare `the selected text`: the active editable's selection,
+					// falling back to the document selection.
+					const activeEl = document.activeElement;
+					if (activeEl && (activeEl.tagName === `TEXTAREA` || activeEl.tagName === `INPUT`)) {
+						content = activeEl.value.substring(activeEl.selectionStart, activeEl.selectionEnd);
+					} else {
+						content = window.getSelection ? window.getSelection().toString() : ``;
+					}
+					return {
+						type: `constant`,
+						numeric: false,
+						content
+					};
+				}
 				symbolRecord = program.getSymbolRecord(value.symbol);
 				target = symbolRecord.element[symbolRecord.index];
 				// textarea/input: return the highlighted substring

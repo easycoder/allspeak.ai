@@ -70,6 +70,20 @@ put property `color` of X into V            ! read back a property
 
 `set the style of X` is bulk inline CSS; `set style \`name\` of X` writes a single CSS property. `set attribute \`name\` of X` writes an HTML attribute on the live DOM element by calling `element.setAttribute(name, value)`.
 
+### Reading the selection
+
+`the selected text of <element>` returns the highlighted substring of a textarea or input (empty when nothing is selected). For a `<select>`, `the selected index of <element>` gives the chosen option's position and `the selected item of <element>` its text.
+
+Bare `the selected text` (no element) returns whatever is selected in the **focused** editable element, falling back to the document selection — useful for toolbar actions that operate on the current selection without knowing which field it lives in:
+
+```as
+put the selected text of Notes into V    ! highlighted part of the textarea
+put the selected text into V             ! active element's selection
+set the selection of Notes from 6 to 11  ! highlight characters 6..11 and focus the field
+```
+
+`set the selection of <textarea/input> from <start> to <end>` sets the highlight programmatically (0-based character offsets) and focuses the element.
+
 ### `set attribute` vs `set property` — they are not the same
 
 This trap bites AI agents reliably and humans occasionally:

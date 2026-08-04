@@ -718,8 +718,7 @@ DoFind:
 FindInBlocks:
     ! Blocks-mode find: walk the sections after the current one (wrapping)
     ! for the term selected in either pane and jump to the first hit.
-    put the selected text of BlocksCodePane into SearchTerm
-    if SearchTerm is empty put the selected text of BlocksDocPane into SearchTerm
+    put the selected text into SearchTerm
     if SearchTerm is empty
     begin
         set the content of StatusSpan to `Select text in a pane to search blocks`
@@ -730,7 +729,7 @@ FindInBlocks:
     add 1 to I
     while I is not CurBlock
     begin
-        if I is not less than SecCount put 0 into I
+        put I modulo SecCount into I
         if I is CurBlock go to FindNotFound
         gosub to BlockContains
         if Found is 1 go to FindMatch
@@ -803,7 +802,7 @@ ClearStatus:
     wait 3 seconds
     set the content of StatusSpan to ``
     stop
-!! @hash 528675bb
+!! @hash 74b13222
 !! @verified df75e3d8
 !!!
 !! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.

@@ -6,7 +6,7 @@ AllSpeak's arithmetic is **integer-first**. There are no floating-point literals
 
 All arithmetic is keyword-driven — there are no infix operators like `+`, `-`, `*`, `/`.
 
-Binary:
+Binary (statement-level):
 
 ```
 add A to B
@@ -18,6 +18,8 @@ multiply A by B giving C
 divide A by B
 divide A by B giving C
 ```
+
+`modulo` is a different kind of animal: a **value-level** binary operator rather than a statement — see [the remainder section](#remainder) below.
 
 Unary:
 
@@ -79,13 +81,16 @@ divide 10 by 3         ! 3
 divide -10 by 3        ! -3
 ```
 
-For remainder, use `modulo`:
+For remainder, use `modulo` — a true binary operator usable wherever a value is expected (not a statement like `add`/`divide`):
 
 ```as
 put 10 modulo 3 into R    ! R = 1
+put 17 modulo 5 into N    ! the left operand may be any value
+if Score modulo 2 is 0 ...    ! works in conditions too
+put I modulo Max into I   ! classic cyclic wrap: 0..Max-1, then back to 0
 ```
 
-`modulo` works with the `put … into` / `set … to` syntax.
+The left operand may be a constant, a variable, or any value expression; both operands are evaluated and the result is the integer remainder. `modulo` is a handy wrap-around tool for cycling an index through a fixed range.
 
 ## Time components
 
