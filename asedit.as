@@ -1211,6 +1211,7 @@ MarkAllVerified:
 !! sidebar, highlighting the current block. Each row's label is the
 !! first prose line of its section, truncated. Clicking a row flushes
 !! any pending edit and jumps to that block.
+!! Rows are shaded dark by verification state — green = verified, brown = stale, grey = unverified — so the blue current row stands out at a glance.
 RenderToc:
     set the content of BlocksToc to ``
     set the elements of TocRow to SecCount
@@ -1220,8 +1221,17 @@ RenderToc:
     begin
         index TocRow to J
         create TocRow in BlocksToc
-        if J is CurBlock set the style of TocRow to `padding:4px 10px;cursor:pointer;background:#1e88e5;color:white`
-        else set the style of TocRow to `padding:4px 10px;cursor:pointer`
+        put `padding:4px 10px;cursor:pointer` into Tmp
+        if J is CurBlock put Tmp cat `;background:#1e88e5;color:white` into Tmp
+        else
+        begin
+            index SecVerifyState to J
+            put SecVerifyState into VerifyState
+            if VerifyState is `verified-fresh` put Tmp cat `;background:#1b5e20` into Tmp
+            else if VerifyState is `verified-stale` put Tmp cat `;background:#5d4037` into Tmp
+            else put Tmp cat `;background:#3f3f3f` into Tmp
+        end
+        set the style of TocRow to Tmp
         index SecProse to J
         put SecProse into ProseSrc
         put the position of newline in ProseSrc into NL
@@ -1245,5 +1255,5 @@ JumpToBlock:
     put Tmp into CurBlock
     gosub to RenderBlock
     stop
-!! @hash ed01e660
+!! @hash de3b41a0
 !!!
