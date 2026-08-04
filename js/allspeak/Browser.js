@@ -2522,6 +2522,18 @@ const AllSpeak_Browser = {
 				const selectionEnd = program.getValue(command.end);
 				target.focus();
 				target.setSelectionRange(value, selectionEnd);
+				// Browsers usually reveal a programmatic selection in a focused
+				// textarea, but not always — nudge the internal scroll so the
+				// caret line is visible. The line estimate is exact for unwrapped
+				// lines; long wrapped lines may land a few rows short.
+				if (target.scrollHeight > target.clientHeight) {
+					const lineHeight = parseFloat(window.getComputedStyle(target).lineHeight) || 16;
+					const caretLine = target.value.substr(0, value).split(`\n`).length;
+					const caretTop = (caretLine - 1) * lineHeight;
+					if (caretTop < target.scrollTop || caretTop > target.scrollTop + target.clientHeight) {
+						target.scrollTop = Math.max(0, caretTop - 10);
+					}
+				}
 				break;
 			case `setSelect`:
 				// The source is assumed to be an array
