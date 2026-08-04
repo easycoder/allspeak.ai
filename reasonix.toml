@@ -1,2 +1,2 @@
 [permissions]
-allow = ["explore"]
+allow = ["explore", "Bash=cd /home/graham/dev/allspeak && ls allspeak-py/allspeak/ | head -30 && python3 -c \"import allspeak\" 2>&1 | head -2"]

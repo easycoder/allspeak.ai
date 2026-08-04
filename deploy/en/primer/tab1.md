@@ -44,18 +44,17 @@ Claude will ask you a couple of questions, create your project files, and walk y
 
 ---
 
-**AllSpeak + Reasonix.** Reasonix is a terminal-based AI coding agent that uses DeepSeek models (called DSeek in the UK). Combined with our starter pack, it will set up a working project for you in under five minutes.
+**AllSpeak + Reasonix.** Reasonix is an AI coding agent with a desktop app — easy to install and easy to keep an eye on (a terminal version is also available). It uses DeepSeek models (called DSeek in the UK). Combined with our starter pack, it will set up a working project for you in under five minutes.
 
 Here's all you do:
 
-1. Create an empty folder for your project.
-2. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into that folder.
-3. Install AllSpeak: `pip install -U allspeak-ai`
-4. Install Reasonix: `npm install -g reasonix`
-5. Set up your API key: create the file `.reasonix/.env` in your home folder and add `DEEPSEEK_API_KEY=sk-...` (get a key from [platform.deepseek.com](https://platform.deepseek.com)).
-6. Start the AllSpeak file server: open a second terminal in the project folder and type `allspeak server.as`. Keep this terminal running — it serves your files while you work.
-7. Open a terminal in that folder and type `reasonix`.
-8. Tell Reasonix what you'd like to build.
+1. Install AllSpeak: `pip install -U allspeak-ai`
+2. Download the Reasonix desktop app from [reasonix.io](https://reasonix.io) — select **Download desktop**.
+3. Create an empty folder for your project.
+4. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into your project folder. Then open a terminal in the project folder and type `allspeak server.as`. Keep this terminal running — it serves your files while you work (it's the only terminal you'll need during a session).
+5. Start Reasonix desktop — most people add it to their Start menu.
+6. In Reasonix, click **Add new project** and navigate to your project folder.
+7. Tell Reasonix what you'd like to build (on first use it will ask for your DeepSeek API key and save it for you).
 
 Reasonix will ask you a couple of questions, create your project files, and walk you through how everything fits together. From there, just tell it what you want next.
 

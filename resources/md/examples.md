@@ -3,6 +3,7 @@
 The following websites were all built entirely in AllSpeak script:
 
  - This site: [AllSpeak](https://allspeak.ai)
+ - [Doclets](https://doclets.eclecity.net) — a searchable note/document system for small teams; the client and the server are both written in AllSpeak script
  - [Yorkshirewoman](https://yorkshirewoman.uk)
  - [Here on the map](https://hotm.allspeak.software)
  - [Rembrandt.ie](https://rembrandt.ie)
@@ -13,6 +14,10 @@ The following websites were all built entirely in AllSpeak script:
 ## This website
 
 The ~ec~ website is driven by a script, with text provided as custom Markdown files. These 2 components work closely together and it's not immediately obvious where to start when trying to understand how it's done. <a href="#" id="how-it-works">Here's a page</a> that explains the process.
+
+## Doclets
+
+Doclets is a searchable note/document system for a small team — and the fullest example of the ~ec~ model in one small system. The browser client and the MQTT-connected server are both written in ~ec~ script; screens are declared as Webson JSON; and the heavy logic (file management, semantic search, local-LLM query, access control) lives in a native plugin behind simple script commands. It shows client–server development without a conventional web framework or a separate client language. See the **Doclets** page in the sidebar for how the pieces fit together; the live application is at <https://doclets.eclecity.net>.
 
 ## Dice roller /SHOW-DICEROLLER/
 

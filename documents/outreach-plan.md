@@ -12,7 +12,7 @@ Four concurrent workstreams, sequenced so that each approach is made when the su
 
 **What:** Upload the completed whitepaper to Zenodo, obtain a DOI, and — if the Aurora community is the right home — deposit it there.
 
-**Current state:** The whitepaper (`documents/whitepaper.md`) is complete at 6,200 words across 9 sections plus references and appendix. It has the new abstract, the laser analogy, the Account application case study, and the collaboration-first conclusion.
+**Current state:** The whitepaper (`documents/whitepaper.md`) is complete at 6,200 words across 9 sections plus references and appendix. It has the new abstract, the laser analogy, the Doclets application case study (§7.2, with the Account application as a scale data point), and the collaboration-first conclusion. Open follow-ups for the Doclets feature are tracked in `documents/doclets-feature-checklist.md`.
 
 **What's needed:**
 
@@ -26,7 +26,7 @@ Four concurrent workstreams, sequenced so that each approach is made when the su
 
 3. **Find the Aurora community** and submit to it. If "Aurora" refers to the Aurora Communities initiative within Zenodo, the deposit form has a "Community" field where you select the community. If it's a different Aurora repository, the same principles apply — DOI, metadata, open access.
 
-4. **Metadata:** Title, author (Graham T.), date, abstract (from the whitepaper), keywords, license (recommend CC-BY 4.0 for a white paper).
+4. **Metadata:** Title, author (Graham Trott), date, abstract (from the whitepaper), keywords, license (recommend CC-BY 4.0 for a white paper).
 
 5. **Upload PDF** and supplementary files (the dev.to article, the Account project README — optional).
 

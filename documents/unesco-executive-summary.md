@@ -2,7 +2,7 @@
 
 ## Executive Summary for UNESCO IFCD Consideration
 
-**Submitted by:** Graham R., Independent Developer
+**Submitted by:** Graham Trott, Independent Developer
 **Project:** AllSpeak — Open-source multilingual scripting runtime
 **Contact:** info@allspeak.ai
 **Repository:** https://github.com/allspeak/allspeak

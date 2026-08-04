@@ -2,7 +2,7 @@
 
 **Working Paper — May 2026**
 
-**Author:** Graham T. (independent developer)
+**Author:** Graham Trott (independent developer)
 
 **Correspondence:** info@allspeak.ai
 
@@ -293,21 +293,42 @@ The four-step prompt series for building a simple graphical application extends 
 
 The Codex is available in all four current languages (EN, FR, DE, IT), with identical pedagogical structure and language-appropriate explanations in each. A learner in French does not receive a translation of the English tutorial; they receive a tutorial written in French, using French keywords, with culturally appropriate examples.
 
-### 7.2 AllSpeak in practice: the Account application
+### 7.2 AllSpeak in practice: the Doclets application
 
-AllSpeak is not only an educational tool. It serves as the runtime for a deployed business application: the Account system, a spreadsheet-replacement application for a one-person event live-streaming service (`https://github.com/easycoder/stream`).
+AllSpeak is not only an educational tool. It is also the runtime for a small but complete client–server application: Doclets, a searchable note/document system for a small team, in which the browser client and the MQTT-connected server are both written in AllSpeak (`https://github.com/easycoder/doclets`). Because the stack is deliberately small, one person can understand and change the entire system—UI, messaging, and backend—without a conventional web framework or a separate client language.
 
-The application demonstrates that the AllSpeak model can handle real business requirements:
-- **Spreadsheet replacement:** The application tracks service bookings, expenses, mileage, and fees—precisely the kind of data a small business would manage in a spreadsheet. Unlike a spreadsheet, the data is stored as structured monthly JSON files, eliminating the risk of accidental formula corruption or cell misalignment that plagues spreadsheet-based record-keeping.
-- **Hidden fields:** The data model includes fields computed or carried as context that never appear in the user-facing table—reducing visual noise while keeping the full record intact for reporting and export.
-- **Full application size:** The production codebase comprises approximately 4,500 lines of AllSpeak spread across multiple modules (`account-main.as`, `admin-main.as`, `index-main.as`, `build.as`, `seed.as`), demonstrating that the language scales well beyond the "small demo" category.
-- **Real deployment:** The application is in daily use, managing real bookings and financial records. It is not a prototype or a proof of concept—it is a production system.
+The client (`doclets.as`) renders its screens declaratively from Webson JSON and communicates with the server entirely by MQTT request/reply: no polling, and no hand-written API layer. The server (`docletServer.as`) is a short AllSpeak script that subscribes to a topic and dispatches each incoming action to the appropriate handler:
 
-The Account system is a concrete demonstration that AllSpeak's constrained, readable vocabulary is not a limitation. The language that can express a booking system, an admin panel, and a data-import pipeline for a real small business can express a great deal. The readability is not bought at the cost of power.
+    on mqtt message append the mqtt message to MessageQueue
+    ...
+    if Action is `topics` gosub to GetTopics
+    else if Action is `query` gosub to DoQuery
+    else if Action is `view` gosub to GetDoclet
+
+The one component that is genuinely heavy—managing, searching, and summarising a growing collection of Markdown notes, with optional local-LLM query support (via Ollama) and per-topic access control—lives in a custom plugin (`as_doclets.py`) that exposes simple AllSpeak commands:
+
+    doclets topics TopicsList from ReceivedMessage
+    doclets query ResultList from ReceivedMessage
+
+This is the "laser" principle of Section 1.3 in miniature: two lines of script conceal semantic embedding, LLM-based ranking, and a token-based access-control layer. The plugin boundary is explicit and visible—everything above the command line is AllSpeak; everything below it is Python.
+
+Doclets also demonstrates the model's incremental quality. Semantic LLM search and per-topic access control were added as features, not rewrites: the architecture absorbed both without restructuring, and the client's state machine grew a flag rather than a new subsystem. The whole system—browser client, MQTT bridge, server script, and plugin—fits a small-team deployment: token-based identity, a browser-only client, and a single Python process behind a static host.
+
+Because AllSpeak separates language from logic, the same architecture can be re-expressed in French, German, or Italian: the keywords resolve automatically through the language pack, and only the script text and user-visible strings need to be authored in the target language. A French-language Doclets client is planned as a demonstration of this property.
+
+AllSpeak's vocabulary is not limited to small applications either. A second deployed system, the Account application, is a spreadsheet-replacement for a one-person event live-streaming service (`https://github.com/easycoder/stream`): approximately 4,500 lines of AllSpeak across five modules (`account-main.as`, `admin-main.as`, `index-main.as`, `build.as`, `seed.as`), in daily use managing real bookings and financial records. Where Doclets demonstrates the breadth of the model in one small system, Account demonstrates its scale.
+
+Together the two applications are a concrete demonstration that AllSpeak's constrained, readable vocabulary is not a limitation. The language that can express a searchable document system, an MQTT server, a plugin boundary, and a production booking system can express a great deal. The readability is not bought at the cost of power.
 
 ### 7.3 The dev.to article: public positioning
 
 An accompanying article, "AI Doesn't Need Your Programming Language" (published on `dev.to`), presents AllSpeak's argument to a developer audience. The article positions AllSpeak not as a replacement for mainstream languages but as a tool for the era of AI-generated code, where the primary human skill is review rather than authorship. It has served as the primary public-facing introduction to the project's philosophy.
+
+### 7.4 Video demonstration
+
+A short video demonstrates AllSpeak in action, walking through a run of the demo build (the colour grid) with a narrated voice-over. The demonstration is intended for readers who want to see the language working before reading the technical sections — a four-minute introduction to what AllSpeak looks like when it runs.
+
+Video: [YouTube link — placeholder: https://www.youtube.com/watch?v=XXXXXXX]
 
 ---
 

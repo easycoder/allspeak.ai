@@ -7,6 +7,7 @@
 
     div Body
     div Header
+    div TopNav
     div Content
     div Nav
     variable Markdown
@@ -30,6 +31,14 @@
     set style `text-align` of Header to `center`
     set style `margin-bottom` of Header to `2em`
     set the content of Header to `<img src="../icon/duckthink.png" style="width:80px;height:80px;border-radius:16px;margin-bottom:0.5em" /><h1 style="color:#00d4ff;font-size:2.5em">AllSpeak</h1>`
+
+    create TopNav in Body
+    set style `text-align` of TopNav to `center`
+    set style `margin-bottom` of TopNav to `2em`
+
+    rest get Markdown from BasePath cat `topnav.md?v=` cat now
+        or go to LoadError
+    set the content of TopNav to Markdown
 
     create Content in Body
     set style `line-height` of Content to `1.8`

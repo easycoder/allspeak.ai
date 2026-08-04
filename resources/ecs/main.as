@@ -16,6 +16,7 @@
 	button HomeButton
 	button IntroButton
 	button ExamplesButton
+	button DocletsButton
 	button AboutButton
 	button PhilosophyButton
 	button ContactButton
@@ -29,6 +30,7 @@
 	module HomeModule
 	module IntroModule
 	module ExamplesModule
+	module DocletsModule
 	module AboutModule
 	module PhilosophyModule
 	module ContactModule
@@ -115,6 +117,8 @@ BuildPage:
 	run Script with ShowdownModule as IntroModule
 	rest get Script from `/resources/ecs/examples.as?v=` cat now
 	run Script with ShowdownModule as ExamplesModule
+	rest get Script from `/resources/ecs/doclets.as?v=` cat now
+	run Script with ShowdownModule as DocletsModule
 	rest get Script from `/resources/ecs/about.as?v=` cat now
 	run Script with ShowdownModule as AboutModule
 	rest get Script from `/resources/ecs/philosophy.as?v=` cat now
@@ -181,6 +185,20 @@ BuildPage:
 		send `pause` to CurrentModule
 		alias CurrentModule to ExamplesModule
 		send to ExamplesModule
+	end
+    
+	create ButtonItem in ButtonList
+	create DocletsButton in ButtonItem
+	set the style of DocletsButton to ButtonStyle
+	set style `margin-top` of DocletsButton to `0.25em`
+	set the text of DocletsButton to `Doclets`
+	on click DocletsButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of DocletsButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to DocletsModule
+		send to DocletsModule
 	end
     
 	create ButtonItem in ButtonList
@@ -315,7 +333,8 @@ ShowHowItWorks:
 DeselectAllButtons:
 	set style `background` of HomeButton to ``
     set style `background` of IntroButton to ``
-    set style `background` of ExamplesButton to ``
+	set style `background` of ExamplesButton to ``
+    set style `background` of DocletsButton to ``
     set style `background` of AboutButton to ``
     set style `background` of PhilosophyButton to ``
     set style `background` of ContactButton to ``
