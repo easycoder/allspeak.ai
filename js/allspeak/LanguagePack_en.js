@@ -1143,6 +1143,7 @@ var AllSpeak_LanguagePack_en = {
     "second": "second",
     "millisecond": "millisecond",
     "modulo": "modulo",
+    "scale": "scale",
     "time": "time",
     "radius": "radius",
     "cat": "cat",

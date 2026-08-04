@@ -1065,6 +1065,7 @@ var AllSpeak_LanguagePack_de = {
     "second": "sekunde",
     "millisecond": "millisekunde",
     "modulo": "modulo",
+    "scale": "skala",
     "time": "zeit",
     "radius": "radius",
     "cat": "cat",

@@ -92,6 +92,20 @@ put I modulo Max into I   ! classic cyclic wrap: 0..Max-1, then back to 0
 
 The left operand may be a constant, a variable, or any value expression; both operands are evaluated and the result is the integer remainder. `modulo` is a handy wrap-around tool for cycling an index through a fixed range.
 
+## `scale` — float strings to scaled integers
+
+`<decimal string> scale <positive integer>` converts a string representation of a number into a scaled integer, rounding **half away from zero** when the string carries more fractional digits than the scale needs:
+
+```as
+put `3.14` scale 100 into Pi        ! 314
+put `12.345` scale 100 into Pence   ! 1235 — 12.345 rounds to 1234.5 → 1235
+put `-3.14` scale 100 into Pi       ! -314
+put `42` scale 100 into Pence       ! 4200 — integer strings work too
+put `.5` scale 100 into Half        ! 50
+```
+
+The left operand must be a clean decimal string (`3`, `3.14`, `.5`, `-3.14`); anything else (`` `abc` ``, `` `3.1.4` ``) is a **runtime error**, as is a scale that isn't a positive integer. The conversion uses integer arithmetic, so results are exact — `12.345 scale 100` is never 1234 despite floating-point noise. The canonical use is parsing incoming REST/form values into the scaled-integer pattern — see [floats-and-scaled-integers](../idioms/floats-and-scaled-integers.md).
+
 ## Time components
 
 `the year of X`, `the month of X`, `the day of X`, `the day number of X`, `the hour of X`, `the minute of X`, `the second of X` extract components from a Unix timestamp (seconds since epoch). They always return a number:

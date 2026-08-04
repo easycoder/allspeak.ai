@@ -1,4 +1,4 @@
-import json, math, hashlib, threading, os, shutil, subprocess, time, webbrowser
+import json, math, hashlib, threading, os, shutil, subprocess, time, webbrowser, re
 import base64, binascii, random, requests, paramiko, uuid
 from copy import deepcopy
 from datetime import datetime
@@ -2737,6 +2737,12 @@ class Core(Handler):
             mv.modval = self.nextValue() # type: ignore
             return mv
 
+        if language.reverse_word(self.peek()) == 'scale':
+            self.nextToken()
+            sv = ECValue(type='scale', content=value)
+            sv.scalefactor = self.nextValue() # type: ignore
+            return sv
+
         return value
 
     #############################################################################
@@ -3011,6 +3017,39 @@ class Core(Handler):
         val = self.textify(v.getContent())
         modval = self.textify(v.modval)
         return ECValue(type=int, content=val % modval)
+
+    def v_scale(self, v):
+        # Convert a decimal string to a scaled integer, using integer arithmetic
+        # (split sign/integer/fraction, round half away from zero) so the result
+        # is exact — `12.345 * 100` in floating point would break the rounding.
+        # Strict: malformed decimals and non-positive integer scales raise.
+        s = str(self.textify(v.getContent())).strip()
+        if not re.match(r'^[+-]?(\d+(\.\d*)?|\.\d+)$', s):
+            RuntimeError(self.program, f"'scale' expects a decimal string, got '{s}'")
+            return ECValue(type=int, content=0)
+        sign = 1
+        if s[0] == '-':
+            sign = -1
+            s = s[1:]
+        elif s[0] == '+':
+            s = s[1:]
+        try:
+            scalefactor = int(self.textify(v.scalefactor))
+        except (TypeError, ValueError):
+            scalefactor = -1
+        if scalefactor <= 0:
+            RuntimeError(self.program,
+                f"'scale' needs a positive integer scale factor, got '{self.textify(v.scalefactor)}'")
+            return ECValue(type=int, content=0)
+        if '.' in s:
+            intPart, fracPart = s.split('.', 1)
+        else:
+            intPart, fracPart = s, ''
+        scaled = (int(intPart) if intPart != '' else 0) * scalefactor
+        if fracPart != '':
+            den = 10 ** len(fracPart)
+            scaled += (int(fracPart) * scalefactor + den // 2) // den
+        return ECValue(type=int, content=sign * scaled)
 
     def v_newline(self, v):
         return ECValue(type=str, content='\n')

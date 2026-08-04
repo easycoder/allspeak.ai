@@ -76,20 +76,26 @@ divide Width by 10000
 
 ## Receiving floats from outside
 
-Strings that arrive as `` `12.50` `` from a REST endpoint or a form input need converting to scaled integers before arithmetic. The canonical pattern is to split on the decimal point and combine:
+Strings that arrive as `` `12.50` `` from a REST endpoint or a form input need converting to scaled integers before arithmetic. The `scale` value operator does exactly that — it reads a decimal string and returns the scaled integer, rounding half away from zero when the string has more digits than the scale needs:
 
 ```as
 ! Suppose Input is `12.50`
-put position of `.` in Input into Dot
-put left Dot of Input into Pounds
-add 1 to Dot
-put from Dot of Input into FracStr
-multiply Pounds by 100
-add FracStr to Pounds giving Pence
+put Input scale 100 into Pence
 ! Pence is now 1250
 ```
 
-In practice, the calling code usually knows the format and inlines this, or wraps it in a parsing subroutine.
+```as
+put `3.14` scale 100 into Pi        ! 314
+put `-3.14` scale 100 into Pi       ! -314
+put `42` scale 100 into Pence       ! 4200 — integer strings work too
+put `12.345` scale 100 into Pence   ! 1235 — extra digits round, half away from zero
+put `.5` scale 100 into Half        ! 50
+put `3.` scale 100 into Three       ! 300
+```
+
+The scale factor must be a positive integer, and the string must be a clean decimal — anything else (`` `abc` ``, `` `3.1.4` ``, scale 0) raises a runtime error, so bad input from outside surfaces loudly. The conversion is done with integer arithmetic, so `12.345 scale 100` is exactly 1235 — never 1234 due to floating-point noise.
+
+Before `scale` existed, this was a six-line split-on-the-dot dance; see the git history if you're curious how it looked.
 
 ## Anti-pattern: arithmetic on the string form
 
