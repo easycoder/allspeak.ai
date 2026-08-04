@@ -85,6 +85,9 @@
     variable SecVerified   ! array: stored @verified, or empty
     variable SecHashState  ! array: fresh / stale / no-baseline / no-code
     variable SecVerifyState ! array: verified-fresh / verified-stale / unverified / verified-no-code
+    variable ActivePane    ! `code` or `doc` — pane last clicked in Blocks mode
+    variable Found         ! 1 if the search term was found in section I
+    variable FoundPane     ! `code` or `doc` — pane that holds the match
 
 !   -- Parser scratch (rebuilt every parse) --
     variable Lines         ! source split on newline
@@ -136,7 +139,7 @@
     variable FirstLine     ! first prose line of a block (for TOC label)
     variable NL
     variable J
-!! @hash 04ce5b0b
+!! @hash d8a9a5cf
 !! @verified 82dc7ca8
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -317,6 +320,8 @@ VersionDone:
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
     on click BlocksVerifyAll go to MarkAllVerified
+    on click BlocksCodePane put `code` into ActivePane
+    on click BlocksDocPane put `doc` into ActivePane
 
     on pick BlocksDivider
     begin
@@ -342,7 +347,8 @@ VersionDone:
 
     put 0 into BlocksMode
     put 0 into BlockDirty
-!! @hash 562a8033
+    put `code` into ActivePane
+!! @hash 716c8ade
 !! @verified d4e6253f
 !!!
 !! While editor is running it periodically saves changes made by the user
@@ -705,17 +711,96 @@ RebuildTabBar:
 !! @verified 1347598c
 !!!
 !! Here are some utility functions.
+!! DoFind searches in flat mode via CodeMirror's find dialog; in Blocks mode it jumps to the next block whose code or prose contains the text selected in the active pane (wrapping around), highlighting the match so repeated presses walk through the hits.
 !   -- Find --
 DoFind:
+    if BlocksMode is 1 go to FindInBlocks
     codemirror find in ContentEditor
     stop
+
+FindInBlocks:
+    ! Blocks-mode find: walk the sections after the current one (wrapping)
+    ! for the term selected in the active pane and jump to the first hit.
+    if ActivePane is `code` put the selected text of BlocksCodePane into Tmp
+    else put the selected text of BlocksDocPane into Tmp
+    if Tmp is empty
+    begin
+        set the content of StatusSpan to `Select text in a pane to search blocks`
+        fork to ClearStatus
+        stop
+    end
+    put CurBlock into I
+    add 1 to I
+    while I is not CurBlock
+    begin
+        if I is not less than SecCount put 0 into I
+        if I is CurBlock go to FindNotFound
+        gosub to BlockContains
+        if Found is 1 go to FindMatch
+        add 1 to I
+    end
+FindNotFound:
+    set the content of StatusSpan to `No other block contains ` cat Tmp
+    fork to ClearStatus
+    stop
+FindMatch:
+    put I into CurBlock
+    gosub to RenderBlock
+    gosub to SelectOccurrence
+    put CurBlock into I
+    add 1 to I
+    set the content of StatusSpan to `Found in block ` cat I cat ` of ` cat SecCount
+    fork to ClearStatus
+    stop
+
+BlockContains:
+    ! Search section I's code then prose for the term (Tmp); sets Found and FoundPane.
+    put 0 into Found
+    index SecCode to I
+    put the position of Tmp in SecCode into Pos
+    if Pos is not less than 0
+    begin
+        put 1 into Found
+        put `code` into FoundPane
+        return
+    end
+    index SecProse to I
+    put the position of Tmp in SecProse into Pos
+    if Pos is not less than 0
+    begin
+        put 1 into Found
+        put `doc` into FoundPane
+    end
+    return
+
+SelectOccurrence:
+    ! Highlight the first occurrence of the term (Tmp) in the pane that matched.
+    if FoundPane is `code`
+    begin
+        index SecCode to CurBlock
+        put the position of Tmp in SecCode into Pos
+        put Pos into N
+        put the length of Tmp into M
+        add N to M
+        set the selection of BlocksCodePane from N to M
+    end
+    else
+    begin
+        index SecProse to CurBlock
+        put the position of Tmp in SecProse into Pos
+        put Pos into N
+        put the length of Tmp into M
+        add N to M
+        set the selection of BlocksDocPane from N to M
+    end
+    return
 
 !   -- Utilities --
 ClearStatus:
     wait 3 seconds
     set the content of StatusSpan to ``
     stop
-!! @hash df75e3d8
+!! @hash 7b49c0e9
 !! @verified df75e3d8
 !!!
 !! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.

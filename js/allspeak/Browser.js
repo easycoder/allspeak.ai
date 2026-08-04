@@ -2433,6 +2433,30 @@ const AllSpeak_Browser = {
 							return true;
 						}
 					}
+				} else if (token === AllSpeak_Language.word(`selection`)) {
+					if (compiler.nextIsWord(`of`)) {
+						if (compiler.nextIsSymbol()) {
+							const symbol = compiler.getSymbolRecord();
+							if (symbol.keyword === `textarea` || symbol.keyword === `input`) {
+								if (compiler.nextIsWord(`from`)) {
+									const start = compiler.getNextValue();
+									if (compiler.isWord(`to`)) {
+										const end = compiler.getNextValue();
+										compiler.addCommand({
+											domain: `browser`,
+											keyword: `set`,
+											lino,
+											type: `setSelection`,
+											symbolName: symbol.name,
+											start,
+											end
+										});
+										return true;
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 			compiler.addWarning(`Unrecognised syntax in 'set'`);
@@ -2489,11 +2513,18 @@ const AllSpeak_Browser = {
 					break;
 				}
 				break;
+			case `setSelection`:
+				targetRecord = program.getSymbolRecord(command.symbolName);
+				target = targetRecord.element[targetRecord.index];
+				value = program.getValue(command.start);
+				const selectionEnd = program.getValue(command.end);
+				target.focus();
+				target.setSelectionRange(value, selectionEnd);
+				break;
 			case `setSelect`:
 				// The source is assumed to be an array
 				sourceRecord = program.getSymbolRecord(command.source);
-				const sourceData = program.getValue(sourceRecord.value[sourceRecord.index]);
-				var itemArray = ``;
+				const sourceData = program.getValue(sourceRecord.value[sourceRecord.index]);				var itemArray = ``;
 				try {
 					itemArray = JSON.parse(sourceData);
 				} catch (err) {
@@ -3158,11 +3189,11 @@ const AllSpeak_Browser = {
 				break;
 			case `selected`:
 				let arg = AllSpeak_Language.reverseWord(compiler.nextToken());
-				if ([`index`, `item`].includes(arg)) {
+				if ([`index`, `item`, `text`].includes(arg)) {
 					if ([`in`, `of`].includes(AllSpeak_Language.reverseWord(compiler.nextToken()))) {
 						if (compiler.nextIsSymbol()) {
 							const symbol = compiler.getSymbolRecord();
-							if ([`ul`, `ol`, `select`].includes(symbol.keyword)) {
+							if ([`ul`, `ol`, `select`, `textarea`, `input`].includes(symbol.keyword)) {
 								compiler.next();
 								return {
 									domain: `browser`,
@@ -3528,6 +3559,15 @@ const AllSpeak_Browser = {
 			case `selected`:
 				symbolRecord = program.getSymbolRecord(value.symbol);
 				target = symbolRecord.element[symbolRecord.index];
+				// textarea/input: return the highlighted substring
+				if (value.arg === `text` && (target.tagName === `TEXTAREA` || target.tagName === `INPUT`)) {
+					content = target.value.substring(target.selectionStart, target.selectionEnd);
+					return {
+						type: `constant`,
+						numeric: false,
+						content
+					};
+				}
 				let selectedIndex = target.selectedIndex;
 				let selectedText = selectedIndex  >= 0 ? target.options[selectedIndex].text : ``;
 				content = (value.arg === `index`) ? selectedIndex : selectedText;
