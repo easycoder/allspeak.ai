@@ -941,6 +941,8 @@ EnterBlocks:
         add 1 to I
     end
     put 1 into BlocksMode
+    ! The toggle button now leaves Blocks mode, so relabel it.
+    set the content of BlocksBtn to `Edit`
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `flex`
     ! Restore divider position from previous session if persisted.
@@ -965,6 +967,8 @@ DoExitBlocks:
     ! Re-parse so SecStart reflects any line shifts from the flush rebuild.
     gosub to ParseSource
     put 0 into BlocksMode
+    ! Back in flat mode the toggle button re-enters Blocks mode.
+    set the content of BlocksBtn to `Blocks`
     set style `display` of BlocksArea to `none`
     set style `display` of EditorArea to `block`
     ! Scroll the flat editor so the start of the block just viewed is visible.
@@ -1038,7 +1042,7 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash dfa5de37
+!! @hash 1f600f90
 !! @verified b94f2261
 !!!
 !! Blocks save.
