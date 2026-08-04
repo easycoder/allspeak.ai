@@ -452,7 +452,7 @@ PollNext:
 !! @hash 528a0f6d
 !! @verified 528a0f6d
 !!!
-!! (explain)
+!! File browser overlay behind the Open button: lists the current directory, navigates into folders and back to the project root, and hands the chosen file to the tab-management section to open.
 !   -- File browser with directory navigation --
 ShowBrowser:
     ! Opening a tab while Blocks mode is up leaves the panes out of sync with
@@ -1049,7 +1049,7 @@ UpdateBadge:
     end
     return
 !! @hash 654c6d02
-!! @verified b94f2261
+!! @verified 654c6d02
 !!!
 !! Blocks save.
 !! FlushBlock pushes the current pane edits back into the
@@ -1208,7 +1208,7 @@ MarkAllVerified:
     end
     stop
 !! @hash b0f5bf9f
-!! @verified f2067b60
+!! @verified b0f5bf9f
 !!!
 !! Blocks TOC. Renders one row per parsed section in the BlocksToc
 !! sidebar, highlighting the current block. Each row's label is the
@@ -1259,4 +1259,5 @@ JumpToBlock:
     gosub to RenderBlock
     stop
 !! @hash 426884b9
+!! @verified 426884b9
 !!!
