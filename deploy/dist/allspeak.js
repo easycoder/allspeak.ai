@@ -5853,7 +5853,9 @@ const AllSpeak_Browser = {
 							if (program.length > 0) {
 								const eventTarget = event.target;
 								const boundTarget = event.currentTarget || target;
-								if (eventTarget && eventTarget.type != `radio` && typeof eventTarget.blur === `function`) {
+								if (eventTarget && eventTarget.type != `radio` &&
+									eventTarget.tagName !== `TEXTAREA` && eventTarget.tagName !== `INPUT` &&
+									typeof eventTarget.blur === `function`) {
 									eventTarget.blur();
 								}
 								if (typeof boundTarget.targetRecord !== `undefined`) {

@@ -85,7 +85,6 @@
     variable SecVerified   ! array: stored @verified, or empty
     variable SecHashState  ! array: fresh / stale / no-baseline / no-code
     variable SecVerifyState ! array: verified-fresh / verified-stale / unverified / verified-no-code
-    variable ActivePane    ! `code` or `doc` — pane last clicked in Blocks mode
     variable Found         ! 1 if the search term was found in section I
     variable FoundPane     ! `code` or `doc` — pane that holds the match
 
@@ -139,7 +138,7 @@
     variable FirstLine     ! first prose line of a block (for TOC label)
     variable NL
     variable J
-!! @hash d8a9a5cf
+!! @hash f42eeb34
 !! @verified 82dc7ca8
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -320,8 +319,6 @@ VersionDone:
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
     on click BlocksVerifyAll go to MarkAllVerified
-    on click BlocksCodePane put `code` into ActivePane
-    on click BlocksDocPane put `doc` into ActivePane
 
     on pick BlocksDivider
     begin
@@ -347,8 +344,7 @@ VersionDone:
 
     put 0 into BlocksMode
     put 0 into BlockDirty
-    put `code` into ActivePane
-!! @hash 716c8ade
+!! @hash 562a8033
 !! @verified d4e6253f
 !!!
 !! While editor is running it periodically saves changes made by the user
@@ -711,7 +707,7 @@ RebuildTabBar:
 !! @verified 1347598c
 !!!
 !! Here are some utility functions.
-!! DoFind searches in flat mode via CodeMirror's find dialog; in Blocks mode it jumps to the next block whose code or prose contains the text selected in the active pane (wrapping around), highlighting the match so repeated presses walk through the hits.
+!! DoFind searches in flat mode via CodeMirror's find dialog; in Blocks mode it jumps to the next block whose code or prose contains the text selected in either pane (wrapping around), highlighting the match so repeated presses walk through the hits.
 !   -- Find --
 DoFind:
     if BlocksMode is 1 go to FindInBlocks
@@ -720,9 +716,9 @@ DoFind:
 
 FindInBlocks:
     ! Blocks-mode find: walk the sections after the current one (wrapping)
-    ! for the term selected in the active pane and jump to the first hit.
-    if ActivePane is `code` put the selected text of BlocksCodePane into Tmp
-    else put the selected text of BlocksDocPane into Tmp
+    ! for the term selected in either pane and jump to the first hit.
+    put the selected text of BlocksCodePane into Tmp
+    if Tmp is empty put the selected text of BlocksDocPane into Tmp
     if Tmp is empty
     begin
         set the content of StatusSpan to `Select text in a pane to search blocks`
@@ -800,7 +796,7 @@ ClearStatus:
     wait 3 seconds
     set the content of StatusSpan to ``
     stop
-!! @hash 7b49c0e9
+!! @hash 51e32e73
 !! @verified df75e3d8
 !!!
 !! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.
