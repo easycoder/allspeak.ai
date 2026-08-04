@@ -87,6 +87,7 @@
     variable SecVerifyState ! array: verified-fresh / verified-stale / unverified / verified-no-code
     variable Found         ! 1 if the search term was found in section I
     variable FoundPane     ! `code` or `doc` — pane that holds the match
+    variable SearchTerm    ! the text being searched for (survives RenderBlock/RenderToc, which reuse Tmp)
 
 !   -- Parser scratch (rebuilt every parse) --
     variable Lines         ! source split on newline
@@ -138,7 +139,7 @@
     variable FirstLine     ! first prose line of a block (for TOC label)
     variable NL
     variable J
-!! @hash f42eeb34
+!! @hash b4ba77d2
 !! @verified 82dc7ca8
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -717,9 +718,9 @@ DoFind:
 FindInBlocks:
     ! Blocks-mode find: walk the sections after the current one (wrapping)
     ! for the term selected in either pane and jump to the first hit.
-    put the selected text of BlocksCodePane into Tmp
-    if Tmp is empty put the selected text of BlocksDocPane into Tmp
-    if Tmp is empty
+    put the selected text of BlocksCodePane into SearchTerm
+    if SearchTerm is empty put the selected text of BlocksDocPane into SearchTerm
+    if SearchTerm is empty
     begin
         set the content of StatusSpan to `Select text in a pane to search blocks`
         fork to ClearStatus
@@ -736,7 +737,7 @@ FindInBlocks:
         add 1 to I
     end
 FindNotFound:
-    set the content of StatusSpan to `No other block contains ` cat Tmp
+    set the content of StatusSpan to `No other block contains ` cat SearchTerm
     fork to ClearStatus
     stop
 FindMatch:
@@ -750,10 +751,10 @@ FindMatch:
     stop
 
 BlockContains:
-    ! Search section I's code then prose for the term (Tmp); sets Found and FoundPane.
+    ! Search section I's code then prose for the term (SearchTerm); sets Found and FoundPane.
     put 0 into Found
     index SecCode to I
-    put the position of Tmp in SecCode into Pos
+    put the position of SearchTerm in SecCode into Pos
     if Pos is not less than 0
     begin
         put 1 into Found
@@ -761,7 +762,7 @@ BlockContains:
         return
     end
     index SecProse to I
-    put the position of Tmp in SecProse into Pos
+    put the position of SearchTerm in SecProse into Pos
     if Pos is not less than 0
     begin
         put 1 into Found
@@ -770,24 +771,30 @@ BlockContains:
     return
 
 SelectOccurrence:
-    ! Highlight the first occurrence of the term (Tmp) in the pane that matched.
+    ! Highlight the first occurrence of the term (SearchTerm) in the pane that matched.
     if FoundPane is `code`
     begin
         index SecCode to CurBlock
-        put the position of Tmp in SecCode into Pos
-        put Pos into N
-        put the length of Tmp into M
-        add N to M
-        set the selection of BlocksCodePane from N to M
+        put the position of SearchTerm in SecCode into Pos
+        if Pos is not less than 0
+        begin
+            put Pos into N
+            put the length of SearchTerm into M
+            add N to M
+            set the selection of BlocksCodePane from N to M
+        end
     end
     else
     begin
         index SecProse to CurBlock
-        put the position of Tmp in SecProse into Pos
-        put Pos into N
-        put the length of Tmp into M
-        add N to M
-        set the selection of BlocksDocPane from N to M
+        put the position of SearchTerm in SecProse into Pos
+        if Pos is not less than 0
+        begin
+            put Pos into N
+            put the length of SearchTerm into M
+            add N to M
+            set the selection of BlocksDocPane from N to M
+        end
     end
     return
 
@@ -796,7 +803,7 @@ ClearStatus:
     wait 3 seconds
     set the content of StatusSpan to ``
     stop
-!! @hash 51e32e73
+!! @hash 528675bb
 !! @verified df75e3d8
 !!!
 !! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.
