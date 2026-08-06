@@ -25,7 +25,7 @@ This is a core architectural principle of AllSpeak, not an after-the-fact rescue
 
 ## The contract
 
-Both runtimes follow a shared plugin contract documented in [`spec/allspeak-plugin-contract.md`](../../spec/allspeak-plugin-contract.md). A plugin is a registered domain that exposes:
+Both runtimes follow a shared plugin contract documented in [`spec/allspeak-plugin-contract.md`](https://github.com/easycoder/allspeak.ai/blob/master/spec/allspeak-plugin-contract.md). A plugin is a registered domain that exposes:
 
 - **Keyword handlers** — `compile(...)` for parse-time, `run(...)` for execute-time.
 - **Value compilers / runners** — for new value types (e.g. `the gps position`).

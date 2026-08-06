@@ -88,7 +88,20 @@
     <script>
         // Click capture: intercept relative .md links inside #content and
         // route to the AllSpeak script via a hidden div+button pair.
+        // A link is a reader page iff its bare slug (directory and NN- prefix
+        // stripped) appears in manifest.json. Anything else — README.md, the
+        // plugin-contract spec, external URLs — is left to the browser.
+        // Manifest slugs are loaded once; if they aren't ready when a click
+        // arrives (edge case), fall back to routing to the reader.
+        var LEARN_SLUGS = null;
         window.addEventListener('DOMContentLoaded', function () {
+            fetch('manifest.json')
+                .then(function (r) { return r.json(); })
+                .then(function (m) {
+                    LEARN_SLUGS = {};
+                    m.pages.forEach(function (p) { LEARN_SLUGS[p.slug] = true; });
+                })
+                .catch(function () { /* keep LEARN_SLUGS null: fall back to reader routing */ });
             document.addEventListener('click', function (e) {
                 var a = e.target.closest && e.target.closest('a');
                 if (!a) return;
@@ -96,10 +109,15 @@
                 var href = a.getAttribute('href');
                 if (!href) return;
                 if (href.indexOf('http://') === 0 || href.indexOf('https://') === 0) return;
-                if (href.slice(-3) !== '.md') return;
-                e.preventDefault();
+                // Split off any #fragment so anchored links (page.md#section)
+                // still route by page slug; the reader opens the page.
+                var frag = href.indexOf('#');
+                var path = frag >= 0 ? href.slice(0, frag) : href;
+                if (path.slice(-3) !== '.md') return;
                 // Strip directory, leading NN-, and .md → bare slug.
-                var slug = href.split('/').pop().replace(/\.md$/, '').replace(/^\d+-/, '');
+                var slug = path.split('/').pop().replace(/\.md$/, '').replace(/^\d+-/, '');
+                if (LEARN_SLUGS !== null && !LEARN_SLUGS[slug]) return;
+                e.preventDefault();
                 var stash = document.getElementById('nav-target');
                 if (stash) stash.textContent = slug;
                 var trigger = document.getElementById('nav-trigger');

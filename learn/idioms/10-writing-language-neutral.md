@@ -30,7 +30,7 @@ When porting a script to a new language, the variables are commonly translated t
 
 ### Constructs that don't exist in every pack
 
-Some packs have a richer set of synonyms than others. If you write idiomatic English that depends on a specific phrasing — an unusual `the … of` chain, say — the translator may not have a one-to-one mapping in the target language. Prefer constructs that appear in every pack — the ones used in the [codex](../../codex) tutorials are a safe set.
+Some packs have a richer set of synonyms than others. If you write idiomatic English that depends on a specific phrasing — an unusual `the … of` chain, say — the translator may not have a one-to-one mapping in the target language. Prefer constructs that appear in every pack — the ones used in the [codex](/codex.html) tutorials are a safe set.
 
 A concrete example: `for each` is hard to express clearly in spoken English and worse in many other languages, so the curriculum drops it in favour of `while` loops with explicit indices. Idioms like that one are easier to translate than constructs that lean on a specific English phrasing.
 

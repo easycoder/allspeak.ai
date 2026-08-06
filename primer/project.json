@@ -68,8 +68,9 @@
     "#": [
       "$TabStart",
       "$TabExample",
-      "$TabManual",
-      "$TabCodex"
+      "$TabLearn",
+      "$TabCodex",
+      "$TabManual"
     ],
 
     "$TabStart": {
@@ -98,10 +99,10 @@
       "cursor": "pointer"
     },
 
-    "$TabManual": {
+    "$TabLearn": {
       "#element": "button",
-      "@id": "TabManual",
-      "#content": "AI Manual",
+      "@id": "TabLearn",
+      "#content": "Learn",
       "background": "#0b1018",
       "color": "#eaf0ff",
       "border": "1px solid #253545",
@@ -115,6 +116,19 @@
       "#element": "button",
       "@id": "TabCodex",
       "#content": "Codex",
+      "background": "#0b1018",
+      "color": "#eaf0ff",
+      "border": "1px solid #253545",
+      "border-radius": "9px",
+      "padding": "0.55em 0.9em",
+      "font-weight": "600",
+      "cursor": "pointer"
+    },
+
+    "$TabManual": {
+      "#element": "button",
+      "@id": "TabManual",
+      "#content": "AI Manual",
       "background": "#0b1018",
       "color": "#eaf0ff",
       "border": "1px solid #253545",

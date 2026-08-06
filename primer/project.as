@@ -17,10 +17,11 @@
     div StartContainer
     div ExampleContainer
     div ManualContainer
-    button TabStart
-    button TabExample
-    button TabManual
-    button TabCodex
+	button TabStart
+	button TabExample
+	button TabLearn
+	button TabCodex
+	button TabManual
     div ManualStatus
     div ManualBody
     button RetryManualButton
@@ -109,6 +110,7 @@ SetupScreen:
     attach ManualContainer to `ManualContainer` or go to AbandonShip
     attach TabStart to `TabStart` or go to AbandonShip
     attach TabExample to `TabExample` or go to AbandonShip
+    attach TabLearn to `TabLearn` or go to AbandonShip
     attach TabManual to `TabManual` or go to AbandonShip
     attach TabCodex to `TabCodex` or go to AbandonShip
     attach ManualStatus to `ManualStatus` or go to AbandonShip
@@ -142,6 +144,11 @@ SetupScreen:
     begin
         gosub to ShowExampleTab
         history push url `#example`
+    end
+
+    on click TabLearn
+    begin
+        location `../learn/`
     end
 
     on click TabManual
@@ -228,6 +235,7 @@ ShowStartTab:
     set style `display` of ManualContainer to `none`
     set style `background` of TabStart to `#1e3450`
     set style `background` of TabExample to `#0b1018`
+    set style `background` of TabLearn to `#0b1018`
     set style `background` of TabManual to `#0b1018`
     set style `background` of TabCodex to `#0b1018`
     set style `display` of RetryManualButton to `none`
@@ -240,6 +248,7 @@ ShowExampleTab:
     set style `display` of ManualContainer to `none`
     set style `background` of TabStart to `#0b1018`
     set style `background` of TabExample to `#1e3450`
+    set style `background` of TabLearn to `#0b1018`
     set style `background` of TabManual to `#0b1018`
     set style `background` of TabCodex to `#0b1018`
     set style `display` of RetryManualButton to `none`
@@ -252,6 +261,7 @@ ShowManualTab:
     set style `display` of ManualContainer to `flex`
     set style `background` of TabStart to `#0b1018`
     set style `background` of TabExample to `#0b1018`
+    set style `background` of TabLearn to `#0b1018`
     set style `background` of TabManual to `#1e3450`
     set style `background` of TabCodex to `#0b1018`
     return

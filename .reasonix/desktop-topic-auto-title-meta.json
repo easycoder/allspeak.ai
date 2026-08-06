@@ -1,1 +1,14 @@
-{}
+{
+  "topic_20260805-100502_7a8fa77a7d0a9e07": {
+    "stage": 1,
+    "userTurns": 1,
+    "basisHash": "c4c4c6d9bd780e7c",
+    "updatedAt": 1785924494158
+  },
+  "topic_20260806-205408_771f36ad8d56c085": {
+    "stage": 3,
+    "userTurns": 3,
+    "basisHash": "bb0674b642b088cc",
+    "updatedAt": 1786051912509
+  }
+}
