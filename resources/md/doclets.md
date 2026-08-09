@@ -44,3 +44,7 @@ Semantic LLM search and per-topic access control were added to Doclets as featur
 ## Fits small teams
 
 Token-based identity, a browser-only client, and a single Python process behind a static host. No database server, no build pipeline, no mobile app.
+
+## Read more
+
+[AI writes the code, humans review it — review is the coming skill](https://dev.to/gtanyware/ai-writes-the-code-humans-review-it-review-is-the-coming-skill-330i) — a dev.to article that takes Doclets as its working example: AI writes the code, humans review it block by block, and customising the tool is a matter of recognising and adjusting existing code, not writing new code from scratch.

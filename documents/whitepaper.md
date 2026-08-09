@@ -320,9 +320,11 @@ AllSpeak's vocabulary is not limited to small applications either. A second depl
 
 Together the two applications are a concrete demonstration that AllSpeak's constrained, readable vocabulary is not a limitation. The language that can express a searchable document system, an MQTT server, a plugin boundary, and a production booking system can express a great deal. The readability is not bought at the cost of power.
 
-### 7.3 The dev.to article: public positioning
+### 7.3 The dev.to articles: public positioning
 
 An accompanying article, "AI Doesn't Need Your Programming Language" (published on `dev.to`), presents AllSpeak's argument to a developer audience. The article positions AllSpeak not as a replacement for mainstream languages but as a tool for the era of AI-generated code, where the primary human skill is review rather than authorship. It has served as the primary public-facing introduction to the project's philosophy.
+
+A second article, "AI writes the code, humans review it — review is the coming skill" (`https://dev.to/gtanyware/ai-writes-the-code-humans-review-it-review-is-the-coming-skill-330i`), develops the same position more explicitly: as AI takes over the writing of code, the human skill that matters becomes review, and a language that reads like a human language is what makes that review possible. It takes the Doclets application of Section 7.2 as its working example—a system produced through deliberately small steps in which AI writes and a human reviews, block by block—and argues that customising it is a matter of recognising and adjusting existing code rather than writing new code from scratch.
 
 ### 7.4 Video demonstration
 
