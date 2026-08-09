@@ -26,3 +26,11 @@ Yes, let's commit and push to keep the repo up to date
 **Assistant**
 
 Committed everything (whitepaper.md, whitepaper.html, resources/md/doclets.md, conversation log, .reasonix bookkeeping) as `b692bc6 2608091552` and pushed to origin (master: 1f63d62..b692bc6).
+
+## 15:56
+
+That's all for this session - a short one this time. I'm hoping to have the YouTube video ready in a day or two, so we'll resume then.
+
+**Assistant**
+
+Noted — see you in a day or two. When the video is ready, the whitepaper §7.4 placeholder (https://www.youtube.com/watch?v=XXXXXXX) needs the real link; the demo-video item in documents/doclets-feature-checklist.md tracks that follow-up.
