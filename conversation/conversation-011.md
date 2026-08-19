@@ -17,3 +17,11 @@ Thank you — glad it landed well. Everything is staged for you: the only live s
 **Assistant**
 
 Understood — closing here. Resume point: whitepaper §7.4 video placeholder, then regenerate all formats (html + PDF) in one pass. Good luck with the video — see you when it's ready.
+
+## 21:06
+
+I finally have the video uploaded to YouTube. It's sharable link is https://youtu.be/BSvh4MPEzV4. Some edits were made to the whitepaper earlier to mention the learn/ documents. Where do we go from here?
+
+**Assistant**
+
+Executed the pre-agreed plan: filled whitepaper §7.4's placeholder with the real link ([AllSpeak - a coding language for AI](https://youtu.be/BSvh4MPEzV4), title confirmed via oEmbed), then regenerated both outputs in one pass — whitepaper.html via md-to-html.py, whitepaper.pdf via wkhtmltopdf (snap chromium can't run in the sandbox; pdf is 17 pages, verify rendering). Checked off both checklist items (regenerate outputs; demo video). Flagged: §7.4 prose still describes the colour-grid demo — if the uploaded video shows something else (e.g. Doclets), prose needs adjusting.

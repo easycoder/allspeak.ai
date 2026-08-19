@@ -27,15 +27,11 @@ Status legend: `[ ]` not done · `[~]` in progress · `[x]` done
 
 - [ ] **Screenshots** (desktop + phone) of the live Doclets UI → add to
       `resources/img/` and wire into `resources/md/doclets.md`.
-- [~] **Regenerate whitepaper outputs** from the edited `documents/whitepaper.md`.
-      `whitepaper.html` was hand-synced to match (sandbox couldn't `pip install markdown`);
-      the canonical refresh is `python3 -m pip install markdown` then
-      `python3 md-to-html.py whitepaper.md whitepaper.html` (in `documents/`).
-      `whitepaper.pdf` is produced from the HTML via browser Print
-      (see `documents/zenodo-deposit-guide.md`) or pandoc
-      (`pandoc whitepaper.md -o whitepaper.pdf --pdf-engine=xelatex`).
-      DECIDED: wait for the §7.4 YouTube video URL, then regenerate ALL outputs
-      (html + pdf) in one pass — html is currently up to date via `md-to-html.py`.
+- [x] **Regenerate whitepaper outputs** from the edited `documents/whitepaper.md`.
+      DONE 2026-08-19: both outputs regenerated in one pass with the §7.4 video
+      link — `whitepaper.html` via `python3 md-to-html.py whitepaper.md whitepaper.html`,
+      `whitepaper.pdf` via `wkhtmltopdf -s A4 whitepaper.html whitepaper.pdf`
+      (snap chromium unavailable in the sandbox).
 - [ ] **Deploy the website** so the new Doclets page + nav button go live
       (`deploy-allspeak`); verify the page renders and the sidebar shows the
       Doclets button.
@@ -57,8 +53,10 @@ Status legend: `[ ]` not done · `[~]` in progress · `[x]` done
       compile/run plugin pattern.
 - [ ] **Full-stack conformance test** — client ⇄ MQTT ⇄ server ⇄ plugin in
       `conformance/` (currently covers scripts only).
-- [ ] **Demo video** — whitepaper §7.4 placeholder should feature the Doclets
-      client.
+- [x] **Demo video** — live at https://youtu.be/BSvh4MPEzV4 ("AllSpeak - a
+      coding language for AI"), linked from whitepaper §7.4 (was: "should
+      feature the Doclets client" — confirm the uploaded video's content
+      matches the §7.4 prose about the colour-grid demo, else adjust prose).
 
 ## Learn curriculum (whitepaper §7.5 + website)
 
