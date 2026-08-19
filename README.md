@@ -1,5 +1,7 @@
 # AllSpeak
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22018537.svg)](https://doi.org/10.5281/zenodo.22018537)
+
 This project is primarily hosted on GitHub. An automatic mirror is maintained at https://codeberg.org/allspeak/allspeak for users who prefer non-corporate infrastructure. Issues and pull requests should be filed on GitHub.
 
 **AllSpeak is a high-level scripting language designed for an age where AI writes most of the code.** Scripts read like a natural human sentence — *"set the content of Heading to `Welcome`"* — so the human can verify what the AI produced without learning a programming language. The same script can be written in any of several human languages and run on a single shared, language-neutral runtime.

@@ -65,3 +65,11 @@ Looks like it's done it. The DOI is 10.5281/zenodo.22018537
 **Assistant**
 
 Verified the DOI resolves (record live: v1.0.0, AllSpeak community, CC-BY 4.0, whitepaper.pdf attached). Executed the deposit guide's post-publish housekeeping: added "Cite as" line to whitepaper.md and regenerated whitepaper.html + whitepaper.pdf; replaced "[Zenodo DOI link]" and "DOI to follow" in revised-approach-letters.md; marked Workstream A done (+ Month-1 tree line + success table) in outreach-plan.md; added the DOI link to README.md Documentation section. Committed and pushed.
+
+## 22:44
+
+Sounds nice to have the SVG. Is that to go on the repository home page?
+
+**Assistant**
+
+Confirmed: the README is the repo's home page on GitHub. Added the Zenodo DOI badge ([![DOI](...svg)](https://doi.org/10.5281/zenodo.22018537)) directly under the README title, standard placement; the plain-text link stays in the Documentation section. Committed and pushed.
