@@ -75,6 +75,8 @@ Four concurrent workstreams, sequenced so that each approach is made when the su
 | **3** | **UNDP** | Accelerator Lab (Francophone) | DOI + video + validated FR | When FR is validated |
 | **4** | **UN Global Pulse** | Partnerships team | DOI + video | After any of the above |
 
+**Planned send:** Tue 8 September 2026, ~10:00–11:00 Paris time (avoids the August holiday window and the first-week return backlog; clear of Mon 7 Sep, a Brazilian holiday). Follow up if no response within 2 weeks (≈22 September).
+
 ### Why UNESCO first
 
 - No application cycle — direct email is the normal approach

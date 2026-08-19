@@ -107,3 +107,11 @@ The comment I saw suggested that some people might be put off by receiving an em
 **Assistant**
 
 Agreed with the distinction: whitepaper stays as-is (openly AI-assisted work, em dashes typographically normal); the email keeps ASCII hyphens to avoid the AI-written first impression. No further changes. Letter ready for review.
+
+## 23:35
+
+Good reasoning. I'll put it in my diary.
+
+**Assistant**
+
+Recorded the planned send date in outreach-plan.md: Tue 8 Sep 2026, ~10:00–11:00 Paris time, with the 2-week follow-up window (≈22 September).
