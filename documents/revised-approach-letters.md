@@ -28,7 +28,7 @@ The current positioning is different:
 
 **Subject:** AllSpeak — a multilingual programming runtime aligned with UNESCO's multilingualism roadmap
 
-Dear Mr Canela,
+Dear Mr Godoi,
 
 I am writing to introduce a project that may be of interest to UNESCO's work on multilingualism in the digital era.
 

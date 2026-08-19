@@ -82,3 +82,11 @@ Let's get the letter send-ready then I can check it carefully.
 **Assistant**
 
 Confirmed the letter's To: line matches the Who's-who entry. Made the UNESCO letter send-ready: added the video sentence to the Roadmap paragraph ("A fifteen-minute narrated demonstration video (https://youtu.be/BSvh4MPEzV4) shows AllSpeak building and running a graphical application from scratch") and added Video: to the signature block. Also updated outreach-plan.md: Workstream B marked done with the URL and a note that email phrasing must say "fifteen-minute"/"short", never "3-minute demo"; Month-1 sequencing line marked done.
+
+## 23:10
+
+I know nothing of Portuguese names, so can I just confirm that "Dear Mr Canela" is te most appropriate form of address?
+
+**Assistant**
+
+No — Brazilian convention uses the last surname (father's family name) for formal address: for "Guilherme Canela de Souza Godoi", "Canela" is the maternal surname and "Godoi" the paternal. Changed the salutation to "Dear Mr Godoi,". To: line (full name) unchanged.
