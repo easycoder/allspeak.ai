@@ -98,3 +98,12 @@ A very minor point: I read the other day that the extended dash is a signature o
 **Assistant**
 
 Replaced all em dashes in revised-approach-letters.md (24 total: 20 spaced " — ", 4 unspaced) with spaced ASCII hyphens " - " so the unspaced parenthetical cases don't read as compound words. Verified zero extended dashes remain. Noted (briefly) that the em-dash heuristic is not a rule, but the choice is the author's. Offered to apply the same treatment to the whitepaper/other docs if wanted.
+
+## 23:24
+
+No, it's OK to leave the whitepper as is. I don't want to pretend I didn't have AI help in writing it.
+The comment I saw suggested that some people might be put off by receiving an email that could conceivably have been AI-generated. This may or may not be a substantial point but I thought it best not to take chances.
+
+**Assistant**
+
+Agreed with the distinction: whitepaper stays as-is (openly AI-assisted work, em dashes typographically normal); the email keeps ASCII hyphens to avoid the AI-written first impression. No further changes. Letter ready for review.
