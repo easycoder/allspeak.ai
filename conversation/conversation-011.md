@@ -25,3 +25,11 @@ I finally have the video uploaded to YouTube. It's sharable link is https://yout
 **Assistant**
 
 Executed the pre-agreed plan: filled whitepaper §7.4's placeholder with the real link ([AllSpeak - a coding language for AI](https://youtu.be/BSvh4MPEzV4), title confirmed via oEmbed), then regenerated both outputs in one pass — whitepaper.html via md-to-html.py, whitepaper.pdf via wkhtmltopdf (snap chromium can't run in the sandbox; pdf is 17 pages, verify rendering). Checked off both checklist items (regenerate outputs; demo video). Flagged: §7.4 prose still describes the colour-grid demo — if the uploaded video shows something else (e.g. Doclets), prose needs adjusting.
+
+## 21:14
+
+The subjet of the video is exactly as described, but its duration is 15 minutes, not 4.
+
+**Assistant**
+
+Updated whitepaper §7.4 prose ("a four-minute introduction" → "a fifteen-minute introduction"), regenerated whitepaper.html and whitepaper.pdf in the same pass, committed and pushed.

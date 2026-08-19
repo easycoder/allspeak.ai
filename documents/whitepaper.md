@@ -328,7 +328,7 @@ A second article, "AI writes the code, humans review it — review is the coming
 
 ### 7.4 Video demonstration
 
-A short video demonstrates AllSpeak in action, walking through a run of the demo build (the colour grid) with a narrated voice-over. The demonstration is intended for readers who want to see the language working before reading the technical sections — a four-minute introduction to what AllSpeak looks like when it runs.
+A short video demonstrates AllSpeak in action, walking through a run of the demo build (the colour grid) with a narrated voice-over. The demonstration is intended for readers who want to see the language working before reading the technical sections — a fifteen-minute introduction to what AllSpeak looks like when it runs.
 
 Video: [AllSpeak - a coding language for AI](https://youtu.be/BSvh4MPEzV4)
 
