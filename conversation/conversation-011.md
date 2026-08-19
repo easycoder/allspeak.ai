@@ -41,3 +41,11 @@ I've uploaded the whitepaper to Zenodo and am filling in the form. What should I
 **Assistant**
 
 Pointed to documents/zenodo-deposit-guide.md section 4: paste the whitepaper abstract verbatim (quoted it in full, copy-paste ready); also gave the section 5 keyword list for the next field.
+
+## 22:15
+
+Then do I click Submit for Review (under Draft)?
+
+**Assistant**
+
+Explained Zenodo's two paths: "Publish" = immediate public + DOI; "Submit for review" appears because the AllSpeak community is attached — record goes public and gets its DOI only after community acceptance. With your own community you control that step (click Submit for review, then approve it in the community as curator), or if the UI offers Publish directly, that also works. Recommended keeping the community link for future deposits.
