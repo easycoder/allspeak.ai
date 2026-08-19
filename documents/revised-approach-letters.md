@@ -13,28 +13,28 @@ The original letters were written when the project was positioned as:
 - Written from an implied organisational perspective
 
 The current positioning is different:
-- **Four languages operational** (EN, FR, DE, IT) — all functional, three awaiting validation
-- **"Comprehension not authorship"** — AllSpeak as a reading tool for the AI era, not a coding tool
-- **Collaboration-first** — seeking people who care about the problem, not primarily funding
-- **Individual, not organisation** — the author is one person, open about it
-- **Whitepaper on Zenodo with DOI** — a citable reference exists
-- **Account application** — a real deployed business system as proof
+- **Four languages operational** (EN, FR, DE, IT) - all functional, three awaiting validation
+- **"Comprehension not authorship"** - AllSpeak as a reading tool for the AI era, not a coding tool
+- **Collaboration-first** - seeking people who care about the problem, not primarily funding
+- **Individual, not organisation** - the author is one person, open about it
+- **Whitepaper on Zenodo with DOI** - a citable reference exists
+- **Account application** - a real deployed business system as proof
 
 ---
 
-## 1. UNESCO — Primary target
+## 1. UNESCO - Primary target
 
 **To:** Guilherme Canela de Souza Godoi, Director, Division for Digital Inclusion and Policies
 
-**Subject:** AllSpeak — a multilingual programming runtime aligned with UNESCO's multilingualism roadmap
+**Subject:** AllSpeak - a multilingual programming runtime aligned with UNESCO's multilingualism roadmap
 
 Dear Mr Godoi,
 
 I am writing to introduce a project that may be of interest to UNESCO's work on multilingualism in the digital era.
 
-AllSpeak is an open-source programming runtime that allows code to be written, read, and understood in any human language. Where conventional programming languages require English syntax, AllSpeak presents the same underlying logic in whichever language the programmer chooses. It is currently operational in four languages—English, French, German, and Italian—and its architecture is designed to be extended to any language, including those using non-Latin scripts.
+AllSpeak is an open-source programming runtime that allows code to be written, read, and understood in any human language. Where conventional programming languages require English syntax, AllSpeak presents the same underlying logic in whichever language the programmer chooses. It is currently operational in four languages - English, French, German, and Italian - and its architecture is designed to be extended to any language, including those using non-Latin scripts.
 
-The project addresses a structural gap. Every mainstream programming language uses English keywords. This means that computational literacy—increasingly recognised as a foundational skill—is accessible only to those who can work comfortably in English. The 6.5 billion people worldwide who are not English speakers are, in effect, barred from understanding the code that increasingly shapes their lives.
+The project addresses a structural gap. Every mainstream programming language uses English keywords. This means that computational literacy - increasingly recognised as a foundational skill - is accessible only to those who can work comfortably in English. The 6.5 billion people worldwide who are not English speakers are, in effect, barred from understanding the code that increasingly shapes their lives.
 
 I was struck by UNESCO's Global Roadmap on Multilingualism in the Digital Era and its call for industry to "design inclusive Language Technologies." AllSpeak does this at the syntactic level: the code itself is in the learner's language, not merely the documentation around it. A companion white paper (available on Zenodo: https://doi.org/10.5281/zenodo.22018537) describes the architecture, the methodology for adding new languages, and the real-world applications already running on the runtime. A fifteen-minute narrated demonstration video (https://youtu.be/BSvh4MPEzV4) shows AllSpeak building and running a graphical application from scratch.
 
@@ -43,18 +43,18 @@ I am an individual developer, not an organisation. I am writing not with a fundi
 With kind regards,
 
 Graham
-AllSpeak — allspeak.ai | info@allspeak.ai
+AllSpeak - allspeak.ai | info@allspeak.ai
 White paper: https://doi.org/10.5281/zenodo.22018537
 Video: https://youtu.be/BSvh4MPEzV4
 Repository: https://github.com/easycoder/allspeak.ai
 
 ---
 
-## 2. ITU AI for Good — Next cycle
+## 2. ITU AI for Good - Next cycle
 
 **To:** AI for Good Innovation Factory team
 
-**Subject:** AllSpeak — programming in any language, for the Innovation Factory
+**Subject:** AllSpeak - programming in any language, for the Innovation Factory
 
 To the AI for Good team,
 
@@ -64,20 +64,20 @@ AllSpeak is an open-source programming runtime that allows code to be written, r
 
 The problem AllSpeak addresses is structural: almost every mainstream programming language requires English. This is a significant and largely invisible barrier for the billions of people who are competent, motivated potential developers but not English-literate. As AI coding tools become widespread, the ability to *read and verify* code in one's own language becomes even more important than the ability to write it.
 
-I am aware that the Innovation Factory Grand Finale took place at the July 2026 Summit. I would be grateful for guidance on the next application cycle and the most appropriate entry route — whether through the Innovation Factory itself, the Innovate for Impact use case process, or another channel. A detailed white paper is available and I am happy to provide any supporting materials.
+I am aware that the Innovation Factory Grand Finale took place at the July 2026 Summit. I would be grateful for guidance on the next application cycle and the most appropriate entry route - whether through the Innovation Factory itself, the Innovate for Impact use case process, or another channel. A detailed white paper is available and I am happy to provide any supporting materials.
 
 Yours faithfully,
 
 Graham
-AllSpeak — allspeak.ai | info@allspeak.ai
+AllSpeak - allspeak.ai | info@allspeak.ai
 
 ---
 
-## 3. UNDP Accelerator Labs — Language-specific pilot
+## 3. UNDP Accelerator Labs - Language-specific pilot
 
 **To:** UNDP Digital and AI Innovation Hub
 
-**Subject:** AllSpeak — a language-agnostic programming runtime for local community adoption
+**Subject:** AllSpeak - a language-agnostic programming runtime for local community adoption
 
 To the UNDP Digital and AI Innovation Hub,
 
@@ -92,15 +92,15 @@ I am not seeking funding at this stage but rather a conversation about whether A
 With kind regards,
 
 Graham
-AllSpeak — allspeak.ai | info@allspeak.ai
+AllSpeak - allspeak.ai | info@allspeak.ai
 
 ---
 
-## 4. UN Global Pulse — Brief introduction
+## 4. UN Global Pulse - Brief introduction
 
 **To:** UN Global Pulse partnerships team
 
-**Subject:** AllSpeak — programming in any language — potential relevance to Global Pulse
+**Subject:** AllSpeak - programming in any language - potential relevance to Global Pulse
 
 To the UN Global Pulse team,
 
@@ -115,4 +115,4 @@ I would welcome your guidance on whether this is relevant to any current program
 With kind regards,
 
 Graham
-AllSpeak — allspeak.ai | info@allspeak.ai
+AllSpeak - allspeak.ai | info@allspeak.ai

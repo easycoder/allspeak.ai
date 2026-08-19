@@ -90,3 +90,11 @@ I know nothing of Portuguese names, so can I just confirm that "Dear Mr Canela" 
 **Assistant**
 
 No — Brazilian convention uses the last surname (father's family name) for formal address: for "Guilherme Canela de Souza Godoi", "Canela" is the maternal surname and "Godoi" the paternal. Changed the salutation to "Dear Mr Godoi,". To: line (full name) unchanged.
+
+## 23:18
+
+A very minor point: I read the other day that the extended dash is a signature of AI-written material. If this is so, can we replace these characters with regular ASCII dashes?
+
+**Assistant**
+
+Replaced all em dashes in revised-approach-letters.md (24 total: 20 spaced " — ", 4 unspaced) with spaced ASCII hyphens " - " so the unspaced parenthetical cases don't read as compound words. Verified zero extended dashes remain. Noted (briefly) that the em-dash heuristic is not a rule, but the choice is the author's. Offered to apply the same treatment to the whitepaper/other docs if wanted.
