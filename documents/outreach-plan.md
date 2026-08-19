@@ -42,6 +42,8 @@ Four concurrent workstreams, sequenced so that each approach is made when the su
 
 **What:** Screen capture of the colour grid demo running under AllSpeak, with professional voice-over. Uploaded to YouTube.
 
+**Status:** ✅ DONE 2026-08-19 — live at https://youtu.be/BSvh4MPEzV4. Note: the video is 15 minutes, not the planned 3–4 — email phrasing must say "fifteen-minute" or just "short", never "3-minute demo".
+
 **Current state:** The user is already working on this. The colour grid demo is a good choice — it's visual, immediate, and demonstrates that AllSpeak produces real output.
 
 **What's needed:** Completion of recording, voice-over track, YouTube upload, and ideally a short link.
@@ -95,7 +97,7 @@ Both respond better to concrete proposals than to introductory emails. Having a 
 ```
 Month 1 (July 2026)
 ├── ✅ Zenodo deposit → DOI 10.5281/zenodo.22018537
-├── Complete and upload YouTube video
+├── ✅ Complete and upload YouTube video (https://youtu.be/BSvh4MPEzV4)
 ├── Optional: Send UNESCO email (if video is ready)
 └── Identify FR/DE/IT validators
 

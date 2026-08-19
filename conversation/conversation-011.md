@@ -73,3 +73,12 @@ Sounds nice to have the SVG. Is that to go on the repository home page?
 **Assistant**
 
 Confirmed: the README is the repo's home page on GitHub. Added the Zenodo DOI badge ([![DOI](...svg)](https://doi.org/10.5281/zenodo.22018537)) directly under the README title, standard placement; the plain-text link stays in the Documentation section. Committed and pushed.
+
+## 23:02
+
+The UNESCO Whos-who page has an entry for Guilherme Canela de Souza Godoi with the email address g.godoi@unesco.org
+Let's get the letter send-ready then I can check it carefully.
+
+**Assistant**
+
+Confirmed the letter's To: line matches the Who's-who entry. Made the UNESCO letter send-ready: added the video sentence to the Roadmap paragraph ("A fifteen-minute narrated demonstration video (https://youtu.be/BSvh4MPEzV4) shows AllSpeak building and running a graphical application from scratch") and added Video: to the signature block. Also updated outreach-plan.md: Workstream B marked done with the URL and a note that email phrasing must say "fifteen-minute"/"short", never "3-minute demo"; Month-1 sequencing line marked done.
