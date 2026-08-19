@@ -155,7 +155,7 @@ fork to label `Task` cat N              ! computed parallel fork
 
 ### Passing parameters with `gosub … with`
 
-Use `gosub … with` to pass values and `param` to read them by position:
+Use `gosub … with` to pass values and `put parameter` to read them by position:
 
 ```as
 variable Key
@@ -173,39 +173,39 @@ Main:
     stop
 
 JsonAddString:
-    param 0 into Key
+    put parameter 0 into Key
     put `{"` cat Key cat `":` into BodyText
     ...
     return
 
 FormatDate:
-    param 0 into Y
-    param 1 into M
-    param 2 into D
+    put parameter 0 into Y
+    put parameter 1 into M
+    put parameter 2 into D
     ...
     return
 ```
 
-`gosub Label with Expr1 and Expr2 …` accepts anything `getValue()` can parse — variables, literals, `cat` chains, `count of`, etc. Arguments are zero-indexed; `param 0 into Var` reads the first value passed.
+`gosub Label with Expr1 and Expr2 …` accepts anything `getValue()` can parse — variables, literals, `cat` chains, `count of`, etc. Arguments are zero-indexed; `put parameter 0 into Var` reads the first value passed.
 
-`param` also works as a **value expression**, so you can read an argument anywhere a value is expected:
+`parameter` is a **value expression**, so you can read an argument anywhere a value is expected:
 
 ```as
 JsonAddString:
-    put param 0 into Key                    ! same as `param 0 into Key`
-    log param 1                             ! log the second argument
-    if param 0 is `slug`
+    put parameter 0 into Key
+    log parameter 1                             ! log the second argument
+    if parameter 0 is `slug`
         gosub Warn
     end
-    gosub Forward with param 0              ! pass the argument along
+    gosub Forward with parameter 0              ! pass the argument along
     return
 ```
 
-The index is a single number token (as in the command form), so a following `cat` chain is not swallowed: `put param 1 cat `-` cat param 2 into DateStr` reads argument 1, then argument 2, then concatenates.
+The index is a single number token, so a following `cat` chain is not swallowed: `put parameter 1 cat `-` cat parameter 2 into DateStr` reads argument 1, then argument 2, then concatenates.
 
-The full form `parameter` is accepted everywhere `param` is, in every language pack (`paramètre` in French, `parametro` in Italian, `Parameter` in German).
+The shorter form `param` is accepted everywhere `parameter` is — `param 0 into Key` (a dedicated command) and `put param 0 into Key` both work — as is the translated full form in every language pack (`paramètre` in French, `parametro` in Italian, `Parameter` in German).
 
-If a subroutine is called without `with`, `param` returns `0` (numeric) — existing subroutines are unaffected.
+If a subroutine is called without `with`, `parameter` returns `0` (numeric) — existing subroutines are unaffected.
 
 ### Failure handling
 
@@ -223,10 +223,10 @@ Parameters live on an implicit stack created when `with` is used and discarded w
 gosub Outer with A
   ...
   gosub Inner with X and Y   ! new frame pushed
-  param 0 into Z             ! reads X (Inner's frame)
+  put parameter 0 into Z     ! reads X (Inner's frame)
   ...
   return                      ! Inner's frame popped
-  param 0 into W             ! reads A (Outer's frame)
+  put parameter 0 into W     ! reads A (Outer's frame)
   ...
   return                      ! Outer's frame popped
 ```
