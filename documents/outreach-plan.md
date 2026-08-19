@@ -12,6 +12,8 @@ Four concurrent workstreams, sequenced so that each approach is made when the su
 
 **What:** Upload the completed whitepaper to Zenodo, obtain a DOI, and — if the Aurora community is the right home — deposit it there.
 
+**Status:** ✅ DONE 2026-08-19 — DOI 10.5281/zenodo.22018537, deposited in the project's own AllSpeak community (the Aurora option was superseded by the project's own community — see `documents/zenodo-deposit-guide.md`).
+
 **Current state:** The whitepaper (`documents/whitepaper.md`) is complete at 6,200 words across 9 sections plus references and appendix. It has the new abstract, the laser analogy, the Doclets application case study (§7.2, with the Account application as a scale data point), and the collaboration-first conclusion. Open follow-ups for the Doclets feature are tracked in `documents/doclets-feature-checklist.md`.
 
 **What's needed:**
@@ -92,7 +94,7 @@ Both respond better to concrete proposals than to introductory emails. Having a 
 
 ```
 Month 1 (July 2026)
-├── Zenodo deposit → DOI obtained
+├── ✅ Zenodo deposit → DOI 10.5281/zenodo.22018537
 ├── Complete and upload YouTube video
 ├── Optional: Send UNESCO email (if video is ready)
 └── Identify FR/DE/IT validators
@@ -130,7 +132,7 @@ The revised letter is in `documents/revised-approach-letters.md`.
 
 | Stage | Success marker |
 |---|---|
-| Zenodo | DOI assigned, paper publicly accessible |
+| Zenodo | ✅ DOI assigned (10.5281/zenodo.22018537), paper publicly accessible |
 | Video | YouTube link that can be shared in an email |
 | UNESCO | Reply, even if it's "not quite our area but try X" |
 | ITU | Application acknowledged, placed in pipeline |

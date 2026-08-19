@@ -36,7 +36,7 @@ AllSpeak is an open-source programming runtime that allows code to be written, r
 
 The project addresses a structural gap. Every mainstream programming language uses English keywords. This means that computational literacy—increasingly recognised as a foundational skill—is accessible only to those who can work comfortably in English. The 6.5 billion people worldwide who are not English speakers are, in effect, barred from understanding the code that increasingly shapes their lives.
 
-I was struck by UNESCO's Global Roadmap on Multilingualism in the Digital Era and its call for industry to "design inclusive Language Technologies." AllSpeak does this at the syntactic level: the code itself is in the learner's language, not merely the documentation around it. A companion white paper (available on Zenodo, DOI to follow) describes the architecture, the methodology for adding new languages, and the real-world applications already running on the runtime.
+I was struck by UNESCO's Global Roadmap on Multilingualism in the Digital Era and its call for industry to "design inclusive Language Technologies." AllSpeak does this at the syntactic level: the code itself is in the learner's language, not merely the documentation around it. A companion white paper (available on Zenodo: https://doi.org/10.5281/zenodo.22018537) describes the architecture, the methodology for adding new languages, and the real-world applications already running on the runtime.
 
 I am an individual developer, not an organisation. I am writing not with a funding request but to ask whether AllSpeak might be of interest to UNESCO as a case study, a reference implementation, or a tool to share with language communities working toward digital participation. I would be glad to arrange an online demonstration and to share the white paper and supporting materials.
 
@@ -44,7 +44,7 @@ With kind regards,
 
 Graham
 AllSpeak — allspeak.ai | info@allspeak.ai
-White paper: [Zenodo DOI link]
+White paper: https://doi.org/10.5281/zenodo.22018537
 Repository: https://github.com/easycoder/allspeak.ai
 
 ---

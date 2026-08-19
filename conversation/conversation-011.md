@@ -57,3 +57,11 @@ The options appear to be Submit for Review or Share
 **Assistant**
 
 Checked Zenodo's help docs (share/about + create-new-upload). "Share" is the collaboration feature (share the draft with users / secret link) — it does not publish or mint a DOI. "Submit for review" is the publish path while the AllSpeak community is attached: submit, then accept the submission in the community (as curator) to publish and register the DOI.
+
+## 22:40
+
+Looks like it's done it. The DOI is 10.5281/zenodo.22018537
+
+**Assistant**
+
+Verified the DOI resolves (record live: v1.0.0, AllSpeak community, CC-BY 4.0, whitepaper.pdf attached). Executed the deposit guide's post-publish housekeeping: added "Cite as" line to whitepaper.md and regenerated whitepaper.html + whitepaper.pdf; replaced "[Zenodo DOI link]" and "DOI to follow" in revised-approach-letters.md; marked Workstream A done (+ Month-1 tree line + success table) in outreach-plan.md; added the DOI link to README.md Documentation section. Committed and pushed.

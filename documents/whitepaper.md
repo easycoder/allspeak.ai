@@ -8,6 +8,8 @@
 
 **Project repository:** https://github.com/easycoder/allspeak.ai
 
+**Cite as:** Graham Trott (2026). *AllSpeak: A Language-Agnostic Runtime for Computational Literacy in Multilingual Communities*. Zenodo. https://doi.org/10.5281/zenodo.22018537
+
 ---
 
 ## Abstract

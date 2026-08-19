@@ -108,6 +108,8 @@ AI/                  Onboarding for AI agents working in this repo
 
 For interactive learning, the **Codex** at [https://allspeak.ai](https://allspeak.ai) offers a tutorial course and a programmers' reference. Source under `codex/<lang>/`.
 
+The whitepaper, *[AllSpeak: A Language-Agnostic Runtime for Computational Literacy in Multilingual Communities](https://doi.org/10.5281/zenodo.22018537)*, is published on Zenodo (DOI: 10.5281/zenodo.22018537).
+
 ## Building
 
 ```sh
