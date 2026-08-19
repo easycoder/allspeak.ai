@@ -93,9 +93,13 @@
         // plugin-contract spec, external URLs — is left to the browser.
         // Manifest slugs are loaded once; if they aren't ready when a click
         // arrives (edge case), fall back to routing to the reader.
+        // Language: ?lang=fr selects the fr/ tree; English lives at the root.
         var LEARN_SLUGS = null;
+        var LANG = (new URLSearchParams(window.location.search)).get('lang') || 'en';
+        var LANG_DIR = (LANG && LANG !== 'en') ? LANG + '/' : '';
+        document.documentElement.lang = LANG;
         window.addEventListener('DOMContentLoaded', function () {
-            fetch('manifest.json')
+            fetch(LANG_DIR + 'manifest.json')
                 .then(function (r) { return r.json(); })
                 .then(function (m) {
                     LEARN_SLUGS = {};

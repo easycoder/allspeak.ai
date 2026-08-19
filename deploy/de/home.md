@@ -51,7 +51,7 @@ sie drücken es lediglich unterschiedlich aus.</p>
 <p>AllSpeak läuft entweder auf einer JavaScript-Laufzeit (im Browser) oder einer Python-Laufzeit (auf der Kommandozeile). Es ist kein Ersatz für diese Sprachen — es ist eine Schicht auf einer höheren Ebene darüber. Plugins werden in JavaScript oder Python geschrieben, und AllSpeak gibt ihnen ein skriptfreundliches Vokabular in jeder menschlichen Sprache.</p>
 
 <h3>Wo fange ich an?</h3>
-<p>Arbeiten Sie den <a href="primer.html" style="color:#00d4ff;text-decoration:none">Primer</a> für eine geführte Einführung durch, oder holen Sie sich ein Starter-Pack, um einen KI-Coding-Assistenten zu steuern.</p>
+<p>Arbeiten Sie den <a href="primer.html" style="color:#00d4ff;text-decoration:none">Primer</a> für eine geführte Einführung durch, lesen Sie das <a href="../learn/?lang=de" style="color:#00d4ff;text-decoration:none">Learn</a>-Curriculum, oder holen Sie sich ein Starter-Pack, um einen KI-Coding-Assistenten zu steuern.</p>
 
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
@@ -63,6 +63,6 @@ sie drücken es lediglich unterschiedlich aus.</p>
 {"@type":"Question","name":"Was, wenn ich den von der KI erzeugten Code nicht verstehe?","acceptedAnswer":{"@type":"Answer","text":"Genau das ist der Fall, den AllSpeak verhindern soll. Skripte lesen sich wie natürliche Sprache. Wenn ein bestimmter Befehl unbekannt ist, hat Ihr KI-Agent eine Kurzreferenz geladen und kann ihn direkt erklären."}},
 {"@type":"Question","name":"Ist AllSpeak kostenlos?","acceptedAnswer":{"@type":"Answer","text":"Ja. AllSpeak ist Open Source unter der Apache-2.0-Lizenz. Der vollständige Quellcode liegt auf github.com/easycoder/allspeak.ai."}},
 {"@type":"Question","name":"Wie verhält sich AllSpeak zu JavaScript und Python?","acceptedAnswer":{"@type":"Answer","text":"AllSpeak läuft entweder auf einer JavaScript-Laufzeit (im Browser) oder einer Python-Laufzeit (auf der Kommandozeile). Es ist kein Ersatz für diese Sprachen — es ist eine Schicht auf einer höheren Ebene darüber. Plugins werden in JavaScript oder Python geschrieben, und AllSpeak gibt ihnen ein skriptfreundliches Vokabular in jeder menschlichen Sprache."}},
-{"@type":"Question","name":"Wo fange ich an?","acceptedAnswer":{"@type":"Answer","text":"Arbeiten Sie den Primer für eine geführte Einführung durch, oder holen Sie sich ein Starter-Pack, um einen KI-Coding-Assistenten zu steuern."}}
+{"@type":"Question","name":"Wo fange ich an?","acceptedAnswer":{"@type":"Answer","text":"Arbeiten Sie den Primer für eine geführte Einführung durch, lesen Sie das Learn-Curriculum, oder holen Sie sich ein Starter-Pack, um einen KI-Coding-Assistenten zu steuern."}}
 ]}
 </script>

@@ -148,7 +148,18 @@ SetupScreen:
 
     on click TabLearn
     begin
-        location `../learn/`
+        ! The Learn curriculum exists per language; point each language with
+        ! a learn/<lang>/ tree at its own reader. Languages without a
+        ! curriculum yet keep the root reader.
+        if StrLang is `fr`
+            location `../learn/?lang=fr`
+        else if StrLang is `de`
+            location `../learn/?lang=de`
+        else if StrLang is `it`
+            location `../learn/?lang=it`
+        else
+            location `../learn/`
+        end
     end
 
     on click TabManual

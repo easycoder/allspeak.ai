@@ -49,7 +49,7 @@ they just express them differently.</p>
 <p>AllSpeak runs on either a JavaScript runtime (in the browser) or a Python runtime (on the command line). It's not a replacement for those languages — it's a higher-level layer above them. Plugins are written in JavaScript or Python and AllSpeak gives them a script-friendly vocabulary in any human language.</p>
 
 <h3>Where do I start?</h3>
-<p>Work through the <a href="primer.html" style="color:#00d4ff;text-decoration:none">Primer</a> for a guided introduction, or grab a starter pack to drive an AI coding assistant.</p>
+<p>Work through the <a href="primer.html" style="color:#00d4ff;text-decoration:none">Primer</a> for a guided introduction, browse the <a href="../learn/" style="color:#00d4ff;text-decoration:none">Learn</a> curriculum, or grab a starter pack to drive an AI coding assistant.</p>
 
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
@@ -61,6 +61,6 @@ they just express them differently.</p>
 {"@type":"Question","name":"What if I don't understand the code the AI produces?","acceptedAnswer":{"@type":"Answer","text":"That's the case AllSpeak is designed to prevent. Scripts read close to natural language. If a specific construct is still unfamiliar, your AI agent has a quick reference loaded and can explain it inline."}},
 {"@type":"Question","name":"Is AllSpeak free?","acceptedAnswer":{"@type":"Answer","text":"Yes. AllSpeak is open source under the Apache 2.0 license. The full source is at github.com/easycoder/allspeak.ai."}},
 {"@type":"Question","name":"How does AllSpeak relate to JavaScript and Python?","acceptedAnswer":{"@type":"Answer","text":"AllSpeak runs on either a JavaScript runtime (in the browser) or a Python runtime (on the command line). It is not a replacement for those languages — it is a higher-level layer above them. Plugins are written in JavaScript or Python and AllSpeak gives them a script-friendly vocabulary in any human language."}},
-{"@type":"Question","name":"Where do I start?","acceptedAnswer":{"@type":"Answer","text":"Work through the Primer for a guided introduction, or grab a starter pack to drive an AI coding assistant."}}
+{"@type":"Question","name":"Where do I start?","acceptedAnswer":{"@type":"Answer","text":"Work through the Primer for a guided introduction, browse the Learn curriculum, or grab a starter pack to drive an AI coding assistant."}}
 ]}
 </script>

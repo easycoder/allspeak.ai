@@ -1227,7 +1227,7 @@ var AllSpeak_LanguagePack_de = {
     "send": "sende",
     "multiply": "multipliziere",
     "negate": "negiere",
-    "param": "param",
+    "param": "param|parameter",
     "play": "spiele",
     "pop": "entnehme",
     "print": "drucke",

@@ -1,0 +1,160 @@
+{
+  "#doc": "Geordnete Liste der Kurseiten (de) für die Zurück/Vor-Navigation und Slug-Auflösung.",
+  "pages": [
+    {
+      "slug": "structure",
+      "path": "reference/01-structure.md",
+      "title": "Struktur"
+    },
+    {
+      "slug": "symbols-and-layout",
+      "path": "reference/02-symbols-and-layout.md",
+      "title": "Symbole und Layout"
+    },
+    {
+      "slug": "variables-and-arrays",
+      "path": "reference/03-variables-and-arrays.md",
+      "title": "Variablen und Arrays"
+    },
+    {
+      "slug": "collections",
+      "path": "reference/04-collections.md",
+      "title": "Sammlungen"
+    },
+    {
+      "slug": "values-and-types",
+      "path": "reference/05-values-and-types.md",
+      "title": "Werte und Typen"
+    },
+    {
+      "slug": "conditions",
+      "path": "reference/06-conditions.md",
+      "title": "Bedingungen"
+    },
+    {
+      "slug": "arithmetic",
+      "path": "reference/07-arithmetic.md",
+      "title": "Arithmetik"
+    },
+    {
+      "slug": "strings-and-text",
+      "path": "reference/08-strings-and-text.md",
+      "title": "Zeichenketten und Text"
+    },
+    {
+      "slug": "control-flow",
+      "path": "reference/09-control-flow.md",
+      "title": "Kontrollfluss"
+    },
+    {
+      "slug": "errors-and-recovery",
+      "path": "reference/10-errors-and-recovery.md",
+      "title": "Fehler und Wiederherstellung"
+    },
+    {
+      "slug": "cooperative-multitasking",
+      "path": "reference/11-cooperative-multitasking.md",
+      "title": "Kooperatives Multitasking"
+    },
+    {
+      "slug": "modules",
+      "path": "reference/12-modules.md",
+      "title": "Module"
+    },
+    {
+      "slug": "plugins",
+      "path": "reference/13-plugins.md",
+      "title": "Plugins"
+    },
+    {
+      "slug": "browser-and-webson",
+      "path": "reference/14-browser-and-webson.md",
+      "title": "Browser und Webson"
+    },
+    {
+      "slug": "multilingual",
+      "path": "reference/15-multilingual.md",
+      "title": "Mehrsprachigkeit"
+    },
+    {
+      "slug": "doc-blocks",
+      "path": "reference/16-doc-blocks.md",
+      "title": "Dokumentationsblöcke"
+    },
+    {
+      "slug": "dev-environment",
+      "path": "reference/17-dev-environment.md",
+      "title": "Entwicklungsbefehle"
+    },
+    {
+      "slug": "json",
+      "path": "reference/18-json.md",
+      "title": "JSON"
+    },
+    {
+      "slug": "cat-and-string-building",
+      "path": "idioms/01-cat-and-string-building.md",
+      "title": "cat und Zeichenkettenaufbau"
+    },
+    {
+      "slug": "event-handlers-and-array-index",
+      "path": "idioms/02-event-handlers-and-array-index.md",
+      "title": "Ereignishandler und Array-Index"
+    },
+    {
+      "slug": "looping-patterns",
+      "path": "idioms/03-looping-patterns.md",
+      "title": "Schleifenmuster"
+    },
+    {
+      "slug": "picking-a-collection-shape",
+      "path": "idioms/04-picking-a-collection-shape.md",
+      "title": "Eine Sammlungsform wählen"
+    },
+    {
+      "slug": "floats-and-scaled-integers",
+      "path": "idioms/05-floats-and-scaled-integers.md",
+      "title": "Gleitkommazahlen und skalierte Ganzzahlen"
+    },
+    {
+      "slug": "rest-and-async",
+      "path": "idioms/06-rest-and-async.md",
+      "title": "REST und asynchron"
+    },
+    {
+      "slug": "mqtt-pubsub",
+      "path": "idioms/07-mqtt-pubsub.md",
+      "title": "MQTT pub/sub"
+    },
+    {
+      "slug": "webson-and-as-separation",
+      "path": "idioms/08-webson-and-as-separation.md",
+      "title": "Webson-und-AS-Trennung"
+    },
+    {
+      "slug": "extracting-a-module",
+      "path": "idioms/09-extracting-a-module.md",
+      "title": "Ein Modul extrahieren"
+    },
+    {
+      "slug": "writing-language-neutral",
+      "path": "idioms/10-writing-language-neutral.md",
+      "title": "Sprachneutral schreiben"
+    },
+    {
+      "slug": "debugging-as",
+      "path": "idioms/11-debugging-as.md",
+      "title": ".as debuggen"
+    },
+    {
+      "slug": "working-with-ai",
+      "path": "idioms/12-working-with-ai.md",
+      "title": "Mit KI arbeiten"
+    },
+    {
+      "slug": "server-as-application",
+      "path": "idioms/13-server-as-application.md",
+      "title": "Der Server als Anwendung"
+    }
+  ]
+}

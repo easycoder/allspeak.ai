@@ -52,7 +52,7 @@ le esprimono solo in modo diverso.</p>
 <p>AllSpeak gira su un runtime JavaScript (nel browser) o un runtime Python (da riga di comando). Non sostituisce quei linguaggi — è uno strato di livello più alto sopra di essi. I plugin sono scritti in JavaScript o Python e AllSpeak fornisce loro un vocabolario adatto agli script in qualsiasi lingua umana.</p>
 
 <h3>Da dove inizio?</h3>
-<p>Segui il <a href="primer.html" style="color:#00d4ff;text-decoration:none">Primer</a> per un'introduzione guidata, oppure prendi uno starter pack per pilotare un assistente di coding IA.</p>
+<p>Segui il <a href="primer.html" style="color:#00d4ff;text-decoration:none">Primer</a> per un'introduzione guidata, sfoglia il curriculum <a href="../learn/?lang=it" style="color:#00d4ff;text-decoration:none">Learn</a>, oppure prendi uno starter pack per pilotare un assistente di coding IA.</p>
 
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
@@ -64,6 +64,6 @@ le esprimono solo in modo diverso.</p>
 {"@type":"Question","name":"E se non capisco il codice prodotto dall'IA?","acceptedAnswer":{"@type":"Answer","text":"È esattamente il caso che AllSpeak è progettato per evitare. Gli script si leggono come linguaggio naturale. Se un costrutto specifico ti è sconosciuto, il tuo assistente IA ha un riferimento rapido caricato e può spiegartelo direttamente."}},
 {"@type":"Question","name":"AllSpeak è gratuito?","acceptedAnswer":{"@type":"Answer","text":"Sì. AllSpeak è open source con licenza Apache 2.0. Il codice sorgente completo è su github.com/easycoder/allspeak.ai."}},
 {"@type":"Question","name":"Che rapporto ha AllSpeak con JavaScript e Python?","acceptedAnswer":{"@type":"Answer","text":"AllSpeak gira su un runtime JavaScript (nel browser) o un runtime Python (da riga di comando). Non sostituisce quei linguaggi — è uno strato di livello più alto sopra di essi. I plugin sono scritti in JavaScript o Python e AllSpeak fornisce loro un vocabolario adatto agli script in qualsiasi lingua umana."}},
-{"@type":"Question","name":"Da dove inizio?","acceptedAnswer":{"@type":"Answer","text":"Segui il Primer per un'introduzione guidata, oppure prendi uno starter pack per pilotare un assistente di coding IA."}}
+{"@type":"Question","name":"Da dove inizio?","acceptedAnswer":{"@type":"Answer","text":"Segui il Primer per un'introduzione guidata, sfoglia il curriculum Learn, oppure prendi uno starter pack per pilotare un assistente di coding IA."}}
 ]}
 </script>

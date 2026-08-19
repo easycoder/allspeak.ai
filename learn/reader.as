@@ -17,6 +17,12 @@
     variable Count
     variable N
     variable Found
+    div Header
+    variable Lang
+    variable LangDir
+    variable Args
+    variable Arg
+    variable Strings
 
     div Body
     div Content
@@ -25,7 +31,7 @@
     button PrevButton
     button NextButton
     button NavTrigger
-!! @hash 97292271
+!! @hash 7559c7b0
 !!!
 
 !! Boot: render the layout into the body, attach the AllSpeak variables to their DOM elements, prime the markdown renderer on the content pane, load the manifest of pages, register event handlers, and land on the contents page.
@@ -37,6 +43,7 @@
     render Layout in Body
 
     attach Content to `content`
+    attach Header to `header`
     attach ContentsButton to `contents-button`
     attach PrevButton to `prev-button`
     attach NextButton to `next-button`
@@ -45,7 +52,21 @@
 
     set attribute `data-markdown` of Content to `1`
 
-    rest get Manifest from `manifest.json`
+    json parse url the location as Args
+    put property `arg` of Args into Arg
+    if left 5 of Arg is `lang=`
+    begin
+        put from 5 of Arg into Lang
+        put the position of `&` in Lang into N
+        if N is greater than -1 put left N of Lang into Lang
+    end
+    else put `en` into Lang
+    if Lang is `en` put empty into LangDir
+    else put Lang cat `/` into LangDir
+
+    if Lang is not `en` gosub ApplyLanguageStrings
+
+    rest get Manifest from LangDir cat `manifest.json`
         or alert `Could not load manifest`
     put property `pages` of Manifest into Pages
     put the json count of Pages into Count
@@ -57,21 +78,21 @@
 
     gosub ShowContents
     stop
-!! @hash 9db0ddec
+!! @hash 90784627
 !!!
 
 !! Render the contents page and put the toolbar in its "you are here" state by disabling all three navigation buttons. CurrentIndex is set to -1 as the marker for "no page is selected".
 
 ShowContents:
     put -1 into CurrentIndex
-    rest get Markdown from `contents.md`
+    rest get Markdown from LangDir cat `contents.md`
         or alert `Could not load contents page`
     set the content of Content to Markdown
     disable ContentsButton
     disable PrevButton
     disable NextButton
     return
-!! @hash 31d236d9
+!! @hash 34a5b6ce
 !!!
 
 !! Render the page at CurrentIndex and update the toolbar to reflect bounds. ContentsButton is always enabled here (we're not on the contents page); PrevButton is disabled at the start of the sequence (index 0); NextButton is disabled at the end (index Count-1).
@@ -81,7 +102,7 @@ ShowContents:
 ShowPage:
     put element CurrentIndex of Pages into Page
     put property `path` of Page into Path
-    rest get Markdown from Path
+    rest get Markdown from LangDir cat Path
         or alert `Could not load ` cat Path
     set the content of Content to Markdown
     enable ContentsButton
@@ -95,7 +116,7 @@ ShowPage:
     else
         disable NextButton
     return
-!! @hash 1e1cb99f
+!! @hash 921d34d1
 !!!
 
 !! Move back one page in the sequence. The early return on `CurrentIndex less than 1` covers both the contents page (-1) and the first page (0); in either case there's nowhere earlier to go.
@@ -145,4 +166,16 @@ LookupEnd:
     gosub ShowPage
     return
 !! @hash fb5f9dee
+!!!
+
+!! Overlay the UI strings (header and toolbar labels) for the active language. English keeps the defaults baked into reader.json; every other language reads a strings.json from its own directory. The page prose itself comes from that directory too, so only these four chrome labels need translating.
+ApplyLanguageStrings:
+    rest get Strings from LangDir cat `strings.json`
+        or return
+    set the content of Header to property `header` of Strings
+    set the content of PrevButton to property `prev` of Strings
+    set the content of ContentsButton to property `contents` of Strings
+    set the content of NextButton to property `next` of Strings
+    return
+!! @hash 0fb079f5
 !!!

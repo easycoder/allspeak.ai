@@ -1,0 +1,160 @@
+{
+  "#doc": "Liste ordonnée des pages du cursus (français) pour la navigation précédent/suivant et la résolution des slugs.",
+  "pages": [
+    {
+      "slug": "structure",
+      "path": "reference/01-structure.md",
+      "title": "Structure"
+    },
+    {
+      "slug": "symbols-and-layout",
+      "path": "reference/02-symbols-and-layout.md",
+      "title": "Symboles et mise en page"
+    },
+    {
+      "slug": "variables-and-arrays",
+      "path": "reference/03-variables-and-arrays.md",
+      "title": "Variables et tableaux"
+    },
+    {
+      "slug": "collections",
+      "path": "reference/04-collections.md",
+      "title": "Collections"
+    },
+    {
+      "slug": "values-and-types",
+      "path": "reference/05-values-and-types.md",
+      "title": "Valeurs et types"
+    },
+    {
+      "slug": "conditions",
+      "path": "reference/06-conditions.md",
+      "title": "Conditions"
+    },
+    {
+      "slug": "arithmetic",
+      "path": "reference/07-arithmetic.md",
+      "title": "Arithmétique"
+    },
+    {
+      "slug": "strings-and-text",
+      "path": "reference/08-strings-and-text.md",
+      "title": "Chaînes et texte"
+    },
+    {
+      "slug": "control-flow",
+      "path": "reference/09-control-flow.md",
+      "title": "Flux de contrôle"
+    },
+    {
+      "slug": "errors-and-recovery",
+      "path": "reference/10-errors-and-recovery.md",
+      "title": "Erreurs et reprise"
+    },
+    {
+      "slug": "cooperative-multitasking",
+      "path": "reference/11-cooperative-multitasking.md",
+      "title": "Multitâche coopératif"
+    },
+    {
+      "slug": "modules",
+      "path": "reference/12-modules.md",
+      "title": "Modules"
+    },
+    {
+      "slug": "plugins",
+      "path": "reference/13-plugins.md",
+      "title": "Extensions"
+    },
+    {
+      "slug": "browser-and-webson",
+      "path": "reference/14-browser-and-webson.md",
+      "title": "Navigateur et Webson"
+    },
+    {
+      "slug": "multilingual",
+      "path": "reference/15-multilingual.md",
+      "title": "Multilingue"
+    },
+    {
+      "slug": "doc-blocks",
+      "path": "reference/16-doc-blocks.md",
+      "title": "Blocs de documentation"
+    },
+    {
+      "slug": "dev-environment",
+      "path": "reference/17-dev-environment.md",
+      "title": "Commandes de l'environnement de développement"
+    },
+    {
+      "slug": "json",
+      "path": "reference/18-json.md",
+      "title": "JSON"
+    },
+    {
+      "slug": "cat-and-string-building",
+      "path": "idioms/01-cat-and-string-building.md",
+      "title": "cat et construction de chaînes"
+    },
+    {
+      "slug": "event-handlers-and-array-index",
+      "path": "idioms/02-event-handlers-and-array-index.md",
+      "title": "Gestionnaires d'événements et index de tableau"
+    },
+    {
+      "slug": "looping-patterns",
+      "path": "idioms/03-looping-patterns.md",
+      "title": "Motifs de boucles"
+    },
+    {
+      "slug": "picking-a-collection-shape",
+      "path": "idioms/04-picking-a-collection-shape.md",
+      "title": "Choisir la forme d'une collection"
+    },
+    {
+      "slug": "floats-and-scaled-integers",
+      "path": "idioms/05-floats-and-scaled-integers.md",
+      "title": "Flottants et entiers mis à l'échelle"
+    },
+    {
+      "slug": "rest-and-async",
+      "path": "idioms/06-rest-and-async.md",
+      "title": "REST et asynchrone"
+    },
+    {
+      "slug": "mqtt-pubsub",
+      "path": "idioms/07-mqtt-pubsub.md",
+      "title": "MQTT pub/sub"
+    },
+    {
+      "slug": "webson-and-as-separation",
+      "path": "idioms/08-webson-and-as-separation.md",
+      "title": "Séparation Webson et AS"
+    },
+    {
+      "slug": "extracting-a-module",
+      "path": "idioms/09-extracting-a-module.md",
+      "title": "Extraire un module"
+    },
+    {
+      "slug": "writing-language-neutral",
+      "path": "idioms/10-writing-language-neutral.md",
+      "title": "Écrire en langage neutre"
+    },
+    {
+      "slug": "debugging-as",
+      "path": "idioms/11-debugging-as.md",
+      "title": "Déboguer .as"
+    },
+    {
+      "slug": "working-with-ai",
+      "path": "idioms/12-working-with-ai.md",
+      "title": "Travailler avec l'IA"
+    },
+    {
+      "slug": "server-as-application",
+      "path": "idioms/13-server-as-application.md",
+      "title": "Le serveur comme application"
+    }
+  ]
+}

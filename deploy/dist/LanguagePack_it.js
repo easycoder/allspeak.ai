@@ -1233,7 +1233,7 @@ var AllSpeak_LanguagePack_it = {
     "negate": "nega",
     "increment": "incrementa",
     "decrement": "decrementa",
-    "param": "param",
+    "param": "param|parametro",
     "play": "riproduci",
     "pop": "estrai",
     "print": "stampa",

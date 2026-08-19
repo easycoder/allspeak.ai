@@ -332,6 +332,12 @@ A short video demonstrates AllSpeak in action, walking through a run of the demo
 
 Video: [YouTube link — placeholder: https://www.youtube.com/watch?v=XXXXXXX]
 
+### 7.5 The Learn curriculum: documentation as demonstration
+
+Alongside the interactive Codex, AllSpeak maintains a second learning surface: the Learn curriculum at `https://allspeak.ai/learn`. Where the Codex is built around doing—twenty steps, each producing a visible result—Learn is built around reading. Its two tiers mirror the two questions a newcomer actually asks: the Reference pages answer "what is this thing?" and the Idioms pages answer "how do I do X the AllSpeak way?", each idiom with worked examples and explicit anti-patterns.
+
+The pages are written to be followed by a reader with no programming background; the language's vocabulary is the documentation's vocabulary, so the material needs no secondary syntax to explain. The reader itself is an AllSpeak application: the navigation toolbar and the rendered Markdown pane are produced by AllSpeak code running on the same engine the curriculum describes. The documentation is thus also a working demonstration of the platform, and the two learning modes—reading and doing—reinforce one another. The curriculum is published in English and in first-draft French, German, and Italian (each labelled as a draft inviting corrections); as the Codex already demonstrates the four-language structure, the Learn translations follow the same pipeline, with community review via Section 6 the path to full quality.
+
 ---
 
 ## 8. Open Questions and Limitations
