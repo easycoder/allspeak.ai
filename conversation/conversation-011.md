@@ -33,3 +33,11 @@ The subjet of the video is exactly as described, but its duration is 15 minutes,
 **Assistant**
 
 Updated whitepaper §7.4 prose ("a four-minute introduction" → "a fifteen-minute introduction"), regenerated whitepaper.html and whitepaper.pdf in the same pass, committed and pushed.
+
+## 21:20
+
+I've uploaded the whitepaper to Zenodo and am filling in the form. What should I put in the Description field?
+
+**Assistant**
+
+Pointed to documents/zenodo-deposit-guide.md section 4: paste the whitepaper abstract verbatim (quoted it in full, copy-paste ready); also gave the section 5 keyword list for the next field.
