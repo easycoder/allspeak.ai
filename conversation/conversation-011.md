@@ -115,3 +115,11 @@ Good reasoning. I'll put it in my diary.
 **Assistant**
 
 Recorded the planned send date in outreach-plan.md: Tue 8 Sep 2026, ~10:00–11:00 Paris time, with the 2-week follow-up window (≈22 September).
+
+## 23:38
+
+OK, we've done everything we can think of. Let's close here.
+
+**Assistant**
+
+Session closed. Summary: whitepaper video linked (§7.4) and all formats regenerated (html + pdf); Zenodo deposit live (DOI 10.5281/zenodo.22018537) with all housekeeping done (cite-as, approach letters, outreach plan, README badge); UNESCO letter send-ready (corrected salutation "Dear Mr Godoi", video + DOI links, ASCII hyphens); send planned Tue 8 Sep 2026 with follow-up window noted in outreach-plan.md. Outstanding (tracked in repo): ITU enquiry, FR/DE/IT validator identification, website deploy, Doclets screenshots.
