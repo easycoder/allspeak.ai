@@ -49,3 +49,11 @@ Then do I click Submit for Review (under Draft)?
 **Assistant**
 
 Explained Zenodo's two paths: "Publish" = immediate public + DOI; "Submit for review" appears because the AllSpeak community is attached — record goes public and gets its DOI only after community acceptance. With your own community you control that step (click Submit for review, then approve it in the community as curator), or if the UI offers Publish directly, that also works. Recommended keeping the community link for future deposits.
+
+## 22:32
+
+The options appear to be Submit for Review or Share
+
+**Assistant**
+
+Checked Zenodo's help docs (share/about + create-new-upload). "Share" is the collaboration feature (share the draft with users / secret link) — it does not publish or mint a DOI. "Submit for review" is the publish path while the AllSpeak community is attached: submit, then accept the submission in the community (as curator) to publish and register the DOI.
