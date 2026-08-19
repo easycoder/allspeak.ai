@@ -158,6 +158,15 @@ fork to label `Task` cat N              ! computed parallel fork
 Use `gosub … with` to pass values and `param` to read them by position:
 
 ```as
+variable Key
+variable BodyText
+variable Y
+variable M
+variable D
+variable Year
+variable Month
+variable Day
+
 Main:
     gosub JsonAddString with `slug`
     gosub FormatDate with Year and Month and Day
@@ -177,7 +186,24 @@ FormatDate:
     return
 ```
 
-`gosub Label with Expr1 and Expr2 …` accepts anything `getValue()` can parse — variables, literals, `cat` chains, `count of`, etc. Parameters are zero-indexed; `param 0 into Var` reads the first value passed.
+`gosub Label with Expr1 and Expr2 …` accepts anything `getValue()` can parse — variables, literals, `cat` chains, `count of`, etc. Arguments are zero-indexed; `param 0 into Var` reads the first value passed.
+
+`param` also works as a **value expression**, so you can read an argument anywhere a value is expected:
+
+```as
+JsonAddString:
+    put param 0 into Key                    ! same as `param 0 into Key`
+    log param 1                             ! log the second argument
+    if param 0 is `slug`
+        gosub Warn
+    end
+    gosub Forward with param 0              ! pass the argument along
+    return
+```
+
+The index is a single number token (as in the command form), so a following `cat` chain is not swallowed: `put param 1 cat `-` cat param 2 into DateStr` reads argument 1, then argument 2, then concatenates.
+
+The full form `parameter` is accepted everywhere `param` is, in every language pack (`paramètre` in French, `parametro` in Italian, `Parameter` in German).
 
 If a subroutine is called without `with`, `param` returns `0` (numeric) — existing subroutines are unaffected.
 

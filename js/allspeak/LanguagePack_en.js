@@ -613,9 +613,10 @@ var AllSpeak_LanguagePack_en = {
       ]
     },
     "PARAM": {
-      "keyword": "param",
+      "keyword": "param|parameter",
       "patterns": [
-        "param {number} into {variable}"
+        "param {number} into {variable}",
+        "parameter {number} into {variable}"
       ]
     },
     "POP": {
@@ -1301,7 +1302,7 @@ var AllSpeak_LanguagePack_en = {
     "negate": "negate",
     "increment": "increment",
     "decrement": "decrement",
-    "param": "param",
+    "param": "param|parameter",
     "play": "play",
     "pop": "pop",
     "print": "print",

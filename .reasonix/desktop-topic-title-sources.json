@@ -1,8 +1,14 @@
 {
+  "legacy_20260709-113212_427432338-deepseek-v4-flash_83657e70fcd7": "manual",
+  "legacy_20260723-210614_598476187-deepseek-v4-flash_967f940d8a05": "manual",
+  "legacy_20260724-085514_853053012-deepseek-v4-flash_384493335ecc": "manual",
+  "topic_20260709-141041_7b013fa24f84f2be": "manual",
+  "topic_20260802-135157_69165308176df125": "manual",
   "topic_20260803-094352_c5d7a2e15acb791e": "manual",
   "topic_20260803-113454_a59d2c338e5e4f1b": "manual",
   "topic_20260805-100502_7a8fa77a7d0a9e07": "auto",
   "topic_20260806-205408_771f36ad8d56c085": "auto",
   "topic_20260807-212451_6a06465f961cbd4b": "manual",
-  "topic_20260809-144224_cc771f6c79d6235e": "manual"
+  "topic_20260809-144224_cc771f6c79d6235e": "manual",
+  "topic_20260819-125549_0f24f734af0988e9": "auto"
 }

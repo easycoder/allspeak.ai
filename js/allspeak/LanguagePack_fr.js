@@ -1229,7 +1229,7 @@ var AllSpeak_LanguagePack_fr = {
     "send": "envoie",
     "multiply": "multiplie",
     "negate": "oppose",
-    "param": "param",
+    "param": "param|paramètre",
     "play": "joue",
     "pop": "dépile|depile",
     "print": "imprime",

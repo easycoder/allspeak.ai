@@ -780,18 +780,22 @@ class Core(Handler):
             # Don't advance here — the 'with' check below uses peek()
         else:
             command['gosub'] = self.nextToken()
-        # Parse optional with-args
+        # Parse optional with-args. The sequence matters: peek() sees one
+        # token ahead without advancing, so we first advance onto the 'with'
+        # connector, then nextValue() advances past it (and past each 'and')
+        # before reading an argument. Reading before advancing would treat
+        # the connector itself as an argument.
         if language.reverse_word(self.peek()) == 'with':
-            self.nextToken()
+            self.nextToken()  # move from the label onto 'with'
             args = []
             while True:
-                value = self.getValue()
+                value = self.nextValue()
                 if value is None:
                     break
                 args.append(value)
                 if language.reverse_word(self.peek()) != 'and':
                     break
-                self.nextToken()
+                self.nextToken()  # move onto 'and' (nextValue skips it)
             if args:
                 command['args'] = args
         self.add(command)
@@ -2470,6 +2474,24 @@ class Core(Handler):
             value.index = self.getValue()
             return value
 
+        # The `param N` value expression: reads the Nth argument of the
+        # current `gosub ... with` frame. `parameter` (and the other forms
+        # each language pack maps to canonical 'param') reaches this via
+        # as_compiler.compileValue -> domain.compileValue with the same token.
+        # N is a single numeric token (like the k_param command form), so a
+        # following `cat` chain is not swallowed into the index. Note: the
+        # index is left as the current token (callers advance past it), per
+        # the Python compiler's convention.
+        if language.reverse_word(token) == 'param':
+            self.nextToken()
+            try:
+                index = int(self.getToken())
+            except (ValueError, TypeError):
+                return None
+            value.setType('param')
+            value.index = ECValue(type=int, content=index)
+            return value
+
         if token in ['cos', 'sin', 'tan']:
             value.angle = self.nextValue()
             if self.nextToken() == 'radius':
@@ -2771,6 +2793,20 @@ class Core(Handler):
             RuntimeError(self.program, f'Argument index {index} out of range (only {len(self.program.argv)} args provided)')
             return ECValue(type=str, content='')
         return ECValue(type=str, content=self.program.argv[index])
+
+    # `param N` value: reads the Nth argument of the current `gosub ... with`
+    # frame. Mirrors r_param: no frame or out-of-range index yields numeric 0.
+    def v_param(self, v):
+        index = self.textify(v.index)
+        frame = (self.program.callArgs[-1]
+                 if hasattr(self.program, 'callArgs') and self.program.callArgs
+                 else None)
+        if frame is not None and index < len(frame):
+            val = frame[index]
+            if isinstance(val, ECValue):
+                return ECValue(type=val.getType(), content=val.getContent())
+            return ECValue(type=int if isinstance(val, int) else str, content=val)
+        return ECValue(type=int, content=0)
 
     def v_bool(self, v):
         value = ECValue(type=bool, content=v.getContent())

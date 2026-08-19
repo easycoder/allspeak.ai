@@ -2943,7 +2943,12 @@ const AllSpeak_Core = {
 		handlers[lang.word(`goto`)] = this.Go;           // alias for go
 		handlers[lang.word(`subtract`)] = this.Take;     // alias for take
 		handlers[lang.word(`endTry`)] = this.EndTry;     // internal
-		handlers[lang.word(`param`)] = this.Param;
+		// Register every accepted spelling of the parameter keyword (e.g.
+		// param|parameter), not just the primary form — wordForms() reads
+		// the `|`-separated list from the active language pack.
+		for (const w of AllSpeak_Language.wordForms(`param`)) {
+			handlers[w] = this.Param;
+		}
 		this._compileHandlers = handlers;
 	},
 
@@ -3307,6 +3312,31 @@ const AllSpeak_Core = {
 						};
 					}
 				}
+			}
+			// The `param N` value expression: reads the Nth argument of the
+			// current `gosub ... with` frame. Accepted under every spelling
+			// the active language pack maps to canonical 'param' (e.g.
+			// param|parameter). N is a single numeric token (like the command
+			// form), so a following `cat` chain is not swallowed into the
+			// index: `param 1 cat X` reads arg 1 then concatenates X.
+			// Placed after the symbol check so a declared variable named
+			// 'param' still shadows the keyword.
+			if (AllSpeak_Language.reverseWord(token) === `param`) {
+				compiler.next();
+				const index = parseInt(compiler.getToken());
+				if (!isNaN(index)) {
+					compiler.next();
+					return {
+						domain: `core`,
+						type: `param`,
+						index: {
+							type: `constant`,
+							numeric: true,
+							content: index
+						}
+					};
+				}
+				return null;
 			}
 			if ([`character`, `char`].includes(token)) {
 				let index = compiler.getNextValue();
@@ -3908,6 +3938,36 @@ const AllSpeak_Core = {
 					numeric: true,
 					content: searchIn.indexOf(value1)
 				};
+			case `param`: {
+				// Read the Nth argument of the current `gosub ... with` frame.
+				// Mirrors Param.run: a missing frame or an out-of-range index
+				// yields numeric 0, matching the command form's behaviour.
+				// Note: getValue() returns the raw content, not a value object.
+				const paramFrame = program.callArgs && program.callArgs.length > 0
+					? program.callArgs[program.callArgs.length - 1]
+					: null;
+				const paramIndex = program.getValue(value.index);
+				let paramContent = 0;
+				let paramNumeric = true;
+				if (paramFrame && paramIndex !== null && paramIndex !== undefined && paramIndex < paramFrame.length) {
+					const val = paramFrame[paramIndex];
+					if (typeof val === `number`) {
+						paramContent = val;
+						paramNumeric = true;
+					} else if (typeof val === `string`) {
+						paramContent = val;
+						paramNumeric = false;
+					} else {
+						paramContent = val !== null && val !== undefined ? val.content : 0;
+						paramNumeric = val ? val.numeric : true;
+					}
+				}
+				return {
+					type: `constant`,
+					numeric: paramNumeric,
+					content: paramContent
+				};
+			}
 			case `arg`:
 				const name = program.getValue(value.value);
 				const target = program.getSymbolRecord(value.target);

@@ -126,8 +126,13 @@ function runTest(distCode, scriptSource) {
     logs.push(msg);
   };
 
-  // Initialize state that AllSpeak_Startup() would normally set
-  // (bypassed when calling EC.start() directly without window.onload)
+  // Initialize state that AllSpeak_Startup() would normally set. Firing
+  // window.onload loads the default (English) language pack first — without
+  // it, _buildCompileHandlers registers no opcode keywords and every command
+  // fails with "I don't understand '<keyword>'".
+  if (typeof window.onload === 'function') {
+    window.onload();
+  }
   EC.scripts = {};
   sandbox.window.AllSpeak = EC;
 
