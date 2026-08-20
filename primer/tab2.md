@@ -26,4 +26,6 @@ Make the grid state survive page reloads. When I refresh the page, each cell sho
 
 After each prompt, review what the AI created. You should be able to read the AllSpeak code and understand what it does — that's the point. If something isn't right, tell the AI what to fix in plain language.
 
+You can watch the whole example being run in this short recording: [AllSpeak primer in action](https://www.youtube.com/watch?v=BSvh4MPEzV4). The run captured there went through all four prompts without needing a single fix, which is what kept the video short — but your mileage may vary.
+
 A few small things may need correcting on the first try — a missing variable declaration, an awkward layout choice, a colour you'd like adjusted. That's normal; the workflow is designed for the human to spot and steer, not the AI to produce perfect first drafts.
