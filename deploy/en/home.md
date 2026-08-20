@@ -51,6 +51,9 @@ they just express them differently.</p>
 <h3>Where do I start?</h3>
 <p>Work through the <a href="primer.html" style="color:#00d4ff;text-decoration:none">Primer</a> for a guided introduction, browse the <a href="../learn/" style="color:#00d4ff;text-decoration:none">Learn</a> curriculum, or grab a starter pack to drive an AI coding assistant.</p>
 
+<h3>References</h3>
+<p>Read the <a href="https://doi.org/10.5281/zenodo.22018537" style="color:#00d4ff;text-decoration:none">whitepaper</a>, watch the <a href="https://youtu.be/BSvh4MPEzV4" style="color:#00d4ff;text-decoration:none">demonstration video</a>, or browse the <a href="https://github.com/easycoder/allspeak.ai" style="color:#00d4ff;text-decoration:none">source repository</a>.</p>
+
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
 {"@type":"Question","name":"What is AllSpeak?","acceptedAnswer":{"@type":"Answer","text":"AllSpeak is a high-level scripting language designed to be written by AI and read by humans, in any of several human languages — currently English, French, German and Italian. The same engine runs all of them, so non-English speakers can code in their own language without losing access to AI assistance."}},

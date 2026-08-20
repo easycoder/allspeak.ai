@@ -123,3 +123,11 @@ OK, we've done everything we can think of. Let's close here.
 **Assistant**
 
 Session closed. Summary: whitepaper video linked (§7.4) and all formats regenerated (html + pdf); Zenodo deposit live (DOI 10.5281/zenodo.22018537) with all housekeeping done (cite-as, approach letters, outreach plan, README badge); UNESCO letter send-ready (corrected salutation "Dear Mr Godoi", video + DOI links, ASCII hyphens); send planned Tue 8 Sep 2026 with follow-up window noted in outreach-plan.md. Outstanding (tracked in repo): ITU enquiry, FR/DE/IT validator identification, website deploy, Doclets screenshots.
+
+## 23:50
+
+I think that on the AllSpeak website landing page there should be a link to the whitepape, possibly in a References section after "Where do I start?". The new section could also include links to the YouTube video and maybe the repo. The more cross-linking the better as long as it's not intrusive or distracting.
+
+**Assistant**
+
+Added a References section to the live landing page (deploy/en/home.md) after the "Where do I start?" FAQ item: links to the whitepaper (Zenodo DOI), the demonstration video (YouTube), and the source repository, matching the page's inline link style. Notes: resources/ is superseded (deploy pipeline doesn't ship it) so only deploy/en/home.md was edited; de/fr/it home pages have a different older structure (no FAQ) so they were left untouched; deploy step is separate (user runs deploy-allspeak). Pre-existing uncommitted deploy/ changes (zips, primer/tab2.md) left alone.
