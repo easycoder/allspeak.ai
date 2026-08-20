@@ -2440,6 +2440,220 @@ class Core(Handler):
         return self.nextPC()
 
     #############################################################################
+    # Test vocabulary: check / test ... end test
+
+    # check [that] {condition} [or {action} | on failure {action}]
+    def k_check(self, command):
+        self.nextToken()               # past 'check'
+        if self.isWord('that'):
+            self.nextToken()
+        # Reuse the exact condition grammar as 'if' — no new condition syntax.
+        # Capture the source text of the condition for the FAIL report.
+        start = self.compiler.index
+        command['condition'] = self.compiler.condition.compileCondition()
+        command['conditionText'] = ' '.join(
+            t.token for t in self.compiler.tokens[start:self.compiler.index + 1])
+        # Locate an optional 'or' / 'on failure' clause introducer. The
+        # condition parser usually leaves the index on the last condition
+        # token (introducer at peek), but when it rewinds a failed 'or' the
+        # introducer is the current token — accept both positions.
+        clause = 0
+        tok = language.reverse_word(self.getToken())
+        if tok not in ('or', 'on'):
+            nxt = language.reverse_word(self.peek())
+            if nxt in ('or', 'on'):
+                self.nextToken()
+                tok = nxt
+            else:
+                tok = None
+        if tok == 'or':
+            self.nextToken()
+            clause = 1
+        elif tok == 'on':
+            mark = self.compiler.index
+            self.nextToken()
+            if language.reverse_word(self.getToken()) == 'failure':
+                self.nextToken()
+                clause = 2
+            else:
+                self.compiler.index = mark
+        command['or'] = None
+        orHere = self.getCodeSize()
+        self.add(command)
+        if clause:
+            # Skip the recovery action on success
+            cmd = {
+                'lino': command['lino'],
+                'domain': 'core',
+                'keyword': 'gotoPC',
+                'goto': 0,
+                'debug': False,
+            }
+            skip = self.getCodeSize()
+            self.add(cmd)
+            self.getCommandAt(orHere)['or'] = self.getCodeSize()
+            self.compileOne()
+            if clause == 1:
+                # 'or' — end the current test block after the action
+                cmd = {
+                    'lino': command['lino'],
+                    'domain': 'core',
+                    'keyword': 'gotoTestEnd',
+                    'debug': False,
+                }
+                self.add(cmd)
+            self.getCommandAt(skip)['goto'] = self.getCodeSize()
+        return True
+
+    def r_check(self, command):
+        test = self.program.condition.testCondition(command['condition'])
+        suite = self.program.testSuite
+        current = self.program.currentTest
+        if current == None:
+            current = suite['default']
+        current['checks'] += 1
+        if test:
+            current['passed'] += 1
+            return self.nextPC()
+        current['failed'] += 1
+        if current['firstFailure'] == None:
+            current['firstFailure'] = {
+                'condition': command['conditionText'],
+                'lino': command['lino'] + 1,
+            }
+        # A failed check is a report, not a crash — log it and continue.
+        code = self.program.code[self.program.pc]
+        lino = str(code['lino'] + 1)
+        print(f'{datetime.now().time()}:{self.program.name}:{lino}->FAIL: '
+              f'{command["conditionText"]} ({self.program.name}:{lino})')
+        if command.get('or') != None:
+            self.program.errorMessage = f'Check failed: {command["conditionText"]}'
+            return command['or']
+        return self.nextPC()
+
+    # test {name} ... end test
+    def k_test(self, command):
+        if getattr(self.compiler, 'inTestBlock', False):
+            FatalError(self.compiler, "'test' blocks cannot be nested")
+        command['name'] = self.nextValue()       # advances past 'test'
+        if command['name'] == None:
+            FatalError(self.compiler, 'test: expected a name')
+            return False
+        self.nextToken()                         # past the name value
+        command['next'] = 0
+        command['errorPC'] = 0
+        testPC = self.getCodeSize()
+        self.add(command)
+        self.compiler.inTestBlock = True
+        # Compile the body up to 'end'. Nested begin/end blocks consume their
+        # own terminator, so only this block's 'end' stops the loop. An empty
+        # body leaves the index at 'end' already.
+        if language.reverse_word(self.getToken()) != 'end':
+            self.compileFromHere(['end'])
+        # Expect the two-word terminator 'end test'
+        if language.reverse_word(self.getToken()) != 'end':
+            FatalError(self.compiler, "Expected 'end test' to close the test block")
+            return False
+        self.nextToken()                       # consume 'end'
+        if language.reverse_word(self.getToken()) != 'test':
+            FatalError(self.compiler, "Expected 'end test' to close the test block")
+            return False
+        # Leave the index at 'test': the enclosing compileFrom loop advances
+        # one token past the handler's final position to reach the next
+        # statement.
+        # Normal flow falls out of the body into endTest (which finalizes the
+        # case and jumps past the error handler). Unhandled runtime errors are
+        # routed to testError in test mode: the case is marked errored and the
+        # runner skips to the next block instead of aborting the whole run.
+        endPC = self.getCodeSize()
+        self.add({
+            'lino': command['lino'],
+            'domain': 'core',
+            'keyword': 'endTest',
+            'next': 0,
+            'debug': False,
+        })
+        errPC = self.getCodeSize()
+        self.add({
+            'lino': command['lino'],
+            'domain': 'core',
+            'keyword': 'testError',
+            'next': 0,
+            'debug': False,
+        })
+        after = self.getCodeSize()
+        self.getCommandAt(testPC)['next'] = after
+        self.getCommandAt(testPC)['errorPC'] = errPC
+        self.getCommandAt(testPC)['endTestPC'] = endPC
+        self.getCommandAt(endPC)['next'] = after
+        self.getCommandAt(errPC)['next'] = after
+        self.compiler.inTestBlock = False
+        return True
+
+    def r_test(self, command):
+        # Save current onError and set up the block error handler (test mode
+        # only — outside test mode errors abort as usual).
+        if not hasattr(self.program, 'onErrorStack'):
+            self.program.onErrorStack = []
+        self.program.onErrorStack.append(self.program.onError)
+        if self.program.testMode:
+            self.program.onError = command['errorPC']
+        name = self.textify(command['name'])
+        if name == None:
+            name = ''
+        self.program.currentTest = {
+            'name': name,
+            'checks': 0,
+            'passed': 0,
+            'failed': 0,
+            'errored': False,
+            'errorMsg': None,
+            'firstFailure': None,
+            'next': command['next'],
+            'endTestPC': command['endTestPC'],
+        }
+        return self.nextPC()
+
+    def r_endTest(self, command):
+        # Restore onError from the stack
+        if hasattr(self.program, 'onErrorStack') and len(self.program.onErrorStack) > 0:
+            self.program.onError = self.program.onErrorStack.pop()
+        else:
+            self.program.onError = 0
+        # Finalize the current test case, then jump past the error handler
+        current = self.program.currentTest
+        if current != None:
+            self.program.testSuite['tests'].append(current)
+            self.program.currentTest = None
+        return command['next']
+
+    def r_testError(self, command):
+        # An unhandled runtime error was routed here — mark the case errored,
+        # restore onError and skip to the next test block.
+        current = self.program.currentTest
+        if current != None:
+            current['errored'] = True
+            msg = getattr(self.program, 'errorMessage', None)
+            current['errorMsg'] = msg if msg else 'Test aborted by an error'
+            self.program.testSuite['tests'].append(current)
+            self.program.currentTest = None
+        if hasattr(self.program, 'onErrorStack') and len(self.program.onErrorStack) > 0:
+            self.program.onError = self.program.onErrorStack.pop()
+        else:
+            self.program.onError = 0
+        return command['next']
+
+    def r_gotoTestEnd(self, command):
+        # An 'or' clause fired on a check: end the current test block now by
+        # running its endTest command, so the case is finalized and onError
+        # restored. Outside any test block the implicit default case ends the
+        # script.
+        current = self.program.currentTest
+        if current != None:
+            return current['endTestPC']
+        return 0
+
+    #############################################################################
     # Support functions
 
     def incdec(self, command, mode):

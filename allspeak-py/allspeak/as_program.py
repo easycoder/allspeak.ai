@@ -42,13 +42,15 @@ def flush():
 
 class Program:
 
-	def __init__(self, arg):
+	def __init__(self, arg, testMode=False):
 		global queue
+		self.testMode = testMode
 		try:
 			allspeak_version = version("allspeak-ai")
 		except PackageNotFoundError:
 			from . import __version__ as allspeak_version
-		print(f'AllSpeak version {allspeak_version}')
+		if not testMode:
+			print(f'AllSpeak version {allspeak_version}')
 		if len(arg) == 0:
 			print('No script supplied')
 			exit()
@@ -71,7 +73,7 @@ class Program:
 		queue = deque()
 		self.domains = []
 		self.domainIndex = {}
-		self.name = '<anon>'
+		self.name = os.path.basename(self.scriptName) if testMode else '<anon>'
 		self.code = []
 		self.pc = 0
 		self.symbols = {}
@@ -104,6 +106,23 @@ class Program:
 		self.replyVar = None
 		self.onMessagePC = 0
 		self.breakpoint = False
+		# Test-runner state (see printTestSummary)
+		self.testExitCode = 0
+		self.summaryPrinted = False
+		self.errorRouted = False
+		self.testSuite = {
+			'name': None,
+			'tests': [],
+			'default': {
+				'checks': 0,
+				'passed': 0,
+				'failed': 0,
+				'errored': False,
+				'errorMsg': None,
+				'firstFailure': None,
+			},
+		}
+		self.currentTest = None
 	# Queue an intent to run at a given PC (thread-safe for MQTT callbacks)
 	def queueIntent(self, pc):
 		global intent_queue
@@ -129,17 +148,17 @@ class Program:
 		self.tokenise(self.script)
 		if self.compiler.compileFromStart():
 			finishCompile = time.time()
-			s = len(self.script.lines)
-			t = len(self.script.tokens)
-			print(f'Compiled {self.name}: {s} lines ({t} tokens) in ' +
-				f'{round((finishCompile - startCompile) * 1000)} ms')
-			for name in self.symbols.keys():
-				record = self.code[self.symbols[name]]
-				if name[-1] != ':' and not record['used']:
-					print(f'Variable "{name}" not used')
-			else:
+			if not self.testMode:
+				s = len(self.script.lines)
+				t = len(self.script.tokens)
+				print(f'Compiled {self.name}: {s} lines ({t} tokens) in ' +
+					f'{round((finishCompile - startCompile) * 1000)} ms')
+				for name in self.symbols.keys():
+					record = self.code[self.symbols[name]]
+					if name[-1] != ':' and not record['used']:
+						print(f'Variable "{name}" not used')
 				print(f'Run {self.name}')
-				self.run(0)
+			self.run(0)
 		else:
 			self.compiler.showWarnings()
 
@@ -188,6 +207,40 @@ class Program:
 			self.graphics = Graphics
 			self.useClass(Graphics)
 		return True
+
+	# Print the test-mode summary and compute the exit code (0 = all passed,
+	# 1 = at least one check failed or a test errored). Output shape matches
+	# the JS runtime for conformance parity.
+	def printTestSummary(self):
+		suite = self.testSuite
+		self.summaryPrinted = True
+		lines = []
+		lines.append(f'Test suite: {self.name}')
+		for t in suite['tests']:
+			if t['errored']:
+				lines.append(f'  \u2717 {t["name"]} (error: {t["errorMsg"]})')
+			elif t['failed'] > 0:
+				lines.append(f'  \u2717 {t["name"]} (FAIL: {t["firstFailure"]["condition"]} '
+					f'\u2014 line {t["firstFailure"]["lino"]})')
+			else:
+				lines.append(f'  \u2713 {t["name"]} ({t["checks"]} checks)')
+		totalChecks = suite['default']['checks']
+		totalPassed = suite['default']['passed']
+		totalFailed = suite['default']['failed']
+		failedTests = 0
+		for t in suite['tests']:
+			totalChecks += t['checks']
+			totalPassed += t['passed']
+			totalFailed += t['failed']
+			if t['failed'] > 0 or t['errored']:
+				failedTests += 1
+		passedTests = len(suite['tests']) - failedTests
+		lines.append('')
+		lines.append(f'{len(suite["tests"])} tests, {passedTests} passed, {failedTests} failed '
+			f'\u2014 {totalChecks} checks, {totalPassed} passed, {totalFailed} failed')
+		for line in lines:
+			print(line)
+		self.testExitCode = 1 if (failedTests > 0 or totalFailed > 0) else 0
 	
 	# Use the MQTT module
 	def useMQTT(self):
@@ -580,20 +633,68 @@ class Program:
 						if self.breakpoint:
 							pass	# Place a breakpoint here for a debugger to catch
 						self.pc = handler(command)
+						# A runtime error was routed to an onError handler (e.g. a
+						# test block's error handler): stop this statement sequence
+						# now so the handler runs before any further statements of
+						# the failing block.
+						if getattr(self, 'errorRouted', False):
+							self.errorRouted = False
+							break
+					except RuntimeError:
+						# A runtime error that was re-raised after routing (e.g.
+						# NoValueRuntimeError): the constructor already queued the
+						# onError handler, so just stop the sequence and let the
+						# queue drain. Any other RuntimeError propagates.
+						if getattr(self, 'errorRouted', False):
+							self.errorRouted = False
+							break
+						raise
 					except Exception as e:
 						tb = traceback.format_exc()
-						raise RuntimeError(self, f'Error during execution of {domainName}:{keyword}: {str(e)}\n\nTraceback:\n{tb}')
+						if getattr(self, 'errorRouted', False):
+							# The handler already routed the original error (queueing
+							# the onError handler); this secondary exception is fallout
+							# from that. Keep the original message and stop here.
+							self.errorRouted = False
+							break
+						# The constructor routes to onError (queueing the handler) or
+						# sys.exit()s when no handler is set. If it routed, stop this
+						# statement sequence so the handler runs before any further
+						# statements of the failing block.
+						RuntimeError(self, f'Error during execution of {domainName}:{keyword}: {str(e)}\n\nTraceback:\n{tb}')
+						if getattr(self, 'errorRouted', False):
+							self.errorRouted = False
+							break
+						raise
 					# Deal with 'exit'
 					if self.pc == -1:
 						queue = deque()
 						if self.parent == None:
-							print('Program exiting')
-							sys.exit()
+							if self.testMode:
+								# In test mode a normal exit triggers the summary and
+								# ends the run cleanly (no sys.exit) so the caller can
+								# still read the results off the program object.
+								if not self.summaryPrinted:
+									self.printTestSummary()
+							else:
+								print('Program exiting')
+								sys.exit()
 						else:
 							self.releaseParent()
 						self.running = False
 						break
 					elif self.pc == None or self.pc == 0 or self.pc >= len(self.code):
+						# Natural end of program (or 'stop'), or a handler returned
+						# None after routing an error to onError — in the latter case
+						# the queue still holds the recovery handler, so keep running
+						# and let the module-level flush() drain it.
+						if len(queue) == 0:
+							# In test mode a natural end also triggers the summary.
+							# running is cleared so start() terminates instead of
+							# spinning forever (scripts without an explicit exit).
+							if self.testMode and not self.summaryPrinted:
+								self.printTestSummary()
+							self.running = False
 						break
 
 	# Run the script at a given PC value
@@ -739,16 +840,71 @@ def showScriptInfo(name):
 
 # This is the program launcher
 def Main():
-	if len(sys.argv) > 1:
-		if sys.argv[1] == 'info':
-			if len(sys.argv) > 2:
-				showScriptInfo(sys.argv[2])
+	args = sys.argv[1:]
+	if len(args) > 0 and args[0] == '--test':
+		sys.exit(runTestSuite(args[1:]))
+	if len(args) > 0:
+		if args[0] == 'info':
+			if len(args) > 1:
+				showScriptInfo(args[1])
 			else:
 				listScripts()
 		else:
-			Program(' '.join(sys.argv[1:])).start()
+			Program(' '.join(args)).start()
 	else:
 		Program('-v')
+
+# Run one .as file in test mode and return its exit code. A SystemExit here
+# means the script could not be compiled or run (exit code 2), as distinct
+# from tests that merely failed (exit code 1).
+def runOneTestFile(path):
+	try:
+		program = Program(path, testMode=True)
+		program.start()
+		return program.testExitCode, program
+	except SystemExit as e:
+		code = e.code
+		return (code if isinstance(code, int) else 2), None
+
+# The '--test' runner: run a file or every .as file in a directory as its own
+# suite, print the per-suite summaries plus an overall line for directories,
+# and return the process exit code (0 = all passed, 1 = failures, 2 = broke).
+def runTestSuite(argv):
+	if len(argv) == 0:
+		print('Usage: allspeak --test <file.as | directory>')
+		return 2
+	target = argv[0]
+	if os.path.isdir(target):
+		files = sorted(globmod.glob(os.path.join(target, '*.as')))
+	else:
+		files = [target]
+	if len(files) == 0:
+		print(f'No .as files found in {target}')
+		return 2
+	worst = 0
+	totalTests = totalPassedTests = totalFailedTests = 0
+	totalChecks = totalPassed = totalFailed = 0
+	for f in files:
+		code, program = runOneTestFile(f)
+		worst = max(worst, code)
+		if program != None:
+			suite = program.testSuite
+			for t in suite['tests']:
+				totalTests += 1
+				totalChecks += t['checks']
+				totalPassed += t['passed']
+				totalFailed += t['failed']
+				if t['failed'] > 0 or t['errored']:
+					totalFailedTests += 1
+				else:
+					totalPassedTests += 1
+			totalChecks += suite['default']['checks']
+			totalPassed += suite['default']['passed']
+			totalFailed += suite['default']['failed']
+	if len(files) > 1:
+		print(f'\nOverall: {len(files)} files \u2014 {totalTests} tests, {totalPassedTests} passed, '
+			f'{totalFailedTests} failed \u2014 {totalChecks} checks, {totalPassed} passed, {totalFailed} failed')
+	return worst
 
 if __name__ == '__main__':
     Main()

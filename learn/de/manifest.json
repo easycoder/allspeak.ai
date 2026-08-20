@@ -92,6 +92,11 @@
       "title": "JSON"
     },
     {
+      "slug": "testing",
+      "path": "reference/19-testing.md",
+      "title": "Testen"
+    },
+    {
       "slug": "cat-and-string-building",
       "path": "idioms/01-cat-and-string-building.md",
       "title": "cat und Zeichenkettenaufbau"

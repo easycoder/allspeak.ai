@@ -1,0 +1,19 @@
+{
+  "id": "EC-0014",
+  "name": "on-failure",
+  "specVersion": "0.1",
+  "required": true,
+  "requirements": [
+    "2.1",
+    "2.6"
+  ],
+  "script": "EC-0014-on-failure.as",
+  "expect": {
+    "logs": [
+      "FAIL: X is 3 (CheckClauses2:7)",
+      "fixup",
+      "continues"
+    ],
+    "error": null
+  }
+}

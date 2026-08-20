@@ -61,7 +61,15 @@ class RuntimeError(BaseException):
 			sys.exit(f'Runtime Error: {message}')
 		elif program.onError:
 			program.errorMessage = message
-			program.run(program.onError)
+			# Flag so the flush loop stops the current statement sequence: the
+			# routing to the onError handler is queued, but the failing handler
+			# may keep executing (or the error may be re-raised). Without the
+			# flag the rest of the failing block would run before the handler.
+			# Only the first error in a sequence queues a handler — a re-wrapped
+			# or re-raised follow-up must not stack duplicate handlers.
+			if not getattr(program, 'errorRouted', False):
+				program.errorRouted = True
+				program.run(program.onError)
 		else:
 			code = program.code[program.pc]
 			lino = code['lino']

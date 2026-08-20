@@ -19,6 +19,7 @@
         { "slug": "doc-blocks", "path": "reference/16-doc-blocks.md", "title": "Doc blocks" },
         { "slug": "dev-environment", "path": "reference/17-dev-environment.md", "title": "Dev-environment commands" },
         { "slug": "json", "path": "reference/18-json.md", "title": "JSON" },
+        { "slug": "testing", "path": "reference/19-testing.md", "title": "Testing" },
         { "slug": "cat-and-string-building", "path": "idioms/01-cat-and-string-building.md", "title": "cat and string building" },
         { "slug": "event-handlers-and-array-index", "path": "idioms/02-event-handlers-and-array-index.md", "title": "Event handlers and array index" },
         { "slug": "looping-patterns", "path": "idioms/03-looping-patterns.md", "title": "Looping patterns" },

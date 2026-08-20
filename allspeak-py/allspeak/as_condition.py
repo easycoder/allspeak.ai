@@ -46,10 +46,16 @@ class Condition:
 		if left is None:
 			return None
 		while language.reverse_word(self.peek()) == 'or':
+			mark = self.getIndex()
 			self.nextToken()  # advance to 'or'
 			self.nextToken()  # advance past 'or' to first token of next term
 			right = self._parseAndExpression()
 			if right is None:
+				# Not a compound condition after all — put the 'or' back so the
+				# caller can treat it as a clause introducer (e.g. 'check ... or
+				# <action>'). Without the rewind the token stream would be left
+				# past the 'or' and the clause would be invisible.
+				self.rewindTo(mark)
 				return left
 			node = types.SimpleNamespace(domain='core', type='or', left=left, right=right)
 			left = node

@@ -29,6 +29,7 @@ Vedi [README.md](../README.md) per come consultare questo corso e come aggiunger
 16. [Blocchi di documentazione](reference/16-doc-blocks.md) — la convenzione `!!` / `!!!` ; `asdoc-check`.
 17. [Comandi dell'ambiente di sviluppo](reference/17-dev-environment.md) — `system`, `download`, `browse` del runtime Python per shell, recupero e apertura di schede.
 18. [JSON](reference/18-json.md) — `save` codifica automaticamente dict/liste ; `accoda … al file json` ; `json di` per l'analisi ; la riserva della cartella padre.
+19. [Test](reference/19-testing.md) — asserzioni `check`, casi `test … fine test`, clausole di fallimento, la modalità di esecuzione `--test` e i codici di uscita.
 
 ## Idiomi
 

@@ -27,6 +27,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 16. [Doc blocks](reference/16-doc-blocks.md) — the `!!` / `!!!` convention; `asdoc-check`.
 17. [Dev-environment commands](reference/17-dev-environment.md) — Python-runtime `system`, `download`, `browse` for shell, fetch, and tab-launch.
 18. [JSON](reference/18-json.md) — `save` auto-encodes dict/list; `append … to json file`; `json of` for parsing; the parent-dir caveat.
+19. [Testing](reference/19-testing.md) — `check` assertions, `test … end test` cases, failure clauses, the `--test` runner and exit codes.
 
 ## Idioms
 

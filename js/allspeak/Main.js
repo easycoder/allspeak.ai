@@ -15,6 +15,49 @@ const AllSpeak = {
 	timingEnabled: false,
 	startupTraceCache: null,
 
+	// Test mode: when true, 'test' blocks isolate runtime errors per case and a
+	// summary is printed at exit. Set by the host (e.g. AllSpeak.testMode = true)
+	// before AllSpeak.start(). The 'check' vocabulary works in either mode.
+	testMode: false,
+
+	printTestSummary: function (program) {
+		const suite = program.testSuite;
+		if (!suite) {
+			return;
+		}
+		const lines = [];
+		lines.push(`Test suite: ${program.script}`);
+		for (const t of suite.tests) {
+			if (t.errored) {
+				lines.push(`  ✗ ${t.name} (error: ${t.errorMsg})`);
+			} else if (t.failed > 0) {
+				lines.push(`  ✗ ${t.name} (FAIL: ${t.firstFailure.condition} — line ${t.firstFailure.lino})`);
+			} else {
+				lines.push(`  ✓ ${t.name} (${t.checks} checks)`);
+			}
+		}
+		let totalChecks = suite.default.checks;
+		let totalPassed = suite.default.passed;
+		let totalFailed = suite.default.failed;
+		let failedTests = 0;
+		for (const t of suite.tests) {
+			totalChecks += t.checks;
+			totalPassed += t.passed;
+			totalFailed += t.failed;
+			if (t.failed > 0 || t.errored) {
+				failedTests++;
+			}
+		}
+		const passedTests = suite.tests.length - failedTests;
+		lines.push(``);
+		lines.push(`${suite.tests.length} tests, ${passedTests} passed, ${failedTests} failed — ` +
+			`${totalChecks} checks, ${totalPassed} passed, ${totalFailed} failed`);
+		for (const line of lines) {
+			AllSpeak.writeToDebugConsole(line);
+		}
+		program.testExitCode = (failedTests > 0 || totalFailed > 0) ? 1 : 0;
+	},
+
 	isStartupTraceEnabled: function () {
 		if (this.startupTraceCache !== null) {
 			return this.startupTraceCache;
@@ -101,9 +144,16 @@ const AllSpeak = {
 
 	runtimeError: function (lino, message) {
 		this.lino = lino;
-		if (this.program && this.program.onError) {
-			this.program.errorMessage = message;
-			this.program.run(this.program.onError);
+		// Handlers call this as program.runtimeError (this = program); it can
+		// also be called as AllSpeak.runtimeError (this = AllSpeak, with
+		// this.program pointing at the running program). Resolve the program
+		// either way so a registered onError handler (e.g. a test block's
+		// error handler) actually receives the error.
+		const prog = this.program || this;
+		if (prog && prog.onError) {
+			prog.errorMessage = message;
+			prog.errorRouted = true;
+			prog.run(prog.onError);
 			return;
 		}
 		this.reportError({
@@ -396,6 +446,20 @@ const AllSpeak = {
 		program.queue = [0];
 		program.module = module;
 		program.parent = parent;
+		program.testMode = this.testMode;
+		program.testSuite = {
+			name: null,
+			tests: [],
+			default: {
+				checks: 0,
+				passed: 0,
+				failed: 0,
+				errored: false,
+				errorMsg: null,
+				firstFailure: null
+			}
+		};
+		program.currentTest = null;
 		if (module) {
 			module.program = program.script;
 		}

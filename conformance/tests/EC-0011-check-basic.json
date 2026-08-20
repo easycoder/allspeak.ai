@@ -1,0 +1,17 @@
+{
+  "id": "EC-0011",
+  "name": "check-basic",
+  "specVersion": "0.1",
+  "required": true,
+  "requirements": [
+    "2.1",
+    "2.6"
+  ],
+  "script": "EC-0011-check-basic.as",
+  "expect": {
+    "logs": [
+      "FAIL: RoomCount is 5 (CheckBasic:7)"
+    ],
+    "error": null
+  }
+}

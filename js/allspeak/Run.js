@@ -97,6 +97,14 @@ const AllSpeak_Run = {
 					break;
 				}
 				program.pc = handler.run(program);
+				// An error was routed to an onError handler (queued by
+				// runtimeError) — stop this statement sequence now so the
+				// handler runs before any further statements of the failing
+				// block (e.g. skip the rest of a test block).
+				if (program.errorRouted) {
+					program.errorRouted = false;
+					break;
+				}
 				if (!program.pc) {
 					break;
 				}

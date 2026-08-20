@@ -413,6 +413,7 @@ const AllSpeak_Compiler = {
 	compile: function(tokens) {
 		this.tokens = tokens;
 		this.index = 0;
+		this.inTestBlock = false;
 		this.program = [];
 		this.program.script = 0;
 		this.program.symbols = {};

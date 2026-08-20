@@ -62,6 +62,18 @@
         "onError?"
       ]
     },
+    "CHECK": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Assert a condition — record pass/fail, log 'FAIL: <condition> (<file>:<line>)' and continue",
+      "current": {
+        "keyword": "check"
+      },
+      "params": [
+        "condition",
+        "onError?"
+      ]
+    },
     "CLEAR": {
       "domain": "core",
       "category": "collection",
@@ -327,6 +339,15 @@
         "symbol"
       ]
     },
+    "END_TEST": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "End a test block and finalize its results",
+      "current": {
+        "keyword": "end test"
+      },
+      "params": []
+    },
     "END_TRY": {
       "domain": "core",
       "category": "control_flow",
@@ -463,6 +484,15 @@
       "params": [
         "label"
       ]
+    },
+    "GOTO_TEST_END": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "End the current test block (used after an 'or' clause action on a failed check)",
+      "current": {
+        "keyword": "gotoTestEnd"
+      },
+      "params": []
     },
     "HIGHLIGHT_ELEMENT": {
       "domain": "browser",
@@ -1639,6 +1669,26 @@
         "value2?",
         "target"
       ]
+    },
+    "TEST": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Begin a named test block, closed by 'end test'",
+      "current": {
+        "keyword": "test"
+      },
+      "params": [
+        "name"
+      ]
+    },
+    "TEST_ERROR": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Test-block error handler — mark the current test errored and skip to the next block",
+      "current": {
+        "keyword": "testError"
+      },
+      "params": []
     },
     "TOGGLE": {
       "domain": "core",
