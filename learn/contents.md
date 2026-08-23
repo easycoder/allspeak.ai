@@ -28,6 +28,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 17. [Dev-environment commands](reference/17-dev-environment.md) — Python-runtime `system`, `download`, `browse` for shell, fetch, and tab-launch.
 18. [JSON](reference/18-json.md) — `save` auto-encodes dict/list; `append … to json file`; `json of` for parsing; the parent-dir caveat.
 19. [Testing](reference/19-testing.md) — `check` assertions, `test … end test` cases, failure clauses, the `--test` runner and exit codes.
+20. [Desktop graphics (Qt)](reference/20-graphics.md) — the Python runtime's PySide6 GUI domain: `use graphics`, widgets, layouts, events, dialogs.
 
 ## Idioms
 
@@ -44,3 +45,5 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 11. [Debugging .as](idioms/11-debugging-as.md) — `print`, `log`, tracer, `dummy`.
 12. [Working with AI](idioms/12-working-with-ai.md) — the AI-writes / human-reviews workflow.
 13. [Server as application](idioms/13-server-as-application.md) — running `server.as -t edit,<project>` so the server *is* the app and the browser tabs are its UI.
+14. [Building a desktop window](idioms/14-desktop-gui.md) — a PySide6 window in AllSpeak: declarations, layout, `on` handlers, and the event-loop model.
+15. [Boolean flags](idioms/15-boolean-flags.md) — the on/off state idiom: `clear X` to initialize, `set X`/`clear X` to toggle, bare `if X` to test.

@@ -27,6 +27,7 @@ class ECServer(ECObject):
         self.program = program
         self.port = port
         self.app = Bottle()
+        program.servers.append(self)
 
         # Serve binary files (images, fonts, etc.) directly via Bottle
         import os
@@ -58,7 +59,10 @@ class ECServer(ECObject):
             self.response_content_type = None
 
             if self.onRequestPC is not None:
-                self.program.queueIntent(self.onRequestPC)
+                # Queue the handler for the main loop's flusher. Using run()
+                # (like the graphics callbacks) re-sets running=True so the
+                # handler executes even after the main flow has ended.
+                self.program.run(self.onRequestPC)
             else:
                 bottle_response.status = 503
                 return 'Server handler not ready'

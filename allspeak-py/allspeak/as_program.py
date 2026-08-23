@@ -95,6 +95,7 @@ class Program:
 		self.psutil = None
 		self.server = None
 		self.email = None
+		self.servers = []  # active HTTP server objects (as_server); keep the main loop alive while any is listening
 		self.useClass(Core)
 		self.ticker = 0
 		self.graphicsRunning = False
@@ -192,12 +193,19 @@ class Program:
 		# If this is the main script and there's no graphics/debugger, run a main loop
 		elif parent == None and not self.graphicsRunning:
 			delay_event = threading.Event()
-			while not self.graphicsRunning:
-				if self.running == True:
-					flush()
+			try:
+				while not self.graphicsRunning:
+					if self.running == True:
+						flush()
+					elif not self.hasServers():
+						# The main flow has ended and no HTTP server is
+						# listening — nothing left to keep the process alive.
+						break
 					delay_event.wait(0.01)
-				else:
-					break
+			except KeyboardInterrupt:
+				# Ctrl+C: stop the loop; the interpreter exits (daemon
+				# threads such as the HTTP server die with the process).
+				pass
 	
 	# Use the graphics module
 	def useGraphics(self):
@@ -705,6 +713,12 @@ class Program:
 		item.pc = pc # type: ignore
 		queue.append(item)
 		self.running = True
+
+	# True while any HTTP server (as_server) is listening. The main loop stays
+	# alive on this so the single flusher can service requests even after the
+	# script's main flow has ended.
+	def hasServers(self):
+		return len(self.servers) > 0
 
 	def kill(self):
 		self.running = False

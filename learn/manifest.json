@@ -20,6 +20,7 @@
         { "slug": "dev-environment", "path": "reference/17-dev-environment.md", "title": "Dev-environment commands" },
         { "slug": "json", "path": "reference/18-json.md", "title": "JSON" },
         { "slug": "testing", "path": "reference/19-testing.md", "title": "Testing" },
+        { "slug": "graphics", "path": "reference/20-graphics.md", "title": "Desktop graphics (Qt)" },
         { "slug": "cat-and-string-building", "path": "idioms/01-cat-and-string-building.md", "title": "cat and string building" },
         { "slug": "event-handlers-and-array-index", "path": "idioms/02-event-handlers-and-array-index.md", "title": "Event handlers and array index" },
         { "slug": "looping-patterns", "path": "idioms/03-looping-patterns.md", "title": "Looping patterns" },
@@ -32,6 +33,8 @@
         { "slug": "writing-language-neutral", "path": "idioms/10-writing-language-neutral.md", "title": "Writing language-neutral" },
         { "slug": "debugging-as", "path": "idioms/11-debugging-as.md", "title": "Debugging .as" },
         { "slug": "working-with-ai", "path": "idioms/12-working-with-ai.md", "title": "Working with AI" },
-        { "slug": "server-as-application", "path": "idioms/13-server-as-application.md", "title": "Server as application" }
+        { "slug": "server-as-application", "path": "idioms/13-server-as-application.md", "title": "Server as application" },
+        { "slug": "desktop-gui", "path": "idioms/14-desktop-gui.md", "title": "Building a desktop window" },
+        { "slug": "boolean-flags", "path": "idioms/15-boolean-flags.md", "title": "Boolean flags" }
     ]
 }

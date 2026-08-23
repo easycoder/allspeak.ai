@@ -91,6 +91,8 @@ if Clicked is true ...
 if Clicked is false ...
 ```
 
+For the full flag lifecycle — declare, initialize with `clear`, toggle with `set`/`clear`, test with bare `if` — see [boolean flags](../idioms/boolean-flags.md).
+
 ## Type tests
 
 `is numeric` tests whether a value can be used as a number:

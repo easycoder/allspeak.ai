@@ -2293,12 +2293,14 @@ class Core(Handler):
             # In debug mode, use Qt's event loop to resume safely on the UI thread
             from PySide6.QtCore import QTimer
             def resume():
-                # Just enqueue - let the graphics timer's flush handle execution
-                self.program.queueIntent(next)
+                # run() (rather than queueIntent) re-sets running=True so the
+                # resumed code executes even if the tick handler was paused
+                # (e.g. by `set blocked true`).
+                self.program.run(next)
             QTimer.singleShot(int(value), resume)
         else:
             # In normal mode, resume via the thread-safe intent queue
-            threading.Timer(value/1000.0, lambda: (self.program.queueIntent(next))).start()
+            threading.Timer(value/1000.0, lambda: self.program.run(next)).start()
         return None
 
     # while <condition> <action>
@@ -3616,14 +3618,15 @@ class Core(Handler):
         if type(value) == bool:
             return not value if condition.negate else value
         elif type(value) == int:
-            return True if condition.negate else False
+            return (value == 0) if condition.negate else (value != 0)
         elif type(value) == str:
-            if value.lower() == 'true':
+            lowered = value.lower()
+            if lowered == 'true':
                 return False if condition.negate else True
-            elif value.lower() == 'false':
+            elif lowered == 'false':
                 return True if condition.negate else False
             else:
-                return True if condition.negate else False
+                return (value == '') if condition.negate else (value != '')
         return False
     
     def c_boolean(self, condition):

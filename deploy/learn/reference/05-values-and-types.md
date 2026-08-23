@@ -8,7 +8,7 @@ A value in AllSpeak is one of three kinds: **number**, **string**, or **boolean*
 
 **String** — text. Literals are backtick-delimited (`` `Hello` ``). See [strings-and-text](strings-and-text.md) for the operations.
 
-**Boolean** — true or false. The keywords `true` and `false` produce boolean values (`while true …`, `set Ready to true`). The shorthand `set X` makes X true; `clear X` makes it false. Booleans appear in conditions and as truthy tests. See [conditions](conditions.md).
+**Boolean** — true or false. The keywords `true` and `false` produce boolean values (`while true …`, `set Ready to true`). The shorthand `set X` makes X true; `clear X` makes it false. Booleans appear in conditions and as truthy tests. For the idiomatic flag pattern — declare, initialize with `clear`, toggle with `set`/`clear`, test with bare `if` — see [boolean flags](../idioms/boolean-flags.md). See [conditions](conditions.md).
 
 The runtime tracks a `numeric` flag on each value. A string that contains only digits has the flag set and participates in arithmetic; a string with non-numeric content does not.
 
@@ -143,4 +143,5 @@ AllSpeak deliberately avoids the richer type hierarchies of mainstream languages
 - [arithmetic](arithmetic.md) — integer-first numeric operations.
 - [strings-and-text](strings-and-text.md) — string operations.
 - [conditions](conditions.md) — equality, comparison, type tests.
+- [boolean flags](../idioms/boolean-flags.md) — the idiomatic on/off flag pattern.
 - [collections](collections.md) — JSON-shaped value types (array, object).

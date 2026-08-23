@@ -29,6 +29,7 @@ Siehe [README.md](../README.md) für die Nutzung dieses Kurses und das Hinzufüg
 16. [Dokumentationsblöcke](reference/16-doc-blocks.md) — die Konvention `!!` / `!!!` ; `asdoc-check`.
 17. [Entwicklungsbefehle](reference/17-dev-environment.md) — `system`, `download`, `browse` der Python-Laufzeit für Shell, Abruf und Tab-Start.
 18. [JSON](reference/18-json.md) — `save` kodiert dict/Liste automatisch ; `ergänze … zur json-Datei` ; `json von` für das Parsen ; der Elternverzeichnis-Vorbehalt.
+19. [Testen](reference/19-testing.md) — `check`-Prüfungen, `test … ende test`-Fälle, Fehlerklauseln, der `--test`-Laufmodus und Exit-Codes.
 
 ## Idiome
 

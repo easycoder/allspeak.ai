@@ -133,6 +133,12 @@ class ECPushButton(ECTextWidget):
         if v is None: return
         v.getContent().setFixedHeight(height) # type: ignore
 
+    # Get the text of the button
+    def getContent(self):
+        v = self.getValue()
+        if v is None: return None
+        return v.text() # type: ignore
+
 ###############################################################################
 # A checkbox variable
 class ECCheckBox(ECCoreWidget):
@@ -265,8 +271,9 @@ class ECListBox(ECCoreWidget):
     
     # Get the count of items in the list box
     def getCount(self):
-        v = self.getContent().count() # type: ignore
-        return v
+        v = self.getValue()
+        if v is None: return None
+        return v.count() # type: ignore
     
     # Get the index of the selected item
     def getIndex(self):
@@ -294,12 +301,19 @@ class ECComboBox(ECCoreWidget):
     
     # Get the count of items in the combo box
     def getCount(self):
-        v = self.getContent().count() # type: ignore
-        return v
-    
+        v = self.getValue()
+        if v is None: return None
+        return v.count() # type: ignore
+
     # Get the text of the widget
     def getText(self):
-        return self.getValue().getContent().text() # type: ignore
+        return self.getContent() # type: ignore
+
+    # Get the content of the widget
+    def getContent(self):
+        v = self.getValue()
+        if v is None: return None
+        return v.currentText() # type: ignore
 
 
 ###############################################################################
@@ -325,6 +339,11 @@ class ECDialog(ECGElement):
     # This type of widget has a runtime value
     def hasRuntimeValue(self):
         return True
+
+    # The dialog result (set by `show {dialog}`), or None before the dialog
+    # has been shown. This is what `put {dialog} into V` returns.
+    def getContent(self):
+        return getattr(self, 'result', None)
 
     def getReturnValue(self):
         dialog = self.getValue().getContent() # type: ignore
