@@ -1783,6 +1783,10 @@ class Core(Handler):
             if not (hasattr(module, 'onMessagePC') and module.onMessagePC): # type: ignore[attr-defined]
                 self.program.replyVar = None
                 raise RuntimeError(self.program, f'Target "{senderName}" has no on message handler')
+            # The child's main flow has typically ended (running=False), and
+            # flush() only executes while running — wake it so the inline
+            # direct-reply handler actually runs and can reply.
+            module.running = True # type: ignore[attr-defined]
             module.flush(module.onMessagePC) # type: ignore[attr-defined]
             if self.program.replyVar is not None:
                 self.program.replyVar = None

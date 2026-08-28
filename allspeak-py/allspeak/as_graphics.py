@@ -24,11 +24,13 @@ from .as_gclasses import (
     ECWindow,
     ECDialog,
     ECMessageBox,
+    ECShape,
 )
 from .as_border import Border
+from .as_keyboard import Keyboard, TextReceiver
 from .debugger.as_debug import Debugger
 from PySide6.QtCore import Qt, QTimer, Signal, QRect
-from PySide6.QtGui import QPixmap, QPainter
+from PySide6.QtGui import QPixmap, QPainter, QPen, QBrush, QColor
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -132,6 +134,62 @@ class ECLineEditWidget(QLineEdit):
         self.clicked.emit()
         super().mousePressEvent(event)
         if self.container != None: self.container.setClickSource(self)
+
+#############################################################################
+# EC shape widget class — a QWidget that paints a rect / roundrect /
+# ellipse / circle fill with an optional border. Painted (rather than
+# QSS) because Qt stylesheets have no percentage border-radius, so an
+# ellipse or circle can't be expressed as a stylesheet string.
+class ECShapeWidget(QWidget):
+    def __init__(self, kind='roundrect', radius=12, fill='#FFFFFF', border=None, borderwidth=0):
+        super().__init__()
+        self.kind = kind
+        self.radius = radius
+        self.fill = fill
+        self.border = border
+        self.borderwidth = borderwidth
+
+    def setKind(self, kind):
+        self.kind = kind
+        self.update()
+
+    def setRadius(self, radius):
+        self.radius = radius
+        self.update()
+
+    def setFill(self, fill):
+        self.fill = fill
+        self.update()
+
+    def setBorder(self, border):
+        self.border = border
+        self.update()
+
+    def setBorderWidth(self, borderwidth):
+        self.borderwidth = borderwidth
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pen = QPen(QColor(self.border), self.borderwidth) if self.border else QPen(Qt.PenStyle.NoPen)
+        painter.setPen(pen)
+        painter.setBrush(QBrush(QColor(self.fill)))
+        rect = self.rect().adjusted(self.borderwidth, self.borderwidth, -self.borderwidth, -self.borderwidth)
+        if rect.width() <= 0 or rect.height() <= 0:
+            return
+        if self.kind == 'rect':
+            painter.drawRect(rect)
+        elif self.kind == 'ellipse':
+            painter.drawEllipse(rect)
+        elif self.kind == 'circle':
+            side = min(rect.width(), rect.height())
+            circle = QRect(0, 0, side, side)
+            circle.moveCenter(rect.center())
+            painter.drawEllipse(circle)
+        else:  # roundrect
+            painter.drawRoundedRect(rect, self.radius, self.radius)
+        painter.end()
 
 #############################################################################
 # EC plain text edit widget class
@@ -270,12 +328,12 @@ class Graphics(Handler):
     # (6) add {widget} at {col} {row} in {grid layout}
     def k_add(self, command):
 
-        # Add to a layout, group, list or combo box
+        # Add to a layout, group, shape, list or combo box
         def addToLayout():
             if self.nextIsSymbol():
                 record = self.getSymbolRecord()
                 object = self.getObject(record)
-                self.checkObjectType(record, (ECLayout, ECGroup, ECListBox, ECComboBox))
+                self.checkObjectType(record, (ECLayout, ECGroup, ECShape, ECListBox, ECComboBox))
                 command['target'] = record['name']
                 self.add(command)
                 return True
@@ -387,6 +445,21 @@ class Graphics(Handler):
                             groupLayout = QVBoxLayout()
                             group.setLayout(groupLayout)  # type: ignore
                         groupLayout.addWidget(self.getInnerObject(widgetRecord), 1 if stretch else 0)  # type: ignore
+                elif self.isObjectType(targetRecord, ECShape):
+                    # add {widget} to {shape}: like a group, an inner layout is
+                    # created on first use, with contents margins matching the
+                    # corner radius so children sit inside the rounded area.
+                    shape = self.getInnerObject(targetRecord)
+                    if self.isObjectType(widgetRecord, ECLayout):
+                        shape.setLayout(self.getInnerObject(widgetRecord))  # type: ignore
+                    else:
+                        shapeLayout = shape.layout()  # type: ignore
+                        if shapeLayout is None:
+                            shapeLayout = QVBoxLayout()
+                            margin = max(self.getInnerObject(targetRecord).radius, 0)  # type: ignore
+                            shapeLayout.setContentsMargins(margin, margin, margin, margin)
+                            shape.setLayout(shapeLayout)  # type: ignore
+                        shapeLayout.addWidget(self.getInnerObject(widgetRecord), 1 if stretch else 0)  # type: ignore
                 else:
                     layoutRecord = targetRecord
                     self.checkObjectType(layoutRecord, ECLayout)
@@ -694,6 +767,33 @@ class Graphics(Handler):
         self.add(command)
         return True
 
+    def k_createShape(self, command):
+        # `type` selects the geometry and defaults to roundrect; all
+        # attributes are optional. `width` is deliberately not used here —
+        # it means widget width elsewhere, so border thickness is `borderwidth`.
+        command['type'] = 'roundrect'
+        command['radius'] = 12
+        while True:
+            token = self.peek()
+            if token == 'type':
+                self.nextToken()
+                command['type'] = self.nextToken()
+            elif token == 'radius':
+                self.nextToken()
+                command['radius'] = self.nextValue()
+            elif token == 'fill':
+                self.nextToken()
+                command['fill'] = self.nextValue()
+            elif token == 'border':
+                self.nextToken()
+                command['border'] = self.nextValue()
+            elif token == 'borderwidth':
+                self.nextToken()
+                command['borderwidth'] = self.nextValue()
+            else: break
+        self.add(command)
+        return True
+
     def k_createDialog(self, command):
         if language.reverse_word(self.peek()) == 'on':
             self.nextToken()
@@ -768,6 +868,7 @@ class Graphics(Handler):
             elif keyword == 'listbox': return self.k_createListBox(command)
             elif keyword == 'combobox': return self.k_createComboBox(command)
             elif keyword == 'panel': return self.k_createPanel(command)
+            elif keyword == 'shape': return self.k_createShape(command)
             elif keyword == 'dialog': return self.k_createDialog(command)
             elif keyword == 'messagebox': return self.k_createMessageBox(command)
         return False
@@ -921,6 +1022,19 @@ class Graphics(Handler):
     def r_createPanel(self, command, record):
         self.setGraphicElement(record, QWidget())
         return self.nextPC()
+
+    def r_createShape(self, command, record):
+        kwargs = {}
+        if 'type' in command: kwargs['kind'] = self.textify(command['type'])
+        if 'radius' in command: kwargs['radius'] = self.textify(command['radius'])
+        if 'fill' in command and command['fill'] is not None:
+            kwargs['fill'] = self.textify(command['fill'])
+        if 'border' in command and command['border'] is not None:
+            kwargs['border'] = self.textify(command['border'])
+        if 'borderwidth' in command: kwargs['borderwidth'] = self.textify(command['borderwidth'])
+        widget = ECShapeWidget(**kwargs)
+        self.setGraphicElement(record, widget)
+        return self.nextPC()
     
     def r_createDialog(self, command, record):
 
@@ -1006,6 +1120,7 @@ class Graphics(Handler):
         elif keyword == 'listbox': return self.r_createListWidget(command, record)
         elif keyword == 'combobox': return self.r_createComboBox(command, record)
         elif keyword == 'panel': return self.r_createPanel(command, record)
+        elif keyword == 'shape': return self.r_createShape(command, record)
         elif keyword == 'dialog': return self.r_createDialog(command, record)
         elif keyword == 'messagebox': return self.r_createMessageBox(command, record)
         return None
@@ -1305,6 +1420,14 @@ class Graphics(Handler):
     def r_panel(self, command):
         return self.nextPC()
 
+    # Declare a shape variable (rect, roundrect, ellipse or circle)
+    def k_shape(self, command):
+        self.compiler.addValueType()
+        return self.compileVariable(command, 'ECShape')
+
+    def r_shape(self, command):
+        return self.nextPC()
+
     # Declare a pushbutton variable
     def k_pushbutton(self, command):
         self.compiler.addValueType()
@@ -1521,6 +1644,16 @@ class Graphics(Handler):
             command['blocked'] = True if self.nextToken() == 'true' else False
             self.add(command)
             return True
+        elif token in ['radius', 'fill', 'border', 'borderwidth']:
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECShape):
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
         elif self.isSymbol():
             record = self.getSymbolRecord()
             if self.isObjectType(record, ECListBox):
@@ -1608,6 +1741,13 @@ class Graphics(Handler):
             widget = self.getInnerObject(record)
             bg_color = self.textify(command['value'])
             widget.setStyleSheet(f"background-color: {bg_color};")  # type: ignore
+        elif what in ('radius', 'fill', 'border', 'borderwidth'):
+            record = self.getVariable(command['name'])
+            widget = self.getInnerObject(record)
+            if what == 'radius': widget.setRadius(self.textify(command['value']))  # type: ignore
+            elif what == 'fill': widget.setFill(self.textify(command['value']))  # type: ignore
+            elif what == 'border': widget.setBorder(self.textify(command['value']))  # type: ignore
+            elif what == 'borderwidth': widget.setBorderWidth(self.textify(command['value']))  # type: ignore
         elif what == 'listbox':
             record = self.getVariable(command['name'])
             widget = self.getInnerObject(record)
@@ -1622,6 +1762,24 @@ class Graphics(Handler):
     # show {widget}
     # show {messagebox} giving {result}}
     def k_show(self, command):
+        if language.reverse_word(self.peek()) == 'keyboard':
+            self.nextToken()
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, (ECLineInput, ECMultiline)):
+                    command['keyboard'] = True
+                    command['field'] = record['name']
+                    if language.reverse_word(self.peek()) == 'on':
+                        self.nextToken()
+                        if self.nextIsSymbol():
+                            windowRecord = self.getSymbolRecord()
+                            if self.isObjectType(windowRecord, ECWindow):
+                                command['window'] = windowRecord['name']
+                    self.skipWord('giving')
+                    if self.nextIsSymbol():
+                        command['result'] = self.getSymbolRecord()['name']
+                    self.add(command)
+                    return True
         if self.nextIsSymbol():
             record = self.getSymbolRecord()
             if self.isObjectType(record, ECCoreWidget):
@@ -1647,6 +1805,20 @@ class Graphics(Handler):
         return False
         
     def r_show(self, command):
+        if 'keyboard' in command:
+            record = self.getVariable(command['field'])
+            widget = self.getInnerObject(record)
+            caller = None
+            if 'window' in command:
+                windowRecord = self.getVariable(command['window'])
+                caller = self.getInnerObject(windowRecord)
+            receiver = TextReceiver(widget)
+            Keyboard(self.program, receiver, caller)
+            if 'result' in command:
+                target = self.getVariable(command['result'])
+                v = ECValue(domain='graphics', type=str, content=receiver.getContent())
+                self.putSymbolValue(target, v)
+            return self.nextPC()
         if 'messagebox' in command:
             record = self.getVariable(command['messagebox'])
             windowRecord = self.getVariable(record['window'])

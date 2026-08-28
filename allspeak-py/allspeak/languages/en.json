@@ -1346,6 +1346,8 @@
     "ellipse": "ellipse",
     "group": "group",
     "rect": "rect",
+    "shape": "shape",
+    "roundrect": "roundrect",
     "move": "move",
     "svgtext": "svgtext",
     "gmap": "gmap",

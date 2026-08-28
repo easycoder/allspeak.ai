@@ -12,14 +12,31 @@ class MQTTClient():
     def __init__(self):
         super().__init__()
 
-    def create(self, program, token, clientID, broker, port, topics):
+    def create(self, program, token, clientID, broker, port, topics, plain=False):
         self.program = program
         self.token = token
         self.clientID = clientID
         self.broker = broker
         self.port = port
         self.topics = topics
+        # Resolve topic names/QoS eagerly, on the main thread. on_connect runs
+        # on the MQTT thread, where program.getVariable() is not safe: it calls
+        # ensureRunning(), which fails whenever the main flow is idle
+        # (running=False) — exactly the steady state of a graphics app parked
+        # in its Qt event loop. Capturing the values here (the mqtt clause runs
+        # while the main flow is active) keeps the MQTT thread free of program
+        # access; it only queues intents, which is thread-safe.
+        self.topic_specs = []
+        for item in topics:
+            record = self.program.getVariable(item)
+            topic = self.program.getObject(record)
+            self.topic_specs.append((topic.getName(), topic.getQoS()))
         self.onConnectPC = None
+        # Register as a "server" so the CLI main loop keeps flushing while
+        # the MQTT connection is live — otherwise an idle script (running
+        # briefly False between waits) breaks out of the main loop and the
+        # program freezes even though the MQTT thread keeps running.
+        program.servers.append(self)
         self.onMessagePC = None
         self.timeout = False
         self.message = None
@@ -37,7 +54,7 @@ class MQTTClient():
         )
         if isinstance(self.token, dict):
             self.client.username_pw_set(self.token['username'], self.token['password'])
-        if broker not in ('localhost', '127.0.0.1'):
+        if not plain and broker not in ('localhost', '127.0.0.1'):
             self.client.tls_set()
     
         # Setup callbacks
@@ -48,10 +65,9 @@ class MQTTClient():
         is_first_connect = not self.connected
         self.connected = True
         print(f"Client {self.clientID} connected")
-        for item in self.topics:
-            topic = self.program.getObject(self.program.getVariable(item))
-            self.client.subscribe(topic.getName(), qos=topic.getQoS())
-            print(f"Subscribed to topic: {topic.getName().strip()} with QoS {topic.getQoS()}")
+        for name, qos in self.topic_specs:
+            self.client.subscribe(name, qos=qos)
+            print(f"Subscribed to topic: {name.strip()} with QoS {qos}")
 
         if is_first_connect and self.onConnectPC is not None:
             self.program.queueIntent(self.onConnectPC)
@@ -272,7 +288,7 @@ class ECTopic(ECObject):
 # The MQTT compiler and runtime handlers
 class MQTT(Handler):
 
-    MQTT_CLAUSE_KEYWORDS = {'token', 'id', 'broker', 'port', 'subscribe', 'action'}
+    MQTT_CLAUSE_KEYWORDS = {'token', 'id', 'broker', 'port', 'subscribe', 'action', 'plain'}
 
     def __init__(self, compiler):
         Handler.__init__(self, compiler)
@@ -341,6 +357,12 @@ class MQTT(Handler):
             elif token == 'port':
                 self.nextToken()
                 command['port'] = self.nextValue()
+            elif token == 'plain':
+                # Force a plain-TCP connection (no TLS) even for a
+                # non-localhost broker, e.g. a LAN machine talking to the
+                # controller's local mosquitto on 1883.
+                self.nextToken()
+                command['plain'] = True
             elif token == 'subscribe':
                 self.nextToken()
                 topics = []
@@ -385,7 +407,7 @@ class MQTT(Handler):
         self.requires = command['requires']
         topics = command['topics']
         client = MQTTClient()
-        client.create(self.program, token, clientID, broker, port, topics)
+        client.create(self.program, token, clientID, broker, port, topics, plain=command.get('plain', False))
         client.run()
         self.program.mqttClient = client
         return self.nextPC()

@@ -127,6 +127,10 @@ class Program:
 	# Queue an intent to run at a given PC (thread-safe for MQTT callbacks)
 	def queueIntent(self, pc):
 		global intent_queue
+		# Waking the program here (like run()) lets an idle program — e.g. a
+		# graphics app parked in its Qt event loop — process MQTT connect /
+		# message intents instead of silently dropping them when running=False.
+		self.running = True
 		with intent_lock:
 			item = ECValue()
 			item.program = self # type: ignore

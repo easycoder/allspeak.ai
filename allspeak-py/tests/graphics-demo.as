@@ -29,6 +29,7 @@
     layout GenericLayout
     layout Grid
     layout PanelGroup
+    layout ShapesRow
     group InputsBox
     group SelectionBox
     group ButtonsBox
@@ -45,6 +46,11 @@
     label GridLabelD
     label ExtraStatusLabel
     panel Placeholder
+    shape RectCard
+    shape RoundCard
+    shape EllipseCard
+    shape CircleCard
+    label ShapeTitle
     pushbutton SaveButton
     pushbutton IconButton
     pushbutton TapButton
@@ -53,6 +59,7 @@
     pushbutton NameDialogButton
     pushbutton GenericDialogButton
     pushbutton OpenExtraButton
+    pushbutton KeyboardButton
     pushbutton ExtraCloseButton
     pushbutton CenterExtraButton
     pushbutton AdjustExtraButton
@@ -207,6 +214,9 @@
     create OpenExtraButton text `Open extra window`
     on click OpenExtraButton go to OpenExtraClick
     add OpenExtraButton to RightPanel
+    create KeyboardButton text `Virtual keyboard`
+    on click KeyboardButton go to KeyboardClick
+    add KeyboardButton to RightPanel
 
     ! ---- status line and clock ----
     create StatusLabel text `Ready` align right
@@ -221,6 +231,20 @@
     clear HiddenFlag
     clear ExtraOpen
     on tick go to Tick
+
+    ! ---- shapes: one of every variant, shown as demo cards ----
+    create ShapesRow type QHBoxLayout
+    add ShapesRow to MainPanel
+    create RectCard type rect fill `#F2F2F2` border `#CCCCCC` borderwidth 1
+    create RoundCard type roundrect radius 16 fill `#FFFFFF` border `#CCCCCC` borderwidth 1
+    create EllipseCard type ellipse fill `#E8F0FE` border `#A9C2F4` borderwidth 2
+    create CircleCard type circle radius 24 fill `#FFF3E0` border `#FFB74D` borderwidth 2
+    add RectCard to ShapesRow
+    add RoundCard to ShapesRow
+    add EllipseCard to ShapesRow
+    add CircleCard to ShapesRow
+    create ShapeTitle text `round card` align center
+    add ShapeTitle to RoundCard
 
     ! ---- create the window with its layout attached up front ----
     create MainWindow title `Graphics demo` at 60 60 size 900 600 layout MainPanel
@@ -340,6 +364,12 @@
         create ExtraWindow title `Extra` at 700 120 size 280 200 layout ExtraLayout
         show ExtraWindow
         set ExtraOpen
+        stop
+
+    KeyboardClick:
+        show keyboard NameInput on MainWindow giving V
+        set the text of StatusLabel to `Keyboard: ` cat V
+        log V
         stop
 
     ExtraCloseClick:

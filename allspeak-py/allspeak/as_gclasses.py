@@ -67,6 +67,12 @@ class ECGroup(ECCoreWidget):
         super().__init__()
 
 ###############################################################################
+# A shape variable (rect, roundrect, ellipse or circle)
+class ECShape(ECCoreWidget):
+    def __init__(self):
+        super().__init__()
+
+###############################################################################
 # A label variable
 class ECLabel(ECTextWidget):
     def __init__(self):
