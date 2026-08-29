@@ -136,9 +136,9 @@
                 return `Forbidden` to Files with status 403
             end
             if FilePath is empty
-                set FileList to entries in BaseDir type `as,ecs,md,txt,json,html,css,js`
+                set FileList to entries in BaseDir type `as,ecs,md,txt,json,html,css,js,py`
             else
-                set FileList to entries in BaseDir cat `/` cat FilePath type `as,ecs,md,txt,json,html,css,js`
+                set FileList to entries in BaseDir cat `/` cat FilePath type `as,ecs,md,txt,json,html,css,js,py`
             return FileList to Files
         end
         else if FullPath starts with `/read/`
