@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QGraphicsDropShadowEffect
 )
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtCore import Qt, QTimer, QPoint
 
 from .as_border import Border
@@ -120,11 +120,26 @@ class TextReceiver:
 # files and works on any system.
 class KeyboardButton(QPushButton):
     def __init__(self, width, height, onClick, text):
-        if text is not None:
-            text = text.replace('&', '&&')  # Qt mnemonic escaping
-        super().__init__(text)
+        # Multi-character legends (Shift, Back, Enter, 123, Space, ...)
+        # start ~20% smaller than the height-derived size for a deliberate
+        # aesthetic margin; single letters keep the full size. The fit loop
+        # below only shrinks further when a legend still would not fit.
+        # The raw (pre-escape) text is measured, so '&' (stored as '&&'
+        # for Qt's mnemonic handling) is measured at its displayed width.
+        wide = text is not None and len(text) > 1
+        display = text.replace('&', '&&') if text is not None else text
+        super().__init__(display)
         self.setFixedSize(int(width), int(height))
-        self.setFont(QFont('Arial', max(10, int(height) // 2)))
+        font = QFont('Arial', max(10, int(height) // 2))
+        if wide:
+            font.setPointSize(max(8, round(font.pointSize() * 0.8)))
+        if text is not None:
+            fm = QFontMetrics(font)
+            padding = 6
+            while font.pointSize() > 8 and fm.horizontalAdvance(text) > int(width) - padding:
+                font.setPointSize(font.pointSize() - 1)
+                fm = QFontMetrics(font)
+        self.setFont(font)
         self.setStyleSheet(f"""
             QPushButton {{
                 background-color: white;
