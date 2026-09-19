@@ -164,6 +164,49 @@ All working fine now. This has been a most rewarding exercise. Next I'll go to R
 
 Great to hear — glad the session landed well. Session wrap-up: everything from today is sitting uncommitted in the repo (as_core/as_graphics/as_gclasses/as_program/as_server + the demo + the new learn pages) — nothing has been committed, so when you're ready, one commit (or a few) captures the whole graphics revival. The RBR UI request: the graphics domain is now documented (`learn/reference/20-graphics.md`), demoed (`allspeak-py/tests/graphics-demo.as`), and de-bugged; bring back any RBR-driven change requests and we'll iterate here.
 
+## 21:15
+
+[Proposal] RBR rounded-rectangle — plan approved; implemented `shape` with variants.
+
+**Assistant**
+
+Reviewed `~/dev/rbr/doc/PROPOSAL-allspeak-rounded-rectangle.md` and implemented (per the approved plan, with the user's choices: `shape` + variants `rect|roundrect|ellipse|circle` defaulting to roundrect; attributes `radius`/`fill`/`border`/`borderwidth`):
+
+- **as_gclasses.py**: `ECShape(ECCoreWidget)` marker.
+- **as_graphics.py**: `ECShapeWidget(QWidget)` — antialiased QPainter paintEvent for all four geometries (paint-based because Qt QSS has no percentage border-radius, so ellipse/circle can't be QSS), with setKind/setRadius/setFill/setBorder/setBorderWidth each repainting; `k_shape` declaration; `k_createShape`/`r_createShape` (type default roundrect, radius default 12, raw-token attribute loop); k_set/r_set branches for `the radius/fill/border/borderwidth of {shape}`; `ECShape` added to k_add targets + r_add container branch (auto inner QVBoxLayout with contents margins = radius); ECShape import.
+- **en.json**: `shape`, `roundrect` words (raw-token resolution already worked; added for vocabulary completeness).
+- **tests/graphics-demo.as**: Shapes section — a row of four cards + a label inside the round card.
+- **learn/reference/20-graphics.md**: widget table + dedicated Shapes section (defaults, borderwidth-vs-width note, container/margins, painted-not-QSS rationale, honest child-clipping limitation). learn-link-check 0 errors; deploy-sync run.
+- **Version**: bumped `__init__.py` to 2608282113 (repo; the printed version still shows the installed snapshot's stamp — reinstall/publish to pick up).
+
+Bugs found and fixed during verification: the runtime `r_create` dispatcher was missing the `shape` branch (create silently halted the script mid-flow — no error, steps just stopped); a missing `ECShape` import in as_graphics.py. Regressions: 23/31 scripts compile clean; the 8 failures (mqtt/plugin/string-type) proven pre-existing on HEAD via git stash. Verified end-to-end: nine-assertion driver (all variants, container, mid-run set, painting, parenting), demo inspection, and clean runs of shape scripts.
+
+## 21:40
+
+The demo looks great. Now for another substantial chunk. The code includes a virtual keyboard for use in kiosk and similar environments. Can you take a look at it, tidy it up, document it etc, with a mod to the demo to pop it up and accept input.
+
+**Assistant**
+
+The virtual keyboard (`allspeak-py/allspeak/as_keyboard.py`, ~440 lines) was orphaned — imported by nothing, never wired to a keyword, with several latent bugs. Revived it:
+
+- **Tidied `as_keyboard.py`**: all key icons replaced by text labels (`Shift`, `123`, `Back`, `Enter`, …) — the `img/*.png` assets don't exist in the repo, so every icon button was blank; fixed `parent.width` → `parent.width()` and float `setFixedSize`; dropped the unused `keyboardType` param and the dead multi-receiver routing; the keyboard dialog now floats over the window (the old code tore the receiver layout INTO the dialog, which would destroy the field with it); fixed a real layout bug — a parented modal dialog came up collapsed (500×30 instead of 500×268) until `adjustSize()` sizes it explicitly.
+- **Wired a keyword**: `show keyboard {lineinput|multiline} [on {window}] [giving {var}]` in as_graphics.py (k_show/r_show). Enter accepts single-line fields (multiline Enter inserts a newline); ✓ accepts; ✕ cancels and restores the original text; `giving` always fires with the final text.
+- **Demo mod**: a `Virtual keyboard` button pops the keyboard over MainWindow; typing edits NameInput live; Enter accepts and the status bar shows `Keyboard: guestsmith`.
+- **Docs**: `learn/reference/20-graphics.md` gained a "Virtual keyboard" section (syntax, semantics, keypads, kiosk use); learn-link-check 0 errors; deploy-sync run.
+- **Version**: bumped `__init__.py` to 2608282146.
+
+Bugs found and fixed during verification: the k_show keyboard branch omitted the `command['keyboard']` marker (the statement compiled but was a silent no-op at runtime); the parented-dialog collapse. Verified: standalone smoke (chars/backspace/ampersand/space/shift/layouts), end-to-end script drivers (Enter → `result: guesthi`; ✕ → restore `guest`), and the full demo flow (button → type `smith` → Enter → `Keyboard: guestsmith`). Regression compile: same 8 pre-existing failures, nothing new. Reinstall/publish needed for the runtime changes.
+
+## 21:45
+
+It all looks really good. Let's close here and I'll return to RBR to implement.
+
+**Assistant**
+
+Glad it landed. Close-out reminders: today's work (shapes, keyboard, demo, docs, version 2608282146) is all in the repo but **uncommitted** — one commit (or a few) when you're ready. For RBR: reinstall/publish to pick up the runtime changes (shapes + keyboard), and remember the demo's served copy needs refreshing too. Bring back any RBR-driven change requests — the shapes/keyboard reference sections in learn/reference/20-graphics.md are the map.
+
+
+
 
 
 

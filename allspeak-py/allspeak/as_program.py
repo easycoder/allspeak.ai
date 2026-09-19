@@ -102,6 +102,7 @@ class Program:
 		self.debugger = None
 		self.graphics_app = None
 		self.running = False
+		self.flush_depth = 0
 		self.parent = None
 		self.message = None
 		self.replyVar = None
@@ -615,100 +616,120 @@ class Program:
 	# Flush the queue
 	def flush(self, pc):
 		global queue
+		self.flush_depth += 1
+		prev_pc = self.pc
+		prev_running = self.running
+		terminated = False
 		self.pc = pc
-		while self.running:
-			command = self.code[self.pc]
-			
-			# Check if debugger wants to halt before executing this command
-			if self.debugger != None:
-				# pc==1 is the first real command (pc==0 is the debug loader)
-				is_first = (self.pc == 1)
-				if self.debugger.checkIfHalt(is_first):
-					# Debugger says halt - break out and wait for user
-					break
-			
-			domainName = command['domain']
-			if domainName == None:
-				self.pc += 1
-			else:
-				keyword = command['keyword']
-				if self.debugStep and not self.debugSkip and 'debug' in command:
-					lino = command['lino'] + 1
-					line = self.script.lines[command['lino']].strip()
-					print(f'{self.name}: Line {lino}: {domainName}:{keyword}:  {line}')
-				domain = self.domainIndex[domainName]
-				handler = domain.runHandler(keyword)
-				if handler:
-					command = self.code[self.pc]
-					command['program'] = self
-					try:
-						if self.breakpoint:
-							pass	# Place a breakpoint here for a debugger to catch
-						self.pc = handler(command)
-						# A runtime error was routed to an onError handler (e.g. a
-						# test block's error handler): stop this statement sequence
-						# now so the handler runs before any further statements of
-						# the failing block.
-						if getattr(self, 'errorRouted', False):
-							self.errorRouted = False
-							break
-					except RuntimeError:
-						# A runtime error that was re-raised after routing (e.g.
-						# NoValueRuntimeError): the constructor already queued the
-						# onError handler, so just stop the sequence and let the
-						# queue drain. Any other RuntimeError propagates.
-						if getattr(self, 'errorRouted', False):
-							self.errorRouted = False
-							break
-						raise
-					except Exception as e:
-						tb = traceback.format_exc()
-						if getattr(self, 'errorRouted', False):
-							# The handler already routed the original error (queueing
-							# the onError handler); this secondary exception is fallout
-							# from that. Keep the original message and stop here.
-							self.errorRouted = False
-							break
-						# The constructor routes to onError (queueing the handler) or
-						# sys.exit()s when no handler is set. If it routed, stop this
-						# statement sequence so the handler runs before any further
-						# statements of the failing block.
-						RuntimeError(self, f'Error during execution of {domainName}:{keyword}: {str(e)}\n\nTraceback:\n{tb}')
-						if getattr(self, 'errorRouted', False):
-							self.errorRouted = False
-							break
-						raise
-					# Deal with 'exit'
-					if self.pc == -1:
-						queue = deque()
-						if self.parent == None:
-							if self.testMode:
-								# In test mode a normal exit triggers the summary and
-								# ends the run cleanly (no sys.exit) so the caller can
-								# still read the results off the program object.
-								if not self.summaryPrinted:
-									self.printTestSummary()
+		try:
+			while self.running:
+				command = self.code[self.pc]
+				
+				# Check if debugger wants to halt before executing this command
+				if self.debugger != None:
+					# pc==1 is the first real command (pc==0 is the debug loader)
+					is_first = (self.pc == 1)
+					if self.debugger.checkIfHalt(is_first):
+						# Debugger says halt - break out and wait for user
+						break
+				
+				domainName = command['domain']
+				if domainName == None:
+					self.pc += 1
+				else:
+					keyword = command['keyword']
+					if self.debugStep and not self.debugSkip and 'debug' in command:
+						lino = command['lino'] + 1
+						line = self.script.lines[command['lino']].strip()
+						print(f'{self.name}: Line {lino}: {domainName}:{keyword}:  {line}')
+					domain = self.domainIndex[domainName]
+					handler = domain.runHandler(keyword)
+					if handler:
+						command = self.code[self.pc]
+						command['program'] = self
+						try:
+							if self.breakpoint:
+								pass	# Place a breakpoint here for a debugger to catch
+							self.pc = handler(command)
+							# A runtime error was routed to an onError handler (e.g. a
+							# test block's error handler): stop this statement sequence
+							# now so the handler runs before any further statements of
+							# the failing block.
+							if getattr(self, 'errorRouted', False):
+								self.errorRouted = False
+								break
+						except RuntimeError:
+							# A runtime error that was re-raised after routing (e.g.
+							# NoValueRuntimeError): the constructor already queued the
+							# onError handler, so just stop the sequence and let the
+							# queue drain. Any other RuntimeError propagates.
+							if getattr(self, 'errorRouted', False):
+								self.errorRouted = False
+								break
+							raise
+						except Exception as e:
+							tb = traceback.format_exc()
+							if getattr(self, 'errorRouted', False):
+								# The handler already routed the original error (queueing
+								# the onError handler); this secondary exception is fallout
+								# from that. Keep the original message and stop here.
+								self.errorRouted = False
+								break
+							# The constructor routes to onError (queueing the handler) or
+							# sys.exit()s when no handler is set. If it routed, stop this
+							# statement sequence so the handler runs before any further
+							# statements of the failing block.
+							RuntimeError(self, f'Error during execution of {domainName}:{keyword}: {str(e)}\n\nTraceback:\n{tb}')
+							if getattr(self, 'errorRouted', False):
+								self.errorRouted = False
+								break
+							raise
+						# Deal with 'exit'
+						if self.pc == -1:
+							queue = deque()
+							if self.parent == None:
+								if self.testMode:
+									# In test mode a normal exit triggers the summary and
+									# ends the run cleanly (no sys.exit) so the caller can
+									# still read the results off the program object.
+									if not self.summaryPrinted:
+										self.printTestSummary()
+								else:
+									print('Program exiting')
+									sys.exit()
 							else:
-								print('Program exiting')
-								sys.exit()
-						else:
-							self.releaseParent()
-						self.running = False
-						break
-					elif self.pc == None or self.pc == 0 or self.pc >= len(self.code):
-						# Natural end of program (or 'stop'), or a handler returned
-						# None after routing an error to onError — in the latter case
-						# the queue still holds the recovery handler, so keep running
-						# and let the module-level flush() drain it.
-						if len(queue) == 0:
-							# In test mode a natural end also triggers the summary.
-							# running is cleared so start() terminates instead of
-							# spinning forever (scripts without an explicit exit).
-							if self.testMode and not self.summaryPrinted:
-								self.printTestSummary()
+								self.releaseParent()
 							self.running = False
-						break
+							terminated = True
+							break
+						elif self.pc == None or self.pc == 0 or self.pc >= len(self.code):
+							# Natural end of program (or 'stop'), or a handler returned
+							# None after routing an error to onError — in the latter case
+							# the queue still holds the recovery handler, so keep running
+							# and let the module-level flush() drain it.
+							if len(queue) == 0:
+								# In test mode a natural end also triggers the summary.
+								# running is cleared so start() terminates instead of
+								# spinning forever (scripts without an explicit exit).
+								if self.testMode and not self.summaryPrinted:
+									self.printTestSummary()
+								self.running = False
+								if self.flush_depth == 1:
+									# Only the outermost flush may stop the program:
+									# a nested flush ending naturally is a continuation
+									# finishing while the outer flush is suspended.
+									terminated = True
+							break
 
+		finally:
+			self.flush_depth -= 1
+			if self.flush_depth > 0:
+				# A nested flush must not clobber the suspended outer flush:
+				# hand back the pc (nextPC() and friends read it) and,
+				# unless this flush terminated the program, its running flag.
+				self.pc = prev_pc
+				if not terminated:
+					self.running = prev_running
 	# Run the script at a given PC value
 	def run(self, pc):
 		global queue

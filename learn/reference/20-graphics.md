@@ -45,11 +45,12 @@ mdpanel HelpPanel
 listbox DeviceList
 combobox SystemCombo
 panel Placeholder
+shape RoundCard
 dialog ConfirmDlg
 messagebox MessageBox
 ```
 
-Types: `window`, `layout`, `group`, `label`, `pushbutton`, `checkbox`, `lineinput`, `multiline`, `mdpanel` (read-only markdown preview), `listbox`, `combobox`, `panel`, `dialog`, `messagebox`.
+Types: `window`, `layout`, `group`, `label`, `pushbutton`, `checkbox`, `lineinput`, `multiline`, `mdpanel` (read-only markdown preview), `listbox`, `combobox`, `panel`, `shape`, `dialog`, `messagebox`.
 
 ## Creating widgets
 
@@ -65,6 +66,7 @@ create CheckBox text `Inverted`
 create NameInput text `guest` size 40
 create Description cols 40 rows 6
 create HelpPanel cols 40 rows 6
+create RoundCard type roundrect radius 16 fill `#FFFFFF` border `#ECECEC` borderwidth 1
 ```
 
 - **window**: `title`, `at X Y`, `size W H`, `layout`. Defaults: title `AllSpeak Main Window`, size 640×480, centered. The `layout` attribute attaches a layout to the window directly (the layout must exist already) — `set the layout of … to …` does the same thing at any time.
@@ -75,6 +77,7 @@ create HelpPanel cols 40 rows 6
 - **checkbox**: `text`.
 - **lineinput**: `text`, `size` (width in characters).
 - **multiline / mdpanel**: `cols`, `rows` (fixed character grid; without them the widget expands).
+- **shape**: `type rect|roundrect|ellipse|circle` (default `roundrect`), `radius` (corner radius, default 12; ignored for `rect`), `fill` (fill colour), `border` (border colour), `borderwidth` (border thickness). The border thickness is called `borderwidth` — plain `width` is the widget width elsewhere in the domain, so `create Card … width 1` would be ambiguous.
 - **listbox / combobox / panel**: no attributes.
 
 A `window` is not a widget — it has no parent layout until you call `set the layout of`. `panel` is a plain `QWidget` you can hang a layout on.
@@ -94,7 +97,36 @@ add spacer size 10 to LeftPanel        ! fixed-size spacer
 add DeviceList at 0 1 in GridPanel     ! QGridLayout cells: column, row
 ```
 
-`add {value} to {listbox|combobox}` appends an item — a list value is spread into items (`add Devices to Combo` adds them all). Groups accept both a layout (`add Layout to Group` sets the group's layout — the rbrconf pattern) and widgets directly (`add Widget to Group` adds to the group's own layout, creating a plain `QVBoxLayout` on first use).
+`add {value} to {listbox|combobox}` appends an item — a list value is spread into items (`add Devices to Combo` adds them all). Groups accept both a layout (`add Layout to Group` sets the group's layout — the rbrconf pattern) and widgets directly (`add Widget to Group` adds to the group's own layout, creating a plain `QVBoxLayout` on first use). Shapes are containers in the same way: `add Widget to Shape` puts the widget in the shape's own layout (auto-created on first use, with contents margins matching the shape's `radius` so children sit inside the rounded area); `add Layout to Shape` sets the shape's layout instead.
+
+## Shapes
+
+A `shape` is a declarative rounded/rectangular card — a painted widget with a fill and an optional border. It exists because the RBR-style "white rounded card" is a primary element worth naming, instead of bolting QSS `border-radius` onto a `panel`. Unlike the workaround, the corner radius, fill, border and border thickness are real attributes:
+
+```as
+shape RoundCard
+shape Avatar
+
+create RoundCard type roundrect radius 16 fill `#FFFFFF` border `#ECECEC` borderwidth 1
+create Avatar type circle radius 24 fill `#FFF3E0` border `#FFB74D` borderwidth 2
+create Title text `Kitchen`
+add Title to RoundCard          ! container: children sit inside the rounded area
+```
+
+The four `type` variants share one widget and one paint path: `rect` (square corners), `roundrect` (corners rounded by `radius`), `ellipse`, and `circle` (always round, centred). The default `type` is `roundrect`, so `create Card radius 16 …` is a rounded card without spelling it out. `type` is create-time only — runtime geometry changes aren't supported.
+
+The shapes are painted with `QPainter` (antialiased) rather than a stylesheet: Qt QSS has no percentage `border-radius`, so an `ellipse` or `circle` cannot be expressed as a style string. There is no text on a shape itself — put a `label` inside it.
+
+Runtime theming via `set` (each change repaints):
+
+```as
+set the fill of RoundCard to `#FF8800`      ! heating card turns accent-orange
+set the radius of RoundCard to 8
+set the border of RoundCard to `#000000`
+set the borderwidth of RoundCard to 2
+```
+
+Honest limitation: the paint clips the shape's own background, not its children — a child near the edge can poke past the rounded corner. The default contents margins (≈ radius) keep normal content clear of the corners; a true rounded mask is a possible future extension.
 
 ## Setting properties
 
@@ -206,6 +238,33 @@ show MessageBox giving Answer
 ```
 
 Styles and results: `question` → `Yes`/`No`; `yesnocancel` → `Yes`/`No`/`Cancel`; `warning` → `OK` or empty string; anything else → `Cancel`.
+
+## Virtual keyboard
+
+An on-screen keyboard for kiosk and touch environments (no hardware keyboard needed):
+
+```as
+show keyboard NameInput on MainWindow giving V
+```
+
+`show keyboard {lineinput|multiline} [on {window}] [giving {var}]` pops a frameless, modal keyboard over the named window (positioned at the bottom, centred) and blocks until it closes. The field **stays in the window** — text appears in it live as you type. When the keyboard closes, `giving {var}` receives the field's final text.
+
+How it behaves:
+
+- **Enter** accepts a single-line field (the `multiline` field type is the exception — there Enter inserts a newline). The ✓ on the title bar accepts too.
+- **✕ on the title bar cancels**: the field is restored to what it held when the keyboard opened, and `giving` still fires with the restored text.
+- The title bar is draggable, so the keyboard can be moved out of the way.
+- **Shift** toggles lowercase/uppercase; **123** switches to numbers and symbols; **#+=** switches to the extended symbol page; **ABC** returns to letters; **Back** deletes.
+- Keys are text-labelled (`Shift`, `123`, `Enter`, …) — the keyboard needs no image assets.
+
+Typical use is from a button click:
+
+```as
+KeyboardClick:
+    show keyboard NameInput on MainWindow giving V
+    set the text of StatusLabel to `Keyboard: ` cat V
+    stop
+```
 
 ## Caveats for reviving this code
 

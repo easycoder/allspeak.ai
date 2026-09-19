@@ -190,7 +190,30 @@ class MQTTClient():
             except (ValueError, IndexError):
                 pass
             return
-    
+
+        else:
+            # Unframed payload: not something an AllSpeak MQTT client produces.
+            # Warning loudly beats dropping it silently — a silent drop makes a
+            # working server look idle, and costs hours to track down.
+            # Describe the shape only: payloads can carry credentials.
+            try:
+                parsed = json.loads(payload)
+                if isinstance(parsed, dict):
+                    shape = f"JSON object with keys {sorted(parsed.keys())}"
+                elif isinstance(parsed, list):
+                    shape = f"JSON array of {len(parsed)} items"
+                else:
+                    shape = f"JSON {type(parsed).__name__}"
+            except ValueError:
+                shape = "not JSON"
+            print(
+                f"WARNING: ignoring unframed payload on topic '{topic}' "
+                f"({len(payload)} bytes, {shape}). AllSpeak MQTT clients always frame "
+                f"messages as '!last!<chunks> <data>' (and '!part!<n> <chunks> <data>' "
+                f"for all but the last chunk); a publisher that does not frame is not "
+                f"speaking the AllSpeak protocol, so the message has been dropped."
+            )
+
     def getMessageTopic(self):
         return self.message.topic # type: ignore
     
