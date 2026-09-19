@@ -64,7 +64,17 @@ echo "Merge into a single file"
 cat js/allspeak/Core.js js/allspeak/Browser.js js/allspeak/MarkdownRenderer.js js/allspeak/Webson.js js/allspeak/JSON.js js/allspeak/MQTT.js js/allspeak/REST.js js/allspeak/Compare.js js/allspeak/Condition.js js/allspeak/Value.js js/allspeak/Run.js js/allspeak/Opcodes.js js/allspeak/Language.js js/allspeak/LanguagePack_en.js js/allspeak/Compile.js js/allspeak/Main.js js/allspeak/AllSpeak.js > deploy/dist/allspeak.js
 
 echo "Minimise with closure"
-npx google-closure-compiler --js=deploy/dist/allspeak.js --js_output_file=deploy/dist/allspeak-min.js --language_in ECMASCRIPT_2021
+if ! npx --yes google-closure-compiler --js=deploy/dist/allspeak.js --js_output_file=deploy/dist/allspeak-min.js --language_in ECMASCRIPT_2021; then
+	echo "ERROR: closure-compiler failed — allspeak-min.js was not produced."
+	echo "       Refusing to continue: a cancelled minify step has previously shipped"
+	echo "       a dist/ without allspeak-min.js, breaking every page that loads it."
+	exit 1
+fi
+if [ ! -s deploy/dist/allspeak-min.js ]; then
+	echo "ERROR: deploy/dist/allspeak-min.js is missing or empty after minification."
+	echo "       Refusing to continue — deploy/dist/ is incomplete."
+	exit 1
+fi
 echo "Closure finished"
 
 echo "Copy language packs to dist"
