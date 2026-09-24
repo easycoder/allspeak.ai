@@ -1,0 +1,11 @@
+{
+  "commands": {
+    "add": "Addiert einen Wert zu einer ~l:variable|k|core!variable~ oder addiert zwei ~m:values~ und legt das Ergebnis in eine ~m:variable~. Wenn du zu einer ~m:variable~ addierst, muss sie bereits einen numerischen Wert enthalten; wenn du einer ~m:variable~ das Ergebnis einer Addition zuweist, geht der bisherige Inhalt verloren.%0a%0aAlle Fließkommawerte werden als Strings gespeichert.",
+    "take": "Subtrahiert einen Wert von einer Variablen, oder subtrahiert einen Wert von einem anderen und legt das Ergebnis in eine Variable.",
+    "multiply": "Multipliziert eine Variable mit einem Wert, oder multipliziert zwei Werte miteinander und legt das Ergebnis in eine Variable.",
+    "divide": "Dividiert eine ~mono:variable~ durch einen ~mono:value~, oder dividiert einen ~mono:value~ durch einen anderen und legt das Ergebnis in eine ~mono:variable~.",
+    "FLOAT": "Das ~m:float~-Paket enthält eine Reihe von Fließkomma-Befehlen; zunächst nur ~l:add~, ~l:subtract~, ~l:multiply~ und ~l:divide~.%0a%0aFließkommawerte werden als Strings wie `3.14159365` gehalten. Die Befehle sind identisch mit ihren Integer-Versionen, abgesehen vom Zusatz ~m:float~ nach dem Befehlsnamen."
+  },
+  "values": {},
+  "conditions": {}
+}

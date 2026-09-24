@@ -1,0 +1,9 @@
+{
+  "commands": {
+    "PSUTIL": "Python-Modul für Prozess-Utilities (Speicherüberwachung)"
+  },
+  "values": {
+    "memory": "Der aktuelle Speicherverbrauch des Prozesses in Megabyte"
+  },
+  "conditions": {}
+}

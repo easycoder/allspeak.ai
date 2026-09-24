@@ -1,0 +1,16 @@
+{
+  "commands": {
+    "SERVER": "Module Python de serveur HTTP.",
+    "server": "Déclare une variable serveur.",
+    "start": "Démarre un serveur HTTP à l'écoute sur le port spécifié.",
+    "on": "Enregistre un gestionnaire pour les requêtes HTTP entrantes.",
+    "get": "Lit le corps d'une requête depuis un serveur vers une variable.",
+    "return": "Envoie une réponse au client avec un code de statut HTTP optionnel."
+  },
+  "values": {
+    "request": "La méthode HTTP de la requête courante (GET, POST, etc.).",
+    "path": "Le chemin d'URL de la requête courante.",
+    "body": "Le contenu du corps de la requête courante."
+  },
+  "conditions": {}
+}

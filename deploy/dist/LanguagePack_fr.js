@@ -956,6 +956,12 @@ var AllSpeak_LanguagePack_fr = {
         "attends {value} minute|minutes|seconde|secondes|tick|ticks"
       ]
     },
+    "VIZ": {
+      "keyword": "viz",
+      "patterns": [
+        "viz start|stop [on {label}] [once|every] [until thread] [limit {count}]"
+      ]
+    },
     "WHILE": {
       "keyword": "tant",
       "patterns": [
@@ -1053,6 +1059,7 @@ var AllSpeak_LanguagePack_fr = {
     "encode": "encode",
     "decode": "décode|decode",
     "lowercase": "minuscule",
+    "uppercase": "majuscule",
     "hash": "hash",
     "reverse": "inverse",
     "trim": "rogne",
@@ -1329,6 +1336,10 @@ var AllSpeak_LanguagePack_fr = {
     "adjust": "ajuste",
     "type": "type",
     "zoom": "zoom",
+    "once": "une-fois",
+    "limit": "limite",
+    "until": "jusqu'à|jusqu’à|jusqu'a|jusqu’a",
+    "thread": "fil",
     "via": "via",
     "memory": "mémoire|memoire"
   },

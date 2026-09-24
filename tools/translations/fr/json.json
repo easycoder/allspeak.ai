@@ -1,0 +1,20 @@
+{
+  "commands": {
+    "json shuffle": "Mélange le contenu d'une liste dans un ordre aléatoire.",
+    "json add": "Ajoute un élément à un tableau JSON.",
+    "json delete": "Supprime la propriété nommée, ou l'élément à un indice précis, du tableau JSON fourni.",
+    "json format": "~m:json format~ traite les chaînes JSON mal formatées qui contiennent des espaces et sauts de ligne superflus. Elle utilise en interne ~m:JSON.parse~ et ~m:JSON.stringify~ pour mettre l'élément dans un format standard.",
+    "json parse": "Analyse une URL, en la décomposant en ses différentes parties afin qu'elles puissent être traitées facilement. Dans l'exemple ci-dessus, ces parties sont :%0a%0a~m:protocol~ : le protocole : ~m:https://~%0a%0a~m:domain~ : le domaine : ~m:allspeak.software~%0a%0a~m:path~ : le chemin : ~demos/first~%0a%0a~m:arg~ : les paramètres CGI : ~value=56~%0a%0aIci, le résultat dans ~m:ParsedValue~ serait%0a%0a~m:{<br />~%0a~m:&nbsp;&nbsp;&quot;protocol&quot;:&quot;https://&quot;,<br />~%0a~m:&nbsp;&nbsp;&quot;domain&quot;:&quot;allspeak.software&quot;,<br />~%0a~m:&nbsp;&nbsp;&quot;path&quot;:&quot;demos/first&quot;,<br />~%0a~m:&nbsp;&nbsp;&quot;arg&quot;:&quot;value=56&quot;<br />~%0a~m:}~%0a%0aVoir aussi ~l:history|k|browser!history~ pour gérer l'historique du navigateur",
+    "json rename": "Renomme une propriété dans un objet JSON.",
+    "json sort": "Trie le contenu d'une liste dans l'ordre alphabétique croissant.",
+    "json split": "Découpe une variable en un tableau de parties selon le séparateur fourni. Si aucun séparateur n'est fourni, le séparateur est fixé à un saut de ligne (%0a).",
+    "json replace": "Remplace l'élément situé à l'index indiqué dans un tableau JSON contenu dans une ~l:variable~ par une nouvelle valeur. Le tableau est analysé, l'élément est remplacé, et le résultat est stocké à nouveau dans la variable."
+  },
+  "values": {
+    "json keys": "Renvoie les clés de toutes les propriétés de l'objet JSON sous forme de tableau JSON ; par défaut triées alphabétiquement. Si ~m:unsorted~ est précisé, la liste ne sera pas triée.",
+    "json count": "Renvoie le nombre d'éléments dans le tableau spécifié. Voir aussi ~l:json size~, qui fait la même chose.",
+    "json size": "Renvoie le nombre d'éléments dans le tableau spécifié. Voir aussi ~l:json count~, qui fait la même chose.",
+    "json index": "Renvoie l'index (base zéro) de l'élément dans le tableau, ou -1 s'il n'est pas présent."
+  },
+  "conditions": {}
+}

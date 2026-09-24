@@ -1,0 +1,9 @@
+{
+  "commands": {
+    "PSUTIL": "Module Python d'utilitaires de processus (suivi de la mémoire)."
+  },
+  "values": {
+    "memory": "L'utilisation mémoire du processus courant, en mégaoctets."
+  },
+  "conditions": {}
+}

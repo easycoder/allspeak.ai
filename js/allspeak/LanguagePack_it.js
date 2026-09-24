@@ -957,6 +957,12 @@ var AllSpeak_LanguagePack_it = {
         "attendi {value} minuto|minuti|secondo|secondi|tick|ticks"
       ]
     },
+    "VIZ": {
+      "keyword": "viz",
+      "patterns": [
+        "viz start|stop [on {label}] [once|every] [until thread] [limit {count}]"
+      ]
+    },
     "WHILE": {
       "keyword": "mentre",
       "patterns": [
@@ -1053,7 +1059,8 @@ var AllSpeak_LanguagePack_it = {
     "date": "data",
     "encode": "encode",
     "decode": "decode",
-    "lowercase": "minuscolo",
+    "lowercase": "minuscolo|minuscola",
+    "uppercase": "maiuscolo|maiuscola",
     "hash": "hash",
     "reverse": "inverti",
     "trim": "taglia",
@@ -1332,6 +1339,10 @@ var AllSpeak_LanguagePack_it = {
     "adjust": "regola",
     "type": "tipo",
     "zoom": "zoom",
+    "once": "una-volta",
+    "limit": "limite",
+    "until": "fino-a",
+    "thread": "discussione|thread",
     "via": "via",
     "memory": "memoria"
   },

@@ -2271,6 +2271,64 @@ class Core(Handler):
         return self.nextPC()
 
     # Pause for a specified time
+    # viz start [on <label>] [once|every] [until thread] [limit N]   |   viz stop [on <label>]
+    #
+    # A marker, not a command: it says *where* to watch and compiles to something the
+    # runtime does nothing with. It lives in core rather than in the analysis plugin
+    # deliberately — a marker that only compiles when a tool is loaded would make an
+    # instrumented script unrunnable as an ordinary script, which is a trap for whoever
+    # leaves one in by accident. Core owns the syntax; the plugin owns the watching.
+    def k_viz(self, command):
+        request = language.reverse_word(self.nextToken())
+        if request not in ('start', 'stop'):
+            FatalError(self.compiler, 'viz: expected "start" or "stop"')
+        command['request'] = request
+        command['mode'] = 'once'
+        # The options are read loosely on purpose: `on` names a label the same way `gosub`
+        # does, so a forward reference works, and a name that resolves to nothing is the
+        # analysis's to report rather than a compile error here. They stop at the end of
+        # the marker's own line, without which a statement on the next line beginning with
+        # one of the option words — `on click Sorted` is a common shape — would be
+        # swallowed as part of the marker.
+        # command['lino'] was stamped by compileToken before this handler ran, so it is the
+        # marker's own line. The test is on the *lookahead's* line: getLino() reports the
+        # token already consumed, which is always the marker's line and so would let the
+        # options run into the next statement.
+        line = command['lino']
+        while self.peekLino() == line:
+            option = language.reverse_word(self.peek())
+            if option == 'on':
+                self.nextToken()
+                point = self.nextToken()
+                command['point'] = point[:-1] if point and point.endswith(':') else point
+            elif option in ('once', 'every'):
+                command['mode'] = option
+                self.nextToken()
+            elif option == 'until':
+                self.nextToken()
+                if language.reverse_word(self.peek()) != 'thread':
+                    FatalError(self.compiler, 'viz: "until" is followed by "thread"')
+                # Exactly "thread": `end` is a block keyword, so being forgiving about the
+                # longer form would swallow the `end` of an enclosing loop.
+                self.nextToken()
+                command['until'] = 'thread'
+            elif option == 'limit':
+                self.nextToken()
+                size = self.nextToken()
+                try:
+                    command['limit'] = int(size)
+                except (TypeError, ValueError):
+                    FatalError(self.compiler, 'viz: "limit" needs a number')
+            else:
+                break
+        self.add(command)
+        return True
+
+    # The whole point of keeping the marker in core: running it does nothing at all. The
+    # recorder, when one is attached, watches the commands go by and does the work.
+    def r_viz(self, command):
+        return self.nextPC()
+
     def k_wait(self, command):
         command['value'] = self.nextValue()
         multipliers = {}
@@ -3584,12 +3642,24 @@ class Core(Handler):
 
         if language.reverse_word(token) == 'is':
             token = self.nextToken()
-            if language.reverse_word(self.peek()) == 'not':
+            # matches_word, not reverse_word: French maps both 'not' and 'step'
+            # to 'pas', so the reverse lookup answers 'step' and the negation
+            # would be missed. The JS compiler checks the same way (isNegate).
+            if language.matches_word(self.peek(), 'not'):
                 self.nextToken()
                 condition.negate = True # type: ignore
             token = self.nextToken()
             condition.type = language.reverse_word(token) # type: ignore
-            if language.reverse_word(token) in ['numeric', 'string', 'bool', 'boolean', 'none', 'list', 'object', 'even', 'odd', 'empty']:
+            if language.reverse_word(token) in ['upper', 'lower']:
+                # English spells the test either way round: `is uppercase` and
+                # `is upper case` mean the same thing, so a bare `upper`/`lower`
+                # has to be followed by `case`. Neither is a pack word, so only
+                # an English script can reach this branch.
+                if language.reverse_word(self.nextToken()) != 'case':
+                    return None
+                condition.type = 'uppercase' if language.reverse_word(token) == 'upper' else 'lowercase' # type: ignore
+                return condition
+            if language.reverse_word(token) in ['numeric', 'string', 'bool', 'boolean', 'none', 'list', 'object', 'even', 'odd', 'empty', 'uppercase', 'lowercase']:
                 return condition
             if language.reverse_word(token) in ['greater', 'less']:
                 if language.reverse_word(self.nextToken()) == 'than':
@@ -3739,6 +3809,21 @@ class Core(Handler):
         comparison = type(self.textify(condition.value1)) is dict
         return not comparison if condition.negate else comparison
 
+    # Is the value written entirely in one case? Only text has a case: a number,
+    # a boolean or an empty value is neither upper nor lower. Python's own
+    # isupper()/islower() give exactly that contract — at least one cased letter,
+    # all of them in the case asked about — and the JS runtime folds the other way
+    # to reach the same answer.
+    def _isCased(self, condition, upper):
+        value = self.textify(condition.value1)
+        if not isinstance(value, str):
+            return False
+        cased = value.isupper() if upper else value.islower()
+        return not cased if condition.negate else cased
+
+    def c_lowercase(self, condition):
+        return self._isCased(condition, False)
+
     def c_odd(self, condition):
         return self.textify(condition.value1) % 2 == 1
     
@@ -3768,6 +3853,9 @@ class Core(Handler):
     def c_string(self, condition):
         comparison = type(self.textify(condition.value1)) is str
         return not comparison if condition.negate else comparison
+
+    def c_uppercase(self, condition):
+        return self._isCased(condition, True)
 
     def c_and(self, condition):
         return self.testCondition(condition.left) and self.testCondition(condition.right)

@@ -1,0 +1,12 @@
+{
+  "commands": {
+    "create": "Erzeugt ein neues ~l:date~-Element im angegebenen Container – in der Regel ein ~l:div|k|browser~ – und initialisiert es mit den angegebenen Werten.",
+    "date": "Deklariert eine Variable vom Typ ~m:&lt;date&gt;~. Mit ~l:create~ kannst du ein neues ~m:date~-Element erzeugen.\n\nEin ~m:date~ ist eine zusammengesetzte Komponente aus 3 Feldern für Jahr, Monat und Tag. Die Komponente verwaltet ihre Interaktionen selbst und berücksichtigt Monate unterschiedlicher Länge ebenso wie Schaltjahre.",
+    "set": "Setzt den Wert der ~m:date~-Komponente auf den angegebenen Zeitstempel. Zeitstempel sind die Anzahl der Sekunden seit dem 1. Januar 1970 (der Unix-Epoche)."
+  },
+  "values": {
+    "timestamp of": "Wandelt das aktuell in der ~l:date|k~-Komponente gehaltene Datum in einen Unix-Zeitstempel um.",
+    "date of": "Wandelt das aktuell in der ~l:date|k~-Komponente gehaltene Datum in eine Zeichenkette der Form &quot;{day} {month} {year}&quot; um, zum Beispiel &quot;15 July 2014&quot;."
+  },
+  "conditions": {}
+}

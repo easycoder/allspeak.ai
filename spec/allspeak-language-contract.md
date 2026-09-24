@@ -26,6 +26,7 @@ This contract does not yet standardize browser-only commands, DOM interactions, 
 7. Compound conditions support `and` (higher precedence) and `or` (lower precedence).
 8. The `includes` condition tests whether a string contains a substring.
 9. The `starts with` and `ends with` conditions test string prefix and suffix respectively.
+10. The `uppercase` and `lowercase` conditions test the case of a text value. A value satisfies either test only when it holds at least one cased letter and every cased letter is in that case, so `ABC-123` is uppercase while `Hello`, `123` and an empty value satisfy neither, and values that cannot be cased (numbers, booleans, null) satisfy neither. `is upper case` and `is lower case` are accepted spellings of `is uppercase` and `is lowercase`.
 
 ## 3. Error Contract (Initial)
 

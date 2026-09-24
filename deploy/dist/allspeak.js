@@ -54,6 +54,27 @@ const _AllSpeak_sha256 = (() => {
 	};
 })();
 
+// Shared by the `is uppercase` / `is lowercase` conditions. A value passes only
+// if it holds at least one cased letter and every cased letter is in that case —
+// Python's str.isupper()/islower(). So `ABC-123` is uppercase, while `Hello`,
+// `123` and an empty value are neither. Folding to the *other* case is the
+// presence test: an unchanged fold means the value holds no letter of the case
+// being asked about, which settles it without a second rule. Only text can be
+// cased, so booleans and empty values never pass — Python's c_uppercase/
+// c_lowercase apply the same rule by testing for a str first.
+const _AllSpeak_isCased = (value, upper) => {
+	if (typeof value !== `string` && typeof value !== `number`) {
+		return false;
+	}
+	const text = `${value}`;
+	const other = upper ? text.toLowerCase() : text.toUpperCase();
+	if (text === other) {
+		return false;
+	}
+	const wanted = upper ? text.toUpperCase() : text.toLowerCase();
+	return text === wanted;
+};
+
 const AllSpeak_Core = {
 
 	name: `AllSpeak_Core`,
@@ -265,6 +286,88 @@ const AllSpeak_Core = {
 				return false;
 			}
 		}
+	},
+
+	// viz start [on <label>] [once|every] [until thread] [limit N]   |   viz stop [on <label>]
+	//
+	// A marker, not a command: it says *where* to watch and compiles to something the
+	// runtime does nothing with. It lives in core rather than in the analysis plugin
+	// deliberately — a marker that only compiles when a tool is loaded would make an
+	// instrumented script unrunnable as an ordinary script, which is a trap for whoever
+	// leaves one in by accident. Core owns the syntax; the plugin owns the watching.
+	Viz: {
+
+		compile: compiler => {
+			const lino = compiler.getLino();
+			compiler.next();
+			const request = AllSpeak_Language.reverseWord(compiler.getToken());
+			if (request !== `start` && request !== `stop`) {
+				throw new Error(AllSpeak_Language.diagnostic(`syntaxError`, {
+					line: lino,
+					detail: `viz: expected "start" or "stop"`
+				}));
+			}
+			const command = {
+				domain: `core`,
+				keyword: `viz`,
+				lino,
+				request,
+				mode: `once`
+			};
+			compiler.next();
+			// The options are read loosely on purpose: `on` names a label the same way
+			// `gosub` does, so a forward reference works, and a name that resolves to
+			// nothing is the analysis's to report rather than a compile error here. They
+			// stop at the end of the marker's own line, without which a statement on the
+			// next line beginning with one of the option words — `on click Sorted` is a
+			// common shape — would be swallowed as part of the marker.
+			// `lino` was taken before the marker word was consumed, so it is the marker's
+			// own line: taken any later, the lookahead would already be reading the next
+			// line and the options would happily run into it.
+			while (compiler.getLino() === lino) {
+				const option = AllSpeak_Language.reverseWord(compiler.getToken());
+				if (option === `on`) {
+					compiler.next();
+					const point = compiler.getToken();
+					command.point = point && point.endsWith(`:`) ? point.slice(0, -1) : point;
+					compiler.next();
+				} else if (option === `once` || option === `every`) {
+					command.mode = option;
+					compiler.next();
+				} else if (option === `until`) {
+					compiler.next();
+					if (AllSpeak_Language.reverseWord(compiler.getToken()) !== `thread`) {
+						throw new Error(AllSpeak_Language.diagnostic(`syntaxError`, {
+							line: lino,
+							detail: `viz: "until" is followed by "thread"`
+						}));
+					}
+					// Exactly "thread": `end` is a block keyword, so being forgiving
+					// about the longer form would swallow a loop's own `end`.
+					compiler.next();
+					command.until = `thread`;
+				} else if (option === `limit`) {
+					compiler.next();
+					const size = parseInt(compiler.getToken(), 10);
+					if (Number.isNaN(size)) {
+						throw new Error(AllSpeak_Language.diagnostic(`syntaxError`, {
+							line: lino,
+							detail: `viz: "limit" needs a number`
+						}));
+					}
+					compiler.next();
+					command.limit = size;
+				} else {
+					break;
+				}
+			}
+			compiler.addCommand(command);
+			return true;
+		},
+
+		// The whole point of keeping the marker in core: running it does nothing at all.
+		// The recorder, when one is attached, watches the commands go by and does the work.
+		run: program => program.pc + 1
 	},
 
 	Begin: {
@@ -3286,6 +3389,7 @@ const AllSpeak_Core = {
 			END_TEST: this.EndTest,
 			TEST_ERROR: this.TestError,
 			GOTO_TEST_END: this.GotoTestEnd,
+			VIZ: this.Viz,
 			BEGIN: this.Begin,
 			END: this.End,
 			SCRIPT: this.Script
@@ -3469,7 +3573,7 @@ const AllSpeak_Core = {
 				};
 			}
 			const canonicalToken2 = AllSpeak_Language.reverseWord(token);
-			if ([`encode`, `decode`, `lowercase`, `hash`, `reverse`, `trim`].includes(canonicalToken2)) {
+			if ([`encode`, `decode`, `lowercase`, `uppercase`, `hash`, `reverse`, `trim`].includes(canonicalToken2)) {
 				compiler.next();
 				const value = compiler.getValue();
 				return {
@@ -4073,6 +4177,12 @@ const AllSpeak_Core = {
 					numeric: false,
 					content: program.getValue(value.value).toLowerCase()
 				};
+			case `uppercase`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: program.getValue(value.value).toUpperCase()
+				};
 			case `hash`:
 				return {
 					type: `constant`,
@@ -4472,6 +4582,33 @@ const AllSpeak_Core = {
 							type: `odd`,
 							value1
 						};
+					case `uppercase`:
+					case `lowercase`:
+						compiler.next();
+						return {
+							domain: `core`,
+							type: test,
+							value1,
+							negate
+						};
+					case `upper`:
+					case `lower`:
+						// English spells the test either way round: `is uppercase`
+						// and `is upper case` mean the same thing, so a bare
+						// `upper`/`lower` has to be followed by `case`. These two
+						// tokens are not pack words, so only an English script can
+						// reach this branch.
+						compiler.next();
+						if (!compiler.isWord(`case`)) {
+							return null;
+						}
+						compiler.next();
+						return {
+							domain: `core`,
+							type: test === `upper` ? `uppercase` : `lowercase`,
+							value1,
+							negate
+						};
 					case `greater`:
 						if (compiler.nextIsWord(`than`)) {
 							compiler.next();
@@ -4622,6 +4759,12 @@ const AllSpeak_Core = {
 				return (program.getValue(condition.value1) % 2) === 0;
 			case `odd`:
 				return (program.getValue(condition.value1) % 2) === 1;
+			case `uppercase`:
+			case `lowercase`:
+				const cased = _AllSpeak_isCased(
+					program.getValue(condition.value1),
+					condition.type === `uppercase`);
+				return condition.negate ? !cased : cased;
 			case `is`:
 				comparison = program.compare(program, condition.value1, condition.value2);
 				return condition.negate ? comparison !== 0 : comparison === 0;
@@ -11446,6 +11589,11 @@ const AllSpeak_Condition = {
 		for (const domainName of Object.keys(compiler.domain)) {
 			// console.log(`Try domain '${domainName}' for condition`);
 			const domain = compiler.domain[domainName];
+			// A domain need not implement condition handling at all — see
+			// spec/allspeak-plugin-contract.md: missing handlers are allowed.
+			if (!domain.condition) {
+				continue;
+			}
 			const code = domain.condition.compile(compiler);
 			if (code) {
 				return code;
@@ -11533,6 +11681,11 @@ const AllSpeak_Value = {
 		const mark = compiler.getIndex();
 		for (const name of Object.keys(compiler.domain)) {
 			const handler = compiler.domain[name];
+			// A domain need not implement value handling at all — see
+			// spec/allspeak-plugin-contract.md: missing handlers are allowed.
+			if (!handler.value) {
+				continue;
+			}
 			const code = handler.value.compile(compiler);
 			if (code) {
 				return code;
@@ -12086,6 +12239,9 @@ const AllSpeak_Opcodes = {
 		const keyword = command.keyword;
 
 		switch (keyword) {
+
+		// Instrumentation markers: core syntax, no runtime effect of their own.
+		case `viz`:      return `VIZ`;
 
 		// Arithmetic
 		case `add`:       return `ADD`;
@@ -13488,6 +13644,12 @@ var AllSpeak_LanguagePack_en = {
         "wait {value} minute|minutes|second|seconds|tick|ticks"
       ]
     },
+    "VIZ": {
+      "keyword": "viz",
+      "patterns": [
+        "viz start|stop [on {label}] [once|every] [until thread] [limit {count}]"
+      ]
+    },
     "WHILE": {
       "keyword": "while",
       "patterns": [
@@ -13548,7 +13710,9 @@ var AllSpeak_LanguagePack_en = {
     "empty": "empty",
     "numeric": "numeric",
     "even": "even",
-    "odd": "odd"
+    "odd": "odd",
+    "uppercase": "uppercase",
+    "lowercase": "lowercase"
   },
   "diagnostics": {
     "unknownCommand": "I don't understand '{token}' at line {line}.",
@@ -13648,6 +13812,7 @@ var AllSpeak_LanguagePack_en = {
     "encode": "encode",
     "decode": "decode",
     "lowercase": "lowercase",
+    "uppercase": "uppercase",
     "hash": "hash",
     "reverse": "reverse",
     "trim": "trim",
@@ -13923,6 +14088,10 @@ var AllSpeak_LanguagePack_en = {
     "type": "type",
     "zoom": "zoom",
     "via": "via",
+    "limit": "limit",
+    "once": "once",
+    "thread": "thread",
+    "until": "until",
     "memory": "memory"
   }
 };
@@ -14245,7 +14414,9 @@ const AllSpeak_Compiler = {
 			this.rewindTo(mark);
 		}
 		AllSpeak.writeToDebugConsole(`No handler found`);
-		const lino = this.getLino() + 1;
+		// getLino() is already 1-based (tokeniser stores lino + 1), so adding 1
+		// here reported the line after the offending token.
+		const lino = this.getLino();
 		if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(token) && !(token in this.symbols)) {
 			throw new Error(AllSpeak_Language.diagnostic(`unknownCommand`, {token, line: lino}));
 		}

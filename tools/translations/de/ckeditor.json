@@ -1,0 +1,11 @@
+{
+  "commands": {
+    "ckeditor": "~m:CKeditor~ ist eine kostenlose Rich-Text-Editor-Komponente von [https://ckeditor.com](https://ckeditor.com). Sie ähnelt einem kleinen Textverarbeitungsprogramm und bietet viele Funktionen, um HTML-Blöcke zu erstellen, die dann in eine Webseite eingefügt werden können.\n\nEs gibt 4 Befehle:\n\n~l:attach!ckeditor attach~ erzeugt den Editor in einem bestehenden ~l:div|k|browser~-Element.\n\n~l:set!ckeditor set~ setzt Inhalt in den Editor.\n\n~l:get!ckeditor get~ holt den Inhalt, wenn die Bearbeitung abgeschlossen ist.\n\n~l:close!ckeditor close~ schließt den Editor, und das Elternelement kehrt in seinen vorherigen Zustand zurück.",
+    "attach": "Heftet ein ~l:ckeditor!CKEditor~-Element an das angegebene ~l:div|k|browser~-Element an und verwandelt dieses in einen Rich-Text-Editor.",
+    "close": "Schließt den ~l:ckeditor!CKEditor~.",
+    "get": "Holt den HTML-Inhalt aus dem ~l:ckeditor!CKEditor~ und legt ihn in die angegebene ~l:variable|k|core~.",
+    "set": "Setzt den Inhalt des ~l:ckeditor!CKEditor~ auf den übergebenen HTML-Inhalt."
+  },
+  "values": {},
+  "conditions": {}
+}

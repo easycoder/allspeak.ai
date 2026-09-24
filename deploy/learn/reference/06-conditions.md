@@ -130,6 +130,17 @@ if Name starts with `Dr ` ...
 if File ends with `.json` ...
 ```
 
+`is uppercase` and `is lowercase` test the case of a text value:
+
+```as
+if Code is uppercase ...
+if Suffix is not lowercase ...
+```
+
+A value passes only when it holds at least one cased letter and every cased letter is in that case — `` `ABC-123` `` is uppercase, while `` `Hello` ``, `` `123` `` and an empty value are neither. The two-word spellings `is upper case` and `is lower case` mean the same thing and are equally accepted. Only text can be cased, so `is uppercase` on a number is never true.
+
+To *convert* case rather than test it, use the `uppercase` and `lowercase` value expressions — see [strings-and-text](strings-and-text.md).
+
 ## Compound conditions
 
 `and` and `or` join two conditions:

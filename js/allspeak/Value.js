@@ -70,6 +70,11 @@ const AllSpeak_Value = {
 		const mark = compiler.getIndex();
 		for (const name of Object.keys(compiler.domain)) {
 			const handler = compiler.domain[name];
+			// A domain need not implement value handling at all — see
+			// spec/allspeak-plugin-contract.md: missing handlers are allowed.
+			if (!handler.value) {
+				continue;
+			}
 			const code = handler.value.compile(compiler);
 			if (code) {
 				return code;

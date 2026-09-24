@@ -36,6 +36,9 @@ const AllSpeak_Opcodes = {
 
 		switch (keyword) {
 
+		// Instrumentation markers: core syntax, no runtime effect of their own.
+		case `viz`:      return `VIZ`;
+
 		// Arithmetic
 		case `add`:       return `ADD`;
 		case `take`:      return `SUBTRACT`;

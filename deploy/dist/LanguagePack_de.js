@@ -953,6 +953,12 @@ var AllSpeak_LanguagePack_de = {
         "warte {value} minute|minuten|sekunde|sekunden|tick|ticks"
       ]
     },
+    "VIZ": {
+      "keyword": "viz",
+      "patterns": [
+        "viz start|stop [on {label}] [once|every] [until thread] [limit {count}]"
+      ]
+    },
     "WHILE": {
       "keyword": "solange",
       "patterns": [
@@ -1049,6 +1055,7 @@ var AllSpeak_LanguagePack_de = {
     "encode": "kodiere",
     "decode": "dekodiere",
     "lowercase": "kleinbuchstaben",
+    "uppercase": "großbuchstaben|grossbuchstaben",
     "hash": "hash",
     "reverse": "umkehre",
     "trim": "kürze|kuerze",
@@ -1327,6 +1334,10 @@ var AllSpeak_LanguagePack_de = {
     "adjust": "justiere",
     "type": "typ",
     "zoom": "zoom",
+    "once": "einmal",
+    "limit": "Limit|limit",
+    "until": "bis",
+    "thread": "Thread|thread",
     "via": "via",
     "memory": "speicher"
   },

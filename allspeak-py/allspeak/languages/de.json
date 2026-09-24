@@ -951,6 +951,12 @@
         "warte {value} minute|minuten|sekunde|sekunden|tick|ticks"
       ]
     },
+    "VIZ": {
+      "keyword": "viz",
+      "patterns": [
+        "viz start|stop [on {label}] [once|every] [until thread] [limit {count}]"
+      ]
+    },
     "WHILE": {
       "keyword": "solange",
       "patterns": [
@@ -1047,6 +1053,7 @@
     "encode": "kodiere",
     "decode": "dekodiere",
     "lowercase": "kleinbuchstaben",
+    "uppercase": "großbuchstaben|grossbuchstaben",
     "hash": "hash",
     "reverse": "umkehre",
     "trim": "kürze|kuerze",
@@ -1325,6 +1332,10 @@
     "adjust": "justiere",
     "type": "typ",
     "zoom": "zoom",
+    "once": "einmal",
+    "limit": "Limit|limit",
+    "until": "bis",
+    "thread": "Thread|thread",
     "via": "via",
     "memory": "speicher"
   },

@@ -2,10 +2,15 @@
 """Convert a Markdown file to a print-formatted HTML document.
 
 Usage:
-    python3 md-to-html.py input.md [output.html]
+    python3 md-to-html.py [--compact] input.md [output.html]
 
 If no output filename is given, replaces the .md extension with .html
 in the input filename.
+
+--compact tightens the heading and paragraph spacing so that a short
+document fits a single printed page. The default layout is a
+title-page style with generous whitespace, suited to long documents
+like the whitepaper; a one-page brief overflows with it.
 
 Requirements: Python 3, the `markdown` package (pip install markdown)
 """
@@ -15,7 +20,7 @@ import sys
 import os
 
 
-def convert(md_path, html_path=None):
+def convert(md_path, html_path=None, compact=False):
     """Read a Markdown file and write a print-ready HTML document."""
 
     if html_path is None:
@@ -29,6 +34,21 @@ def convert(md_path, html_path=None):
         extensions=['extra', 'smarty', 'codehilite'],
         output_format='html5'
     )
+
+    # Opt-in tightening, applied after the base styles so it wins on
+    # equal specificity. Empty when --compact is not given, which
+    # leaves the default (title-page) layout byte-for-byte unchanged.
+    compact_css = '''
+  body { line-height: 1.45; }
+  h1 { margin-top: 0; font-size: 18pt; }
+  h2 { margin-top: 0.6cm; margin-bottom: 0.3cm; font-size: 13pt; }
+  p { margin: 0.25cm 0; }
+  ul, ol { margin: 0.2cm 0; }
+  li { margin: 0.08cm 0; }
+  @media print {
+    h1 { margin-top: 0; }
+  }
+''' if compact else ''
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -133,7 +153,7 @@ def convert(md_path, html_path=None):
     table {{ page-break-inside: avoid; }}
     h2, h3 {{ page-break-after: avoid; }}
   }}
-</style>
+{compact_css}</style>
 </head>
 <body>
 {html_body}
@@ -148,7 +168,10 @@ def convert(md_path, html_path=None):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+    compact = '--compact' in args
+    args = [a for a in args if a != '--compact']
+    if not args:
         print(__doc__)
         sys.exit(1)
-    convert(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
+    convert(args[0], args[1] if len(args) > 1 else None, compact)

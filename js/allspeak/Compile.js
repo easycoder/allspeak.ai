@@ -317,7 +317,9 @@ const AllSpeak_Compiler = {
 			this.rewindTo(mark);
 		}
 		AllSpeak.writeToDebugConsole(`No handler found`);
-		const lino = this.getLino() + 1;
+		// getLino() is already 1-based (tokeniser stores lino + 1), so adding 1
+		// here reported the line after the offending token.
+		const lino = this.getLino();
 		if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(token) && !(token in this.symbols)) {
 			throw new Error(AllSpeak_Language.diagnostic(`unknownCommand`, {token, line: lino}));
 		}

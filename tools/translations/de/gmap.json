@@ -1,0 +1,22 @@
+{
+  "commands": {
+    "gmap": "Deklariert eine ~m:Google Map~-Variable. Siehe ~l:create~.",
+    "create": "1. Erzeugt eine neue ~l:gmap!Google Map~ im angegebenen ~l:div|k|browser~.\n\n2. Erzeugt einen neuen ~l:marker~ in der angegebenen ~l:gmap!Google Map~.",
+    "marker": "Deklariert eine ~m:marker~-Variable. Siehe ~l:create~.%0a%0aEin ~m:marker~ ist eine Stecknadel auf der Karte. Farbe und Titel lassen sich mit ~l:set~ festlegen.",
+    "on": "Behandelt verschiedene Ereignisse, die von ~l:gmap!Google Maps~ und ~l:marker!markers~ ausgelöst werden.%0a%0a~m:click~ : ein Klick in die Karte oder auf einen Marker%0a%0a~m:move~ : die Karte wurde von der Nutzerin verschoben%0a%0a~m:type~ : der Kartentyp wurde geändert, z. B. von Straßenkarte auf Satellit%0a%0a~m:zoom~ : die Zoomstufe wurde von der Nutzerin verändert%0a",
+    "remove": "Entfernt alle ~l:marker!markers~ von der ~l:gmap!Google Map~.",
+    "set": "Setzt verschiedene Attribute von ~l:gmap!Google Maps~ und ~l:marker!markers~.%0a%0a~m:sets the key~ ist nötig, damit Karten überhaupt funktionieren. API-Keys werden von Google ausgegeben und erlauben ein großzügiges kostenloses Kontingent pro Tag, bevor Gebühren anfallen. Wenn möglich, solltest du den Key nicht direkt in dein Skript einbetten, damit andere ihn nicht kostenlos mitnutzen können. Lege ihn stattdessen auf deinen Server und hole ihn über einen REST-Endpunkt. Alternativ gehst du in die Google Developer Console und legst fest, welche URLs den Key verwenden dürfen, sodass er sonst nirgends funktioniert.%0a%0aDie ~m:position~ eines ~l:marker~ ist ein JSON-String mit den Eigenschaften latitude und longitude, zum Beispiel:%0a%0a~m:{~dq~latitude~dq~:~dq~53.8291119~dq~,~dq~longitude~dq~:~dq~-1.5381586~dq~}~",
+    "show": "Zeigt eine ~l:gmap!Google Map~, macht sie also sichtbar. Wird nach ~l:create~ aufgerufen.",
+    "update": "Aktualisiert eine ~l:gmap!Google Map~, nachdem das Skript Änderungen vorgenommen hat, die sich auf die Darstellung auswirken."
+  },
+  "values": {
+    "click position": "1. Liefert die Position, an der die Nutzerin auf die Karte geklickt hat. Das ist ein JSON-Wert, der sowohl latitude als auch longitude enthält. Er lässt sich direkt an ~l:set|k!set the position of {gmap}~ übergeben.%0a%0a2. Liefert latitude, longitude, zoom, type oder bounds einer ~l:gmap|k!Google Map~. ~m:bounds~ ist ein JSON-Wert mit den Eigenschaften ~m:north~, ~m:south~, ~m:east~ und ~m:west~. Die Website [Here On The Map](https://hereonthemap.com) nutzt sie, um ihre Datenbank nach Markern innerhalb des sichtbaren Kartenausschnitts zu durchsuchen.%0a%0a3. Liefert ein Attribut eines ~l:marker~.",
+    "latitude": "Liefert die Breite des Zentrums einer ~l:gmap|k!Google Map~ oder die Position eines ~l:marker|k~.",
+    "longitude": "Liefert die Länge des Zentrums einer ~l:gmap|k!Google Map~ oder die Position eines ~l:marker|k~.",
+    "type": "Liefert den Typ (~m:roadmap~ oder ~m:satellite~) einer ~l:gmap|k!Google Map~.",
+    "title": "Liefert den Titel eines ~l:marker|k~.",
+    "bounds": "Liefert die Grenzen einer ~l:gmap|k!Google Map~. ~m:bounds~ ist ein JSON-Wert mit den Eigenschaften ~m:north~, ~m:south~, ~m:east~ und ~m:west~. Die Website [Here On The Map](https://hereonthemap.com) nutzt sie, um ihre Datenbank nach Markern innerhalb des sichtbaren Kartenausschnitts zu durchsuchen. Siehe ~l:on|k!on click~ und ~l:click position!the click position~.%0a",
+    "zoom": "Liefert die aktuelle Zoomstufe der ~l:gmap|k!Google Map~."
+  },
+  "conditions": {}
+}

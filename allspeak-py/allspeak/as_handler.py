@@ -13,6 +13,7 @@ class Handler:
 		self.skip = compiler.skip
 		self.skipArticles = compiler.skipArticles
 		self.peek = compiler.peek
+		self.peekLino = compiler.peekLino
 		self.getValue = compiler.getValue
 		self.nextValue = compiler.nextValue
 		self.getConstant = compiler.getConstant

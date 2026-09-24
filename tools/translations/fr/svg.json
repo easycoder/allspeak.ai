@@ -1,0 +1,19 @@
+{
+  "commands": {
+    "rect": "Déclare une variable ~m:&lt;rect&gt;~. Vous pouvez soit l'attacher à un élément correspondant dans le HTML, soit créer un nouvel élément ; voir ~l:attach~ et ~l:create~.",
+    "circle": "Déclare une variable ~m:&lt;circle&gt;~. Vous pouvez soit l'attacher à un élément correspondant dans le HTML, soit créer un nouvel élément ; voir ~l:attach~ et ~l:create~.",
+    "ellipse": "Déclare une variable ~m:&lt;ellipse&gt;~. Vous pouvez soit l'attacher à un élément correspondant dans le HTML, soit créer un nouvel élément ; voir ~l:attach~ et ~l:create~.",
+    "group": "Déclare une variable ~m:&lt;group&gt;~.%0a%0aUn groupe est un ensemble d'éléments graphiques SVG (~l:circle~, ~l:ellipse~, ~l:line~, ~l:rect~, ~l:svgtext~) qui partagent tous un parent commun — le ~m:group~. L'avantage principal est que vous pouvez ~l:move~ l'ensemble du groupe comme un seul élément, sans avoir à gérer ses composants individuels.",
+    "line": "Déclare une variable ~m:&lt;line&gt;~. Vous pouvez soit l'attacher à un élément correspondant dans le HTML, soit créer un nouvel élément ; voir ~l:attach~ et ~l:create~.",
+    "move": "Déplace un élément graphique ou un ~l:group~ vers un emplacement spécifié dans la ~l:svg!scène~ contenante.",
+    "on": "Réagit au clic sur un élément ou un groupe.",
+    "set": "Définit le texte d'un élément ~l:svgtext~.",
+    "svg": "Déclare une variable ~m:&lt;svg&gt;~. Voir aussi ~l:create~.",
+    "svgtext": "Déclare une variable ~m:&lt;svgtext&gt;~. Vous pouvez soit l'attacher à un élément correspondant dans le HTML, soit créer un nouvel élément ; voir ~l:attach~ et ~l:create~.",
+    "create": "Crée un élément comme enfant du parent donné. Dans le cas des éléments graphiques (~l:circle~, ~l:ellipse~, ~l:line~, ~l:rect~, ~l:svgtext~), vous pouvez également ajouter les styles qui seront appliqués à l'élément.%0a%0aPlusieurs exemples d'utilisation de graphiques SVG sont disponibles sur la page [Exemples _**AllSpeak**_](https://allspeak.software/examples)."
+  },
+  "values": {
+    "text": "Renvoie le texte de l'élément ~l:svgtext~ nommé. Voir aussi ~l:set|k!set the text~"
+  },
+  "conditions": {}
+}

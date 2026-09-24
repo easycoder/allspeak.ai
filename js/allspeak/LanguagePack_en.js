@@ -968,6 +968,12 @@ var AllSpeak_LanguagePack_en = {
         "wait {value} minute|minutes|second|seconds|tick|ticks"
       ]
     },
+    "VIZ": {
+      "keyword": "viz",
+      "patterns": [
+        "viz start|stop [on {label}] [once|every] [until thread] [limit {count}]"
+      ]
+    },
     "WHILE": {
       "keyword": "while",
       "patterns": [
@@ -1028,7 +1034,9 @@ var AllSpeak_LanguagePack_en = {
     "empty": "empty",
     "numeric": "numeric",
     "even": "even",
-    "odd": "odd"
+    "odd": "odd",
+    "uppercase": "uppercase",
+    "lowercase": "lowercase"
   },
   "diagnostics": {
     "unknownCommand": "I don't understand '{token}' at line {line}.",
@@ -1128,6 +1136,7 @@ var AllSpeak_LanguagePack_en = {
     "encode": "encode",
     "decode": "decode",
     "lowercase": "lowercase",
+    "uppercase": "uppercase",
     "hash": "hash",
     "reverse": "reverse",
     "trim": "trim",
@@ -1403,6 +1412,10 @@ var AllSpeak_LanguagePack_en = {
     "type": "type",
     "zoom": "zoom",
     "via": "via",
+    "limit": "limit",
+    "once": "once",
+    "thread": "thread",
+    "until": "until",
     "memory": "memory"
   }
 };

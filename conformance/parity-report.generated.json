@@ -1,49 +1,201 @@
 {
   "specVersion": "0.1",
-  "generatedAt": "2026-03-15T22:45:43.090324+00:00",
+  "generatedAt": "2026-09-23T18:10:39.141324+00:00",
   "implementations": {
     "js-browser": {
       "runtimeVersion": "unknown",
       "summary": {
-        "pass": 0,
-        "fail": 0,
-        "skip": 7
+        "pass": 13,
+        "fail": 2,
+        "skip": 0
       },
       "results": [
         {
           "id": "EC-0001",
-          "status": "skip",
-          "details": "No actual result provided"
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "hello"
+            ],
+            "error": null
+          }
         },
         {
           "id": "EC-0002",
-          "status": "skip",
-          "details": "No actual result provided"
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "18"
+            ],
+            "error": null
+          }
         },
         {
           "id": "EC-0003",
-          "status": "skip",
-          "details": "No actual result provided"
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "GT"
+            ],
+            "error": null
+          }
         },
         {
           "id": "EC-0004",
-          "status": "skip",
-          "details": "No actual result provided"
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "15"
+            ],
+            "error": null
+          }
         },
         {
           "id": "EC-0005",
-          "status": "skip",
-          "details": "No actual result provided"
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "green"
+            ],
+            "error": null
+          }
         },
         {
           "id": "EC-0006",
-          "status": "skip",
-          "details": "No actual result provided"
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "AND works",
+              "OR works",
+              "Precedence correct"
+            ],
+            "error": null
+          }
         },
         {
           "id": "EC-0007",
-          "status": "skip",
-          "details": "No actual result provided"
+          "status": "fail",
+          "actual": {
+            "logs": [],
+            "error": {
+              "category": "compile",
+              "message": "Compile error in 'undefined':\n   1 ! EC-0007: Includes membership in condition\n   2 \n   3 string Sentence\nI don't understand 'string' at line 3.\n"
+            }
+          },
+          "details": {
+            "expected": {
+              "logs": [
+                "11"
+              ],
+              "error": null
+            },
+            "reason": "Output mismatch"
+          }
+        },
+        {
+          "id": "EC-0008",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "u",
+              "e"
+            ],
+            "error": null
+          }
+        },
+        {
+          "id": "EC-0009",
+          "status": "fail",
+          "actual": {
+            "logs": [],
+            "error": {
+              "category": "compile",
+              "message": "Compile error in 'undefined':\n   1 ! EC-0009: starts with / ends with string conditions\n   2 \n   3 string S\nI don't understand 'string' at line 3.\n"
+            }
+          },
+          "details": {
+            "expected": {
+              "logs": [
+                "starts ok",
+                "ends ok"
+              ],
+              "error": null
+            },
+            "reason": "Output mismatch"
+          }
+        },
+        {
+          "id": "EC-0010",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "slug",
+              "2026-5",
+              "slug+5",
+              "0",
+              "0"
+            ],
+            "error": null
+          }
+        },
+        {
+          "id": "EC-0011",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "FAIL: RoomCount is 5 (CheckBasic:7)"
+            ],
+            "error": null
+          }
+        },
+        {
+          "id": "EC-0012",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "FAIL: X is 3 (CheckBlocks:10)"
+            ],
+            "error": null
+          }
+        },
+        {
+          "id": "EC-0013",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "recovered",
+              "FAIL: X is 9 (CheckClauses:11)",
+              "cleanup"
+            ],
+            "error": null
+          }
+        },
+        {
+          "id": "EC-0014",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "FAIL: X is 3 (CheckClauses2:7)",
+              "fixup",
+              "continues"
+            ],
+            "error": null
+          }
+        },
+        {
+          "id": "EC-0015",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "uppercase ok",
+              "upper case ok",
+              "lowercase ok",
+              "lower case ok",
+              "not lowercase ok",
+              "not uppercase ok"
+            ],
+            "error": null
+          }
         }
       ]
     }

@@ -1,0 +1,19 @@
+{
+  "commands": {
+    "rect": "Deklariert eine Variable vom Typ ~m:&lt;rect&gt;~. Du kannst sie entweder an ein entsprechendes Element im HTML anheften oder ein neues Element erzeugen; siehe ~l:attach~ und ~l:create~.",
+    "circle": "Deklariert eine Variable vom Typ ~m:&lt;circle&gt;~. Du kannst sie entweder an ein entsprechendes Element im HTML anheften oder ein neues Element erzeugen; siehe ~l:attach~ und ~l:create~.",
+    "ellipse": "Deklariert eine Variable vom Typ ~m:&lt;ellipse&gt;~. Du kannst sie entweder an ein entsprechendes Element im HTML anheften oder ein neues Element erzeugen; siehe ~l:attach~ und ~l:create~.",
+    "group": "Deklariert eine Variable vom Typ ~m:&lt;group&gt;~.%0a%0aEine Gruppe ist eine Sammlung grafischer SVG-Elemente (~l:circle~, ~l:ellipse~, ~l:line~, ~l:rect~, ~l:svgtext~), die alle ein gemeinsames Elternelement – die ~m:group~ – haben. Der Hauptvorteil ist, dass du die gesamte Gruppe mit ~l:move~ als Ganzes bewegen kannst, ohne dich um die einzelnen Bestandteile zu kümmern.",
+    "line": "Deklariert eine Variable vom Typ ~m:&lt;line&gt;~. Du kannst sie entweder an ein entsprechendes Element im HTML anheften oder ein neues Element erzeugen; siehe ~l:attach~ und ~l:create~.",
+    "move": "Verschiebt ein grafisches Element oder eine ~l:group~ an eine bestimmte Stelle innerhalb der umgebenden ~l:svg!stage~.",
+    "on": "Führt eine Aktion aus, wenn ein Element oder eine Gruppe angeklickt wird.",
+    "set": "Setzt den Text eines ~l:svgtext~-Elements.",
+    "svg": "Deklariert eine Variable vom Typ ~m:&lt;svg&gt;~. Siehe auch ~l:create~.",
+    "svgtext": "Deklariert eine Variable vom Typ ~m:&lt;svgtext&gt;~. Du kannst sie entweder an ein entsprechendes Element im HTML anheften oder ein neues Element erzeugen; siehe ~l:attach~ und ~l:create~.",
+    "create": "Erzeugt ein Element als Kind des angegebenen Elternelements. Bei grafischen Elementen (~l:circle~, ~l:ellipse~, ~l:line~, ~l:rect~, ~l:svgtext~) kannst du zusätzlich die Styles angeben, die für das Element gelten sollen.%0a%0aAuf der Seite [~_**AllSpeak**_ Examples](https://allspeak.software/examples) findest du eine Reihe von Beispielen zur Nutzung von SVG-Grafiken."
+  },
+  "values": {
+    "text": "Liefert den Text des angegebenen ~l:svgtext~-Elements. Siehe auch ~l:set|k!set the text~"
+  },
+  "conditions": {}
+}

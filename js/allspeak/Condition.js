@@ -9,6 +9,11 @@ const AllSpeak_Condition = {
 		for (const domainName of Object.keys(compiler.domain)) {
 			// console.log(`Try domain '${domainName}' for condition`);
 			const domain = compiler.domain[domainName];
+			// A domain need not implement condition handling at all — see
+			// spec/allspeak-plugin-contract.md: missing handlers are allowed.
+			if (!domain.condition) {
+				continue;
+			}
 			const code = domain.condition.compile(compiler);
 			if (code) {
 				return code;

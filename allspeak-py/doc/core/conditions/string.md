@@ -9,7 +9,7 @@
 ## Description:
 Tests if the value is a text string.
 
-Next: [boolean](boolean.md)  
+Next: [uppercase](uppercase.md)  
 Prev: [starts](starts.md)
 
 [Back](../../README.md)

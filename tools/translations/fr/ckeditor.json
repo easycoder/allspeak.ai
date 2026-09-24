@@ -1,0 +1,11 @@
+{
+  "commands": {
+    "ckeditor": "~m:CKeditor~ est un composant gratuit d'édition de texte enrichi disponible sur [https://ckeditor.com](https://ckeditor.com). Il ressemble à un mini traitement de texte et est bien pourvu en fonctionnalités permettant de créer des blocs de HTML prêts à être collés dans une page web.\n\nIl existe 4 commandes :\n\n~l:attach!ckeditor attach~ crée l'éditeur dans un élément ~l:div|k|browser~ existant.\n\n~l:set!ckeditor set~ définit le contenu dans l'éditeur.\n\n~l:get!ckeditor get~ récupère le contenu une fois l'édition terminée.\n\n~l:close!ckeditor close~ ferme l'éditeur et son élément parent retrouve son état précédent.",
+    "attach": "Attache un élément ~l:ckeditor!CKEditor~ à l'élément ~l:div|k|browser~ spécifié, ce qui le convertit en éditeur de texte enrichi.",
+    "close": "Ferme le ~l:ckeditor!CKEditor~.",
+    "get": "Récupère le contenu HTML du ~l:ckeditor!CKEditor~ et le place dans la ~l:variable|k|core~ nommée.",
+    "set": "Définit le contenu du ~l:ckeditor!CKEditor~ au contenu HTML fourni."
+  },
+  "values": {},
+  "conditions": {}
+}

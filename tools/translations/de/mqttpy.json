@@ -1,0 +1,15 @@
+{
+  "commands": {
+    "MQTT": "Python-Modul für MQTT-Messaging",
+    "topic": "Deklariert eine Variable für ein MQTT-Topic",
+    "init": "Initialisiert eine Topic-Variable mit Namen und QoS-Stufe",
+    "mqtt": "Erzeugt und verbindet einen MQTT-Client mit Abonnements und optionaler Aktions-Validierung",
+    "on": "Registriert einen Handler für MQTT-Connect- oder Message-Ereignisse",
+    "send": "Sendet eine strukturierte Nachricht an ein MQTT-Topic mit Sender, Aktion und Payload"
+  },
+  "values": {
+    "message": "Die zuletzt empfangene MQTT-Nachricht",
+    "topic": "Name und QoS einer Topic-Variablen als JSON"
+  },
+  "conditions": {}
+}

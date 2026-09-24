@@ -1,0 +1,15 @@
+{
+  "commands": {
+    "MQTT": "Module Python de messagerie MQTT.",
+    "topic": "Déclare une variable de sujet (topic) MQTT.",
+    "init": "Initialise une variable topic avec un nom et un niveau de QoS.",
+    "mqtt": "Crée et connecte un client MQTT avec des abonnements et une validation d'action optionnelle.",
+    "on": "Enregistre un gestionnaire pour les événements MQTT de connexion ou de message.",
+    "send": "Envoie un message structuré à un topic MQTT avec expéditeur, action et charge utile."
+  },
+  "values": {
+    "message": "Le dernier message MQTT reçu.",
+    "topic": "Le nom et la QoS d'une variable topic au format JSON."
+  },
+  "conditions": {}
+}

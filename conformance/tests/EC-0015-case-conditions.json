@@ -1,0 +1,21 @@
+{
+  "id": "EC-0015",
+  "name": "case-conditions",
+  "specVersion": "0.1",
+  "required": true,
+  "requirements": [
+    "2.10"
+  ],
+  "script": "EC-0015-case-conditions.as",
+  "expect": {
+    "logs": [
+      "uppercase ok",
+      "upper case ok",
+      "lowercase ok",
+      "lower case ok",
+      "not lowercase ok",
+      "not uppercase ok"
+    ],
+    "error": null
+  }
+}

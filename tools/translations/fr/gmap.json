@@ -1,0 +1,22 @@
+{
+  "commands": {
+    "gmap": "Déclare une variable ~m:Google Map~. Voir ~l:create~.",
+    "create": "1. Crée une nouvelle ~l:gmap!Google Map~ dans le ~l:div|k|browser~ spécifié.\n\n2. Crée un nouveau ~l:marker~ dans la ~l:gmap!Google Map~ spécifiée.",
+    "marker": "Déclare une variable ~m:marker~. Voir ~l:create~.%0a%0aUn ~m:marker~ est une épingle sur la carte. Vous pouvez spécifier la couleur de l'épingle et son titre à l'aide de ~l:set~.",
+    "on": "Gère divers types d'événements provenant des ~l:gmap!Google Maps~ et des ~l:marker!markers~.%0a%0a~m:click~ : un clic sur la carte ou sur un marqueur%0a%0a~m:move~ : la carte a été déplacée par l'utilisateur%0a%0a~m:type~ : le type de carte a changé, par ex. routier ou satellite%0a%0a~m:zoom~ : le niveau de zoom a été modifié par l'utilisateur%0a",
+    "remove": "Retire tous les ~l:marker!markers~ de la ~l:gmap!Google Map~.",
+    "set": "Définit divers attributs des ~l:gmap!Google Maps~ et des ~l:marker!markers~.%0a%0a~m:sets the key~ est indispensable pour que les cartes fonctionnent. Les clés API sont délivrées par Google et autorisent un généreux quota d'utilisation gratuite par jour avant facturation. Si possible, n'incluez pas la clé directement dans votre script, car d'autres pourraient alors en profiter gratuitement. Placez-la plutôt sur votre serveur et récupérez-la via un endpoint REST. Autrement, rendez-vous dans votre Google Developer Console et précisez les URLs qui doivent être associées à la clé, la rendant inutilisable ailleurs.%0a%0aLa ~m:position~ d'un ~l:marker~ est une chaîne JSON contenant des propriétés latitude et longitude, par exemple :%0a%0a~m:{~dq~latitude~dq~:~dq~53.8291119~dq~,~dq~longitude~dq~:~dq~-1.5381586~dq~}~",
+    "show": "Affiche une ~l:gmap!Google Map~, c'est-à-dire la rend visible. Appelée après ~l:create~.",
+    "update": "Met à jour une ~l:gmap!Google Map~ après que le script a effectué des modifications qui affectent son affichage."
+  },
+  "values": {
+    "click position": "1. Récupère la position à laquelle l'utilisateur a cliqué sur la carte. Il s'agit d'une valeur JSON contenant à la fois latitude et longitude. Elle peut être directement passée à ~l:set|k!set the position of {gmap}~.%0a%0a2. Récupère la latitude, longitude, zoom, type ou bornes d'une ~l:gmap|k!Google Map~. ~m:bounds~ est une valeur JSON comportant les propriétés ~m:north~, ~m:south~, ~m:east~ et ~m:west~. Le site [Here On The Map](https://hereonthemap.com) utilise ces valeurs pour rechercher dans sa base de données les marqueurs situés dans les limites de la carte.%0a%0a3. Récupère un attribut d'un ~l:marker~.",
+    "latitude": "Récupère la latitude du centre d'une ~l:gmap|k!Google Map~ ou la position d'un ~l:marker|k~.",
+    "longitude": "Récupère la longitude du centre d'une ~l:gmap|k!Google Map~ ou la position d'un ~l:marker|k~.",
+    "type": "Récupère le type (~m:roadmap~ ou ~m:satellite~) d'une ~l:gmap|k!Google Map~.",
+    "title": "Récupère le titre d'un ~l:marker|k~.",
+    "bounds": "Récupère les bornes d'une ~l:gmap|k!Google Map~. ~m:bounds~ est une valeur JSON comportant les propriétés ~m:north~, ~m:south~, ~m:east~ et ~m:west~. Le site [Here On The Map](https://hereonthemap.com) utilise ces valeurs pour rechercher dans sa base de données les marqueurs situés dans les limites de la carte. Voir ~l:on|k!on click~ et ~l:click position!the click position~.%0a",
+    "zoom": "Récupère le niveau de zoom courant pour la ~l:gmap|k!Google Map~."
+  },
+  "conditions": {}
+}

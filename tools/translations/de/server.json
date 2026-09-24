@@ -1,0 +1,16 @@
+{
+  "commands": {
+    "SERVER": "Python-HTTP-Server-Modul",
+    "server": "Deklariert eine Server-Variable",
+    "start": "Startet einen HTTP-Server, der auf dem angegebenen Port lauscht",
+    "on": "Registriert einen Handler für eingehende HTTP-Requests",
+    "get": "Liest den Request-Body eines Servers in eine Variable",
+    "return": "Sendet eine Antwort an den Client zurück, optional mit HTTP-Statuscode"
+  },
+  "values": {
+    "request": "Die HTTP-Methode des aktuellen Requests (GET, POST usw.)",
+    "path": "Der URL-Pfad des aktuellen Requests",
+    "body": "Der Body-Inhalt des aktuellen Requests"
+  },
+  "conditions": {}
+}

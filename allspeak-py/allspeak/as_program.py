@@ -108,6 +108,7 @@ class Program:
 		self.replyVar = None
 		self.onMessagePC = 0
 		self.breakpoint = False
+		self.recorder = None        # the visualiser's recorder, when attached
 		# Test-runner state (see printTestSummary)
 		self.testExitCode = 0
 		self.summaryPrinted = False
@@ -624,6 +625,11 @@ class Program:
 		try:
 			while self.running:
 				command = self.code[self.pc]
+				
+				# The visualiser's recorder, if one is attached. One attribute test and,
+				# when armed, one or two list writes — nothing when it is not.
+				if self.recorder is not None:
+					self.recorder.tick(self, self.pc)
 				
 				# Check if debugger wants to halt before executing this command
 				if self.debugger != None:

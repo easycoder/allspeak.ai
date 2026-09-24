@@ -1,0 +1,12 @@
+{
+  "commands": {
+    "create": "Crée un nouvel élément ~l:date~ dans le conteneur fourni — généralement un ~l:div|k|browser~ — et l'initialise avec les valeurs données.",
+    "date": "Déclare une variable ~m:&lt;date&gt;~. Vous pouvez créer un nouvel élément ~m:date~ avec ~l:create~.\n\nUn ~m:date~ est un composant composé comportant 3 champs : année, mois et jour. Le composant gère lui-même ses interactions, en s'ajustant aux mois de longueurs différentes et aux années bissextiles.",
+    "set": "Définit la valeur du composant ~m:date~ à l'horodatage fourni. Les horodatages correspondent au nombre de secondes écoulées depuis le 1er janvier 1970 (l'époque Unix)."
+  },
+  "values": {
+    "timestamp of": "Convertit la date actuellement contenue dans le composant ~l:date|k~ en un horodatage Unix.",
+    "date of": "Convertit la date actuellement contenue dans le composant ~l:date|k~ en une chaîne de texte de la forme &quot;{day} {month} {year}&quot;, par exemple &quot;15 July 2014&quot;."
+  },
+  "conditions": {}
+}

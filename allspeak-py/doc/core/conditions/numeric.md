@@ -10,6 +10,6 @@
 Tests if the value is a numeric value. The inclusion of `[not]` negates the test.
 
 Next: [none](none.md)  
-Prev: [list](list.md)
+Prev: [lowercase](lowercase.md)
 
 [Back](../../README.md)

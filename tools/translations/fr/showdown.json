@@ -1,0 +1,10 @@
+{
+  "commands": {
+    "showdown": "Showdown est une implémentation JavaScript de la spécification Markdown, disponible sur [https://github.com/showdownjs/showdown](https://github.com/showdownjs/showdown). Il permet d'être étendu via des extensions, et le paquet ~m:showdown~ utilise cette fonctionnalité pour implémenter des styles destinés à ce gestionnaire de documentation.",
+    "load": "Charge le module JavaScript Showdown dans le HEAD du document."
+  },
+  "values": {
+    "decode": "Décode un bloc de texte balisé, en appelant le ~l:callback|k|core~ à chaque occurrence d'un motif spécifié. Le motif utilisé ici est%0a%0a~m:/&tilde;([^&tilde;]+)&tilde;/g~%0a%0aqui correspond à tout ce qui se trouve entre 2 caractères tilde (~m:&tilde;~). Le contenu de la correspondance est interprété par le callback, qui renvoie une chaîne de remplacement. ~m:Callback~ est une variable chargée par le module markdown à chaque chaîne correspondante. Un événement ~l:on|k|core!on callback~ est alors déclenché pour permettre au script de gérer le traitement en prenant le contenu du callback, en le transformant puis en le replaçant."
+  },
+  "conditions": {}
+}

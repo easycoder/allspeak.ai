@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>unesco-one-pager</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2.5cm 2cm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h1 {
+    font-size: 20pt;
+    text-align: center;
+    margin-top: 3cm;
+    margin-bottom: 0.3cm;
+    line-height: 1.3;
+  }
+  h1 + p {
+    text-align: center;
+    font-size: 10pt;
+    color: #555;
+  }
+  h2 {
+    font-size: 14pt;
+    margin-top: 1.5cm;
+    margin-bottom: 0.5cm;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 4px;
+  }
+  h3 {
+    font-size: 12pt;
+    margin-top: 1cm;
+    margin-bottom: 0.3cm;
+  }
+  h4 {
+    font-size: 11pt;
+    margin-top: 0.7cm;
+    margin-bottom: 0.2cm;
+  }
+  p { margin: 0.4cm 0; text-align: justify; }
+  blockquote {
+    border-left: 3px solid #999;
+    margin: 0.5cm 0;
+    padding: 0.2cm 0.8cm;
+    color: #444;
+    font-style: italic;
+  }
+  code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #f4f4f4;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    font-size: 9pt;
+    line-height: 1.4;
+  }
+  pre code { background: none; padding: 0; border-radius: 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.5cm 0;
+    font-size: 10pt;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 5px 8px;
+    text-align: left;
+  }
+  th { background: #f0f0f0; font-weight: bold; }
+  ul, ol { margin: 0.3cm 0; padding-left: 1.5em; }
+  li { margin: 0.15cm 0; }
+  hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 1cm 0;
+  }
+  em { font-style: italic; }
+  strong { font-weight: bold; }
+  a { color: #1a5276; text-decoration: underline; }
+  @media print {
+    body { padding: 0; max-width: none; }
+    h1 { margin-top: 2cm; }
+    pre { page-break-inside: avoid; }
+    table { page-break-inside: avoid; }
+    h2, h3 { page-break-after: avoid; }
+  }
+
+  body { line-height: 1.45; }
+  h1 { margin-top: 0; font-size: 18pt; }
+  h2 { margin-top: 0.6cm; margin-bottom: 0.3cm; font-size: 13pt; }
+  p { margin: 0.25cm 0; }
+  ul, ol { margin: 0.2cm 0; }
+  li { margin: 0.08cm 0; }
+  @media print {
+    h1 { margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+<h1>AllSpeak — programming in any language</h1>
+<p><strong>A working implementation of multilingualism at the level of the code itself</strong></p>
+<p>Graham Trott, independent developer · info@allspeak.ai · https://allspeak.ai</p>
+<h2>The gap</h2>
+<p>UNESCO&rsquo;s multilingualism agenda has addressed how people read and write prose: digital content, interfaces, translation, domain names and email addresses, and the revitalisation of Indigenous languages. One layer is untouched — <strong>the language in which people read and write logic.</strong> Every mainstream programming language uses English keywords, and code is not text to be translated but structure to be understood.</p>
+<p>This matters more, not less, as AI writes more code. AI has no difficulty writing in a small, constrained grammar, and the population that must <em>read, check and maintain</em> the result is no longer limited to English-literate professionals. Comprehension, not authorship, is the binding constraint.</p>
+<h2>What AllSpeak is</h2>
+<p>An open-source scripting runtime in which the code itself is written in the learner&rsquo;s language. A single language-neutral engine executes every variant; language packs supply the keyword vocabulary and grammar mappings. Most localisation stops at the documentation; AllSpeak stops at the keywords.</p>
+<p>Keywords such as <code>put</code>, <code>create</code>, <code>append</code>, <code>rest get</code> and <code>on click</code> conceal HTTP requests, DOM manipulation and data flow behind words anyone can read — over an engine that supports 127 opcodes, concurrency, a JSON pipeline, graphics, maps and messaging.</p>
+<h2>Evidence</h2>
+<ul>
+<li><strong>Four language packs operational</strong> — English, French, German, Italian. The non-English packs are functional and awaiting native-speaker educator validation; the architecture admits any language, including non-Latin scripts.</li>
+<li><strong>A deployed business system</strong> — approximately 4,500 lines across five modules, in daily use for bookings, expenses and financial records.</li>
+<li><strong>A 20-step tutorial</strong> in all four languages, and a white paper with DOI (10.5281/zenodo.22018537) describing the architecture and the method for adding a language.</li>
+<li><strong>Built by one person,</strong> with AI assistance, and open source.</li>
+</ul>
+<h2>Points of contact</h2>
+<ul>
+<li><strong>2003 Recommendation</strong> — language technologies, multilingual digital content, equitable access. AllSpeak is a language technology at the syntactic level.</li>
+<li><strong>Internet Universality ROAM</strong> — Accessibility and Multi-stakeholder participation. Any language community can extend the runtime, and the method is documented.</li>
+<li><strong>Universal Acceptance for a multilingual Internet</strong> — the same argument one layer deeper: not only domain names and addresses, but source code.</li>
+<li><strong>Global Roadmap on Multilingualism in the Digital Era</strong> — a working answer to the call for industry to &ldquo;design inclusive Language Technologies&rdquo;.</li>
+</ul>
+<h2>The question</h2>
+<p>Could a project of this kind contribute usefully to UNESCO&rsquo;s work — as a case study, a reference implementation, or a contribution to its consultations — and if so, through which route? The project is unfunded and seeks collaborators rather than funding.</p>
+<p>Correspondence: info@allspeak.ai</p>
+</body>
+</html>

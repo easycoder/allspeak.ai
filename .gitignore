@@ -1,6 +1,5 @@
 __pycache__/
 *.pyc
-tools/
 various/
 
 # Local secrets — supply your own; never commit

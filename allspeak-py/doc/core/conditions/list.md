@@ -9,7 +9,7 @@
 ## Description:
 Tests if the value is a list. The inclusion of `[not]` negates the test.
 
-Next: [numeric](numeric.md)  
+Next: [lowercase](lowercase.md)  
 Prev: [less](less.md)
 
 [Back](../../README.md)

@@ -52,6 +52,15 @@ class Compiler:
 		except:
 			return None
 
+	# Peek ahead at the line number of the next token, without advancing. getLino()
+	# reports the line of the token already consumed, which cannot answer "is the next
+	# token still on this statement's line?"
+	def peekLino(self):
+		try:
+			return self.tokens[self.index + 1].lino
+		except:
+			return None
+
 	# Get a constant
 	def getConstant(self, token):
 		self.index += 1

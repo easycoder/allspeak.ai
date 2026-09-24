@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>AllSpeak doc-block check</title>
+	<style>
+		body { font-family: sans-serif; max-width: 900px; margin: 1em auto; padding: 0 1em; }
+		.row { display: flex; gap: 0.5em; align-items: center; margin-bottom: 0.5em; }
+		input[type=text] { flex: 1; padding: 4px 8px; font-family: monospace; }
+		button { padding: 4px 12px; cursor: pointer; }
+		pre#asdoc-output { background: #f6f6f6; border: 1px solid #ddd; padding: 0.75em; min-height: 12em; white-space: pre-wrap; }
+	</style>
+</head>
+<body>
+	<h1>Doc-block check</h1>
+	<p>Path is relative to the AllSpeak server root. Defaults to <code>asedit.as</code>.</p>
+	<div class="row">
+		<input type="text" id="asdoc-filename">
+		<button id="asdoc-check-btn">Check</button>
+	</div>
+	<pre id="asdoc-output"></pre>
+	<pre id="allspeak-script" style="display:none"></pre>
+
+	<script>
+	(async function () {
+		const t = Date.now();
+		const src = await fetch('/read/tools/asdoc-check.as?v=' + t).then(r => r.text());
+		document.getElementById('allspeak-script').textContent = src;
+		await new Promise((resolve, reject) => {
+			const s = document.createElement('script');
+			s.src = '/dist/allspeak.js?v=' + t;
+			s.onload = resolve;
+			s.onerror = reject;
+			document.head.appendChild(s);
+		});
+		AllSpeak_Startup();
+	})();
+	</script>
+</body>
+</html>

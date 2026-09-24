@@ -1,0 +1,20 @@
+{
+  "commands": {
+    "json shuffle": "Mischt den Inhalt einer Liste in zufälliger Reihenfolge.",
+    "json add": "Fügt einem JSON-Array ein Element hinzu.",
+    "json delete": "Entfernt die genannte Eigenschaft oder das Element am angegebenen Index aus dem übergebenen JSON-Array.",
+    "json format": "~m:json format~ behandelt schlecht formatierte JSON-Strings, die überflüssige Leerzeichen und Zeilenumbrüche enthalten. Der Befehl nutzt intern ~m:JSON.parse~ und ~m:JSON.stringify~, um den Wert in ein einheitliches Format zu bringen.",
+    "json parse": "Parst eine URL und zerlegt sie in ihre Bestandteile, sodass sich damit bequem weiterarbeiten lässt. Im obigen Beispiel sind das:%0a%0a~m:protocol~: Das Protokoll: ~m:https://~%0a%0a~m:domain~: Die Domain: ~m:allspeak.software~%0a%0a~m:path~: Der Pfad: ~demos/first~%0a%0a~m:arg~: Die CGI-Parameter: ~value=56~%0a%0aHier wäre das Ergebnis in ~m:ParsedValue~%0a%0a~m:{<br />~%0a~m:&nbsp;&nbsp;&quot;protocol&quot;:&quot;https://&quot;,<br />~%0a~m:&nbsp;&nbsp;&quot;domain&quot;:&quot;allspeak.software&quot;,<br />~%0a~m:&nbsp;&nbsp;&quot;path&quot;:&quot;demos/first&quot;,<br />~%0a~m:&nbsp;&nbsp;&quot;arg&quot;:&quot;value=56&quot;<br />~%0a~m:}~%0a%0aSiehe auch ~l:history|k|browser!history~ zum Verwalten der Browser-History.",
+    "json rename": "Benennt eine Eigenschaft in einem JSON-Objekt um.",
+    "json sort": "Sortiert den Inhalt einer Liste in aufsteigender alphabetischer Reihenfolge.",
+    "json split": "Teilt eine Variable anhand des angegebenen Trennzeichens in ein Array von Teilen auf. Wird kein Trennzeichen angegeben, wird ein Zeilenumbruch (%0a) verwendet.",
+    "json replace": "Ersetzt das Element am angegebenen Index in einem JSON-Array, das in einer ~l:variable~ gehalten wird, durch einen neuen Wert. Das Array wird geparst, das Element ersetzt, und das Ergebnis wird in die Variable zurückgeschrieben."
+  },
+  "values": {
+    "json keys": "Liefert die Schlüssel aller Eigenschaften im JSON-Objekt als JSON-Array; standardmäßig alphabetisch sortiert. Wird ~m:unsorted~ angegeben, bleibt die Liste unsortiert.",
+    "json count": "Liefert die Anzahl der Elemente im angegebenen Array. Siehe auch ~l:json size~, das dasselbe tut.",
+    "json size": "Liefert die Anzahl der Elemente im angegebenen Array. Siehe auch ~l:json count~, das dasselbe tut.",
+    "json index": "Liefert den nullbasierten Index des Elements im Array oder -1, wenn es nicht enthalten ist."
+  },
+  "conditions": {}
+}
