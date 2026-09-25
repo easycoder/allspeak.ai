@@ -5,3 +5,7 @@ various/
 # Local secrets — supply your own; never commit
 config/gmap-key.txt
 deploy/config/gmap-key.txt
+
+# The step summary the agent rewrites for every prompt. A working aid, opened in the
+# editor, not a record of the project — it must never land in a commit.
+DIFF.md

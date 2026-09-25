@@ -2,6 +2,25 @@
 
 Items identified during real project work. Each should be implemented in both JS and Python.
 
+## Where things stand
+
+**Working and verified:** the orphan flag end to end — the plugin's `reachable=no` anchor, the editor's walk over the model records, the range test, and the sidebar row's red background, strike-through and tooltip. Switching tabs (or opening a file) now leaves Blocks mode automatically. The string-versus-number trap is documented in `learn/` (`idioms/12-working-with-ai.md`, `reference/06-conditions.md`), and the `DIFF.md` habit is a rule in the root `AGENTS.md` and in all eight starter-pack documents.
+
+**Open, in order:**
+
+1. The starter packs' `AGENTS.md` and `CLAUDE.md` have drifted apart — the same structural slot is titled "Project context" in one and "First-time setup" in the other, and the French pair runs 166 lines against 412. Whichever an agent reads, it misses something. Decide whether they should be one document.
+2. Block-level aggregation over a trace, then the first screen in `asedit.as` — both described in the Visualiser section below.
+3. The label bodies after `ListSorter` in `codex.as`, and the run-panel region that still sits outside any block.
+4. The JS recorder, still missing — needed before traces from the two runtimes can be compared.
+5. Propagate the logging recommendation (root `AGENTS.md`, "Diagnostics while debugging") to the four starter packs — drafts in fr/de/it for review, as with the diff-notes sections.
+
+**Traps that have cost hours here — worth reading before editing anything:**
+
+- **Text compared with numbers.** A number read *out of* text — a record field, `the content of`, `the index of` — stays text, and text comparison is lexical: `\`29\`` is not less than `\`1000001\``. Nothing errors; the condition simply answers the wrong way. Convert with `add 0 to X` or `the value of X`. The two runtimes differ — the browser does not coerce a mixed comparison, the terminal does — so verify in the runtime where the problem appears.
+- **An undeclared `variable`** is reported as a *token* error at the first statement using it ("I don't understand 'put'"), not as "not declared". If a compile fails that way, look for a missing declaration.
+- **Editing `asedit.as`:** use content anchors with assertions, never positional spans. Afterwards check that `commands` is non-zero *as well as* the analyser reporting 0 errors — a broken editor still analyses clean.
+- **The served editor is cached.** `asedit.as` is fetched with a `?v=` stamp; if a change does not appear, check the fetch before the code.
+
 ## High priority
 
 ### 1. ~~String split by delimiter~~ ✓ Done
@@ -149,3 +168,75 @@ containing those words. Worth eyeballing those diffs before the next `deploy-syn
 `as_value.py` calls `domain.modifyValue(value)` on every registered domain, and the JS twin
 of that bug was fixed earlier by guarding `handler.value`. Any plugin domain must define
 `modifyValue` to avoid an AttributeError; `spec/allspeak-plugin-contract.md` does not say so.
+
+## Visualiser (`viz`) — decisions and next steps
+
+**Governing principle** (Graham, and it overrides anything below that conflicts with it): *make
+complex things simple.* The aim is a **fully-integrated solution with a concise feature set and a
+minimal learning curve**, for an audience that includes people who will only stay aboard while
+each learning step is small. Three rules follow, and future work should be checked against them:
+
+1. **No new commands to see the picture.** The view is simply there for a script you have run. The
+   two marker words a user has already learned — `viz start` and `viz stop` — are enough for every
+   review; `on`, `once`, `every`, `until` and `limit` are refinements, not a curriculum. `viz` is a
+   no-op without a recorder, so a script carrying markers runs like any other.
+2. **Nothing in the onboarding depends on this.** The Primer's first steps carry no markers at all.
+3. **Perfetto is not the product.** It is a development instrument and an optional escape hatch;
+   users are never asked to learn it. Its UI is also English-only and has no notion of the script's
+   own language, whereas our records already carry the user's own names and prose.
+
+**The visualiser speaks the script's language for free.** The language packs already carry a
+`diagnostics` section of user-facing strings in all four languages (`Je ne comprends pas '{token}'
+à la ligne {line}.`), so the view's own labels belong there rather than in a translation layer of
+our own. Anchor names and doc-block prose arrive in the author's language already, because they
+*are* the author's text.
+
+**Decided:** a **dual-pane** view — the script on one side, the picture on the other, with the
+script *following* the user's navigation of the picture. Two consequences already built into the
+trace format: every event names a `line` (the join key the editor scrolls to), and every event
+carries `steps` alongside its timing (the deterministic axis, since timings are not comparable
+across runs or runtimes).
+
+**In place:** `viz` markers as core syntax (no-ops without a recorder); the static model
+(sections, prose, anchors, routes, windows, findings); the Python recorder; and now the recording
+as a **file** — `spec/viz-trace-format.md` (Chrome Trace Event Format, the subset used and the
+meaning of each `args` field) with `tools/check-trace.py` as the conformance check both runtimes
+must pass. `tools/asviz-run.py --run --trace=<file.json>` writes one.
+
+**Next, in order — deliberately trimmed:**
+1. Block-level aggregation over a trace (sections and anchors × visits/steps) — what the picture
+   draws, and where the static model and the trace are joined. No user-visible surface.
+2. The first screen in `asedit.as`: one row per block in file order, coloured by activity, with
+   prose from the analyser, and click-through to the editor. It reads a **trace file**, so it
+   needs nothing new from the runtime.
+3. Only if it earns its place: running the script in-browser (which needs the JS recorder), an
+   overlay/code-map mode, and `viz diff`.
+
+**Cut for now,** because they add artefacts or steps without answering the first screen's
+question: a separate report document, and `viz diff`. The JS recorder is no longer a prerequisite
+for the visualiser either — a trace written by the Python runtime is a complete input, which is
+what the portable format was for.
+
+**Unverified here:** that a trace renders as expected in Perfetto or `chrome://tracing`. The
+documents validate against the format as specified, but the rendering needs an eye on a browser —
+`ui.perfetto.dev` accepts the file directly, so that is a one-minute check for whoever has one.
+
+**Not yet decided:** whether the trace file becomes the editor's only input (records joined with
+`asdoc-check.py --json` for prose), or whether the editor also runs the script itself in-browser.
+The first is needed either way; the second is the difference between JS-Recorder-first and
+Editor-first.
+
+### 8. Flags: `it` / `fr` / `de` are provisional
+
+The three flags now in `deploy/icon/` are flat PNG tricolours copied out of `resources/flags/`,
+a plain ISO-code set. The intended look is the **wavy banner** of `en-flag.svg`, which is
+OpenClipart's "US/UK flag" by **klainen** — `openclipart.org/detail/168121/usuk-flag`, and the
+attribution is inside the file itself. Graham is looking for where the wavy set came from; when
+it turns up, replace the three PNGs and the three `flagImage` values in `deploy/config.json`.
+
+Two things already established, so nobody re-derives them:
+
+- **OpenClipart is public domain** by contributor dedication. Artwork from there carries no
+  attribution obligation; the comment in `en-flag.svg` is a courtesy, not a requirement.
+- The PNG set in `resources/flags/` records no provenance of its own. `en-flag.svg` documents
+  its source *inside* the file, which is the habit worth copying.

@@ -370,6 +370,59 @@ const AllSpeak_Core = {
 		run: program => program.pc + 1
 	},
 
+	// model the script [in <path>] [as <source>] giving <variable>
+	//
+	// A fallback, and the reason it belongs in core rather than being left to the viz
+	// plugin: the editor names this keyword, so without the plugin the editor would not
+	// compile at all — a tool that cannot run because another tool is missing. Core
+	// therefore answers with an *empty* model when the plugin is absent, and defers to the
+	// plugin when it is loaded. The `viz` markers strike the same bargain for the same
+	// reason, so an instrumented script runs with or without the analysis tool.
+	Model: {
+
+		compile: compiler => {
+			if (AllSpeak.domain && AllSpeak.domain.viz) {
+				return false;      // the plugin owns the grammar: rewind, let it compile
+			}
+			const lino = compiler.getLino();
+			compiler.next();
+			if (compiler.isWord(`the`)) compiler.next();
+			if (compiler.isWord(`script`)) compiler.next();
+			if (compiler.isWord(`in`)) {
+				compiler.next();
+				compiler.getValue();
+			}
+			if (compiler.isWord(`as`)) {
+				compiler.next();
+				compiler.getValue();
+			}
+			if (!compiler.isWord(`giving`)) {
+				throw new Error(`viz 'model' (line ${lino + 1}): expected ` +
+					`'model the script [in <path>] [as <source>] giving <variable>'`);
+			}
+			compiler.next();
+			const target = compiler.getToken();
+			compiler.next();
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `model`,
+				lino,
+				target,
+				empty: true
+			});
+			return true;
+		},
+
+		// An empty model: callers walk no records and behave as if nothing were flagged.
+		run: program => {
+			const command = program[program.pc];
+			const record = program.getSymbolRecord(command.target);
+			record.elements = 0;
+			record.index = 0;
+			return program.pc + 1;
+		}
+	},
+
 	Begin: {
 
 		compile: compiler => {
@@ -3280,6 +3333,9 @@ const AllSpeak_Core = {
 		// Add compile-only handlers not represented by runtime opcodes.
 		// These compile to other commands or set compiler flags.
 		handlers[lang.word(`begin`)] = this.Begin;
+		// Compile-only because there is no opcode for it: the viz plugin's own keyword,
+		// answered here only so that naming it cannot fail when the plugin is absent.
+		handlers[lang.word(`model`)] = this.Model;
 		handlers[lang.word(`end`)] = this.End;
 		handlers[lang.word(`script`)] = this.Script;
 		handlers[lang.word(`log`)] = this.Log;           // compiles to PRINT with log flag

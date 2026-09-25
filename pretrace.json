@@ -1,0 +1,135 @@
+{
+  "traceEvents": [
+    {
+      "name": "process_name",
+      "ph": "M",
+      "pid": 1,
+      "args": {
+        "name": "examples/chemical/parser.as"
+      }
+    },
+    {
+      "name": "thread_name",
+      "ph": "M",
+      "pid": 1,
+      "tid": 1,
+      "args": {
+        "name": "window 1 (line 379)"
+      }
+    },
+    {
+      "name": "thread_sort_index",
+      "ph": "M",
+      "pid": 1,
+      "tid": 1,
+      "args": {
+        "sort_index": 1
+      }
+    },
+    {
+      "name": "window 1",
+      "cat": "window",
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "ts": 33629037882,
+      "dur": 558,
+      "args": {
+        "from_line": 379,
+        "mode": "once",
+        "limit": 100000,
+        "until": null,
+        "visits": 4,
+        "anchors": 27,
+        "steps": 20,
+        "truncated": false,
+        "line_counts": {
+          "379": 1,
+          "380": 1,
+          "381": 1,
+          "382": 1,
+          "383": 2,
+          "384": 1,
+          "385": 1,
+          "386": 1,
+          "387": 4,
+          "388": 1,
+          "389": 1,
+          "390": 2,
+          "395": 1,
+          "397": 1,
+          "403": 1
+        }
+      }
+    },
+    {
+      "name": "viz-start@379",
+      "cat": "anchor",
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "ts": 33629037889,
+      "dur": 297,
+      "args": {
+        "line": 379,
+        "pc": 266,
+        "name": "viz-start@379",
+        "steps": 1,
+        "visit": 1
+      }
+    },
+    {
+      "name": "loop@387",
+      "cat": "anchor",
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "ts": 33629038187,
+      "dur": 191,
+      "args": {
+        "line": 387,
+        "pc": 275,
+        "name": "loop@387",
+        "steps": 9,
+        "visit": 2
+      }
+    },
+    {
+      "name": "loop@387",
+      "cat": "anchor",
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "ts": 33629038378,
+      "dur": 58,
+      "args": {
+        "line": 387,
+        "pc": 275,
+        "name": "loop@387",
+        "steps": 16,
+        "visit": 3
+      }
+    },
+    {
+      "name": "viz-stop@403",
+      "cat": "anchor",
+      "ph": "X",
+      "pid": 1,
+      "tid": 1,
+      "ts": 33629038437,
+      "dur": 2,
+      "args": {
+        "line": 403,
+        "pc": 290,
+        "name": "viz-stop@403",
+        "steps": 20,
+        "visit": 4
+      }
+    }
+  ],
+  "displayTimeUnit": "ms",
+  "otherData": {
+    "vizTrace": 1,
+    "script": "examples/chemical/parser.as"
+  }
+}

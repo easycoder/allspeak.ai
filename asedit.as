@@ -4,6 +4,7 @@
 
     script ASEditor
 !! @hash 7ad312d2
+!! @verified 7ad312d2
 !!!
 !! Variable declarations
 !! The script uses a lot of variables; they are grouped here by function.
@@ -99,6 +100,7 @@
     variable MetaValue
     variable Pos
     variable Tmp
+    variable Tip              ! a sidebar row's tooltip, decided with its colour
     variable InSection
     variable SecHasCode
     variable SecStartTmp
@@ -137,10 +139,26 @@
     variable StoredWidth
     variable FinalWidth
     variable FirstLine     ! first prose line of a block (for TOC label)
+    variable From          ! first line of a block, for the review-signal test
+    variable To            ! and its last line
+    variable BlockAfter    ! index of the block after this one, which bounds it
+    variable FromCheck     ! the two bounds moved out by one, so both tests can be positive
+    variable ToCheck
+    variable FlagCount     ! lines the plugin says nothing enters, over all blocks
+    variable FlagLine      ! array: those lines
+    variable K             ! walk index over the records, and over the flagged lines
+    variable MarkRecord    ! one model record, as the walk reaches it
+    variable MarkCount     ! how many records the plugin returned
+    variable MarkLine      ! one flagged line, as the walk reaches it
+    variable MarkRest      ! scratch: the record after `line=`
+    variable MarkSpace     ! scratch: where its number ends
+    variable MarkDigits    ! scratch: the number itself
+    variable EditorPath    ! the current tab's path, handed to the plugin as its target
+    variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash b4ba77d2
-!! @verified 82dc7ca8
+!! @hash 8fffee32
+!! @verified b4ba77d2
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -177,7 +195,7 @@
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
 !! @hash e1a4268e
-!! @verified 9fa497ac
+!! @verified e1a4268e
 !!!
 !! Some general initialisation
 !   -- CodeMirror --
@@ -346,7 +364,7 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into BlockDirty
 !! @hash 562a8033
-!! @verified d4e6253f
+!! @verified 562a8033
 !!!
 !! While editor is running it periodically saves changes made by the user
 !! and updates the display to show updates made externally.
@@ -560,7 +578,7 @@ CloseBrowser:
     set style `display` of Overlay to `none`
     stop
 !! @hash ac5d5c01
-!! @verified 90558828
+!! @verified ac5d5c01
 !!!
 !! This section is tab management; creating a new tab, opening a file, selecting a tab and closing a tab.
 !   -- New empty tab --
@@ -666,12 +684,14 @@ CloseTab:
     end
     go to ActivateTab
 
+!! Activating a tab leaves Blocks mode first. A tab is a different file, and Blocks mode belongs to the file you were reading — so switching tabs, and opening a file, both land in the flat editor rather than refusing to move until you leave the mode by hand.
 ActivateTab:
+    if BlocksMode is 1 gosub to DoExitBlocks
     index TabSaved to ActiveTab
     codemirror set content of ContentEditor to TabSaved
     gosub to RebuildTabBar
     stop
-!! @hash 14377e61
+!! @hash 37917138
 !! @verified 14377e61
 !!!
 !! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
@@ -803,7 +823,7 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 !! @hash 74b13222
-!! @verified df75e3d8
+!! @verified 74b13222
 !!!
 !! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.
 !!
@@ -842,6 +862,38 @@ ParseSource:
     set the elements of Outside to Tmp
     index Outside to SecCount
     put OutsideTmp into Outside
+
+    !   -- Review signals --
+    ! What the parse cannot see for itself: blocks nothing enters. The viz plugin compiles
+    ! the same source and reports it. Nothing here raises an error — a buffer mid-edit
+    ! frequently will not compile, which is the editor's ordinary condition, and the plugin
+    ! simply reports fewer records. With no flags the TOC renders exactly as it did before.
+    put 0 into FlagCount
+    index TabPath to ActiveTab
+    put TabPath into EditorPath
+    model the script in EditorPath as Source giving Model
+    put the elements of Model into MarkCount
+    put 0 into K
+    while K is less than MarkCount
+    begin
+        index Model to K
+        put Model into MarkRecord
+        if MarkRecord starts with `anchor | reachable=no` gosub to NoteMarker
+        add 1 to K
+    end
+
+    ! A script the plugin cannot compile yields no anchors and so no flags — which used to
+    ! look exactly like a clean file. The plugin reports why in a `problem` record, so say it:
+    ! a reviewer's first question about an empty picture is whether there was anything to draw.
+    ! The record carries the runtime's own wording, so it is already in the reader's language.
+    put 0 into K
+    while K is less than MarkCount
+    begin
+        index Model to K
+        put Model into MarkRecord
+        if MarkRecord starts with `problem |` gosub to NoteProblem
+        add 1 to K
+    end
     return
 
 OutsideDispatch:
@@ -994,7 +1046,7 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash 56254133
+!! @hash fab5b751
 !! @verified 56254133
 !!!
 !! Blocks view.
@@ -1297,6 +1349,67 @@ MarkAllVerified:
 !! @hash b0f5bf9f
 !! @verified b0f5bf9f
 !!!
+!! Take the line out of `anchor | reachable=no | kind=label | line=NN | ...`, so a block
+!! can be told whether it is one nothing enters. The anchor record is the documented shape, which is why its line can be read positionally — a finding's line lives in prose and cannot.
+NoteMarker:
+    put the position of `line=` in MarkRecord into Pos
+    add 5 to Pos
+    put from Pos of MarkRecord into MarkRest
+    put the position of ` ` in MarkRest into MarkSpace
+    if MarkSpace is less than 0 put MarkRest into MarkDigits
+    else put left MarkSpace of MarkRest into MarkDigits
+    ! The line number is read out of a record, so it arrives as text. Comparing text with the
+    ! numeric block bounds does not coerce here, so the whole range test silently fails — the
+    ! same reason `add 0 to` is used for numbers read from strings elsewhere in this codebase.
+    add 0 to MarkDigits
+    ! Grow the array first, then write the new last element: sizing to the current count and
+    ! indexing it would ask for element 0 of an empty list on the first flag. This is the same
+    ! order the editor's own CloseSection uses, for the same reason.
+    put FlagCount into I
+    add 1 to FlagCount
+    set the elements of FlagLine to FlagCount
+    index FlagLine to I
+    put MarkDigits into FlagLine
+    return
+!! @hash e3dfc5f8
+!!!
+
+!! Say, in the status line, why the analysis could not run. The plugin reports a script it could not compile as a `problem` record, and without this the result is indistinguishable from a file with nothing wrong in it.
+NoteProblem:
+    put the position of `| does not compile` in MarkRecord into Pos
+    if Pos is less than 0 put MarkRecord into MarkRest
+    else
+    begin
+        add 13 to Pos
+        put from Pos of MarkRecord into MarkRest
+    end
+    set the content of StatusSpan to MarkRest
+    return
+!! @hash 09c88156
+!!!
+
+!! Decide whether one block's line range holds a flagged line. The bounds are widened by one so that both tests can be positive: `is not less than` is a form the editor avoids elsewhere.
+BlockFlagged:
+    put 0 into Found
+    put From into FromCheck
+    subtract 1 from FromCheck
+    put To into ToCheck
+    add 1 to ToCheck
+    put 0 into K
+    while K is less than FlagCount
+    begin
+        index FlagLine to K
+        put FlagLine into MarkLine
+        if MarkLine is greater than FromCheck
+        begin
+            if MarkLine is less than ToCheck put 1 into Found
+        end
+        add 1 to K
+    end
+    return
+!! @hash 5af211ef
+!!!
+
 !! Blocks TOC. Renders one row per parsed section in the BlocksToc
 !! sidebar, highlighting the current block. Each row's label is the
 !! first prose line of its section, truncated. Clicking a row flushes
@@ -1311,17 +1424,34 @@ RenderToc:
     begin
         index TocRow to J
         create TocRow in BlocksToc
+        ! Colour and tooltip are decided together, so a row can never carry a colour without
+        ! saying what it means. The tooltips are the legend: a reviewer should be able to read
+        ! every state off the sidebar without being told them anywhere else.
         put `padding:4px 10px;cursor:pointer` into Tmp
-        if J is CurBlock put Tmp cat `;background:#1e88e5;color:white` into Tmp
+        put `Not yet verified` into Tip
+        if J is CurBlock
+        begin
+            put Tmp cat `;background:#1e88e5;color:white` into Tmp
+            put `You are reading this block` into Tip
+        end
         else
         begin
             index SecVerifyState to J
             put SecVerifyState into VerifyState
-            if VerifyState is `verified-fresh` put Tmp cat `;background:#1b5e20` into Tmp
-            else if VerifyState is `verified-stale` put Tmp cat `;background:#a26d18` into Tmp
+            if VerifyState is `verified-fresh`
+            begin
+                put Tmp cat `;background:#1b5e20` into Tmp
+                put `Verified: the prose and the code still agree` into Tip
+            end
+            else if VerifyState is `verified-stale`
+            begin
+                put Tmp cat `;background:#a26d18` into Tmp
+                put `Verified once, but the code has changed since — worth a look` into Tip
+            end
             else put Tmp cat `;background:#3f3f3f` into Tmp
         end
         set the style of TocRow to Tmp
+        set attribute `title` of TocRow to Tip
         index SecProse to J
         put SecProse into ProseSrc
         put the position of newline in ProseSrc into NL
@@ -1330,9 +1460,37 @@ RenderToc:
         put J into Tmp
         add 1 to Tmp
         put Tmp cat `. ` cat FirstLine into FirstLine
+
+        ! Does anything enter this block? The row's own colour already carries the
+        ! verification state, so the flag goes on the label and the two signals stay on
+        ! separate channels.
+        index SecStart to J
+        put SecStart into From
+        put J into BlockAfter
+        add 1 to BlockAfter
+        if BlockAfter is less than SecCount
+        begin
+            index SecStart to BlockAfter
+            put SecStart into To
+            subtract 1 from To
+        end
+        else put 1000000 into To
+        gosub to BlockFlagged
+
+
         index TocLabel to J
         create TocLabel in TocRow
         set the content of TocLabel to FirstLine
+        ! A block nothing enters gets a solid background rather than only a struck label: it is
+        ! unmissable at a glance, and a reviewer should not have to read every row to find the one
+        ! that is unreachable. The trade is that such a row shows this instead of its verification
+        ! colour, which is the right way round — an orphaned block is the more urgent fact.
+        if Found is 1
+        begin
+            set the style of TocRow to `background:#b71c1c;color:white`
+            set attribute `title` of TocRow to `Orphaned: nothing enters this block, so none of its code can run`
+        end
+        if Found is 1 set the style of TocLabel to `text-decoration:line-through;opacity:0.55`
         on click TocLabel go to JumpToBlock
         add 1 to J
     end
@@ -1345,6 +1503,6 @@ JumpToBlock:
     put Tmp into CurBlock
     gosub to RenderBlock
     stop
-!! @hash 426884b9
+!! @hash 56b2a0d3
 !! @verified 426884b9
 !!!

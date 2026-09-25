@@ -16,7 +16,7 @@ The complete AllSpeak language reference and idioms live at:
 
   **https://allspeak.ai/learn/**
 
-The site has 16 reference files (`reference/`) and 12 idiom files (`idioms/`). When you need to look up syntax, runtime behaviour, or idiomatic patterns, consult it rather than relying on training data — AllSpeak's vocabulary doesn't always match what AI was trained on, and the curriculum corrects for that.
+The site has 20 reference files (`reference/`) and 15 idiom files (`idioms/`). When you need to look up syntax, runtime behaviour, or idiomatic patterns, consult it rather than relying on training data — AllSpeak's vocabulary doesn't always match what AI was trained on, and the curriculum corrects for that.
 
 **Read `learn/contents.md` first** — it is the canonical index of file paths. Use those exact paths when fetching specific files; do not guess slugs. (For example: the file is `learn/idioms/02-event-handlers-and-array-index.md`, not `02-event-handlers.md`.)
 
@@ -130,9 +130,15 @@ Use `date +%H:%M` if you need the time. Omit fenced code blocks (triple-backtick
 
 **Midnight rollover:** if today's date differs from the file's date header, pause and ask the user: "We've crossed midnight — start a new conversation file for today?" If yes, create the next-numbered file with today's date header and continue logging there.
 
+## Diff notes for the human
+
+Keep `DIFF.md` in the project root, **rewritten** after every change rather than appended to, saying what changed and what the human has to do about it — reload the page, restart the server, open a different file. The human reads it in the editor, which reloads it automatically, so it is how they keep up without reading the diff.
+
+Keep it to a few lines, and lead with the action. It is **not** a changelog: it describes this change only, not the project's history.
+
 ## Project context
 
-This directory contains `CODEWHALE.md` — this file. Read it now to understand the AllSpeak language and workflow before working on any code.
+This directory contains `AGENTS.md` — this file. Read it now to understand the AllSpeak language and workflow before working on any code.
 
 **Important:** Check whether a file called `.allspeak-init` exists in this directory. If it does, read it to learn the project name and type. If it does NOT exist, the project has not been set up yet — guide the user through the initialisation process below.
 

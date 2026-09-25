@@ -1,3 +1,9 @@
+!! The Codex IDE: a single-page reader that walks the Primer a step at a time, showing each step's code beside its prose.
+!!
+!! Every element the script shows is declared before anything runs, because `create` and `attach` take a declared name rather than a string — so this list is the script's vocabulary, and an element missing from it cannot be drawn at all. That is also why the run is long and repetitive: it is a map of the interface, not of the logic.
+!!
+!! This first group is the reading surface itself: the screen, the code and prose panes, the panels that replace them, and the buttons that drive it.
+
 !	AllSpeak Codex
 
     script Codex
@@ -43,6 +49,12 @@
     module TestModule
 	module DocManModule
   	callback DecoratorCallback
+!! @hash 94fa0edc
+!!!
+!! The state the reader keeps: which step and view are showing, the script being demonstrated, and the strings loaded for the chosen language.
+!!
+!! They are declared together rather than beside first use, so the names, and the fact that they are shared for the whole session, are visible in one place. `Pages`, `Strings` and `List` all arrive from the server during startup, which is why they exist before it runs.
+
     variable Args
     variable Arg
     variable Name
@@ -75,6 +87,12 @@
     variable Lang
     variable Strings
     variable BasePath
+!! @hash 7fd9e82b
+!!!
+
+!! The file browser: an overlay that lists the server's own scripts, so a reader can open one without leaving the page.
+!!
+!! It is declared apart from the reading surface because it is a mode rather than a panel — it covers everything and is torn down again — and its own nouns (`FileListing`, `FileRow`, `Scroller`) are the vocabulary the listing code works in.
 
   ! The browser
     div Overlay
@@ -94,9 +112,17 @@
     variable FileIsOpen
     variable Item
     variable Items
+!! @hash 56ef15f1
+!!!
 
 !    debug step
     
+!! Before anything is drawn the reader's language is decided and the strings for it are fetched, because every word in the interface comes from that file rather than from this script.
+!!
+!! The language arrives as `?lang=xx` on the URL, which is how one build serves every language without a server-side router; anything after an ampersand is dropped because other arguments may follow. The fallback to `en` matters — without it a missing argument leaves the interface with no words at all — and if the strings themselves cannot be fetched the script stops rather than drawing an interface it cannot label.
+!!
+!! `BasePath` is the single place where a language becomes a path, so a second language needs no change anywhere else.
+
     load showdown
 	rest get ECPayload from `/codex/fragments/ec.txt`
 	or put `<strong>AllSpeak</strong>` into ECPayload
@@ -115,6 +141,12 @@
 
     rest get Strings from BasePath cat `/strings.json`
         or go to StringsFailed
+!! @hash 3a57b8b2
+!!!
+!! The browser's back and forward buttons are wired to the step the reader was on, so moving through the Primer behaves like moving through any other page instead of dropping the reader out of it.
+!!
+!! `CallStack` is the record: each step shown is pushed on, and a restore pops two entries before showing the one beneath. The `go to SHP2` is the part that does not explain itself — `SHP2` sits in a family whose neighbours put the help panel up, and `StepBack` reaches the same family to redraw the page, so it is almost certainly that shared continuation — but the name still does not say so.
+
     print `Static site`
     put empty into CallStack
     history set
@@ -128,6 +160,12 @@
         put element N of CallStack into Step
         go to SHP2
     end
+!! @hash 59cbceb3
+!!!
+
+!! What the reader is reading on decides two things: whether the layout is a column or full width, and whether the run panel is offered at all. `portrait` and `mobile` are the runtime's own questions, so the script asks them rather than inspecting the user agent.
+!!
+!! The requires are the editor's dependencies, grouped because they arrive together: gmap and svg for the steps that use them, and CodeMirror with the search add-ons for the code panes. Each carries a version, so a browser cannot serve a stale plugin after a release. `Pages` is fetched here because it is the reader's index, and everything after this point assumes it exists.
 
     if portrait
     begin
@@ -146,6 +184,10 @@
     require js `/dist/plugins/codemirror/addon/search/jump-to-line.js`
 
     rest get Pages from BasePath cat `/pages.json`
+!! @hash b093b8de
+!!!
+
+!! The reader's place is remembered in storage, so returning to the page resumes where they stopped rather than at the beginning. The check is on the shape of the stored name rather than on its value, which is all the storage contract needs, and `step0` is the fallback.
 
     get Step from storage as `.step`
     if left 4 of Step is not `step`
@@ -153,7 +195,15 @@
     	put `step0` into Step
         put Step into storage as `.step`
     end
+!! @hash 39c3e5b2
+!!!
     
+!! The interface is built from the outside in as a flex column — a screen, a container, a control bar — and the order is forced by the DOM: `create ... in ...` needs its parent to exist already, so this run is the structure written once, in the order the browser will build it.
+!!
+!! The buttons are made the same way each time, a link wrapping an image with a width, a right margin and a tooltip taken from the strings, which is why the run repeats itself. The repetition is preferred to a rule: the buttons differ only in those three values, and naming the differences would cost more than writing them out.
+!!
+!! `Status` is the one element whose style is chosen by device rather than by panel: on desktop it floats at the right of the bar, on mobile it takes a line of its own. The rest of the responsive layout is done by swapping panels instead.
+
     create Body
     if Mobile
 	    set the style of Body to `width:100%;height:100%`
@@ -203,6 +253,10 @@
     create Status in Buttons
     if Mobile set the style of Status to `height:1em;color:green`
     else set the style of Status to `float:right;margin:0.5em 2em 0 0;color:green`
+!! @hash 672591bc
+!!!
+
+!! The script's name sits above its code and is editable in place, so a reader can rename what they are working on without leaving the step. On mobile the row is hidden — there is no width to spare beside the code, and the name is already in the tab title.
 
     create ScriptName in Controls
     set the style of ScriptName to `display:flex;margin:0.5em 0;padding:0.5em`
@@ -212,6 +266,12 @@
     set the content of Span to property `scriptName` of Strings
     create NameEditor in ScriptName
     set the style of NameEditor to `flex:85;display:inline-block`
+!! @hash 9781de03
+!!!
+
+!! The code area scrolls sideways instead of wrapping, which is the reason for the explicit `overflow-x:scroll` and the matching hidden vertical. A wrapped line of code breaks the correspondence between a line number and a line, and on a phone it would reflow every step at once.
+!!
+!! The mobile branch sets both dimensions explicitly, where the desktop branch leaves them implicit. The difference matters once the editor positions its own content inside: a scroll container sized implicitly collapses around absolutely positioned children.
 
 	create ContentDiv in Container
     set the style of ContentDiv to `flex:1`
@@ -223,7 +283,13 @@
     else
     begin
     	set the style of ContentDiv to `width:100%;height:100%;overflow-x:scroll;overflow-y:hidden`
+!! @hash 707eb796
+!!!
 	end
+
+!! Where the code, the output and the help appear depends on the device, and the two branches are the two answers. On desktop all three are rows of the screen, each half its height; on mobile they replace one another, so the panels are created in a different parent and the code panel starts hidden.
+!!
+!! The panels are built inside the branch rather than above it because `create ... in ...` needs the parent that this branch decides, and there is no one parent that suits both devices.
 
    	create CodePanel in ContentDiv
    	create ContentEditor in CodePanel
@@ -253,6 +319,12 @@
         	`flex:50;margin-left:1em;`
             cat `border:1px solid gray;padding:0 0.5em;overflow-y:scroll`
     end
+!! @hash eb6e24db
+!!!
+
+!! The help panel carries its own navigation — back, forward, contents, the reference, the tools and the way out — because help is a place the reader can wander into, and everything needed to leave it again should be reachable from inside it.
+!!
+!! Each button is a link wrapping an icon with a tooltip taken from the strings, so the words a reader sees are translated with the rest of the interface instead of being baked into the images.
 
     create Banner in HelpOuter
     set the style of Banner to `width:100%`
@@ -270,7 +342,7 @@
        set the style of Forward to `margin-left:1em;width:40px`
     set attribute `src` of Forward to `codex/icon/arrow-forward.png`
     set attribute `title` of Forward to property `tooltipNext` of Strings
-    create Contents in HelpButtons
+    create Link in HelpButtons
     create Contents in Link
     set the style of Contents to `margin-left:1em;width:40px`
     set attribute `src` of Contents to `codex/icon/list.png`
@@ -290,7 +362,13 @@
     set the style of Exit to `margin-left:1em;width:40px`
     set attribute `src` of Exit to `codex/icon/exit.png`
     set attribute `title` of Exit to property `tooltipExit` of Strings
+!! @hash 1fc7094e
+!!!
     
+!! Two panels share the space below those buttons: the help page itself and the language reference, each hidden until something shows it. They are built here rather than on demand, so that switching between them is a style change rather than a rebuild — a reference opened from a step is expected to appear at once.
+!!
+!! Neither panel holds any text of its own. The words arrive from the server, from `pages.json` beside the language's strings, so a step's help is data rather than markup.
+
     create HelpInner in HelpOuter
     set the style of HelpInner to `width:100%;line-height:1.5em`
 
@@ -298,6 +376,8 @@
 	set the style of HelpPanel to `display:none;width:100%;height:100%`
 	create ReferencePanel in HelpInner
 	set the style of ReferencePanel to `display:none;width:100%;height:100%`
+!! @hash 1b208ddf
+!!!
 
 	gosub to ShowHelpPage
     rest get Script from `/resources/ecs/docman.as?v=` cat now
@@ -355,6 +435,10 @@
         set attribute `src` of RunStop to `codex/icon/run.png`
     end
    
+!! The file browser is an overlay rather than a panel because a reader opens it over whatever they were doing and expects to come back to it: the listing floats centred, and the backdrop is fully transparent (`rgba(0,0,0,0.0)`) rather than dimmed, so the step stays visible behind it.
+!!
+!! `Scroller` exists because the listing can outgrow the space it is given, and `LowerPanel` holds the controls that are not files — starting with the way to close it again.
+
     create Overlay in Body
     set the style of Overlay to
       `position:absolute;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.0);display:none`
@@ -375,6 +459,8 @@
     
     create CloseButton in LowerPanel
     set the style of CloseButton to `margin-left:2em`
+!! @hash 20d919ff
+!!!
     set the text of CloseButton to property `close` of Strings
 
     put empty into Current
@@ -806,6 +892,12 @@ SHP4:
     end
 	return
 
+!! The step's markdown is rendered into the help panel through `showdown`, with `Decorate` consulted as the decorator for every substitution. That is what lets the Primer's prose carry live pieces of AllSpeak — a snippet, a quotation, a runnable example — instead of only text.
+!!
+!! The links `showdown` produced are wired by hand afterwards, because a link in rendered text is not a click until something attaches it. Each carries a `data-codexid` naming the step it points at, so following one is the same journey as pressing Forward.
+!!
+!! The comment on this label still asks for the links to be counted and the listeners set up. The code below does both, so the note is spent and only the label line keeps it alive.
+
 ProcessMarkdown: ! TODO Count the links & set up listeners
   on DecoratorCallback go to Decorate
   put 0 into LinkCount
@@ -824,6 +916,12 @@ ProcessMarkdown: ! TODO Count the links & set up listeners
     goto ShowHelpPage
   end
   return
+!! @hash a671e565
+!!!
+
+!! Where the Primer's prose needs something AllSpeak-aware it writes a short prefix — `ec`, `quot:`, `code:`, `step`, `pre:`, `copy` — and this turns each one into markup. It is a very small markup language, and it exists so that the tutorial's text can hold working examples without the markdown carrying HTML around.
+!!
+!! The prefixes are tested in order and the first match wins, so the order is also the precedence: a payload beginning with two of them is treated as the earlier one. `ec` is the fragment fetched at startup, which is why its text is not written here.
 
 Decorate:
   put the payload of DecoratorCallback into Payload
@@ -886,6 +984,12 @@ Decorate:
   end
   set the payload of DecoratorCallback to Payload
   stop
+!! @hash fec99f1e
+!!!
+
+!! A comparator for `sort ... with ...`: given two entries of the list as `arg a` and `arg b`, it reads the `index` each carries and sets `arg v` to -1, 0 or 1, so the sort knows which comes first.
+!!
+!! The two `add 0` lines are there to force a numeric comparison. Without them the properties would be compared as text, where `10` sorts before `9`.
 
 ListSorter:
     put arg `a` of List into A
@@ -899,6 +1003,8 @@ ListSorter:
     else put 0 into V
     set arg `v` of List to V
     stop
+!! @hash fb88db29
+!!!
 
 StepBack:
     put property Step of Pages into Page

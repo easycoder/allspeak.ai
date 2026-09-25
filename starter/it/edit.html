@@ -15,14 +15,18 @@
 
 <script>
 (async function() {
-	const ui = await fetch('asedit.json').then(r => r.text());
+	const ui = await fetch('asedit.json?v=' + Date.now()).then(r => r.text());
 	document.getElementById('asedit-ui').textContent = ui;
-	const ecs = await fetch('asedit.as').then(r => r.text());
+	const ecs = await fetch('asedit.as?v=' + Date.now()).then(r => r.text());
 	document.getElementById('allspeak-script').textContent = ecs;
 
 	const t = Date.now();
 	const scripts = [
 		'https://allspeak.ai/dist/allspeak-min.js?v=' + t,
+		// The viz plugin is what lets the editor ask for the static review signals. It is
+		// loaded here rather than fetched on demand because `asedit.as` names its one
+		// keyword, so the plugin has to exist before that script compiles.
+		'https://allspeak.ai/dist/plugins/asviz.js?v=' + t,
 		'https://allspeak.ai/dist/plugins/codemirror.js?v=' + t,
 		'https://allspeak.ai/dist/plugins/codemirror/codemirror.js?v=' + t,
 		'https://allspeak.ai/dist/plugins/codemirror-ecs.js?v=' + t,

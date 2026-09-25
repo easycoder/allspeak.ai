@@ -151,6 +151,14 @@ Surface findings as a short list at the **start** of your response, separately f
 
 The point of the doc-block convention is to force close reading; reporting what that reading turned up is the natural payoff.
 
+## Diagnostics while debugging
+
+Reach for a log before reaching for a theory. `log` writes to the browser console, and the same line prints in the terminal runtime, so a script can tell you what it is actually doing rather than what you assume it is doing.
+
+The reason to prefer a log over a dialog box is not that it is cheap — it is that it is **copyable**. A copied line can be quoted into a conversation, a bug report or a commit message, compared against earlier output, and read by somebody else; a dialog box leaves you to paraphrase it from memory, and that is where wrong ideas take hold. A stuck afternoon usually ends the moment the numbers become copyable.
+
+Be liberal with them, and cheerful about intrusive ones — they are not permanent. Remove each one once the question it was asked has an answer, and have each line name its own subject (`records: 8  flags: 1`) so the copy still makes sense on its own.
+
 ## Commit Style
 
 When no specific message is given, use a date-time stamp in `YYMMDDHHMM` form (e.g. `2605101119`, `2605082123`) — same format as the version string. Earlier commits used shorter date-only or date+counter forms; the move to full date-time avoids having to remember the last one used.
@@ -177,4 +185,12 @@ This project keeps a per-session log under `conversation/`, for the human's refe
 
 Use `date +%H:%M` if you need the time. Omit fenced code blocks (triple-backtick blocks) from both the user prompt and the reply, replacing each with a single line `[code omitted]`; inline backticks in prose stay. Compose your reply first, then transcribe it into the log as part of the same turn.
 
+**The working state lives in `TODO.md`.** Its `## Where things stand` section says what is done, what is next and in what order, and the traps worth knowing before editing. A new session should read it first: that is the handover, whereas this log is a record for you.
+
 **Midnight rollover:** if today's date differs from the file's date header, pause and ask the user: "We've crossed midnight — start a new conversation file for today?" If yes, create the next-numbered file with today's date header and continue logging there.
+
+## Diff notes for the human
+
+Keep `DIFF.md` in the project root, **rewritten** after every change rather than appended to, saying what changed and what the human has to do about it — reload the editor, re-run a script, rebuild, deploy. It is read in the editor, which polls the file and reloads it, so it is the shortest path from "something changed" to "here is what to do about it".
+
+Keep it short, and lead with the action. It is **not** a changelog: it describes this change only, and the previous contents are not worth keeping — git has them.

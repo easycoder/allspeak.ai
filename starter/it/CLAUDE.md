@@ -49,6 +49,12 @@ Usa `date +%H:%M` se ti serve l'ora. Ometti i blocchi di codice racchiusi tra tr
 
 **Cambio di data (mezzanotte):** se la data odierna è diversa dall'intestazione del file, fermati e chiedi all'utente: "Abbiamo superato la mezzanotte — apro un nuovo file di conversazione per oggi?" Se sì, crea il file successivo con l'intestazione di oggi e continua a registrare lì.
 
+## Note di diff per l'umano
+
+Tenete `DIFF.md` nella radice del progetto, **riscritto** dopo ogni modifica invece che ampliato, indicando cosa è cambiato e cosa deve fare l'umano — ricaricare la pagina, riavviare il server, aprire un altro file. L'umano lo legge nell'editor, che lo ricarica automaticamente: è così che resta al passo senza leggere il diff.
+
+Poche righe bastano, e iniziate dall'azione. **Non** è un registro delle modifiche: descrive questa modifica, non la storia del progetto.
+
 ## Prima configurazione
 
 > **Suggerimento:** Se non succede nulla quando avvii Claude, digita **go**.

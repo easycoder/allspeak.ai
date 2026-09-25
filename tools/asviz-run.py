@@ -8,14 +8,30 @@ a browser page would load the plugin and hand it the editor buffer.
 Usage:  python3 tools/asviz-run.py <script.as> [...]
         python3 tools/asviz-run.py --run <script.as> [...]   (also run it, and report
                                                               the recording its markers made)
+        python3 tools/asviz-run.py --run --trace=<file.json> <script.as>
+                                                             (also write the recording as a
+                                                              Chrome trace; load it at
+                                                              ui.perfetto.dev)
+        python3 tools/asviz-run.py --run --trace=<file.json> --trace-pretty <script.as>
+                                                             (indent it for reading; the
+                                                              default is compact, since a
+                                                              trace is mostly read by a
+                                                              viewer)
 
 Paths are relative to the current directory, which is where `Program` resolves
 them from too, so run it from the repository root.
 """
 
+import json
 import os
 import subprocess
 import sys
+
+USAGE = """usage: asviz-run.py [--run|-r] [--trace=<file.json>] [--trace-pretty[=<file.json>]]
+                       [--trace-compact[=<file.json>]] <script.as> [...]
+       A trace needs --run, and one target. Either trace flag may carry the path, so
+       --trace-pretty=pretrace.json is the same as --trace=pretrace.json --trace-pretty.
+"""
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'allspeak-py'))
@@ -60,15 +76,49 @@ def runTarget(target):
     program.recorder = Recorder()
     VizState.trace[program.scriptName] = program.recorder
     program.start()
+    # The run is over, so a window still open ends here rather than whenever a reader looks.
+    program.recorder.finish()
+    return program.recorder
 
 
 def main(argv):
     argv = list(argv)
     run = False
-    if argv and argv[0] in ('--run', '-r'):
-        run = True
-        argv = argv[1:]
+    trace = None
+    pretty = False
+    while argv and argv[0].startswith('-'):
+        flag = argv.pop(0)
+        if flag in ('--run', '-r'):
+            run = True
+        elif flag.startswith('--trace='):
+            trace = flag.split('=', 1)[1]
+        elif flag == '--trace-pretty':
+            pretty = True
+        elif flag == '--trace-compact':
+            pass                       # the default, accepted so both spellings work
+        elif flag.startswith('--trace-pretty='):
+            pretty = True
+            trace = flag.split('=', 1)[1]
+        elif flag.startswith('--trace-compact='):
+            trace = flag.split('=', 1)[1]
+        elif flag == '--trace':
+            # `--trace` alone would have to guess a filename, and guessing writes files
+            # nobody asked for. The equals form is unambiguous beside a list of targets.
+            sys.stderr.write('asviz-run: --trace needs a path: --trace=<file.json>\n')
+            return 1
+        else:
+            # A mistyped flag is the likeliest reason to land here, so say what the
+            # flags are rather than only what this one is not.
+            sys.stderr.write(f'asviz-run: unknown option: {flag}\n')
+            sys.stderr.write(USAGE)
+            return 1
     targets = argv or ['codex/en/code/step13.as']
+    if trace and not run:
+        sys.stderr.write('asviz-run: a trace records a run, so it needs --run too\n')
+        return 1
+    if trace and len(targets) > 1:
+        sys.stderr.write('asviz-run: --trace takes one target, not several\n')
+        return 1
     for target in targets:
         if not os.path.exists(target):
             sys.stderr.write(f'asviz-run: no such file: {target}\n')
@@ -90,7 +140,29 @@ def main(argv):
 
         if run:
             sys.stderr.write(f'asviz-run: running {target}\n')
-            runTarget(target)
+            recorder = runTarget(target)
+            # Written before the framework runs so a trace survives a framework failure,
+            # and because a recording is a fact about the run, not about the report.
+            if trace:
+                windows = recorder.finishedWindows()
+                document = as_viz.traceDocument(target, windows)
+                try:
+                    with open(trace, 'w', encoding='utf-8') as f:
+                        # Compact by default: whitespace does not matter to a JSON reader,
+                        # and a trace's first consumer is a viewer, not a person. Nothing is
+                        # lost when someone does want to read one, since a compact file can
+                        # be indented without re-running: python3 -m json.tool <file>
+                        if pretty:
+                            json.dump(document, f, indent=2)
+                        else:
+                            json.dump(document, f, separators=(',', ':'))
+                except OSError as e:
+                    sys.stderr.write(f'asviz-run: cannot write {trace}: {e}\n')
+                    return 1
+                sys.stderr.write(
+                    f'asviz-run: trace: {trace} '
+                    f'({len(document["traceEvents"])} events, '
+                    f'{len(windows)} window(s))\n')
 
         program = Program(FRAMEWORK, testMode=True)
         program.useClass(Viz)          # the domain must exist before viz.as compiles

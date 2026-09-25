@@ -49,6 +49,12 @@ Utilise `date +%H:%M` si tu as besoin de l'heure. Omets les blocs de code (déli
 
 **Passage à minuit :** si la date du jour diffère de l'en-tête du fichier, fais une pause et demande à l'utilisateur : « Nous avons passé minuit — créer un nouveau fichier de conversation pour aujourd'hui ? » Si oui, crée le fichier au numéro suivant avec l'en-tête d'aujourd'hui et continue d'y consigner.
 
+## Notes de diff pour l'humain
+
+Gardez `DIFF.md` à la racine du projet, **réécrit** après chaque modification plutôt que complété, indiquant ce qui a changé et ce que l'humain doit faire — recharger la page, redémarrer le serveur, ouvrir un autre fichier. L'humain le lit dans l'éditeur, qui le recharge automatiquement : c'est ainsi qu'il suit le travail sans lire le diff.
+
+Quelques lignes suffisent, et commencez par l'action. Ce n'est **pas** un journal de modifications : il décrit cette modification-ci, pas l'historique du projet.
+
 ## Première configuration
 
 > **Astuce pour débutants :** Si rien ne se passe quand tu lances Claude, tape **go**.

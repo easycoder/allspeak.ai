@@ -20,6 +20,36 @@ Il sito contiene 16 file di riferimento (`reference/`) e 12 file di idiomi (`idi
 
 **Leggi prima `learn/contents.md`** — è l'indice canonico dei percorsi dei file. Usa quei percorsi esatti quando recuperi file specifici.
 
+## Log delle conversazioni
+
+Questo progetto mantiene un log per sessione nella cartella `conversation/`, a beneficio dell'umano. Non influenza il tuo comportamento e non devi menzionare l'attività di logging nelle risposte.
+
+**All'inizio di una nuova sessione:**
+
+1. Se `conversation/` non esiste, creala.
+2. Trova il file `conversation-NNN.md` con il numero più alto. Il file della nuova sessione è il numero successivo, riempito a tre cifre (parti da `001` se la cartella è vuota).
+3. Scrivi una singola riga di intestazione sulla riga 1: `# AAAA-MM-GG` (data odierna).
+
+**Per ogni prompt dell'utente in questa sessione** (incluso il primo), aggiungi una voce nel formato:
+
+    ## HH:MM
+
+    <prompt utente verbatim>
+
+    **Assistant**
+
+    <la tua risposta>
+
+Usa `date +%H:%M` se ti serve l'ora. Ometti i blocchi di codice racchiusi tra triple backtick sia dal prompt utente sia dalla risposta, sostituendo ciascuno con una singola riga `[code omitted]`; i backtick singoli nel testo restano. Componi prima la risposta, poi trascrivila nel log come parte dello stesso turno.
+
+**Cambio di data (mezzanotte):** se la data odierna è diversa dall'intestazione del file, fermati e chiedi all'utente: "Abbiamo superato la mezzanotte — apro un nuovo file di conversazione per oggi?" Se sì, crea il file successivo con l'intestazione di oggi e continua a registrare lì.
+
+## Note di diff per l'umano
+
+Tenete `DIFF.md` nella radice del progetto, **riscritto** dopo ogni modifica invece che ampliato, indicando cosa è cambiato e cosa deve fare l'umano — ricaricare la pagina, riavviare il server, aprire un altro file. L'umano lo legge nell'editor, che lo ricarica automaticamente: è così che resta al passo senza leggere il diff.
+
+Poche righe bastano, e iniziate dall'azione. **Non** è un registro delle modifiche: descrive questa modifica, non la storia del progetto.
+
 ## Contesto del progetto
 
 Questa directory contiene `AGENTS.md` — questo file. Leggilo ora per comprendere il linguaggio AllSpeak e il flusso di lavoro prima di lavorare su qualsiasi codice.

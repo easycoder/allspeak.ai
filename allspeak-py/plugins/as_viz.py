@@ -112,6 +112,28 @@ class Recorder:
             'truncated': False
         }
 
+    def finish(self):
+        """Close a window left open when the program ended.
+
+        The end of a window that never saw its stop is the end of the *run*, not the moment
+        some tool next looks at the recorder — otherwise the report and the trace file
+        disagree about how long it lasted by however long the host spent in between.
+        """
+        self.stop()
+
+    def finishedWindows(self):
+        """The windows worth reporting: the stopped ones, plus a window still open when the run
+        ended, punched as of now. A `viz start` with no stop is not a mistake — it is the
+        deliberate "watch until the end" case — but it is still a window, and a copy is taken
+        so stamping it cannot surprise a reader holding the original.
+        """
+        windows = list(self.windows)
+        if self.current is not None:
+            closed = dict(self.current)
+            closed['t1'] = time.perf_counter_ns()
+            windows.append(closed)
+        return windows
+
     def stop(self):
         if self.current is None:
             return
@@ -187,9 +209,16 @@ class Viz(Handler):
         if language_word(self.peek()) == 'in':
             self.nextToken()
             command['path'] = self.nextValue()
+        # `as <source>` is for a caller holding the text itself — an editor with an unsaved
+        # buffer is the case that matters — so nothing has to be written out and read back
+        # just to be looked at.
+        if language_word(self.peek()) == 'as':
+            self.nextToken()
+            command['text'] = self.nextValue()
         if language_word(self.peek()) != 'giving':
             FatalError(self.compiler,
-                       "viz 'model': expected 'model the script [in <path>] giving <variable>'")
+                       "viz 'model': expected "
+                       "'model the script [in <path>] [as <source>] giving <variable>'")
         self.nextToken()
         command['target'] = self.nextToken()
         self.add(command)
@@ -213,6 +242,8 @@ class Viz(Handler):
                          "viz: no target — the host must set as_viz.VizState.target")
             return self.nextPC()
 
+        if 'text' in command:
+            VizState.sources[path] = self.textify(command['text'])
         text = VizState.sources.get(path)
         if text is None:
             try:
@@ -237,9 +268,7 @@ class Viz(Handler):
         recorder = VizState.trace.get(path)
         if recorder is None:
             return []
-        windows = list(recorder.windows)
-        if recorder.current is not None:
-            windows.append(recorder.current)     # never stopped: still worth reporting
+        windows = recorder.finishedWindows()
 
         out = []
         for n, window in enumerate(windows):
@@ -1001,6 +1030,97 @@ class Viz(Handler):
 
 
 # ---------------------------------------------------------------- helpers
+
+# ------------------------------------------------------------------ trace file
+
+# A recording is more useful as a file than as an object held by the process that made it:
+# the editor can then show a trace without running anything, a trace recorded by one
+# runtime can be read by the other, and the two have a neutral container to be compared in.
+# The container is the Chrome Trace Event Format — see spec/viz-trace-format.md for the
+# subset used, the meaning of each args field, and why `line` and `steps` carry the join and
+# the comparable axis respectively.
+TRACE_VERSION = 1
+
+
+def traceDocument(script, windows):
+    """The whole recording as one Chrome-trace document.
+
+    One lane per window, one interval per anchor arrival: from that arrival to the next, which
+    is time spent inside the block the arrival named. The intervals tile the window without
+    overlapping, so their durations sum to the window's span — the property that makes the
+    height of a row mean something, and one that tools/check-trace.py checks.
+    """
+    events = [{
+        'name': 'process_name',
+        'ph': 'M',
+        'pid': 1,
+        'args': {'name': script}
+    }]
+    for index, window in enumerate(windows, start=1):
+        visits = window['visits']
+        last = visits[-1][2] if visits else window['t0']
+        end = window['t1'] or last
+        events.append({
+            'name': 'thread_name', 'ph': 'M', 'pid': 1, 'tid': index,
+            'args': {'name': f'window {index} (line {window["line"]})'}
+        })
+        events.append({
+            'name': 'thread_sort_index', 'ph': 'M', 'pid': 1, 'tid': index,
+            'args': {'sort_index': index}
+        })
+        counts = {}
+        for pc, count in enumerate(window['counts']):
+            if count:
+                line = str(window['linos'][pc])
+                counts[line] = counts.get(line, 0) + count
+        # Keyed and ordered by line number: this map is read by people.
+        counts = {line: counts[line] for line in sorted(counts, key=int)}
+        events.append({
+            'name': f'window {index}',
+            'cat': 'window',
+            'ph': 'X',
+            'pid': 1,
+            'tid': index,
+            'ts': window['t0'] // 1000,
+            'dur': max(0, (end - window['t0']) // 1000),
+            'args': {
+                'from_line': window['line'],
+                'mode': window['mode'],
+                'limit': window['limit'],
+                'until': window['until'],
+                'visits': len(visits),
+                'anchors': len(window['anchors']),
+                'steps': window['steps'],
+                'truncated': bool(window['truncated']),
+                'line_counts': counts
+            }
+        })
+        for position, (pc, steps, stamp) in enumerate(visits):
+            following = visits[position + 1][2] if position + 1 < len(visits) else end
+            line = window['linos'][pc]
+            name = window['anchors'].get(pc, '')
+            events.append({
+                'name': name or f'line {line}',
+                'cat': 'anchor',
+                'ph': 'X',
+                'pid': 1,
+                'tid': index,
+                'ts': stamp // 1000,
+                'dur': max(0, (following - stamp) // 1000),
+                'args': {
+                    'line': line,
+                    'pc': pc,
+                    'name': name,
+                    'steps': steps,
+                    'visit': position + 1
+                }
+            })
+    return {
+        'traceEvents': events,
+        'displayTimeUnit': 'ms',
+        'otherData': {'vizTrace': TRACE_VERSION, 'script': script}
+    }
+
 
 def traceRecordsFor(handler, path, covered=None):
     return handler.traceRecords(path, covered)

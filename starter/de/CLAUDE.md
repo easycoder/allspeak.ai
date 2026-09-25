@@ -49,6 +49,12 @@ Verwenden Sie `date +%H:%M`, wenn Sie die Uhrzeit brauchen. Lassen Sie eingegren
 
 **Mitternachtswechsel:** Wenn das heutige Datum vom Datumskopf der Datei abweicht, halten Sie inne und fragen Sie den Benutzer: „Wir haben Mitternacht überschritten — eine neue Konversationsdatei für heute beginnen?" Bei Ja erstellen Sie die nächstnummerierte Datei mit dem heutigen Datumskopf und protokollieren dort weiter.
 
+## Diff-Hinweise für den Menschen
+
+Halten Sie `DIFF.md` im Projektstammverzeichnis, **nach jeder Änderung neu geschrieben** statt ergänzt: was sich geändert hat und was der Mensch tun muss — die Seite neu laden, den Server neu starten, eine andere Datei öffnen. Der Mensch liest sie im Editor, der sie automatisch neu lädt; so bleibt er auf dem Laufenden, ohne das Diff zu lesen.
+
+Wenige Zeilen genügen, und beginnen Sie mit der Handlung. Es ist **kein** Änderungsprotokoll: es beschreibt diese Änderung, nicht die Geschichte des Projekts.
+
 ## Erste Einrichtung
 
 > **Hinweis für Einsteiger:** Wenn beim Start von Claude nichts geschieht, geben Sie **go** ein.

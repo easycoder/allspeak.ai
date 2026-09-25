@@ -41,7 +41,11 @@ const AllSpeak_Viz = {
 
 	Model: {
 
-		// model the script [in <path>] giving <variable>
+		// model the script [in <path>] [as <source>] giving <variable>
+		//
+		// `as <source>` is for a caller holding the text itself — an editor with an
+		// unsaved buffer is the case that matters — so nothing has to be written out and
+		// read back just to be looked at.
 		compile: (compiler) => {
 			const lino = compiler.getLino();
 			compiler.next();
@@ -52,9 +56,14 @@ const AllSpeak_Viz = {
 				compiler.next();
 				path = compiler.getValue();
 			}
+			let text = null;
+			if (compiler.isWord(`as`)) {
+				compiler.next();
+				text = compiler.getValue();
+			}
 			if (!compiler.isWord(`giving`)) {
 				throw new Error(`viz 'model' (line ${lino + 1}): expected ` +
-					`'model the script [in <path>] giving <variable>'`);
+					`'model the script [in <path>] [as <source>] giving <variable>'`);
 			}
 			compiler.next();
 			const target = compiler.getToken();
@@ -64,6 +73,7 @@ const AllSpeak_Viz = {
 				keyword: `model`,
 				lino,
 				path,
+				text,
 				target
 			});
 			return true;
@@ -72,6 +82,11 @@ const AllSpeak_Viz = {
 		run: (program) => {
 			const command = program[program.pc];
 			const path = command.path ? program.getValue(command.path) : AllSpeak_Viz.target;
+			// A caller that supplies the text registers it under the path, so every other
+			// reader in this plugin keeps working from one place.
+			if (command.text) {
+				AllSpeak_Viz.sources[path] = program.getValue(command.text);
+			}
 			const text = AllSpeak_Viz.sources[path];
 			if (typeof text !== `string`) {
 				program.runtimeError(command.lino,

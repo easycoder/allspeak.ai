@@ -64,6 +64,17 @@ if the value of Mm is not less than 4    ! numeric comparison — works for all 
 
 `the value of X` is documented in [values-and-types](values-and-types.md).
 
+Two things make this expensive out of proportion to its size. The first is that it is **silent** — no error, no warning, just a condition that answers the wrong way. The second is that it applies to `is greater than` and `is less than` too, and there the damage is worse than a near-miss: with text comparison the answer depends on the characters, so `\`29\`` is not less than `\`1000001\`` at all.
+
+The two runtimes are not identical here, which is worth knowing before you debug one of them: the terminal converts a text operand in a mixed comparison, while the browser does not. Code that converts explicitly behaves the same on both, and that is the reason to convert rather than to rely on it.
+
+It bites hardest when a number arrives *inside* text — read out of a record, from a DOM element, from `the content of Input`, or from `the index of X`. Convert before comparing, and prefer `the value of X` at the comparison. `add 0 to X` is the shorter form when the value is already sitting in a variable:
+```as
+add 0 to LineNumber
+if LineNumber is less than To                                ! now numeric
+```
+
+
 ## Negation
 
 Negate a condition with `not` at the start, or use `is not` within the condition:

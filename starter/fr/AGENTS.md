@@ -20,6 +20,36 @@ Le site contient 16 fichiers de référence (`reference/`) et 12 fichiers d'idio
 
 **Lis d'abord `learn/contents.md`** — c'est l'index canonique des chemins de fichiers. Utilise ces chemins exacts pour récupérer les fichiers spécifiques.
 
+## Journal des conversations
+
+Ce projet conserve un journal par session dans le dossier `conversation/`, à l'intention de l'utilisateur humain. Cela n'affecte pas ton comportement et tu ne dois pas mentionner l'activité de journalisation dans tes réponses.
+
+**Au début d'une nouvelle session :**
+
+1. Si `conversation/` n'existe pas, crée-le.
+2. Trouve le fichier `conversation-NNN.md` au numéro le plus élevé. Le fichier de la nouvelle session est le numéro suivant, complété sur trois chiffres (commence à `001` si le dossier est vide).
+3. Écris une seule ligne d'en-tête sur la ligne 1 : `# AAAA-MM-JJ` (date du jour).
+
+**À chaque prompt utilisateur de cette session** (y compris le premier), ajoute une entrée de la forme :
+
+    ## HH:MM
+
+    <prompt utilisateur verbatim>
+
+    **Assistant**
+
+    <ta réponse>
+
+Utilise `date +%H:%M` si tu as besoin de l'heure. Omets les blocs de code (délimités par triple backtick) à la fois du prompt utilisateur et de la réponse, en remplaçant chacun par une seule ligne `[code omitted]` ; les backticks inline dans le texte restent. Compose d'abord ta réponse, puis transcris-la dans le journal au cours du même tour.
+
+**Passage à minuit :** si la date du jour diffère de l'en-tête du fichier, fais une pause et demande à l'utilisateur : « Nous avons passé minuit — créer un nouveau fichier de conversation pour aujourd'hui ? » Si oui, crée le fichier au numéro suivant avec l'en-tête d'aujourd'hui et continue d'y consigner.
+
+## Notes de diff pour l'humain
+
+Gardez `DIFF.md` à la racine du projet, **réécrit** après chaque modification plutôt que complété, indiquant ce qui a changé et ce que l'humain doit faire — recharger la page, redémarrer le serveur, ouvrir un autre fichier. L'humain le lit dans l'éditeur, qui le recharge automatiquement : c'est ainsi qu'il suit le travail sans lire le diff.
+
+Quelques lignes suffisent, et commencez par l'action. Ce n'est **pas** un journal de modifications : il décrit cette modification-ci, pas l'historique du projet.
+
 ## Contexte du projet
 
 Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour comprendre le langage AllSpeak et le flux de travail avant de travailler sur du code.
