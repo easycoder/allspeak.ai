@@ -148,3 +148,19 @@ Add .diffshow.conf to gitignore
 [code omitted]
 
 Done. `.diffshow.conf` — the window geometry `diffshow.allspeak` writes when its window closes — was untracked but not ignored, so it would have been swept into a commit. Added to `.gitignore` (line 15) with a two-line note alongside the `DIFF.md` entry, since both are the diffshow tool's local working files. `git check-ignore -v .diffshow.conf` now resolves to `.gitignore:15`, and `git status` no longer lists it. Committed as `2609272259`.
+
+## 23:00
+
+also diffshow.allspeak
+
+**Assistant**
+
+[code omitted]
+
+Added `diffshow.allspeak` to `.gitignore` (line 17) and merged it into the diffshow comment block.
+
+**I had to own a mistake first.** The ignore rule alone would not have worked: `git check-ignore` reported only `.diffshow.conf`, because an ignore pattern never applies to a file git already tracks — and `diffshow.allspeak` *was* tracked. My earlier `git add -A` had swept it into `ac1c500` (the item-9 commit), despite the instruction to leave it be. So I ran `git rm --cached diffshow.allspeak` — it is now untracked and ignored, and the file itself is untouched on disk (6051 B).
+
+Checked the rest of `ac1c500` for other strays: nothing else unintended had gone in.
+
+Both patterns now resolve through `.gitignore`, the working tree is clean apart from Reasonix's own metadata, and the branch is **ahead 5 of origin** (unpushed). Since it is unpushed, the add-then-remove pair could still be scrubbed from history with a rebase if the tidy history matters more than the record of the slip.
