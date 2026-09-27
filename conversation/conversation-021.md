@@ -138,3 +138,13 @@ Two notes first: `diffshow.allspeak` is untracked and referenced nowhere (left a
 **Verified.** In Python: `2026 / 8 / 27 / 0 / 22` for year, month, day-of-month, weekday (0=Sunday) and hour, matching the host clock. The Python conformance suite still shows only its three pre-existing failures. `asdoc-check` reports 0 errors. `dist/` rebuilt.
 
 **Left open, and logged.** The Python value parser does not canonicalise translated keywords, so `l horodatage` and `l année de` fail where `the timestamp` and `the year of` work — JavaScript canonicalises via `AllSpeak_Language.reverseWord`, Python compares the raw surface token. That affects *every* translated value keyword, not just these, so it is its own job rather than a rider on this one. Also logged: `weekday` (Python, 0 = Monday) and `day` (JS, 0 = Sunday) are near-synonyms on different bases.
+
+## 22:59
+
+Add .diffshow.conf to gitignore
+
+**Assistant**
+
+[code omitted]
+
+Done. `.diffshow.conf` — the window geometry `diffshow.allspeak` writes when its window closes — was untracked but not ignored, so it would have been swept into a commit. Added to `.gitignore` (line 15) with a two-line note alongside the `DIFF.md` entry, since both are the diffshow tool's local working files. `git check-ignore -v .diffshow.conf` now resolves to `.gitignore:15`, and `git status` no longer lists it. Committed as `2609272259`.
