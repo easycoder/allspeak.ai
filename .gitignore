@@ -9,3 +9,7 @@ deploy/config/gmap-key.txt
 # The step summary the agent rewrites for every prompt. A working aid, opened in the
 # editor, not a record of the project — it must never land in a commit.
 DIFF.md
+
+# diffshow's saved window position and size. Local to this machine, rewritten when the
+# window closes — the tool regenerates it, so it has no place in a commit.
+.diffshow.conf
