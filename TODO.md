@@ -8,11 +8,12 @@ Items identified during real project work. Each should be implemented in both JS
 
 **Open, in order:**
 
-1. **Branch `ext-allspeak` awaits review** (not master): the source extension was renamed `.as` → `.allspeak` across the repo — 318 files renamed, ~326 docs/config swept, both extensions accepted by the runtimes during the transition. Review with `git diff master...ext-allspeak --stat`; the open question is whether to merge, and whether to re-verify the 14 `verify-stale` blocks in `asedit.allspeak` that the sweep touched.
-2. Native review of the fr/de/it `AGENTS.md`: they were machine-drafted in this session, so a reading pass is worth doing before they ship — the viz-word review is the precedent.
-3. Block-level aggregation over a trace, then the first screen in `asedit.allspeak` — both described in the Visualiser section below.
-4. The label bodies after `ListSorter` in `codex.allspeak`, and the run-panel region that still sits outside any block.
-5. The JS recorder, still missing — needed before traces from the two runtimes can be compared.
+1. **Extension rename is on `master`** (merged fast-forward, 3 commits; `origin/master` not yet pushed). `.as` → `.allspeak` across the repo: 318 files renamed, ~326 docs/config swept, both extensions accepted by the runtimes. Remaining: `git push` when ready, and re-verify the 14 `verify-stale` blocks in `asedit.allspeak` (Blocks mode) if that matters.
+2. **Consumer projects** still carry the old names. `~/dev/doclets` is the only project *coupled* to this repo — it holds copies of `asedit.as`, `asdoc-check.py` and `allspeak-js/*.js`. Nothing is *broken* (the runtimes accept `.as`), so renaming the rest is cosmetic; the `.as` counts per project are in `conversation-021.md`. Update doclets in its own session, never in place here.
+3. Native review of the fr/de/it `AGENTS.md`: they were machine-drafted, so a reading pass is worth doing before they ship — the viz-word review is the precedent.
+4. Block-level aggregation over a trace, then the first screen in `asedit.allspeak` — both described in the Visualiser section below.
+5. The label bodies after `ListSorter` in `codex.allspeak`, and the run-panel region that still sits outside any block.
+6. The JS recorder, still missing — needed before traces from the two runtimes can be compared.
 6. Propagate the logging recommendation (root `AGENTS.md`, "Diagnostics while debugging") to the four starter packs — drafts in fr/de/it for review, as with the diff-notes sections.
 7. `learn/{,fr,de,it}/idioms/13-server-as-application.md` (and the `deploy/` mirrors) still say the starter packs' `CLAUDE.md` default is to launch the server with `-t edit,<project>`. The packs now say the user starts the server and the agent must not — so that line is stale in all four languages. Worth fixing when `learn/` is next touched.
 
