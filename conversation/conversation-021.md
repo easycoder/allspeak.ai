@@ -118,3 +118,23 @@ All three had gone stale in different ways, and between them they turned up one 
 **The find.** `tests` then died at `wait 3` with no error at all, and a minimal probe showed why: a `wait` schedules its resume on a timer and stands the script at `pc == None`, and the main loop could not tell that from a script that had finished, so it broke out and the process exited — before the timer fired. Only scripts with no HTTP server and no graphics window were hit; the server and graphics paths keep the loop alive for other reasons, which is why your projects never showed it. Fixed with a `pendingWakeups` count in `r_wait`, and the loop now requires it to be zero before breaking. Reproduced and verified both ways: the installed copy loses everything after the first `wait`, the repo copy waits and resumes.
 
 **Untouched, reported for their own session:** `set property \`k\` of D to v` still poisons the dictionary (it compiles, then the next read dies with `TypeError: argument of type 'ECValue' is not iterable`); `dummy` and `debug symbol(s)` exist in JS and the packs but not in Python; `the year of X` and its siblings are documented in two `learn/` reference pages and implemented in neither runtime. Those four, plus the two failing conformance suites, are now items 8-11 in `TODO.md`. I also documented the interactive debugger in `learn/idioms/11-debugging-as.md` (EN only — flagged as item 11) since fizzbuzz's dead line was the only pointer to it anywhere, and rewrote `DIFF.md` with the reinstall action at the top.
+
+## 22:45
+
+Tidying up done. What's next?
+
+**Assistant**
+
+[code omitted]
+
+Two notes first: `diffshow.allspeak` is untracked and referenced nowhere (left alone at your request), and `master` is in sync with `origin/master`. Item 9 was the recommendation, and you took it.
+
+**What it turned out to be.** Not the "implemented in neither runtime" the note claimed. JS *does* implement all seven accessors; Python implements none of them. Digging in, three separate faults:
+
+1. **Python had nothing** — no `year`/`month`/`day`/`hour`/`minute`/`second`/`daynumber`/`monthnumber`. Added, mirroring JavaScript, with `the day number of` / `the month number of` parsed the same way.
+2. **The JS accessors were seconds-based** — they did `new Date(value * 1000)`, so the docs' own example (`put the timestamp into Now`, then `the year of Now`) yielded `NaN` in the browser. Now millisecond-based.
+3. **The two reference pages contradicted each other** — `05-values-and-types.md` says `timestamp` is milliseconds, `07-arithmetic.md` said the accessors took seconds. Fixed `07` in all four languages to say milliseconds.
+
+**Verified.** In Python: `2026 / 8 / 27 / 0 / 22` for year, month, day-of-month, weekday (0=Sunday) and hour, matching the host clock. The Python conformance suite still shows only its three pre-existing failures. `asdoc-check` reports 0 errors. `dist/` rebuilt.
+
+**Left open, and logged.** The Python value parser does not canonicalise translated keywords, so `l horodatage` and `l année de` fail where `the timestamp` and `the year of` work — JavaScript canonicalises via `AllSpeak_Language.reverseWord`, Python compares the raw surface token. That affects *every* translated value keyword, not just these, so it is its own job rather than a rider on this one. Also logged: `weekday` (Python, 0 = Monday) and `day` (JS, 0 = Sunday) are near-synonyms on different bases.
