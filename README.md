@@ -77,9 +77,9 @@ allspeak hello.as
 
 ## Quick start — AI-assisted
 
-Each non-English language ships a starter pack at `deploy/allspeak-<lang>.zip` containing a `CLAUDE.md` (or compatible AI-agent context file), the editor, and a quick reference. Drop the contents into a project directory, point an AI coding agent at it, and ask it to build something.
+Each non-English language ships a starter pack at `deploy/allspeak-<lang>.zip` containing the agent instructions (`AGENTS.md`, plus a short `CLAUDE.md` pointer), the dev server, and the editor. Drop the contents into a project directory, point an AI coding agent at it, and ask it to build something.
 
-The starter pack drives the **AI writes, human reviews** workflow that is core to using AllSpeak in practice. See [`starter/<lang>/CLAUDE.md`](starter/) for the agent-facing instructions.
+The starter pack drives the **AI writes, human reviews** workflow that is core to using AllSpeak in practice. See [`starter/<lang>/AGENTS.md`](starter/) for the agent-facing instructions.
 
 ## Repository layout
 

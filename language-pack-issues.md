@@ -18,8 +18,8 @@ The earlier worry was that adding FR `has → a` would collide with the `a` HTML
 ### 4. Plugin-declared elements not available in headless compile checks
 `gmap` (gmap plugin), `animation` (svg plugin) fail when plugins aren't loaded — affects English and translated scripts identically. Testing-infrastructure limitation, not a translation issue: step16 / step19 / step20 fail the same way in EN and FR harness runs.
 
-### 5. Quick Reference in starter `CLAUDE.md` is hand-maintained
-Each `starter/<lang>/CLAUDE.md` carries a hand-translated subset of the language in its Quick Reference block. Drift between this and `LanguagePack_<lang>.js` is the failure mode that bit us with random/wait/fork on 2026-04-26. Long-term fix: generate the Quick Reference from the language pack with a template format that distinguishes generated regions from hand-written prose. Deferred — needs design.
+### 5. (resolved 2026-09-27) Quick Reference in starter `CLAUDE.md` is hand-maintained
+The per-language `CLAUDE.md` Quick Reference block was removed when the four starter packs were consolidated onto a single `AGENTS.md` (the `CLAUDE.md` files are now one-line pointers). No hand-maintained vocabulary table remains in the packs, so there is nothing left to drift from `LanguagePack_<lang>.js`. The earlier failure mode (random/wait/fork drift, 2026-04-26) no longer applies.
 
 ### 6. Localized error messages — coverage check pending
 Each pack has a handful of translated error strings (`"syntaxError"`, `"runtimeError"`, …) but full coverage hasn't been verified. Some runtime error paths probably still emit English. Worth a sweep when next we touch error reporting.

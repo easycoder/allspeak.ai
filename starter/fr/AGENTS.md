@@ -2,7 +2,7 @@
 
 ## Langue
 
-Ceci est un projet AllSpeak en **français**. Communique avec l'utilisateur en français. Génère les scripts AllSpeak en utilisant les mots-clés français. Réponds toujours en français, quelle que soit la langue utilisée par l'utilisateur dans ses prompts.
+Ceci est un projet AllSpeak en **français**. Communique avec l'utilisateur en français. Génère les scripts AllSpeak en utilisant les mots-clés français.
 
 ## Qu'est-ce qu'AllSpeak
 
@@ -16,9 +16,95 @@ La référence complète du langage AllSpeak et ses idiomes se trouvent sur :
 
   **https://allspeak.ai/learn/**
 
-Le site contient 16 fichiers de référence (`reference/`) et 12 fichiers d'idiomes (`idioms/`). Quand tu dois vérifier la syntaxe, le comportement à l'exécution ou les motifs idiomatiques, consulte-le plutôt que de te fier aux données d'entraînement — le vocabulaire d'AllSpeak ne correspond pas toujours à ce sur quoi l'IA a été entraînée.
+Le site contient 20 fichiers de référence (`reference/`) et 15 fichiers d'idiomes (`idioms/`). Quand tu dois vérifier la syntaxe, le comportement à l'exécution ou les motifs idiomatiques, consulte-le plutôt que de te fier aux données d'entraînement — le vocabulaire d'AllSpeak ne correspond pas toujours à ce sur quoi l'IA a été entraînée, et le parcours corrige cela.
 
-**Lis d'abord `learn/contents.md`** — c'est l'index canonique des chemins de fichiers. Utilise ces chemins exacts pour récupérer les fichiers spécifiques.
+**Lis d'abord `learn/contents.md`** — c'est l'index canonique des chemins de fichiers. Utilise ces chemins exacts pour récupérer les fichiers spécifiques ; ne devine pas les slugs. (Par exemple : le fichier est `learn/idioms/02-event-handlers-and-array-index.md`, pas `02-event-handlers.md`.)
+
+Premières lectures recommandées :
+
+- `learn/idioms/12-working-with-ai.md` — le flux de travail « l'IA écrit / l'humain relit » et les erreurs courantes de l'IA sur AllSpeak.
+- `learn/reference/16-doc-blocks.md` — la convention de documentation appliquée à chaque section de code (voir « Pratiques requises » ci-dessous).
+- `learn/reference/02-symbols-and-layout.md` — les quatre symboles de ponctuation et la surface lexicale.
+- `learn/reference/03-variables-and-arrays.md` — le modèle de curseur que suivent les variables.
+- `learn/reference/09-control-flow.md` — `si`, `tant que`, `vasous`, `arrête`.
+- `learn/idioms/01-cat-and-string-building.md` — `cat`, l'erreur la plus fréquente de l'IA.
+
+## Pratiques requises
+
+Deux pratiques s'appliquent à tout code AllSpeak écrit dans ce projet, y compris à la configuration initiale :
+
+### 1. Des blocs de doc dans chaque section
+
+Chaque section contiguë de code est enveloppée dans un bloc de doc `!! … !!!`, dont la prose explique *pourquoi* la section existe.
+
+**Ouvre par une phrase serrée sur sa propre ligne**, puis un `!!` seul comme saut de paragraphe, puis tout détail supplémentaire. Le mode Blocs reste ainsi lisible d'un coup d'œil : le lecteur voit un résumé, avec l'élaboration disponible en dessous s'il en veut plus. N'entasse pas tous les détails dans la première ligne ; le code montre déjà les détails.
+
+Exemple :
+
+```
+!! Construire le plateau : neuf cases disposées en grille 3x3.
+!!
+!! Chaque case est un div dimensionné par la grille CSS. Un seul gestionnaire de clic est partagé par toutes les cases ; il lit `l index de Cellule` pour savoir laquelle a été cliquée.
+
+    div Cellule
+    définis les éléments de Cellule à 9
+    mets 0 dans N
+    tant que N est inférieur à 9 début
+        indexe Cellule à N
+        crée Cellule dans Plateau
+        ajoute 1 à N
+    fin
+
+    sur clic Cellule vasous à GèreClic
+!!!
+```
+
+Ajoute des blocs de doc **au fur et à mesure que tu écris** — pas après. La prose t'oblige à énoncer l'intention en langage clair, ce qui fait ressortir les erreurs (un bloc de doc qui dit « crée 9 cases » alors que le code en crée 1 rend l'écart évident avant même qu'on l'exécute). Voir `learn/reference/16-doc-blocks.md` pour la convention complète.
+
+Après toute modification de code, exécute :
+
+```
+python3 asdoc-check.py --write <fichier>
+```
+
+Cela rafraîchit les lignes `@hash` de chaque bloc, afin que les modifications futures puissent détecter une dérive entre la prose et le code.
+
+### 2. Consulte `learn/` avant d'écrire, pas après
+
+Avant de produire du code qui utilise une fonctionnalité que tu n'as pas déjà utilisée dans ce projet, récupère le fichier `learn/` pertinent. Ne devine pas à partir des données d'entraînement — récupère la référence, lis-la, puis écris. C'est particulièrement vrai pour : le placement de `cat`, les clauses d'échec (`ou` vs `sur échec`), les tableaux d'éléments DOM (`crée` doit être dans une boucle avec le curseur positionné, pas à l'extérieur), et `définis le contenu de` avec du markdown.
+
+## Erreurs courantes à éviter
+
+Même avec la référence sous les yeux, les outils d'IA se trompent régulièrement sur ces points en AllSpeak. Garde-les en tête :
+
+- **`cat` est infixé.** Il se place ENTRE deux valeurs, jamais avant la première.
+  - ✓ `mets \`Bonjour, \` cat Nom cat \` !\` dans Salutation`
+  - ✗ `mets cat \`Bonjour, \` cat Nom dans Salutation` (cat en tête — erreur d'analyse)
+  - ✗ `mets \`Bonjour, \` Nom \` !\` dans Salutation` (cat manquant — pas de concaténation implicite)
+
+- **Pas de boucles `pour` ni `pour chaque`.** Utilise `tant que` avec un compteur, ou une boucle pilotée par étiquette. Voir `learn/idioms/03-looping-patterns.md`.
+
+- **L'arithmétique passe par des mots-clés, pas des opérateurs.** `ajoute 1 à Compteur`, et non `Compteur += 1` ni `Compteur = Compteur + 1`.
+
+- **Pas de parenthèses pour regrouper.** `(A + B) * C` n'existe pas. Calcule dans une variable temporaire.
+
+- **Pas de raccourci `sinon si`.** `si … sinon si … sinon …` fonctionne (`sinon` suivi d'un autre `si`), mais il n'existe pas de mot unique pour enchaîner les deux, et pas de `case` / `switch` non plus.
+
+- **Deux clauses d'échec au comportement différent.** `ou` exécute la clause puis arrête le fil. `sur échec` exécute la clause puis continue. Voir `learn/reference/10-errors-and-recovery.md`.
+
+- **`vasous Étiquette`, pas `Étiquette()`.** AllSpeak n'a pas de syntaxe d'appel de fonction.
+
+- **Aucune de ces formes n'existe :** `try`/`catch`, `break`, `continue`, `retourne X` (avec une valeur de retour), `await`, `import` (au sens des autres langages).
+
+- **Chaque variable doit être déclarée avant usage.** Cela inclut les compteurs de boucle jetables (`variable N`), pas seulement les variables de données évidentes. Oublier de déclarer un compteur de boucle est une erreur courante de premier jet. Les noms commencent par une majuscule ; le camel case est la convention : `Compteur`, `NomUtilisateur`, `EstConnecte`.
+
+- **Toutes les variables sont globales — pas de portée locale de bloc.** Déclarer une variable à l'intérieur d'un bloc étiqueté (`GèreClic:`) ou d'un corps `si`/`tant que` ne la rend pas privée. La variable est partagée dans tout le script. Le seul moyen d'obtenir un état privé est un module (`learn/reference/12-modules.md`).
+
+- **Les chaînes sont délimitées par des backticks.** Pas de guillemets simples ni doubles.
+
+- **Les flottants sont des chaînes.** `3.14` est une chaîne de quatre caractères, pas un nombre. Utilise l'arithmétique entière avec un facteur d'échelle — voir `learn/idioms/05-floats-and-scaled-integers.md`.
+
+En cas de doute, consulte `learn/` plutôt que de deviner.
 
 ## Journal des conversations
 
@@ -72,14 +158,32 @@ Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour compr
 
 5. **Crée `.allspeak-init`** contenant le nom et le type du projet (cli/gui/both) pour ne pas répéter cette configuration.
 
-6. **Lance l'application (GUI) ou explique comment l'exécuter (CLI).**
+6. **Dis à l'utilisateur que les fichiers du projet sont prêts et où les voir.**
 
-   - **GUI** : Exécute immédiatement `allspeak server.as -t edit,<projet>` en arrière-plan. Cela démarre le serveur de développement et ouvre deux onglets de navigateur : l'éditeur (`edit.html`) et la page du projet (`<projet>.html`). Dis à l'utilisateur : "J'ai démarré l'application — l'éditeur et votre page projet devraient maintenant être ouverts dans des onglets."
-   - **CLI** : Dis à l'utilisateur d'exécuter son script avec `allspeak <projet>.as`.
+   Le serveur AllSpeak tourne déjà — l'utilisateur l'a démarré avec `allspeak server.as` avant de te lancer. N'essaie **pas** de démarrer ou redémarrer le serveur toi-même. Il sert déjà les fichiers dans un autre terminal.
 
-7. **Explique à l'utilisateur comment les fichiers fonctionnent ensemble.** Pour les projets GUI, explique l'interaction entre HTML (chargeur), `.as` (logique) et `.json` (disposition/Webson).
+   Après avoir créé les fichiers du projet, dis à l'utilisateur :
 
-8. **Demande ce qu'il veut construire.**
+   > Vos fichiers projet sont prêts. Ouvrez-les dans votre navigateur :
+   > - http://localhost:8080/edit.html — l'éditeur
+   > - http://localhost:8080/<projet>.html — votre page projet
+
+   Remplace `<projet>` par le nom réel du projet.
+
+   - **CLI** : Dis à l'utilisateur d'exécuter son script avec `allspeak <projet>.as`. Il peut aussi ouvrir http://localhost:8080/edit.html pour utiliser l'éditeur dans le navigateur s'il préfère.
+
+7. **Explique à l'utilisateur comment les fichiers fonctionnent ensemble.** Pour les projets GUI, explique :
+
+   - Le fichier HTML n'est qu'un lanceur — il charge le runtime AllSpeak et exécute un petit script d'amorçage qui récupère le fichier `.as` principal.
+   - Le fichier `.as` est la logique du programme. Il crée un élément body, récupère la disposition `.json` et utilise `rends` pour transformer le JSON en véritables éléments de la page. Il utilise ensuite `attache` pour se relier à ces éléments par leur `@id` et interagir avec eux.
+   - Le fichier `.json` définit la disposition de la page avec Webson — un format JSON où les clés comme `#element` créent des éléments HTML, `@id` (et tout autre `@<nom>`) définissent des attributs, `#content` définit le texte, `$Nom` définit des composants nommés, `#` liste les enfants, et toute autre clé est un style CSS. Détails complets dans `learn/reference/14-browser-and-webson.md`.
+   - Cette séparation permet de changer la disposition sans toucher au code, et inversement.
+
+   Pour les projets CLI, explique que le fichier `.as` est un script autonome exécuté depuis le terminal, et décris ce que fait chaque ligne.
+
+8. **À propos de l'éditeur.** L'éditeur dans le navigateur (`edit.html`) offre une édition avec coloration syntaxique pour les fichiers `.as`, `.json`, `.html` et autres. L'utilisateur devrait déjà l'avoir ouvert à http://localhost:8080/edit.html depuis l'étape précédente. Pour les projets CLI, il peut aussi l'ouvrir là — aucune commande de démarrage séparée n'est nécessaire puisque le serveur tourne déjà.
+
+9. **Demande ce qu'il veut construire.** À partir de là, réponds simplement à ce que l'utilisateur veut.
 
 ---
 
@@ -96,7 +200,7 @@ Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour compr
 
     script <Projet>
 
-!! Point d'entrée : journaliser un message de bienvenue et quitter. Remplacez ceci par la logique réelle du projet.
+!! Point d'entrée : journaliser un message de bienvenue et quitter. Remplacez ceci par la logique réelle du projet, en gardant chaque section contiguë de code dans son propre bloc de doc.
 
     variable Message
     mets `Bonjour depuis <Projet>` dans Message
@@ -151,7 +255,7 @@ Un projet GUI utilise trois fichiers :
 
     script <Projet>
 
-!! Démarrer la GUI : rendre la disposition Webson dans le corps et attacher aux éléments.
+!! Démarrer la GUI : rendre la disposition Webson dans le corps et attacher aux éléments. Chaque section de code suivante doit recevoir son propre bloc de doc.
 
     div Corps
     variable Layout
@@ -164,7 +268,7 @@ Un projet GUI utilise trois fichiers :
     attache Écran à `ecran`
     définis le contenu de Écran à `Bonjour depuis <Projet>`
 
-    stop
+    arrête
 !!!
 ```
 
@@ -189,10 +293,10 @@ Un projet GUI utilise trois fichiers :
 }
 ```
 
-Dans tous les modèles, remplacez `<projet>` par le nom du projet (en minuscules pour les noms de fichiers) et `<Projet>` par le nom du projet en majuscules.
+Dans tous les modèles, remplacez `<projet>` par le nom du projet (en minuscules pour les noms de fichiers) et `<Projet>` par le nom du projet avec une majuscule initiale.
 
 ---
 
 ## Politique d'extension du langage
 
-Si une construction nécessaire n'existe pas en AllSpeak, **n'invente pas de syntaxe**. Au lieu de cela, fais une pause et propose une nouvelle commande à l'utilisateur, en restant cohérent avec le style proche de l'anglais d'AllSpeak.
+Si une construction nécessaire n'existe pas en AllSpeak, **n'invente pas de syntaxe**. Au lieu de cela, fais une pause et propose une nouvelle commande à l'utilisateur, en restant cohérent avec le style d'AllSpeak, proche du langage naturel français.

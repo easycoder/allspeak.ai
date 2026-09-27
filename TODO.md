@@ -4,15 +4,16 @@ Items identified during real project work. Each should be implemented in both JS
 
 ## Where things stand
 
-**Working and verified:** the orphan flag end to end — the plugin's `reachable=no` anchor, the editor's walk over the model records, the range test, and the sidebar row's red background, strike-through and tooltip. Switching tabs (or opening a file) now leaves Blocks mode automatically. The string-versus-number trap is documented in `learn/` (`idioms/12-working-with-ai.md`, `reference/06-conditions.md`), and the `DIFF.md` habit is a rule in the root `AGENTS.md` and in all eight starter-pack documents.
+**Working and verified:** the four starter packs are consolidated onto a single instructions document per language — `AGENTS.md` — with `CLAUDE.md` reduced to a one-line pointer, so the two can no longer drift. The fr/de/it `AGENTS.md` now carry the same sections as EN: the "Required practices" (doc blocks, consult `learn/`) and "Common mistakes to avoid" sections that were missing, a reference section listing the current 20 reference / 15 idiom files, and the newer first-time-setup flow (the *user* starts the server; the agent must not). The hand-maintained Quick Reference is gone — it duplicated `learn/` — which closes item #5 in `language-pack-issues.md`. The orphan flag works end to end — the plugin's `reachable=no` anchor, the editor's walk over the model records, the range test, and the sidebar row's red background, strike-through and tooltip. Switching tabs (or opening a file) now leaves Blocks mode automatically. The string-versus-number trap is documented in `learn/` (`idioms/12-working-with-ai.md`, `reference/06-conditions.md`), and the `DIFF.md` habit is a rule in the root `AGENTS.md` and in all four starter packs' `AGENTS.md`.
 
 **Open, in order:**
 
-1. The starter packs' `AGENTS.md` and `CLAUDE.md` have drifted apart — the same structural slot is titled "Project context" in one and "First-time setup" in the other, and the French pair runs 166 lines against 412. Whichever an agent reads, it misses something. Decide whether they should be one document.
+1. Native review of the fr/de/it `AGENTS.md`: they were machine-drafted in this session, so a reading pass is worth doing before they ship — the viz-word review is the precedent.
 2. Block-level aggregation over a trace, then the first screen in `asedit.as` — both described in the Visualiser section below.
 3. The label bodies after `ListSorter` in `codex.as`, and the run-panel region that still sits outside any block.
 4. The JS recorder, still missing — needed before traces from the two runtimes can be compared.
 5. Propagate the logging recommendation (root `AGENTS.md`, "Diagnostics while debugging") to the four starter packs — drafts in fr/de/it for review, as with the diff-notes sections.
+6. `learn/{,fr,de,it}/idioms/13-server-as-application.md` (and the `deploy/` mirrors) still say the starter packs' `CLAUDE.md` default is to launch the server with `-t edit,<project>`. The packs now say the user starts the server and the agent must not — so that line is stale in all four languages. Worth fixing when `learn/` is next touched.
 
 **Traps that have cost hours here — worth reading before editing anything:**
 
