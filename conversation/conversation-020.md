@@ -51,3 +51,21 @@ You then chose: **one document — `AGENTS.md` is the single source, `CLAUDE.md`
 I validated every code example with the Python runtime: the `cat` examples (and the deliberate wrong ones) behave as the doc claims, and the loops, conditionals and `vasous`/`gsub` forms compile. Two things I could not validate that way, and flagged: `div`/`rest`/`crée` are browser-only so the CLI can't reach them, and the multi-word `set the elements of` resolves in EN but not fr/de/it in the Python runtime — the known Python i18n gap, not a bad example.
 
 **Findings left for you (not fixed):** the EN "Common mistakes" bullet says `try`/`catch` doesn't exist, but the EN pack *does* have a `try` opcode (`try … end try`) — a doc/code disagreement now inherited by fr/de/it; and `learn/{,fr,de,it}/idioms/13-server-as-application.md` still say the packs' default is to launch with `-t edit,<project>`, contradicted by the packs in all four languages. Both are logged in `TODO.md`, along with the native-review pass the fr/de/it drafts need.
+
+## 13:14
+
+Do the full change on a branch, then review.
+
+**Assistant**
+
+[code omitted]
+
+Blog: I did the extension rename on a new branch `ext-allspeak`, with master untouched.
+
+**Branch contents.** Two commits. `2609271309` is a checkpoint of the pending starter-pack work from earlier in the session, so the rename diff stays isolated. `2609271314` is the rename itself: all 318 tracked `.as` files -> `.allspeak` (including the `deploy/` mirrors), ~326 docs/config files swept, and the runtimes widened to accept **both** extensions during the transition.
+
+**Both extensions accepted.** The Python CLI globs and `--test` runner, the dev server's MIME map and `/list` extension filter, the editor's save-as, `sw.js`, and both `asdoc-check` tools now take `.allspeak` and `.as`; new files get `.allspeak`. Verified by running a `.allspeak` file, a legacy `.as` file, and `--test` over a directory holding both.
+
+**Fixed along the way, and worth knowing about.** The sweep clobbered the `codex.html` symlink (restored). It also rewrote a code edit I had made *before* it, turning an intended `'.as'` into `'.allspeak'` (repaired). My own `--test` change had a parenthesis bug (`list | set`) caught by the verification run. Unquoted shell expansion skipped a file whose name contains spaces (found and swept). And the dev server's `/list` filter did not include `allspeak`, so the editor's file browser would not have listed the new files — fixed in all five copies.
+
+**Verification.** `python3 tools/asdoc-check.py .` reports 0 errors (14 `verify-stale` warnings in `asedit.allspeak`; 7 pre-date the change, 7 are new because the sweep touched verified blocks). The conformance suite passes 12 of 15; the three failures (`EC-0007/0008/0009`) fail identically on master and are the known Python gaps (`string`, `char N of`). No stale `.as` remains except the intentional legacy-acceptance code. Nothing was deployed — `./deploy-allspeak` rsyncs to allspeak.ai and was not run.

@@ -22,7 +22,7 @@ Scripts use the `.allspeak` extension. The name "AllSpeak" references the Marvel
 ## Origin
 
 Forked from [EasyCoder](https://github.com/easycoder/easycoder.github.io) on 2026-04-06. The entire EasyCoder codebase was copied and globally renamed:
-- `EasyCoder` → `AllSpeak`, `easycoder` → `allspeak`, `ec_` → `as_`, `.ecs` → `.allspeak`
+- `EasyCoder` → `AllSpeak`, `easycoder` → `allspeak`, `ec_` → `as_`, `.ecs` → `.as` (the source extension is now `.allspeak` — see below)
 
 The original EasyCoder repo continues unchanged as the stable English-only product.
 
