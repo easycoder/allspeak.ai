@@ -11,8 +11,8 @@ Le cadre plus simple : **le serveur est l'application, et les onglets du navigat
 `server.allspeak` accepte un indicateur `-t` / `--tabs` dont la valeur est une liste de noms de pages séparés par des virgules (sans `.html`) :
 
 ```
-allspeak server.allspeak -t edit,<projet>
-allspeak server.allspeak --tabs edit,<projet> 8080
+allspeak server -t edit,<projet>
+allspeak server --tabs edit,<projet> 8080
 ```
 
 Pour chaque nom, le serveur construit `http://localhost:<port>/<nom>.html` et l'ouvre dans le navigateur par défaut de l'utilisateur avec [`browse`](../reference/17-dev-environment.md#browse). Le port par défaut est 8080 et peut apparaître avant ou après l'indicateur.
@@ -77,7 +77,7 @@ Quand on demande à une IA de créer un projet GUI avec le pack de démarrage, l
 
 1. Générer `<projet>.html`, `<projet>-main.allspeak`, `<projet>.json`.
 2. Exécuter `python3 asdoc-check.py --write` sur tout nouveau fichier `.allspeak`.
-3. Exécuter **immédiatement** `allspeak server.allspeak -t edit,<projet>` en arrière-plan.
+3. Exécuter **immédiatement** `allspeak server -t edit,<projet>` en arrière-plan.
 4. Dire à l'utilisateur que l'application a démarré et que deux onglets devraient s'être ouverts.
 
 L'utilisateur doit avoir le sentiment que « l'application a démarré » — pas qu'il doive assembler trois morceaux d'infrastructure pour voir ce qui vient d'être construit.

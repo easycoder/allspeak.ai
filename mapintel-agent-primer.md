@@ -306,7 +306,7 @@ Environment-dependent options:
 
 In this repo, a common option is:
 
-- `allspeak server.allspeak 5500`
+- `allspeak server 5500`
 
 Then open `http://localhost:5500/` in a browser.
 

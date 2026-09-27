@@ -4,7 +4,7 @@
 `truncate {file}`
 
 ## Example:
-``open File `file.txt` for writing``
+``open `file.txt` as File for writing``
 `truncate File`
 
 ## Description:

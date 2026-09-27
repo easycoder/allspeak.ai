@@ -32,7 +32,7 @@ Einen Shell-Befehl ausführen. Mit `background` wird der Befehl in einen separat
 
 ```
 system `ls -l > files.txt`
-system background `sleep 2 && allspeak server.allspeak 8080`
+system background `sleep 2 && allspeak server 8080`
 ```
 
 `system` ist praktisch, bindet das Skript aber an ein bestimmtes Betriebssystem. Bevorzuge `browse`, wenn das Ziel das Öffnen einer URL ist, und `download`, wenn das Ziel das Holen einer Datei ist — beides ist betriebssystem-unabhängig.

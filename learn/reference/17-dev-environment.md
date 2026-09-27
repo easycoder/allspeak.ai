@@ -32,7 +32,7 @@ Run a shell command. With `background`, the command is forked into a separate pr
 
 ```
 system `ls -l > files.txt`
-system background `sleep 2 && allspeak server.allspeak 8080`
+system background `sleep 2 && allspeak server 8080`
 ```
 
 `system` is convenient but ties the script to a particular OS. Prefer `browse` when the goal is opening a URL, and `download` when the goal is fetching a file — both are OS-independent.

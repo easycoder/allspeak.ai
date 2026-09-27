@@ -58,12 +58,12 @@ class Program:
 		if arg[0:6] == 'debug ':
 			print('Debug mode requested')
 			parts = arg[6:].split()
-			self.scriptName = parts[0]
+			self.scriptName = resolveScriptPath(parts[0])
 			self.argv = parts[1:]
 			self.debugging = True
 		else:
 			parts = arg.split()
-			self.scriptName = parts[0]
+			self.scriptName = resolveScriptPath(parts[0])
 			self.argv = parts[1:]
 			self.debugging = False
 
@@ -96,6 +96,7 @@ class Program:
 		self.server = None
 		self.email = None
 		self.servers = []  # active HTTP server objects (as_server); keep the main loop alive while any is listening
+		self.pendingWakeups = 0  # timers scheduled by `wait`; a suspended script is not a finished one
 		self.useClass(Core)
 		self.ticker = 0
 		self.graphicsRunning = False
@@ -203,9 +204,14 @@ class Program:
 				while not self.graphicsRunning:
 					if self.running == True:
 						flush()
-					elif not self.hasServers():
-						# The main flow has ended and no HTTP server is
-						# listening — nothing left to keep the process alive.
+					elif not self.hasServers() and self.pendingWakeups == 0:
+						# The main flow has ended, no HTTP server is listening
+						# and no `wait` timer is outstanding — nothing left to
+						# keep the process alive. Without the wake-up count a
+						# suspended script looks identical to a finished one
+						# (both sit at pc == None), and the loop exited before
+						# the timer could resume it: a `wait` longer than this
+						# loop's 10 ms poll ended the script silently.
 						break
 					delay_event.wait(0.01)
 			except KeyboardInterrupt:
@@ -810,15 +816,21 @@ def listScripts():
 	else:
 		print('No .allspeak files found in current directory.')
 
+# Work out which file a script name refers to. A name that already carries an
+# extension is used as given; otherwise .allspeak is assumed, falling back to
+# the older .as only when that file (and not the .allspeak one) exists. Every
+# script loaded from a name goes through here — the command line, the debugger
+# and module loading — so `allspeak grep` and `run `grep` as G` agree.
+def resolveScriptPath(name):
+	if name.endswith(('.allspeak', '.as')):
+		return name
+	if os.path.exists(name + '.as') and not os.path.exists(name + '.allspeak'):
+		return name + '.as'
+	return name + '.allspeak'
+
 # Extract and display the info text from a script file
 def showScriptInfo(name):
-	if not name.endswith(('.allspeak', '.as')):
-		if os.path.exists(name + '.allspeak'):
-			name += '.allspeak'
-		elif os.path.exists(name + '.as'):
-			name += '.as'
-		else:
-			name += '.allspeak'
+	name = resolveScriptPath(name)
 	if not os.path.exists(name):
 		print(f"Script '{name}' not found.")
 		return
@@ -921,7 +933,7 @@ def runOneTestFile(path):
 # and return the process exit code (0 = all passed, 1 = failures, 2 = broke).
 def runTestSuite(argv):
 	if len(argv) == 0:
-		print('Usage: allspeak --test <file.allspeak | directory>')
+		print('Usage: allspeak --test <file | directory>')
 		return 2
 	target = argv[0]
 	if os.path.isdir(target):

@@ -75,7 +75,7 @@ Dans l'action, `le erreur` contient le message d'échec.
 La CLI Python exécute un script (ou tout un répertoire) comme une suite de tests :
 
 ```
-allspeak --test planning.allspeak
+allspeak --test planning
 allspeak --test conformance/tests/
 ```
 

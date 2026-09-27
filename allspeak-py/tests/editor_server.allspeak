@@ -1,6 +1,6 @@
 !   editor_server.allspeak
 !   File server for the scripted editor.
-!   Usage: allspeak tests/editor_server.allspeak
+!   Usage: allspeak tests/editor_server
 !
 !   Routes (all paths absolute on the local filesystem):
 !     GET  /read<path>  →  returns file contents

@@ -11,8 +11,8 @@ Il quadro più semplice: **il server è l'applicazione, e le schede del browser 
 `server.allspeak` accetta un flag `-t` / `--tabs` il cui valore è una lista di nomi di pagine separati da virgole (senza `.html`):
 
 ```
-allspeak server.allspeak -t edit,<progetto>
-allspeak server.allspeak --tabs edit,<progetto> 8080
+allspeak server -t edit,<progetto>
+allspeak server --tabs edit,<progetto> 8080
 ```
 
 Per ogni nome, il server costruisce `http://localhost:<porta>/<nome>.html` e lo apre nel browser predefinito dell'utente tramite [`browse`](../reference/17-dev-environment.md#browse). La porta predefinita è 8080 e può comparire prima o dopo il flag.
@@ -77,7 +77,7 @@ Quando a un'IA viene chiesto di creare un progetto GUI con lo starter pack, la s
 
 1. Genera `<progetto>.html`, `<progetto>-main.allspeak`, `<progetto>.json`.
 2. Esegui `python3 asdoc-check.py --write` su qualsiasi nuovo file `.allspeak`.
-3. Esegui **subito** `allspeak server.allspeak -t edit,<progetto>` in background.
+3. Esegui **subito** `allspeak server -t edit,<progetto>` in background.
 4. Di' all'utente che l'app è partita e che dovrebbero essersi aperte due schede.
 
 L'utente deve avere la sensazione che «l'app è partita» — non che debba assemblare tre pezzi di infrastruttura per vedere ciò che è appena stato costruito.

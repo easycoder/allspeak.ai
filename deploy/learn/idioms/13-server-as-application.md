@@ -11,8 +11,8 @@ The simpler frame: **the server is the application, and the browser tabs are its
 `server.allspeak` accepts a `-t` / `--tabs` flag whose value is a comma-separated list of page names (without `.html`):
 
 ```
-allspeak server.allspeak -t edit,<project>
-allspeak server.allspeak --tabs edit,<project> 8080
+allspeak server -t edit,<project>
+allspeak server --tabs edit,<project> 8080
 ```
 
 For each name, the server builds `http://localhost:<port>/<name>.html` and opens it in the user's default browser using [`browse`](../reference/17-dev-environment.md#browse). Port defaults to 8080 and may appear before or after the flag.
@@ -77,7 +77,7 @@ When an AI is asked to create a GUI project with the starter pack, the expected 
 
 1. Generate `<project>.html`, `<project>-main.allspeak`, `<project>.json`.
 2. Run `python3 asdoc-check.py --write` on any new `.allspeak` files.
-3. **Immediately** run `allspeak server.allspeak -t edit,<project>` in the background.
+3. **Immediately** run `allspeak server -t edit,<project>` in the background.
 4. Tell the user that the app has started and two tabs should have opened.
 
 The user should feel that "the app started" — not that they have to assemble three pieces of infrastructure to see what was just built.

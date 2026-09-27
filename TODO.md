@@ -16,6 +16,10 @@ Items identified during real project work. Each should be implemented in both JS
 6. The JS recorder, still missing — needed before traces from the two runtimes can be compared.
 6. Propagate the logging recommendation (root `AGENTS.md`, "Diagnostics while debugging") to the four starter packs — drafts in fr/de/it for review, as with the diff-notes sections.
 7. `learn/{,fr,de,it}/idioms/13-server-as-application.md` (and the `deploy/` mirrors) still say the starter packs' `CLAUDE.md` default is to launch the server with `-t edit,<project>`. The packs now say the user starts the server and the agent must not — so that line is stale in all four languages. Worth fixing when `learn/` is next touched.
+8. **Runtime bugs the three old `allspeak-py/tests` scripts exposed** (2026-09-27 — the scripts themselves are fixed; see `DIFF.md` for the repros). `set property \`k\` of D to v` compiles and then poisons the dictionary — the next read dies with `TypeError: argument of type 'ECValue' is not iterable`; `set entry \`k\` of D to v` is the spelling that works. `put json \`{}\` into X` on a plain `variable` reports "I don't understand 'put'" rather than naming the type mismatch. `dummy` and `debug symbol(s)` exist in JS (and the packs) but not in the Python runtime. Take them one at a time, JS-parity first.
+9. **`the year of X` / `the month of X` / `the day of X` / `the hour of X` and friends** are documented in `learn/reference/05-values-and-types.md` and `07-arithmetic.md` but implemented in *neither* runtime — the docs' own example, `put the year of N into YYYY`, fails to compile. Implement, or pull the docs.
+10. **Two conformance suites fail** — `allspeak --test conformance/tests/` reports 15 files, 5 tests, 3 failed (`CheckBasic` "RoomCount is 5", `CheckBlocks` "X is 3"). Pre-existing, not touched by the 2026-09-27 work.
+11. The new "interactive debugger" section in `learn/idioms/11-debugging-as.md` is **English only** — the fr/de/it copies need the same block (the EN page is the source).
 
 **Traps that have cost hours here — worth reading before editing anything:**
 

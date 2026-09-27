@@ -5,7 +5,7 @@
 	variable N
 	variable M
 	variable Array
-	variable Dictionary
+	dictionary Dictionary
 
 !	debug step
 
@@ -16,7 +16,7 @@
 	while N is less than 500000 increment N
 	put now into Finish
 	take Start from Finish giving N
-	log N cat ` seconds`
+	log N cat ` ms`
 
 	log `Compare 500,000 long integers for equality`
 	wait 1 tick
@@ -29,7 +29,7 @@
 	end
 	put now into Finish
 	take Start from Finish giving N
-	log N cat ` seconds`
+	log N cat ` ms`
 
 	log `Allocate and initialize a 500,000 element array`
 	wait 1 tick
@@ -44,7 +44,7 @@
 	end
 	put now into Finish
 	take Start from Finish giving N
-	log N cat ` seconds`
+	log N cat ` ms`
 
 	log `Allocate and initialize a 500,000 element dictionary`
 	wait 1 tick
@@ -56,14 +56,14 @@
 		put 0 into M
 		while M is less than 500
 		begin
-			set property N cat ` ` cat M of Dictionary to M
+			set entry N cat ` ` cat M of Dictionary to M
 			increment M
 		end
 		increment N
 	end
-	log property `123 456` of Dictionary
+	log entry `123 456` in Dictionary
 	put now into Finish
 	take Start from Finish giving N
-	log N cat ` seconds`
+	log N cat ` ms`
 	wait 1
 	exit

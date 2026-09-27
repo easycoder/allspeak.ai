@@ -32,7 +32,7 @@ Esegue un comando shell. Con `background`, il comando viene biforcato in un proc
 
 ```
 system `ls -l > files.txt`
-system background `sleep 2 && allspeak server.allspeak 8080`
+system background `sleep 2 && allspeak server 8080`
 ```
 
 `system` è comodo ma lega lo script a un particolare sistema operativo. Preferisci `browse` quando l'obiettivo è aprire un URL, e `download` quando l'obiettivo è recuperare un file: entrambi sono indipendenti dal sistema operativo.

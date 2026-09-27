@@ -219,12 +219,12 @@ Before submitting your changes, always test them:
    
    If you have AllSpeak installed:
    ```bash
-   allspeak scripts/tests.allspeak
+   allspeak tests/tests
    ```
    
    Or in development mode (without installing):
    ```bash
-   python -m allspeak scripts/tests.allspeak
+   python -m allspeak tests/tests
    ```
 
 2. **Test your specific changes** with custom scripts
@@ -233,14 +233,14 @@ Before submitting your changes, always test them:
    
    If you have AllSpeak installed:
    ```bash
-   allspeak scripts/fizzbuzz.allspeak
-   allspeak scripts/benchmark.allspeak
+   allspeak tests/fizzbuzz
+   allspeak tests/benchmark
    ```
    
    Or in development mode:
    ```bash
-   python -m allspeak scripts/fizzbuzz.allspeak
-   python -m allspeak scripts/benchmark.allspeak
+   python -m allspeak tests/fizzbuzz
+   python -m allspeak tests/benchmark
    ```
 
 ## Submitting a Pull Request

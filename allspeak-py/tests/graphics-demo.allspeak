@@ -3,7 +3,7 @@
 !   command form. Run it with a display:
 !
 !       cd allspeak-py
-!       python3 -m allspeak.as_program tests/graphics-demo.allspeak
+!       python3 -m allspeak.as_program tests/graphics-demo
 !
 !   (The icon on IconButton is loaded relative to the working directory, so
 !   run from allspeak-py as above. Everything else is position-independent.)

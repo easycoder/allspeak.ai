@@ -1,7 +1,7 @@
 !   parser.allspeak
 !   Chemical formula parser.
-!   Usage: allspeak parser.allspeak [-u unit] [formula ...]
-!   Example: allspeak parser.allspeak H2O NaCl Na2CO3
+!   Usage: allspeak parser [-u unit] [formula ...]
+!   Example: allspeak parser H2O NaCl Na2CO3
 !     H2O -> {"H":2,"O":1} 18.015 g/mol
 !   Options: -u mg/mol | g/mol | kg/mol   (default g/mol)
 !   Browser version: parser.html — same parser, same atomic-weights.json.
@@ -146,7 +146,7 @@
 !!!
 !! Entry point: report each formula given on the command line.
 !!
-!! `-u` picks the unit the masses are shown in and every other argument is a formula. With no formulas at all the worked examples stand in, so `allspeak parser.allspeak` on its own shows what the parser does — `allspeak parser.allspeak -u kg/mol` shows the same five in kilograms. A bad command line ends the run instead of guessing: a `-u` with nothing after it, or a unit that is not in the table.
+!! `-u` picks the unit the masses are shown in and every other argument is a formula. With no formulas at all the worked examples stand in, so `allspeak parser` on its own shows what the parser does — `allspeak parser -u kg/mol` shows the same five in kilograms. A bad command line ends the run instead of guessing: a `-u` with nothing after it, or a unit that is not in the table.
 !!
 !! Each formula passes through MeasureFormula and prints as one line; the self-checks have the last word before the run ends.
     put `g/mol` into Unit
@@ -564,7 +564,7 @@ FormatCounts:
 !!!
 !! Self-checks: the masses from the specification, the unit conversions, and what happens to an element with no weight.
 !!
-!! Every run ends here, so these are live checks rather than a suite that only runs on request — a passing check says nothing, and a failing one prints its line and carries on. `allspeak --test parser.allspeak` reports the same blocks as a named suite, which is the quicker way to see them. Each case sets its own formula and goes through MeasureFormula, so no case depends on what the one before it left in `Counts` or `Mass`.
+!! Every run ends here, so these are live checks rather than a suite that only runs on request — a passing check says nothing, and a failing one prints its line and carries on. `allspeak --test parser` reports the same blocks as a named suite, which is the quicker way to see them. Each case sets its own formula and goes through MeasureFormula, so no case depends on what the one before it left in `Counts` or `Mass`.
 SelfChecks:
     test `Water is 18.015 g/mol`
         put `H2O` into Formula

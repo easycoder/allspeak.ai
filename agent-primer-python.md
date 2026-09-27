@@ -24,7 +24,7 @@ pip install -U allspeak-ai
 Run script:
 
 ```bash
-allspeak project.allspeak
+allspeak project
 ```
 
 If `allspeak` is not on `PATH`, use full path (often under `~/.local/bin`).
@@ -36,7 +36,7 @@ When starting a new CLI project, use this as your starting point:
 ```text
 !   project.allspeak
 !   Description: (what this script does)
-!   Usage: allspeak project.allspeak
+!   Usage: allspeak project
 
     script Project
 
@@ -51,7 +51,7 @@ For scripts that take command-line arguments:
 
 ```text
 !   project.allspeak
-!   Usage: allspeak project.allspeak <filename>
+!   Usage: allspeak project <filename>
 
     script Project
 
@@ -60,7 +60,7 @@ For scripts that take command-line arguments:
     put arg 0 into FileName
     if FileName is empty
     begin
-        print `Usage: allspeak project.allspeak <filename>`
+        print `Usage: allspeak project <filename>`
         exit
     end
 

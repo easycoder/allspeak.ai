@@ -73,7 +73,7 @@ Dentro l'azione, `l errore` contiene il messaggio di fallimento.
 La CLI Python esegue uno script (o un intero elenco di file) come suite di test:
 
 ```
-allspeak --test pianificazione.allspeak
+allspeak --test pianificazione
 allspeak --test conformance/tests/
 ```
 

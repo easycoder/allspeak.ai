@@ -38,7 +38,7 @@ Both scripts compile to identical internal opcodes and run on the same engine.
 
 | | JavaScript (browser) | Python (CLI) |
 |--|--|--|
-| Runtime | `dist/allspeak.js` (loaded via CDN or self-hosted) | `pip install allspeak-ai`, then `allspeak script.allspeak` |
+| Runtime | `dist/allspeak.js` (loaded via CDN or self-hosted) | `pip install allspeak-ai`, then `allspeak script` |
 | Source | `js/allspeak/` | `allspeak-py/allspeak/` |
 | State | Production | Production; some i18n gaps tracked in [`language-pack-issues.md`](language-pack-issues.md) |
 
@@ -65,8 +65,10 @@ For a non-English script, also load the relevant language pack (e.g. `LanguagePa
 
 ```sh
 pip install allspeak-ai
-allspeak hello.allspeak
+allspeak hello
 ```
+
+The `.allspeak` extension may be omitted from the script name.
 
 ```text
 !   hello.allspeak

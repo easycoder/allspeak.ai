@@ -40,7 +40,7 @@ If AllSpeak is already installed this will update you to the latest version, whi
 
 and to run your script, use
 
-`allspeak project.allspeak`
+`allspeak project`
 
 ### JavaScript version
 For local LLM development of a webapp, set up a simple Python local server:

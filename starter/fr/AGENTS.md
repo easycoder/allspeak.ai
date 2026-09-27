@@ -160,7 +160,7 @@ Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour compr
 
 6. **Dis à l'utilisateur que les fichiers du projet sont prêts et où les voir.**
 
-   Le serveur AllSpeak tourne déjà — l'utilisateur l'a démarré avec `allspeak server.allspeak` avant de te lancer. N'essaie **pas** de démarrer ou redémarrer le serveur toi-même. Il sert déjà les fichiers dans un autre terminal.
+   Le serveur AllSpeak tourne déjà — l'utilisateur l'a démarré avec `allspeak server` avant de te lancer. N'essaie **pas** de démarrer ou redémarrer le serveur toi-même. Il sert déjà les fichiers dans un autre terminal.
 
    Après avoir créé les fichiers du projet, dis à l'utilisateur :
 
@@ -170,7 +170,7 @@ Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour compr
 
    Remplace `<projet>` par le nom réel du projet.
 
-   - **CLI** : Dis à l'utilisateur d'exécuter son script avec `allspeak <projet>.allspeak`. Il peut aussi ouvrir http://localhost:8080/edit.html pour utiliser l'éditeur dans le navigateur s'il préfère.
+   - **CLI** : Dis à l'utilisateur d'exécuter son script avec `allspeak <projet>` (l'extension `.allspeak` est facultative). Il peut aussi ouvrir http://localhost:8080/edit.html pour utiliser l'éditeur dans le navigateur s'il préfère.
 
 7. **Explique à l'utilisateur comment les fichiers fonctionnent ensemble.** Pour les projets GUI, explique :
 

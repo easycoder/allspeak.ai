@@ -76,7 +76,7 @@ Inside the action, `the error` holds the failure message.
 The Python CLI runs a script (or a whole directory) as a test suite:
 
 ```
-allspeak --test schedule.allspeak
+allspeak --test schedule
 allspeak --test conformance/tests/
 ```
 

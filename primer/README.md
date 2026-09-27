@@ -13,9 +13,9 @@ Aim your browser at index.html and you should see a blank screen with the word (
 If you are developing a client-server application you will need a 4th file, `server.allspeak`. Run it as follows:
 
 ```
-allspeak server.allspeak?port={port}
+allspeak server {port}
 ```
 
-where {port} is some number such as 5500. Aim your browser at `http://localhost:{port}.
+where {port} is some number such as 5500. Aim your browser at `http://localhost:{port}`.
 
 See the instructions in our [Primer](https://allspeak.ai/en/primer.html).

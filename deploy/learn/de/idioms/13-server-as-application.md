@@ -11,8 +11,8 @@ Der einfachere Rahmen: **der Server ist die Anwendung, und die Browser-Tabs sind
 `server.allspeak` akzeptiert ein `-t`-/`--tabs`-Flag, dessen Wert eine kommaseparierte Liste von Seitennamen ist (ohne `.html`):
 
 ```
-allspeak server.allspeak -t edit,<projekt>
-allspeak server.allspeak --tabs edit,<projekt> 8080
+allspeak server -t edit,<projekt>
+allspeak server --tabs edit,<projekt> 8080
 ```
 
 Für jeden Namen baut der Server `http://localhost:<port>/<name>.html` und öffnet ihn mit [`browse`](../reference/17-dev-environment.md#browse) im Standard-Browser des Benutzers. Der Port ist standardmäßig 8080 und darf vor oder nach dem Flag stehen.
@@ -77,7 +77,7 @@ Wenn eine KI gebeten wird, mit dem Starter-Pack ein GUI-Projekt zu erstellen, is
 
 1. `<projekt>.html`, `<projekt>-main.allspeak`, `<projekt>.json` erzeugen.
 2. `python3 asdoc-check.py --write` auf allen neuen `.allspeak`-Dateien ausführen.
-3. **Sofort** `allspeak server.allspeak -t edit,<projekt>` im Hintergrund ausführen.
+3. **Sofort** `allspeak server -t edit,<projekt>` im Hintergrund ausführen.
 4. Dem Benutzer sagen, dass die App gestartet ist und sich zwei Tabs geöffnet haben sollten.
 
 Der Benutzer soll das Gefühl haben, dass „die App gestartet ist" — nicht, dass er drei Infrastrukturteile zusammensetzen muss, um zu sehen, was gerade gebaut wurde.

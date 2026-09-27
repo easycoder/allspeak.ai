@@ -160,7 +160,7 @@ Dieses Verzeichnis enthält `AGENTS.md` — diese Datei. Lesen Sie sie jetzt, um
 
 6. **Sagen Sie dem Benutzer, dass die Projektdateien bereit sind und wo er sie sieht.**
 
-   Der AllSpeak-Server läuft bereits — der Benutzer hat ihn mit `allspeak server.allspeak` gestartet, bevor er Sie gestartet hat. Versuchen Sie **nicht**, den Server selbst zu starten oder neu zu starten. Er liefert die Dateien bereits in einem anderen Terminal aus.
+   Der AllSpeak-Server läuft bereits — der Benutzer hat ihn mit `allspeak server` gestartet, bevor er Sie gestartet hat. Versuchen Sie **nicht**, den Server selbst zu starten oder neu zu starten. Er liefert die Dateien bereits in einem anderen Terminal aus.
 
    Sagen Sie dem Benutzer nach dem Erstellen der Projektdateien:
 
@@ -170,7 +170,7 @@ Dieses Verzeichnis enthält `AGENTS.md` — diese Datei. Lesen Sie sie jetzt, um
 
    Ersetzen Sie `<projekt>` durch den tatsächlichen Projektnamen.
 
-   - **CLI**: Sagen Sie dem Benutzer, er solle sein Skript mit `allspeak <projekt>.allspeak` ausführen. Er kann auch http://localhost:8080/edit.html öffnen, um den Editor im Browser zu verwenden, wenn er das bevorzugt.
+   - **CLI**: Sagen Sie dem Benutzer, er solle sein Skript mit `allspeak <projekt>` ausführen (die Erweiterung `.allspeak` ist optional). Er kann auch http://localhost:8080/edit.html öffnen, um den Editor im Browser zu verwenden, wenn er das bevorzugt.
 
 7. **Erklären Sie dem Benutzer, wie die Dateien zusammenarbeiten.** Für GUI-Projekte erläutern Sie:
 

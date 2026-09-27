@@ -283,4 +283,4 @@ Previously documented defects that are now fixed: `create Window … layout L` w
 - [Browser and Webson](browser-and-webson.md) — the JS-runtime UI model.
 - [Event handlers and array index](../idioms/event-handlers-and-array-index.md) — the cursor model behind widget arrays.
 - [Dev-environment commands](dev-environment.md) — the Python runtime's shell integration.
-- `allspeak-py/tests/graphics-demo.allspeak` — an on-screen tour exercising one of every widget type and command form; run it with `cd allspeak-py && python3 -m allspeak.as_program tests/graphics-demo.allspeak`.
+- `allspeak-py/tests/graphics-demo.allspeak` — an on-screen tour exercising one of every widget type and command form; run it with `cd allspeak-py && python3 -m allspeak.as_program tests/graphics-demo`.

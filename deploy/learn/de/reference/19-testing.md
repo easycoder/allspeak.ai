@@ -76,7 +76,7 @@ Innerhalb der Aktion hält `der fehler` die Fehlermeldung.
 Die Python-CLI führt ein Skript (oder ein ganzes Verzeichnis) als Testsuite aus:
 
 ```
-allspeak --test terminplan.allspeak
+allspeak --test terminplan
 allspeak --test konformanz/tests/
 ```
 

@@ -4,7 +4,7 @@
 `file {name}`
 ## Example:
 `file InputFile`  
-``open InputFile `mydata.txt` for reading``  
+``open `mydata.txt` as InputFile for reading``  
 `read Data from InputFile`  
 `close InputFile`
 ## Description:

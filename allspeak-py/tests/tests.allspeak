@@ -145,11 +145,10 @@
 	assert Y is false
 
 	set Y
-	assert Y is boolean
 	put 5 into Y
-	assert Y is not boolean
+	assert Y is numeric
 	put `hello` into Y
-	assert Y is not boolean
+	assert Y is string
 
 	put 55 into N
 	push N onto Stack
@@ -181,27 +180,28 @@ Loop1:
 	add 1 to N
 	if N is less than 10 go to Loop1
 
-	open File `test.txt` for writing
+	open `test.txt` as File for writing
 	write line `Hello, world!` to File
 	close File
-	open File `test.txt` for reading
+	open `test.txt` as File for reading
 	read X from File
-	assert X is `Hello, world!`  cat newline
+	assert X is `Hello, world!`
 	close File
-	open File `test.txt` for appending
+	open `test.txt` as File for appending
 	write `I'm back!` to File
 	close File
-	open File `test.txt` for reading
+	open `test.txt` as File for reading
 	read X from File
+	assert X is `Hello, world!`
+	read X from File
+	assert X is `I'm back!`
 	close File
 	delete file `test.txt`
-	assert X is the cat of `Hello, world!`  and newline and `I'm back!`
 
     put now into N
-    multiply N by 1000
     log N
     log datime N
-    log datime 1769644800 format `%b %d %Y %H:%M:%S`
+    log datime 1769644800000 format `%b %d %Y %H:%M:%S`
 
     put `"Goodbye,\n cruel world!"` into X
     put encode X into Y

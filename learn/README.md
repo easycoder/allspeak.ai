@@ -11,7 +11,7 @@ The AllSpeak curriculum — a small in-browser reader that serves a set of markd
 
 Run the project's dev server from the repo root and open `learn/index.html`:
 
-    allspeak server.allspeak
+    allspeak server
 
 then visit `http://localhost:8080/learn/index.html`. The reader is itself an AllSpeak app (`reader.allspeak` + `reader.json`) — the toolbar (Contents · Prev · Next) and the rendered markdown pane are produced by AllSpeak code running on the same engine the curriculum describes.
 

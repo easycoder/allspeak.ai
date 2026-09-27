@@ -160,7 +160,7 @@ This directory contains `AGENTS.md` — this file. Read it now to understand the
 
 6. **Tell the user the project files are ready and where to view them.**
 
-   The AllSpeak server is already running — the user started it with `allspeak server.allspeak` before launching you. Do NOT attempt to start or restart the server yourself. It is already serving files in another terminal.
+   The AllSpeak server is already running — the user started it with `allspeak server` before launching you. Do NOT attempt to start or restart the server yourself. It is already serving files in another terminal.
 
    After creating the project files, tell the user:
 
@@ -170,7 +170,7 @@ This directory contains `AGENTS.md` — this file. Read it now to understand the
 
    Replace `<project>` with the actual project name.
 
-   - **CLI**: Tell the user to run their script with `allspeak <project>.allspeak`. They can also open http://localhost:8080/edit.html to use the browser-based editor if they prefer.
+   - **CLI**: Tell the user to run their script with `allspeak <project>` (the `.allspeak` extension is optional). They can also open http://localhost:8080/edit.html to use the browser-based editor if they prefer.
 
 7. **Walk the user through how the files work together.** For GUI projects, explain:
 

@@ -36,7 +36,7 @@ Now write a test script, `hello.allspeak`, containing the following:
 print `Hello, world!`
 exit
 ```
-(Note the backticks.) This is traditionally the first program to be written in virtually any language. To run it, use `allspeak hello.allspeak`.
+(Note the backticks.) This is traditionally the first program to be written in virtually any language. To run it, use `allspeak hello.allspeak` — or just `allspeak hello`, since `.allspeak` is assumed when the extension is left off.
 
 The output will look like this (the version number will likely differ):
 ```

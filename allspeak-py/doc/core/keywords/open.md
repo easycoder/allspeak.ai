@@ -1,20 +1,20 @@
 # open
 
 ## Syntax:
-`open {file} {path} for reading/writing/appending`
+`open {path} as {file} for reading/writing/appending`
 ## Example:
 `file File1`  
 `file File2`  
 `file File3`
 
-``open File1 `oldvalues.txt` for reading``  
-``open File2 `newvalues.txt` for writing``  
+``open `oldvalues.txt` as File1 for reading``  
+``open `newvalues.txt` as File2 for writing``  
 `read Value from File1`  
 `write Value to File2`  
 `close File2`  
 `close File1`
 
-``open File3 `somefile.txt` for appending``  
+``open `somefile.txt` as File3 for appending``  
 ``write `some data` to File3``  
 `close File3`
 

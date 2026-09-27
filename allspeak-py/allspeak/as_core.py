@@ -2361,8 +2361,21 @@ class Core(Handler):
                 self.program.run(next)
             QTimer.singleShot(int(value), resume)
         else:
-            # In normal mode, resume via the thread-safe intent queue
-            threading.Timer(value/1000.0, lambda: self.program.run(next)).start()
+            # In normal mode, resume via the thread-safe intent queue. The
+            # outstanding wake-up is counted so the main loop can tell a
+            # suspended script from a finished one — both sit at pc == None —
+            # otherwise the loop broke out and ended the process before the
+            # timer fired, and any `wait` longer than the loop's 10ms poll
+            # ended the script silently.
+            self.program.pendingWakeups += 1
+            def resume():
+                # run() first: it re-sets running=True and queues the intent, so
+                # the main loop can never catch the program with running == False
+                # and the count already back to zero — which reads as "finished"
+                # and breaks the loop before the resumed code is drained.
+                self.program.run(next)
+                self.program.pendingWakeups -= 1
+            threading.Timer(value/1000.0, resume).start()
         return None
 
     # while <condition> <action>

@@ -1,7 +1,7 @@
 !   server.allspeak
 !   AllSpeak development server.
-!   Usage: allspeak server.allspeak [-t|--tabs page1,page2,...] [port]    (default port: 8080)
-!   Example: allspeak server.allspeak -t edit,test 8080
+!   Usage: allspeak server [-t|--tabs page1,page2,...] [port]    (default port: 8080)
+!   Example: allspeak server -t edit,test 8080
 !     opens edit.html and test.html in the default browser at localhost:8080
 !
 !   Serves two purposes:

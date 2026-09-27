@@ -16,7 +16,7 @@
 !! (8 hex chars of SHA-256), and section semantics so an editor can rely
 !! on either back-end interchangeably.
 !!
-!! Usage: allspeak tools/asdoc-check-cli.allspeak <path>
+!! Usage: allspeak tools/asdoc-check-cli <path>
 !!
 !! V1 is read-only — refreshing stored @hash lines is left to the
 !! Python tool until the AS analyser is mature enough to take over.
@@ -100,7 +100,7 @@
     put argc into ArgCount
     if ArgCount is 0
     begin
-        print `Usage: allspeak tools/asdoc-check-cli.allspeak <file-or-directory>`
+        print `Usage: allspeak tools/asdoc-check-cli <file-or-directory>`
         exit
     end
     put arg 0 into TargetPath
@@ -115,7 +115,7 @@
     print ``
     print `TOTAL: ` cat TotalFiles cat ` file(s); ` cat TotalWithConv cat ` with doc blocks, ` cat TotalWithoutConv cat ` without; ` cat TotalErrors cat ` error(s), ` cat TotalWarnings cat ` warning(s)`
     exit
-!! @hash d4ebcaed
+!! @hash c5057813
 !!!
 
 !! Iterative directory walker. Maintains WorkList as a LIFO stack of

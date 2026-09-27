@@ -38,6 +38,16 @@ gosub ComplicatedRoutine
 
 `debug stop` cancels the stepping. `debug breakpoint` marks a spot where the browser's developer-tools debugger can stop in the underlying JS source. The `debug` keyword has further modes that come and go with engine versions; treat the documented forms as the stable subset and check the current implementation for anything more exotic.
 
+### The interactive debugger
+
+The Python CLI also has a graphical debugger, started from the command line rather than from the script:
+
+```
+allspeak debug myscript
+```
+
+It opens a window showing the script with Run, Step and Stop controls, clickable lines for setting breakpoints, and a watch list you add variables to. The script halts at its first command, so you can step through from the beginning. Debug mode loads the Qt graphics stack, so it needs PySide6 — and a display to be useful, which makes `debug step` and the log the practical tools on a headless machine.
+
 ### `dummy`
 
 A no-op statement. Its purpose is to give you a known spot in the compiled or running JS/Python where you can set a native-side breakpoint, ahead of a suspected problem:
