@@ -172,6 +172,7 @@ on tap SaveButton go to SaveClick       ! alias for click
 on select SystemCombo go to SystemChanged
 on select DeviceList go to DevicePicked
 on tick go to Tick                      ! every 250 ms while the program is idle
+on close MainWindow go to MainClose     ! as the window closes
 stop                                    ! end the main flow here
 
 SaveClick:
@@ -182,6 +183,25 @@ SaveClick:
 Only `pushbutton` takes `click`/`tap`; `combobox` and `listbox` take `select` (fired on `currentIndexChanged` / `itemClicked`). The tick handler is invoked by the flush timer whenever the program is not busy and not blocked.
 
 Because the handler is a single command, the idiomatic pattern is a label — usually ending in `stop`. The handler runs to completion; nothing waits on it. Widget variables follow the cursor model, and the `on` registration captures the array index of the element that fires, so one registration can serve an array of widgets (see [event handlers and array index](../idioms/event-handlers-and-array-index.md)).
+
+`close` is for windows. Its handler runs **inside the close event**, before the window has gone — so it can still read the window's geometry, which is what makes it the place to save the window's position and size for the next run:
+
+```as
+dictionary Saved                     ! declared with the other variables
+on close MainWindow go to MainClose
+
+MainClose:
+    set entry `x` of Saved to the x of MainWindow
+    set entry `y` of Saved to the y of MainWindow
+    set entry `width` of Saved to the width of MainWindow
+    set entry `height` of Saved to the height of MainWindow
+    save Saved to `window.json`
+    stop
+```
+
+(That dictionary is what the next run reads back to place the window with `create MainWindow at X Y size W H`.)
+
+It fires whichever way the window closes — the user's X button or the script's own `close {window}` — and it runs before the runtime ends the program as its last window goes, so that save always completes. `exit` does not raise it: `exit` quits the process without closing the windows one by one.
 
 ## Reading values back
 
@@ -204,7 +224,11 @@ put the current index of ListBox into N    ! -1 if nothing selected
 put the current of Combo into V            ! selected combo text
 put the width of MainWindow into N
 put the height of MainWindow into N
+put the x of MainWindow into N
+put the y of MainWindow into N
 ```
+
+`x`, `y`, `width` and `height` are window-only: for a widget, `set the width of` fixes a size and there is no matching read. The four use the same frame convention as `create {window} at X Y` — the window frame is excluded — so a position read here and handed back to `at` puts the window where it was, instead of walking it up and left by the border on each restart. Qt's own `x()`/`y()` include the frame, which is why the runtime reads `geometry()` instead.
 
 Two read idioms to remember: `the current item` takes `in` (`the current item in ListBox`) while `the current index` takes `of` (`the current index of ListBox`). A combo's selection is read with `put Combo into V` or `the current of Combo`; there is no per-item `current item` for a combo.
 

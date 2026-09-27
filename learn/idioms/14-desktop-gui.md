@@ -24,6 +24,7 @@ lineinput NameInput
 combobox SystemCombo
 listbox DeviceList
 variable V
+dictionary Saved
 
 init graphics
 
@@ -65,6 +66,7 @@ on click SaveButton go to SaveClick
 on select SystemCombo go to SystemChanged
 on select DeviceList go to DevicePicked
 on tick go to Tick
+on close Window go to Closing
 
 show Window
 stop                                ! main flow ends; the event loop runs
@@ -85,13 +87,22 @@ DevicePicked:
 Tick:
     ! keep the clock honest without a blocking loop
     stop
+
+Closing:
+    ! runs as the window closes — where the geometry is saved
+    set entry `x` of Saved to the x of Window
+    set entry `y` of Saved to the y of Window
+    set entry `width` of Saved to the width of Window
+    set entry `height` of Saved to the height of Window
+    save Saved to `window.json`
+    stop
 ```
 
 Every widget you `create` must be declared first (`label Label`, `lineinput NameInput`, …), exactly as in the [reference](../reference/graphics.md).
 
 ## Reading the fields
 
-Every widget type that holds a value can be read: `put LineInput into V`, `put CheckBox into V`, `put Label into V`, `put PushButton into V`, `put Combo into V`, `put ListBox into V` (returns `None` when nothing is selected), plus the value forms `the text of …`, `the count of …`, `the current item in ListBox`, `the current index of ListBox`, `the current of Combo`, `the width/height of Window` (full list in the [reference page](../reference/graphics.md)). A handy pattern for handlers that need the selected list entry is to snapshot it into a state variable:
+Every widget type that holds a value can be read: `put LineInput into V`, `put CheckBox into V`, `put Label into V`, `put PushButton into V`, `put Combo into V`, `put ListBox into V` (returns `None` when nothing is selected), plus the value forms `the text of …`, `the count of …`, `the current item in ListBox`, `the current index of ListBox`, `the current of Combo`, `the width/height of Window` and `the x/y of Window` (full list in the [reference page](../reference/graphics.md)). A handy pattern for handlers that need the selected list entry is to snapshot it into a state variable:
 
 ```as
 variable CurrentDevice
@@ -107,12 +118,43 @@ DevicePicked:
 
 Two read idioms to remember: `the current item` takes `in`, `the current index` takes `of`, and a combo's selection is `put Combo into V` or `the current of Combo`.
 
+## Putting the window back where it was
+
+`on close` is the one hook that also catches the user's X button, and it runs before the window goes — which is what makes the `Closing:` label above a safe place to save the geometry. The next run reads that file back and hands it straight to `create … at X Y size W H`:
+
+```as
+variable X
+variable Y
+variable W
+variable H
+variable Text
+
+if file `window.json` exists begin
+    load Text from `window.json`
+    put json of Text into Saved
+    put entry `x` of Saved into X
+    put entry `y` of Saved into Y
+    put entry `width` of Saved into W
+    put entry `height` of Saved into H
+end
+else begin
+    put 40 into X
+    put 40 into Y
+    put 420 into W
+    put 300 into H
+end
+
+create Window title `Settings` at X Y size W H
+```
+
+The first run has no file, so the `else` branch supplies the defaults — the same `420 300` the skeleton above asks for, only now the position is ours rather than Qt's centring. `x` and `y` are read frame-*excluded*, the convention `create … at` writes with, so a saved position comes back unchanged instead of walking up and to the left by the window border on every restart. [JSON](../reference/json.md) covers `load` and `json of`; the geometry reads themselves are in the [reference page](../reference/graphics.md).
+
 ## Anti-patterns
 
 - **Creating the window before the layout it references** — `create Window … layout Panel` attaches the layout at create time, so `Panel` must already exist. Build and populate layouts first, then create the window; `set the layout of Window to Panel` works at any later point.
 - **Long loops in a handler** — the main flow runs on a 250 ms timer; a handler that loops for seconds freezes the whole UI. Keep handlers short, and use `wait` or `set blocked true` around genuinely long operations.
 - **Reading a listbox with nothing selected** — `put DeviceList into V` returns `None` (no crash); use `the current index of DeviceList` if you need to distinguish "nothing selected" (-1) from a real selection.
-- **Calling `exit` mid-app to close a window** — `exit` quits the whole process. To close just the window, `close Window`; the app exits when the last window closes.
+- **Calling `exit` mid-app to close a window** — `exit` quits the whole process, and it does not raise `on close`, so anything that handler saves is skipped. To close just the window, `close Window`; the app exits when the last window closes.
 
 ## Why this works
 

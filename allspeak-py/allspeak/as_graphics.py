@@ -256,6 +256,25 @@ class ECComboBoxWidget(QComboBox):
         return self.currentText()
 
 #############################################################################
+# EC window class — a QMainWindow that can report its own close event, so a
+# script's `on close {window}` handler runs in time to save state before the
+# runtime ends the program as its last window goes. Without this hook the
+# only sight of a closing window is QApplication.lastWindowClosed, which
+# fires after every window has gone.
+class ECWindowWidget(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.onClose = None
+
+    def setOnClose(self, callback):
+        self.onClose = callback
+
+    def closeEvent(self, event):
+        if self.onClose is not None:
+            self.onClose()
+        super().closeEvent(event)
+
+#############################################################################
 # EC dialog class
 class ECDialogWindow(QDialog):
     clicked = Signal()
@@ -874,7 +893,7 @@ class Graphics(Handler):
         return False
     
     def r_createWindow(self, command, record):
-        window = QMainWindow()
+        window = ECWindowWidget()
         title = self.textify(command['title'])
         if title == None: title = 'AllSpeak Main Window'
         window.setWindowTitle(title)
@@ -1313,6 +1332,7 @@ class Graphics(Handler):
     # on click/tap {pushbutton}/{lineinput}/{multiline}
     # on select {combobox}/{listbox}
     # on tick
+    # on close {window}
     def k_on(self, command):
         def setupOn():
             command['goto'] = self.getCodeSize() + 2
@@ -1355,6 +1375,14 @@ class Graphics(Handler):
                     command['name'] = record['name']
                     setupOn()
                     return True
+        elif token == 'close':
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECWindow):
+                    command['domain'] = record['domain']
+                    command['name'] = record['name']
+                    setupOn()
+                    return True
         elif token == 'tick':
             command['tick'] = True
             command['runOnTick'] = self.getCodeSize() + 2
@@ -1385,6 +1413,22 @@ class Graphics(Handler):
     def r_on(self, command):
         if command['type'] == 'tick':
             self.runOnTick = command['runOnTick']
+        elif command['type'] == 'close':
+            record = self.getVariable(command['name'])
+            window = self.getInnerObject(record)
+            goto = command['goto']
+            # The handler runs here and now, inside the window's close event:
+            # `run` queues it and the program's own `flushCB` drains the queue,
+            # so it completes before Qt finishes closing the window — and, when
+            # this is the last window, before the runtime kills the program.
+            # flushCB (rather than the module-level `flush` imported above) so
+            # the queue drained is the running program's: `python3 -m
+            # allspeak.as_program` loads this file twice, and only the copy that
+            # built the Program has a queue.
+            def onClose():
+                self.run(goto)
+                self.program.flushCB()
+            window.setOnClose(onClose)
         else:
             record = self.getVariable(command['name'])
             object = self.getObject(record)
@@ -1936,7 +1980,7 @@ class Graphics(Handler):
                     if self.isObjectType(record, (ECListBox, ECComboBox)): # type: ignore
                         value.setContent(ECValue(domain=self.getName(), type='object', name=record['name']))
                         return value
-            elif token in ['width', 'height']:
+            elif token in ['width', 'height', 'x', 'y']:
                 self.skipWord('of')
                 if self.nextIsSymbol():
                     record = self.getSymbolRecord()
@@ -2057,6 +2101,30 @@ class Graphics(Handler):
         if isinstance(object, ECWindow):
             widget = self.getInnerObject(object)
             value = widget.width()  # type: ignore
+            return ECValue(domain=self.getName(), type=int, content=value)  # type: ignore
+        return None
+
+    # The window's screen position. `geometry()` excludes the window frame, so
+    # these agree with `create {window} at X Y` (which calls setGeometry);
+    # Qt's own x()/y() include the frame, and reading them back into setGeometry
+    # walks the window up and left by the border on every restart.
+    def v_x(self, v):
+        targetName = v.target
+        record = self.getVariable(targetName)
+        object = self.getObject(record)
+        if isinstance(object, ECWindow):
+            widget = self.getInnerObject(object)
+            value = widget.geometry().x()  # type: ignore
+            return ECValue(domain=self.getName(), type=int, content=value)  # type: ignore
+        return None
+
+    def v_y(self, v):
+        targetName = v.target
+        record = self.getVariable(targetName)
+        object = self.getObject(record)
+        if isinstance(object, ECWindow):
+            widget = self.getInnerObject(object)
+            value = widget.geometry().y()  # type: ignore
             return ECValue(domain=self.getName(), type=int, content=value)  # type: ignore
         return None
 
