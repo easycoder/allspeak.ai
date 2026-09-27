@@ -40,9 +40,9 @@ Vedi [README.md](../README.md) per come consultare questo corso e come aggiunger
 5. [Numeri a virgola mobile e interi scalati](idioms/05-floats-and-scaled-integers.md) — precisione frazionaria senza virgola mobile.
 6. [REST e asincrono](idioms/06-rest-and-async.md) — `rest ottieni`, clausole di errore, resa del controllo durante l'attesa.
 7. [MQTT pub/sub](idioms/07-mqtt-pubsub.md) — il blocco di connessione, i payload a forma di dict, richiesta/risposta.
-8. [Separazione Webson e AS](idioms/08-webson-and-as-separation.md) — il layout in `.json`, la logica in `.as`.
+8. [Separazione Webson e AS](idioms/08-webson-and-as-separation.md) — il layout in `.json`, la logica in `.allspeak`.
 9. [Estrarre un modulo](idioms/09-extracting-a-module.md) — quando e come suddividere uno script.
 10. [Scrivere in linguaggio neutro](idioms/10-writing-language-neutral.md) — ciò che il pacchetto linguistico non traduce.
-11. [Debug di .as](idioms/11-debugging-as.md) — `stampa`, `registra`, tracciatore, `nulla`.
+11. [Debug di .allspeak](idioms/11-debugging-as.md) — `stampa`, `registra`, tracciatore, `nulla`.
 12. [Lavorare con l'IA](idioms/12-working-with-ai.md) — il flusso di lavoro « l'IA scrive, l'umano rilegge ».
-13. [Il server come applicazione](idioms/13-server-as-application.md) — eseguire `server.as -t edit,<progetto>` perché il server *sia* l'applicazione e le schede del browser siano la sua interfaccia.
+13. [Il server come applicazione](idioms/13-server-as-application.md) — eseguire `server.allspeak -t edit,<progetto>` perché il server *sia* l'applicazione e le schede del browser siano la sua interfaccia.

@@ -1,6 +1,6 @@
 # Multilingue
 
-AllSpeak permet d'écrire le code dans sa propre langue. Un script `.as` français et un script `.as` anglais compilent vers le même programme interne et tournent sur le même moteur ; seul le vocabulaire source change.
+AllSpeak permet d'écrire le code dans sa propre langue. Un script `.allspeak` français et un script `.allspeak` anglais compilent vers le même programme interne et tournent sur le même moteur ; seul le vocabulaire source change.
 
 Ce fichier décrit comment fonctionne la couche multilingue. Pour des conseils sur l'écriture de scripts dont la *logique* survit à la traduction (en évitant les présupposés de forme de données centrés sur l'anglais, les particularités d'ordre des mots, etc.), voir [écrire en langage neutre](../idioms/writing-language-neutral.md).
 

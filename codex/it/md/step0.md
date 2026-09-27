@@ -4,7 +4,7 @@
 
 Benvenuto nel **_Codex_** di ~ec~, una risorsa gratuita e completa dove puoi imparare a programmare usando script simili al linguaggio naturale e utilizzare le competenze acquisite per costruire e gestire siti web di qualsiasi complessità. (Sviluppatori esperti: consultate la nota in fondo a questa pagina.)
 
-Se stai usando lo sviluppo assistito dall'IA, `codex.as` è una risorsa di apprendimento preziosa non solo per ciò che può fare, ma anche per come è strutturato.
+Se stai usando lo sviluppo assistito dall'IA, `codex.allspeak` è una risorsa di apprendimento preziosa non solo per ciò che può fare, ma anche per come è strutturato.
 
 Tutti noi abbiamo capacità di programmazione. Senza di esse non saremmo in grado di seguire semplici istruzioni come preparare un pasto o fare la manutenzione base dell'auto. Basta guardare una ricetta: è un po' come un programma per computer scritto in una sorta di italiano semplificato. Non è sorprendente, perché anche i computer seguono istruzioni; in realtà, è tutto ciò che sanno fare. Un programma per computer è semplicemente un insieme di istruzioni, anche se spesso molto più complesso di quelle che incontriamo nella vita quotidiana. E un programmatore è qualcuno che ha imparato a leggere e scrivere queste istruzioni.
 

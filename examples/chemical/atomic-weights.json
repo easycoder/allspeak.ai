@@ -1,5 +1,5 @@
 {
-    "#doc": "Standard 3-decimal atomic weights, as exact integers in milligrams per mole (1 g/mol = 1000 mg/mol), in atomic-number order. Elements with no stable isotope carry the mass number of their longest-lived isotope. Shared by parser.as (the command-line version) and parser-main.as (the browser page); both read it, neither writes it.",
+    "#doc": "Standard 3-decimal atomic weights, as exact integers in milligrams per mole (1 g/mol = 1000 mg/mol), in atomic-number order. Elements with no stable isotope carry the mass number of their longest-lived isotope. Shared by parser.allspeak (the command-line version) and parser-main.allspeak (the browser page); both read it, neither writes it.",
     "H": 1008,
     "He": 4003,
     "Li": 6940,

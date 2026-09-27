@@ -6,7 +6,7 @@
   "requirements": [
     "2.7"
   ],
-  "script": "EC-0006-and-or-conditions.as",
+  "script": "EC-0006-and-or-conditions.allspeak",
   "expect": {
     "logs": [
       "AND works",

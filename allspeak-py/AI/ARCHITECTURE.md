@@ -2,22 +2,22 @@
 
 ## Runtime layers
 1. AllSpeak runtime modules (JS)
-2. AllSpeak scripts (`.as`) for app logic
+2. AllSpeak scripts (`.allspeak`) for app logic
 3. Webson JSON for UI structure
 4. Python plugin/server for doclet content and search
 
 ## UI path
-- `doclets-js.as` calls `render MainScreenWebson in Body`
+- `doclets-js.allspeak` calls `render MainScreenWebson in Body`
 - `Browser.js` handles `render` command
 - `Webson.js` builds DOM from `doclets.json`
 
 ## Data path
 - Client sends MQTT actions (`topics`, `query`, `view`)
 - Server returns payloads
-- `doclets-js.as` updates state and DOM content
+- `doclets-js.allspeak` updates state and DOM content
 
 ## State machine hints
-Common states in `doclets-js.as`:
+Common states in `doclets-js.allspeak`:
 - `topics`: waiting/processing available topics
 - `query`: processing search results
 - `content`: showing selected doclet

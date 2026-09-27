@@ -22,11 +22,11 @@ Use this pattern when building AllSpeak browser apps:
 - Keep `Webson.js` loaded when `render` command is used
 
 ## Example: Codex training script pattern
-- Use `codex/codex.as` as a primary training reference when learning or generating non-trivial AllSpeak scripts.
+- Use `codex/codex.allspeak` as a primary training reference when learning or generating non-trivial AllSpeak scripts.
 - Treat it as both a feature map and a style map:
   - feature map: it exercises many core AllSpeak constructs in one real script.
   - style map: it demonstrates practical structure, flow organization, and readable script composition.
-- When proposing architecture for new scripts, prefer patterns already visible in `codex/codex.as` unless the user requests a different style.
+- When proposing architecture for new scripts, prefer patterns already visible in `codex/codex.allspeak` unless the user requests a different style.
 
 ## Candidate onboarding task for unfamiliar AI
 Tic-Tac-Toe applet (human vs computer):

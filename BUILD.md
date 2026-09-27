@@ -8,8 +8,8 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 |---|---|
 | `js/allspeak/*.js` (runtime, plugins, language packs) | `./build-allspeak` |
 | `js/allspeak/LanguagePack_*.js` | `./build-allspeak` **and** `./sync-language-packs` |
-| `starter/<lang>/*` or repo-root `asedit.as` / `asedit.json` | `./build-starters` — and refresh any extracted starter directory (`edit.html`, `asedit.as`), since a running server serves the copy on disk, not the repository |
-| `server.as` or `edit.html` (auto-update payload) | nothing locally — committed file is used directly by deploy |
+| `starter/<lang>/*` or repo-root `asedit.allspeak` / `asedit.json` | `./build-starters` — and refresh any extracted starter directory (`edit.html`, `asedit.allspeak`), since a running server serves the copy on disk, not the repository |
+| `server.allspeak` or `edit.html` (auto-update payload) | nothing locally — committed file is used directly by deploy |
 | `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
 | Any of the above, shipping to allspeak.ai | `./deploy-allspeak` (local) **or** trigger the GitHub `Deploy to allspeak.ai` workflow |
 
@@ -22,7 +22,7 @@ Concatenates the JS runtime sources under `js/allspeak/` into `dist/allspeak.js`
 Extracts the JS object literal from each `js/allspeak/LanguagePack_<lang>.js` and writes it to `allspeak-py/allspeak/languages/<lang>.json`. The JS pack is the source of truth; this keeps the Python runtime in sync. Run after editing any language pack — otherwise the `allspeak` CLI sees a different vocabulary than the browser.
 
 ### `./build-starters`
-Bundles the per-language starter zip `deploy/allspeak-<lang>.zip`, auto-discovering languages from `starter/*/`. Each zip contains the language's `AGENTS.md` + `CLAUDE.md` (a short pointer) + `server.as` + `edit.html` plus the shared `asedit.as` + `asedit.json` from the repo root. Run after editing anything under `starter/`, or after touching repo-root `asedit.as` / `asedit.json`.
+Bundles the per-language starter zip `deploy/allspeak-<lang>.zip`, auto-discovering languages from `starter/*/`. Each zip contains the language's `AGENTS.md` + `CLAUDE.md` (a short pointer) + `server.allspeak` + `edit.html` plus the shared `asedit.allspeak` + `asedit.json` from the repo root. Run after editing anything under `starter/`, or after touching repo-root `asedit.allspeak` / `asedit.json`.
 
 ### `./deploy-sync`
 Mirrors `codex/`, `dist/`, and `resources/doc/` into the matching `deploy/` subdirectories so the committed `deploy/` tree matches the source tree. The GitHub deploy workflow rsyncs `deploy/` to the server **as-is**, so anything that lives under `deploy/codex/` or `deploy/resources/doc/` ships whatever was last committed there. Run + commit before deploying when you've changed those source dirs.
@@ -43,4 +43,4 @@ Triggered manually via `workflow_dispatch` on `.github/workflows/deploy.yml`. Th
 
 The local script does both implicitly so there's nothing extra to remember.
 
-Edits to `server.as`, `edit.html`, `.code-version`, `asedit.as`, `asedit.json` are picked up directly by both paths' `cp` step — no separate sync needed for those.
+Edits to `server.allspeak`, `edit.html`, `.code-version`, `asedit.allspeak`, `asedit.json` are picked up directly by both paths' `cp` step — no separate sync needed for those.

@@ -7,7 +7,7 @@ contract with no checker drifts. And the property that makes the picture worth d
 — one lane per window, intervals that tile the window without overlapping, every event
 naming a line the script can be scrolled to — is invisible in a file that loads.
 
-Usage:  python3 tools/check-trace.py <trace.json> [script.as]
+Usage:  python3 tools/check-trace.py <trace.json> [script.allspeak]
 
 Exit status is 0 when the document conforms, 1 when it does not. Both runtimes' writers
 are expected to produce something that passes this.

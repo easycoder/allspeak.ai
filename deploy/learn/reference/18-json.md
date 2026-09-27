@@ -20,7 +20,7 @@ save Rows to `data/2024-25/04.json`
 JSON output is **pretty-printed by default** (two-space indentation) so saved files can be opened directly for human examination. This applies to two paths:
 
 - **Auto-encoded dict or list.** The serialiser uses `indent=2`, regardless of the file path.
-- **String content saved to a `.json` path.** If the content is already a JSON string (e.g. the request body of a POST to `server.as`'s `/write/<file>` endpoint, which is written verbatim by `save`), it is parsed and re-emitted with `indent=2`. If the string fails to parse as JSON, it is written verbatim — non-JSON content in a `.json` file is left alone rather than crashing the save.
+- **String content saved to a `.json` path.** If the content is already a JSON string (e.g. the request body of a POST to `server.allspeak`'s `/write/<file>` endpoint, which is written verbatim by `save`), it is parsed and re-emitted with `indent=2`. If the string fails to parse as JSON, it is written verbatim — non-JSON content in a `.json` file is left alone rather than crashing the save.
 
 The file extension is a documentation convention for *encoding* — a dict or list saved to a file with no extension is still encoded as JSON; a non-JSON string saved to `report.json` is still written verbatim — but for *formatting*, the `.json` extension does trigger the pretty-print pass on string content.
 

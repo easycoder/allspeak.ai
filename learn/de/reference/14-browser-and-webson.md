@@ -2,7 +2,7 @@
 
 Die Browser-Domäne von AllSpeak liefert den Wortschatz zum Erzeugen und Manipulieren von DOM-Elementen: Knöpfe, divs, inputs, Formulare, alles. Die Begleitsprache Webson ist ein JSON-Dialekt zum Beschreiben von Layout — du kannst die UI-Struktur in einer separaten `.json`-Ressource halten, getrennt von der AllSpeak-Logik.
 
-Eine typische AllSpeak-Oberfläche legt das Layout in Webson ab, das Verhalten in `.as` und nutzt `befestige`, um beides zu verbinden.
+Eine typische AllSpeak-Oberfläche legt das Layout in Webson ab, das Verhalten in `.allspeak` und nutzt `befestige`, um beides zu verbinden.
 
 ## DOM-Variablentypen
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""asdoc-check.py — validate doc blocks in AllSpeak (.as) source files.
+"""asdoc-check.py — validate doc blocks in AllSpeak (.allspeak) source files.
 
 Doc-block convention (see prompt-260509.md for design notes). A "section"
 looks like this:
@@ -25,14 +25,14 @@ Usage:
   asdoc-check.py [options] <path> [<path> ...]
 
   Each <path> is a file or a directory. Directories are walked for files
-  matching --ext (default .as).
+  matching --ext (default .allspeak).
 
 Options:
   --write       Insert/update "!! @hash" lines so they match the current
                 code. Never touches @verified. Without this flag the tool
                 is read-only.
   --json        Emit a JSON report on stdout instead of human-readable text.
-  --ext .EXT    Extension to match when walking directories (default .as).
+  --ext .EXT    Extension to match when walking directories (default .allspeak).
   --strict      Treat warnings as errors for exit-code purposes.
   --self-test   Run built-in fixtures and exit.
 
@@ -349,7 +349,12 @@ def process_file(path, write=False):
 
 
 def walk_paths(paths, ext):
-    """Expand paths into a sorted list of files matching `ext`."""
+    """Expand paths into a sorted list of files matching `ext`.
+
+    `ext` may be a comma-separated list (default '.allspeak,.as') so that legacy
+    '.as' scripts are still checked during the transition.
+    """
+    exts = tuple(e.strip() for e in ext.split(',') if e.strip())
     out = []
     for p in paths:
         if os.path.isdir(p):
@@ -357,7 +362,7 @@ def walk_paths(paths, ext):
                 # Skip dot-directories (.git, .venv, etc.)
                 dirs[:] = [d for d in dirs if not d.startswith('.')]
                 for fn in files:
-                    if fn.endswith(ext):
+                    if fn.endswith(exts):
                         out.append(os.path.join(root, fn))
         elif os.path.isfile(p):
             out.append(p)
@@ -517,15 +522,15 @@ def run_self_test():
 def main(argv):
     ap = argparse.ArgumentParser(
         prog='asdoc-check',
-        description='Validate doc blocks in AllSpeak (.as) sources.',
+        description='Validate doc blocks in AllSpeak (.allspeak) sources.',
     )
     ap.add_argument('paths', nargs='*', help='files or directories')
     ap.add_argument('--write', action='store_true',
                     help='insert/update !! @hash lines in place')
     ap.add_argument('--json', action='store_true',
                     help='emit JSON report')
-    ap.add_argument('--ext', default='.as',
-                    help='extension to match when walking dirs (default .as)')
+    ap.add_argument('--ext', default='.allspeak,.as',
+                    help='extension(s) to match when walking dirs, comma-separated (default .allspeak,.as)')
     ap.add_argument('--strict', action='store_true',
                     help='treat warnings as errors for exit code')
     ap.add_argument('--self-test', action='store_true',

@@ -11,11 +11,11 @@ Strict guardrails:
 - Do not emit `define`, `end define`, `otherwise`, `endif`.
 - Do not emit `function`, `end function`, or callable subroutines like `Name(...)`.
 - Use `gosub Label` + `return` for subroutines.
-- In `.as` command lines, punctuation beyond `!`, `:`, and backticks is suspicious unless user-confirmed.
+- In `.allspeak` command lines, punctuation beyond `!`, `:`, and backticks is suspicious unless user-confirmed.
 
 ## 1) AllSpeak essentials
 
-- `.as` is AllSpeak script source.
+- `.allspeak` is AllSpeak script source.
 - `index.html` loads `https://allspeak.ai/dist/allspeak.js` and runs script text.
 - Variables are single-value by default.
 - To make arrays: `set the elements of Name to N`.
@@ -159,7 +159,7 @@ A web UI project has three files. Use these as your starting point for new proje
     <pre id="allspeak-script" style="display:none">
         script Loader
         variable Script
-        rest get Script from `project.as`
+        rest get Script from `project.allspeak`
         run Script
     </pre>
 </body>
@@ -222,7 +222,7 @@ A web UI project has three files. Use these as your starting point for new proje
 }
 ```
 
-`project.as` (behavior — attach elements, add logic):
+`project.allspeak` (behavior — attach elements, add logic):
 
 ```text
     script Project
@@ -250,7 +250,7 @@ A web UI project has three files. Use these as your starting point for new proje
     stop
 ```
 
-Add UI elements to `project.json` (with `@id`), then declare, attach, and handle them in `project.as`.
+Add UI elements to `project.json` (with `@id`), then declare, attach, and handle them in `project.allspeak`.
 
 ## 4) Response policy
 

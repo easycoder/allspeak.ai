@@ -7,7 +7,7 @@
     "2.1",
     "2.6"
   ],
-  "script": "EC-0012-test-blocks.as",
+  "script": "EC-0012-test-blocks.allspeak",
   "expect": {
     "logs": [
       "FAIL: X is 3 (CheckBlocks:10)"

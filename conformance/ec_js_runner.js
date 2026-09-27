@@ -3,7 +3,7 @@
  * AllSpeak JS-browser conformance adapter (headless Node.js)
  *
  * Loads the pre-built dist/allspeak.js bundle into a minimal browser-API shim,
- * runs each canonical .as test, captures log output, and writes an actuals JSON
+ * runs each canonical .allspeak test, captures log output, and writes an actuals JSON
  * file for use with run_conformance.py --actuals.
  *
  * Usage:

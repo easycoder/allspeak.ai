@@ -6,7 +6,7 @@
   "requirements": [
     "2.10"
   ],
-  "script": "EC-0015-case-conditions.as",
+  "script": "EC-0015-case-conditions.allspeak",
   "expect": {
     "logs": [
       "uppercase ok",

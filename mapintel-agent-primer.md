@@ -21,7 +21,7 @@ Training path for this project is now two-stage:
 1. Beginner entry point: build TicTacToe first.
 2. Final aim: build MapIntel after core skills are established.
 
-Use AllSpeak for behavior/state flow (`.as`), Webson for UI (`.json`), and a minimal `index.html` loader.
+Use AllSpeak for behavior/state flow (`.allspeak`), Webson for UI (`.json`), and a minimal `index.html` loader.
 
 The goal is to help users learn practical development through small, testable milestones before moving to the larger MapIntel scope.
 
@@ -49,7 +49,7 @@ Webson format guard:
 When a user starts from an empty workspace, bootstrap these files first:
 
 1. `index.html`
-2. `tictactoe.as`
+2. `tictactoe.allspeak`
 3. `tictactoe.json`
 4. `.vscode/tasks.json`
 5. `.vscode/launch.json`
@@ -59,7 +59,7 @@ When a user starts from an empty workspace, bootstrap these files first:
 Explain each file in plain language:
 
 - `index.html`: lightweight loader and runtime entry point.
-- `tictactoe.as`: AllSpeak behavior/state flow.
+- `tictactoe.allspeak`: AllSpeak behavior/state flow.
 - `tictactoe.json`: Webson UI layout and style model.
 
 Keep `index.html` minimal. Do not embed all app logic in HTML unless explicitly requested.
@@ -100,17 +100,17 @@ Use a clean CDN URL by default (no fixed `?ver=` token). If cache bypass is need
 
 		script Loader
 		variable Script
-		rest get Script from `tictactoe.as`
+		rest get Script from `tictactoe.allspeak`
 		run Script
 	</pre>
 </body>
 </html>
 ```
 
-`tictactoe.as` (load and render Webson):
+`tictactoe.allspeak` (load and render Webson):
 
 ```text
-! tictactoe.as
+! tictactoe.allspeak
 
 		script TicTacToe
 
@@ -165,7 +165,7 @@ Use this default teaching sequence:
 3. TicTacToe game logic: turns, win/draw detection, restart.
 4. TicTacToe refactor: clear state transitions and readable naming.
 5. Transition milestone: map TicTacToe lessons to MapIntel architecture.
-6. MapIntel bootstrap: begin `mapintel.as` + `mapintel.json` work.
+6. MapIntel bootstrap: begin `mapintel.allspeak` + `mapintel.json` work.
 
 ## 2C) TicTacToe Board Model Requirement
 
@@ -227,7 +227,7 @@ Relevant references in this repository:
 - `AI/mapintel-agent-primer.md`: alternate agent-facing starter version.
 - `mapintel-primer.html`: human-facing primer page.
 - `webson/WEBSON.md`: Webson quick reference and render model.
-- `aidev/project.as`: working AllSpeak flow for the primer app.
+- `aidev/project.allspeak`: working AllSpeak flow for the primer app.
 - `project.json`: Webson content/layout used by the primer app.
 
 Runtime components are in `js/allspeak/` (for example `Core.js`, `Browser.js`, `Webson.js`, `AllSpeak.js`).
@@ -283,9 +283,9 @@ Follow this sequence:
 
 Codex training reference rule:
 
-1. Treat `codex/codex.as` as a primary in-repo training artifact for substantial AllSpeak script work.
+1. Treat `codex/codex.allspeak` as a primary in-repo training artifact for substantial AllSpeak script work.
 2. Use it as both a feature reference (what it does) and a construction reference (how it is structured).
-3. Prefer established organization and flow patterns from `codex/codex.as` unless the user requests a different style.
+3. Prefer established organization and flow patterns from `codex/codex.allspeak` unless the user requests a different style.
 
 Capability decision rule:
 
@@ -306,7 +306,7 @@ Environment-dependent options:
 
 In this repo, a common option is:
 
-- `allspeak server.as 5500`
+- `allspeak server.allspeak 5500`
 
 Then open `http://localhost:5500/` in a browser.
 

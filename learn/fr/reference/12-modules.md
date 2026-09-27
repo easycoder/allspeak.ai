@@ -21,14 +21,14 @@ La variable commence vide. `exécute` y charge un script.
 **Python** — l'argument est un chemin ; le runtime ouvre et compile le fichier :
 
 ```as
-exécute `deviceControl.as` comme DeviceController
+exécute `deviceControl.allspeak` comme DeviceController
 ```
 
 **JS** — l'argument est une variable contenant le texte source. Récupère-le d'abord avec `rest obtiens` :
 
 ```as
 variable ModuleSrc
-rest obtiens ModuleSrc depuis `resources/as/device-control.as?v=` cat maintenant
+rest obtiens ModuleSrc depuis `resources/as/device-control.allspeak?v=` cat maintenant
     ou va à LoadFailed
 exécute ModuleSrc comme DeviceController
 ```

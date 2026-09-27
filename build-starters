@@ -2,19 +2,19 @@
 # build-starters: rebuild deploy/allspeak-<lang>.zip from starter/<lang>/.
 #
 # Each starter zip bundles the language-specific bootstrap files
-# (CLAUDE.md, AGENTS.md, server.as, edit.html) with the shared editor
-# (asedit.as, asedit.json) and the doc-block analyser (asdoc-check.py),
+# (CLAUDE.md, AGENTS.md, server.allspeak, edit.html) with the shared editor
+# (asedit.allspeak, asedit.json) and the doc-block analyser (asdoc-check.py),
 # all at the zip root.
 #
 # Run after editing anything under starter/ or after changing
-# asedit.as / asedit.json / tools/asdoc-check.py. Languages are
+# asedit.allspeak / asedit.json / tools/asdoc-check.py. Languages are
 # auto-discovered from starter/*/ subdirectories.
 
 set -eu
 cd "$(dirname "$0")"
 
-if [ ! -f asedit.as ] || [ ! -f asedit.json ]; then
-    echo "Error: asedit.as / asedit.json not found in repo root." >&2
+if [ ! -f asedit.allspeak ] || [ ! -f asedit.json ]; then
+    echo "Error: asedit.allspeak / asedit.json not found in repo root." >&2
     exit 1
 fi
 
@@ -37,7 +37,7 @@ built=0
 for dir in starter/*/; do
     lang=$(basename "$dir")
     missing=
-    for f in CLAUDE.md server.as edit.html; do
+    for f in CLAUDE.md server.allspeak edit.html; do
         [ -f "$dir$f" ] || missing="$missing $f"
     done
     if [ -n "$missing" ]; then
@@ -47,17 +47,17 @@ for dir in starter/*/; do
 
     work="$STAGE/$lang"
     mkdir -p "$work"
-    cp -p "$dir"CLAUDE.md "$dir"server.as "$dir"edit.html "$work/"
+    cp -p "$dir"CLAUDE.md "$dir"server.allspeak "$dir"edit.html "$work/"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$dir$extra" ]; then
             cp -p "$dir$extra" "$work/"
         fi
     done
-    cp -p asedit.as asedit.json tools/asdoc-check.py "$work/"
+    cp -p asedit.allspeak asedit.json tools/asdoc-check.py "$work/"
 
     out="$PWD/deploy/allspeak-$lang.zip"
     rm -f "$out"
-    zip_files="CLAUDE.md server.as edit.html asedit.json asedit.as asdoc-check.py"
+    zip_files="CLAUDE.md server.allspeak edit.html asedit.json asedit.allspeak asdoc-check.py"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$work/$extra" ]; then
             zip_files="$zip_files $extra"

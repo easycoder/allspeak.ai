@@ -32,7 +32,7 @@ Exécute une commande shell. Avec `background`, la commande est lancée dans un 
 
 ```
 system `ls -l > files.txt`
-system background `sleep 2 && allspeak server.as 8080`
+system background `sleep 2 && allspeak server.allspeak 8080`
 ```
 
 `system` est pratique mais attache le script à un système d'exploitation particulier. Préfère `browse` quand le but est d'ouvrir une URL, et `download` quand le but est de récupérer un fichier — les deux sont indépendants du système d'exploitation.
@@ -42,7 +42,7 @@ system background `sleep 2 && allspeak server.as 8080`
 Récupère une URL dans un fichier local, avec une clause `or` / `on failure` facultative pour la gestion d'erreurs :
 
 ```
-download `https://allspeak.ai/code/server.as` to BaseDir cat `/server.as` ou début
+download `https://allspeak.ai/code/server.allspeak` to BaseDir cat `/server.allspeak` ou début
     imprime `Échec de la vérification de mise à jour`
 fin
 ```
@@ -51,4 +51,4 @@ Ajoute `binary` pour les charges utiles non textuelles (images, archives). La gr
 
 ## Quand elles n'existent pas
 
-Dans le runtime navigateur JS, `system`, `download` et `browse` ne sont pas définis. Le bac à sable du navigateur les rend soit impossibles (`system`) soit redondantes (`browse` — un script peut naviguer via `window.location` ou ouvrir via `window.open`, et `download` peut se faire avec `rest obtiens`). N'écris pas de code qui utilise ces mots-clés s'il doit aussi tourner dans le navigateur ; garde-les dans les scripts clairement côté Python, comme `server.as` et les utilitaires CLI.
+Dans le runtime navigateur JS, `system`, `download` et `browse` ne sont pas définis. Le bac à sable du navigateur les rend soit impossibles (`system`) soit redondantes (`browse` — un script peut naviguer via `window.location` ou ouvrir via `window.open`, et `download` peut se faire avec `rest obtiens`). N'écris pas de code qui utilise ces mots-clés s'il doit aussi tourner dans le navigateur ; garde-les dans les scripts clairement côté Python, comme `server.allspeak` et les utilitaires CLI.

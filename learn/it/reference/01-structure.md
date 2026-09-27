@@ -53,7 +53,7 @@ Il runtime stesso è piccolo e indipendente dalla lingua. Non sa che cosa signif
 
 Un secondo livello si trova tra lo script sorgente e i compilatori dei domini: il **pacchetto linguistico**. I token sorgente in qualsiasi lingua supportata (inglese, francese, italiano, tedesco, …) vengono risolti tramite il pacchetto linguistico in una forma canonica e poi consegnati ai domini. I domini non vedono mai i token localizzati — lavorano interamente nel vocabolario canonico.
 
-Questo significa che uno script `.as` francese e uno `.as` inglese compilano nello stesso array del programma e girano sullo stesso motore. Vedi [multilingua](multilingual.md) per come funzionano i pacchetti linguistici e come la direttiva `language` ne seleziona uno.
+Questo significa che uno script `.allspeak` francese e uno `.allspeak` inglese compilano nello stesso array del programma e girano sullo stesso motore. Vedi [multilingua](multilingual.md) per come funzionano i pacchetti linguistici e come la direttiva `language` ne seleziona uno.
 
 ## Plugin
 

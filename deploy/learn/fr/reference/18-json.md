@@ -20,7 +20,7 @@ save Rows to `data/2024-25/04.json`
 La sortie JSON est **joliment imprimée par défaut** (indentation de deux espaces) pour que les fichiers sauvegardés puissent être ouverts directement pour examen humain. Cela s'applique à deux chemins :
 
 - **Dict ou liste à encodage automatique.** Le sérialiseur utilise `indent=2`, quel que soit le chemin du fichier.
-- **Contenu chaîne sauvegardé vers un chemin `.json`.** Si le contenu est déjà une chaîne JSON (par exemple le corps de requête d'un POST vers le point d'extrémité `/write/<file>` de `server.as`, qui est écrit tel quel par `save`), il est analysé et ré-émis avec `indent=2`. Si la chaîne ne s'analyse pas comme du JSON, elle est écrite telle quelle — le contenu non-JSON dans un fichier `.json` est laissé seul plutôt que de faire échouer la sauvegarde.
+- **Contenu chaîne sauvegardé vers un chemin `.json`.** Si le contenu est déjà une chaîne JSON (par exemple le corps de requête d'un POST vers le point d'extrémité `/write/<file>` de `server.allspeak`, qui est écrit tel quel par `save`), il est analysé et ré-émis avec `indent=2`. Si la chaîne ne s'analyse pas comme du JSON, elle est écrite telle quelle — le contenu non-JSON dans un fichier `.json` est laissé seul plutôt que de faire échouer la sauvegarde.
 
 L'extension de fichier est une convention de documentation pour *l'encodage* — un dict ou une liste sauvegardé vers un fichier sans extension est quand même encodé en JSON ; une chaîne non-JSON sauvegardée dans `report.json` est quand même écrite telle quelle — mais pour *la mise en forme*, l'extension `.json` déclenche bien le passage de jolie impression sur le contenu chaîne.
 

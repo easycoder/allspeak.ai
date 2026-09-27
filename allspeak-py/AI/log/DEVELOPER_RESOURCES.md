@@ -16,11 +16,11 @@ A comprehensive guide to all documentation, patterns, and references for working
 - Individual keyword docs in `doc/core/keywords/` and `doc/graphics/keywords/`
 
 ### Example Scripts
-- **`scripts/hello.as`** — Traditional first program
-- **`scripts/fizzbuzz.as`** — FizzBuzz challenge solution
-- **`scripts/benchmark.as`** — Performance benchmarking
-- **`tests/tests.as`** — Comprehensive core language test (220 lines, 50+ features)
-- **`tests/testg.as`** — Graphics application test (366 lines, real-world UI)
+- **`scripts/hello.allspeak`** — Traditional first program
+- **`scripts/fizzbuzz.allspeak`** — FizzBuzz challenge solution
+- **`scripts/benchmark.allspeak`** — Performance benchmarking
+- **`tests/tests.allspeak`** — Comprehensive core language test (220 lines, 50+ features)
+- **`tests/testg.allspeak`** — Graphics application test (366 lines, real-world UI)
 
 ### Testing
 - `python3 test.py` — Run core test suite
@@ -215,8 +215,8 @@ on Table row-selected do Handler
 |----------|---------|
 | [PLUGIN_PATTERNS.md](PLUGIN_PATTERNS.md) section 8 | Validation checklist |
 | [PLUGIN_PATTERNS.md](PLUGIN_PATTERNS.md) section 9 | Collision detection |
-| [tests/tests.as](tests/tests.as) | Core test cases |
-| [tests/testg.as](tests/testg.as) | Graphics test cases |
+| [tests/tests.allspeak](tests/tests.allspeak) | Core test cases |
+| [tests/testg.allspeak](tests/testg.allspeak) | Graphics test cases |
 
 ### For Understanding Architecture
 | Document | Purpose |
@@ -291,8 +291,8 @@ allspeak-py/
 │   └── as_value.py                    Value operations
 ├── plugins/                           Example plugins
 ├── tests/
-│   ├── tests.as                      Core test suite
-│   └── testg.as                      Graphics test suite
+│   ├── tests.allspeak                      Core test suite
+│   └── testg.allspeak                      Graphics test suite
 └── scripts/                           Example scripts
 ```
 

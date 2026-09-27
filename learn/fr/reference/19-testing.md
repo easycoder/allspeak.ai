@@ -29,7 +29,7 @@ check Compteur est 4
 - **Échec** — enregistré, et une ligne de rapport est émise par le canal de journalisation normal :
 
   ```
-  FAIL: Compteur est 5 (planning.as:12)
+  FAIL: Compteur est 5 (planning.allspeak:12)
   ```
 
   La partie entre parenthèses est le nom du script (comme défini par `script <nom>`, sinon le nom du fichier) et le numéro de ligne de la vérification. Après la journalisation, l'exécution **continue** — une vérification en échec est un rapport, pas un crash.
@@ -75,14 +75,14 @@ Dans l'action, `le erreur` contient le message d'échec.
 La CLI Python exécute un script (ou tout un répertoire) comme une suite de tests :
 
 ```
-allspeak --test planning.as
+allspeak --test planning.allspeak
 allspeak --test conformance/tests/
 ```
 
-Un répertoire exécute chaque fichier `.as` comme sa propre suite, puis imprime une ligne agrégée. En mode test, le résumé est imprimé à `quitte` (ou à la fin du script) :
+Un répertoire exécute chaque fichier `.allspeak` comme sa propre suite, puis imprime une ligne agrégée. En mode test, le résumé est imprimé à `quitte` (ou à la fin du script) :
 
 ```
-Test suite: schedule.as
+Test suite: schedule.allspeak
   ✓ Adding a room (2 checks)
   ✗ Advance roll-over (FAIL: the room count is 4 — line 12)
   ✓ Boost expiry (3 checks)

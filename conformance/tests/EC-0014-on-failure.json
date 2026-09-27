@@ -7,7 +7,7 @@
     "2.1",
     "2.6"
   ],
-  "script": "EC-0014-on-failure.as",
+  "script": "EC-0014-on-failure.allspeak",
   "expect": {
     "logs": [
       "FAIL: X is 3 (CheckClauses2:7)",

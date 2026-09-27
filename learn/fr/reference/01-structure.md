@@ -53,7 +53,7 @@ Le runtime lui-même est petit et indépendant de la langue. Il ne sait pas ce q
 
 Une seconde couche se situe entre le script source et les compilateurs de domaines : le **pack de langue**. Les jetons source de n'importe quelle langue prise en charge (anglais, français, italien, allemand, …) sont résolus à travers le pack de langue vers une forme canonique, puis transmis aux domaines. Les domaines ne voient jamais les jetons localisés — ils travaillent entièrement dans le vocabulaire canonique.
 
-Cela signifie qu'un script `.as` français et un script `.as` anglais compilent vers le même tableau de programme et tournent sur le même moteur. Voir [multilingue](multilingual.md) pour comprendre comment fonctionnent les packs de langue et comment la directive `language` en sélectionne un.
+Cela signifie qu'un script `.allspeak` français et un script `.allspeak` anglais compilent vers le même tableau de programme et tournent sur le même moteur. Voir [multilingue](multilingual.md) pour comprendre comment fonctionnent les packs de langue et comment la directive `language` en sélectionne un.
 
 ## Greffons
 

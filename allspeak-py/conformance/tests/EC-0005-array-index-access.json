@@ -8,7 +8,7 @@
     "2.2",
     "2.6"
   ],
-  "script": "EC-0005-array-index-access.as",
+  "script": "EC-0005-array-index-access.allspeak",
   "expect": {
     "logs": [
       "green"

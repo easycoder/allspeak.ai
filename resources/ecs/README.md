@@ -10,7 +10,7 @@ Put all files in the same directory as the scripts you want to edit.
 
 Start up the server:
 
-`allspeak scripted-server.as {port}`
+`allspeak scripted-server.allspeak {port}`
 
 where {port} is a port number such as 5500, then run
 

@@ -11,16 +11,16 @@ The AllSpeak curriculum — a small in-browser reader that serves a set of markd
 
 Run the project's dev server from the repo root and open `learn/index.html`:
 
-    allspeak server.as
+    allspeak server.allspeak
 
-then visit `http://localhost:8080/learn/index.html`. The reader is itself an AllSpeak app (`reader.as` + `reader.json`) — the toolbar (Contents · Prev · Next) and the rendered markdown pane are produced by AllSpeak code running on the same engine the curriculum describes.
+then visit `http://localhost:8080/learn/index.html`. The reader is itself an AllSpeak app (`reader.allspeak` + `reader.json`) — the toolbar (Contents · Prev · Next) and the rendered markdown pane are produced by AllSpeak code running on the same engine the curriculum describes.
 
 ## Files
 
 | File | Role |
 |--|--|
-| `index.html` | Loads the AllSpeak runtime and `reader.as`; defines the JS shim that intercepts in-page link clicks and routes them to the reader |
-| `reader.as` | The reader app — toolbar handling, manifest lookups, markdown rendering, slug-based navigation |
+| `index.html` | Loads the AllSpeak runtime and `reader.allspeak`; defines the JS shim that intercepts in-page link clicks and routes them to the reader |
+| `reader.allspeak` | The reader app — toolbar handling, manifest lookups, markdown rendering, slug-based navigation |
 | `reader.json` | Webson layout for the reader's DOM |
 | `manifest.json` | Ordered list of pages (slug, path, title) — the source of truth for Prev/Next order |
 | `contents.md` | Landing page, rendered when the reader has no current page (`CurrentIndex = -1`) |

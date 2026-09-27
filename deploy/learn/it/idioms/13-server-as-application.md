@@ -8,11 +8,11 @@ Il quadro più semplice: **il server è l'applicazione, e le schede del browser 
 
 ## Il pattern
 
-`server.as` accetta un flag `-t` / `--tabs` il cui valore è una lista di nomi di pagine separati da virgole (senza `.html`):
+`server.allspeak` accetta un flag `-t` / `--tabs` il cui valore è una lista di nomi di pagine separati da virgole (senza `.html`):
 
 ```
-allspeak server.as -t edit,<progetto>
-allspeak server.as --tabs edit,<progetto> 8080
+allspeak server.allspeak -t edit,<progetto>
+allspeak server.allspeak --tabs edit,<progetto> 8080
 ```
 
 Per ogni nome, il server costruisce `http://localhost:<porta>/<nome>.html` e lo apre nel browser predefinito dell'utente tramite [`browse`](../reference/17-dev-environment.md#browse). La porta predefinita è 8080 e può comparire prima o dopo il flag.
@@ -57,7 +57,7 @@ L'ordine è portante: le fasi 3 e 4 devono stare in quest'ordine. Se `browse` gi
     fine
 ```
 
-L'implementazione di riferimento completa è `server.as` negli starter pack.
+L'implementazione di riferimento completa è `server.allspeak` negli starter pack.
 
 ## Quando usare questo pattern
 
@@ -67,7 +67,7 @@ L'implementazione di riferimento completa è `server.as` negli starter pack.
 
 ## Quando *non* usare questo pattern
 
-- **Per un'app distribuita.** Gli utenti in produzione non eseguiranno `server.as`. Questo pattern è solo per il flusso di sviluppo.
+- **Per un'app distribuita.** Gli utenti in produzione non eseguiranno `server.allspeak`. Questo pattern è solo per il flusso di sviluppo.
 - **Quando lo script non fa girare un server.** `browse` funziona da solo, ma la cornice server-come-app ha senso solo quando ci sono pagine da servire.
 - **Per lanci ad hoc usa-e-getta.** Digita semplicemente l'URL nel browser. Il pattern merita la sua complessità quando il lancio è ripetuto.
 
@@ -75,9 +75,9 @@ L'implementazione di riferimento completa è `server.as` negli starter pack.
 
 Quando a un'IA viene chiesto di creare un progetto GUI con lo starter pack, la sequenza attesa è:
 
-1. Genera `<progetto>.html`, `<progetto>-main.as`, `<progetto>.json`.
-2. Esegui `python3 asdoc-check.py --write` su qualsiasi nuovo file `.as`.
-3. Esegui **subito** `allspeak server.as -t edit,<progetto>` in background.
+1. Genera `<progetto>.html`, `<progetto>-main.allspeak`, `<progetto>.json`.
+2. Esegui `python3 asdoc-check.py --write` su qualsiasi nuovo file `.allspeak`.
+3. Esegui **subito** `allspeak server.allspeak -t edit,<progetto>` in background.
 4. Di' all'utente che l'app è partita e che dovrebbero essersi aperte due schede.
 
 L'utente deve avere la sensazione che «l'app è partita» — non che debba assemblare tre pezzi di infrastruttura per vedere ciò che è appena stato costruito.

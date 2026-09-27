@@ -30,7 +30,7 @@ check RoomCount is 4
 - **Fail** — recorded, and a report line is logged through the normal log channel:
 
   ```
-  FAIL: RoomCount is 5 (schedule.as:12)
+  FAIL: RoomCount is 5 (schedule.allspeak:12)
   ```
 
   The parenthesised part is the script name (as set by `script <name>`, else the file name) and the line number of the check. After logging, execution **continues** — a failed check is a report, not a crash.
@@ -76,14 +76,14 @@ Inside the action, `the error` holds the failure message.
 The Python CLI runs a script (or a whole directory) as a test suite:
 
 ```
-allspeak --test schedule.as
+allspeak --test schedule.allspeak
 allspeak --test conformance/tests/
 ```
 
-A directory runs every `.as` file as its own suite, then prints an aggregate line. In test mode, the summary is printed at `exit` (or at end of script):
+A directory runs every `.allspeak` file as its own suite, then prints an aggregate line. In test mode, the summary is printed at `exit` (or at end of script):
 
 ```
-Test suite: schedule.as
+Test suite: schedule.allspeak
   ✓ Adding a room (2 checks)
   ✗ Advance roll-over (FAIL: the room count is 4 — line 12)
   ✓ Boost expiry (3 checks)

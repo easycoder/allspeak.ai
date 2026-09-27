@@ -1,7 +1,7 @@
 """as_viz.py — the Python-side half of the AllSpeak visualiser.
 
 Same job as js/plugins/asviz.js: compile a target script WITHOUT running it, read
-its IR, and hand the AllSpeak framework (viz.as) a list of records describing the
+its IR, and hand the AllSpeak framework (viz.allspeak) a list of records describing the
 ANCHORS — labels, loop tests, and event registrations — plus whether each can be
 reached. The record format is identical to the JS plugin's, so one framework
 serves both runtimes.
@@ -12,7 +12,7 @@ Loaded from a script, as any plugin is:
 
 Host contract (the counterpart of AllSpeak_Viz.target / .sources in JS):
 
-    as_viz.VizState.target = `path/to/script.as`
+    as_viz.VizState.target = `path/to/script.allspeak`
 
 The IR this reads is the *Python* runtime's, which is not the same as the JS
 runtime's — labels are real commands here rather than bare symbol entries, `lino`

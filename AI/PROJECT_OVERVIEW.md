@@ -8,11 +8,11 @@ Doclets is a searchable note/doclet system with:
 - browser UI rendered from Webson JSON
 
 ## Key files
-- `doclets-js.as`: main JS/browser reader behavior in AllSpeak
+- `doclets-js.allspeak`: main JS/browser reader behavior in AllSpeak
 - `doclets.json`: Webson UI layout
-- `docletServer.as`: server-side AllSpeak script
+- `docletServer.allspeak`: server-side AllSpeak script
 - `as_doclets.py`: Python plugin with doclet search logic
-- `codex/codex.as`: substantial reference script for AllSpeak constructs and script-structure patterns
+- `codex/codex.allspeak`: substantial reference script for AllSpeak constructs and script-structure patterns
 - `Browser.js`, `Core.js`, `JSON.js`, etc.: AllSpeak JS runtime modules
 - `Webson.js`: Webson renderer used by AllSpeak browser render command
 

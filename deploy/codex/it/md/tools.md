@@ -11,7 +11,7 @@ In questo esempio il plugin è uno standard di ~ec~ ma puoi anche caricare plugi
 
 Una volta caricato, il plugin è disponibile per qualsiasi script che ne abbia bisogno (ma non per quello che lo ha caricato). Qui, qualsiasi script che includa comandi per le mappe può essere caricato e compilato, come in
 
-~pre:rest get Script from `/resources/ecs/myscript.as`
+~pre:rest get Script from `/resources/ecs/myscript.allspeak`
 run Script~
 
 (Questa è la forma più semplice, che presuppone che non tu debba comunicare con lo script una volta in esecuzione.)

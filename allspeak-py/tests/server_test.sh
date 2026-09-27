@@ -1,6 +1,6 @@
 #!/bin/sh
 # server_test.sh
-# Tests for server.as — run while server.as is running in another terminal
+# Tests for server.allspeak — run while server.allspeak is running in another terminal
 
 BASE=http://localhost:8765
 PASS=0

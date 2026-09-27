@@ -672,7 +672,7 @@ Before releasing a plugin, verify:
 ### 4. Testing
 - [ ] Plugin compiles with core test suite (`python3 test.py`)
 - [ ] Plugin compiles with graphics test suite (`python3 testg.py`)
-- [ ] Simple example script works (`plugin_example.as`)
+- [ ] Simple example script works (`plugin_example.allspeak`)
 - [ ] Error cases handled gracefully (missing params, wrong types, etc.)
 
 ### 5. Documentation

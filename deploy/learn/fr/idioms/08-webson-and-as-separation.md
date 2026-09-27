@@ -9,7 +9,7 @@ Tu as une interface plus grande qu'une poignée d'éléments. Créer chacun en l
 Sépare l'interface en deux :
 
 - **La mise en page dans un fichier Webson `.json`.** L'arbre des éléments, le style, les identifiants.
-- **La logique dans un fichier `.as`.** Charger les données, gérer les événements, transformer l'état.
+- **La logique dans un fichier `.allspeak`.** Charger les données, gérer les événements, transformer l'état.
 - **`attache` fait le pont.** Après le rendu du Webson, le script AS récupère chaque élément par son identifiant.
 
 ```as
@@ -80,7 +80,7 @@ Le `crée` en ligne convient quand :
 }
 ```
 
-`app.as` (logique AllSpeak) :
+`app.allspeak` (logique AllSpeak) :
 
 ```as
 variable Layout
@@ -139,7 +139,7 @@ Le schéma Webson + attache cesse de suffire quand la forme n'est pas connue au 
 - **Des nombres d'éléments variables.** Webson peut déclarer un nombre fixe de lignes ; il ne peut pas déclarer « une ligne par enregistrement du fichier de données ».
 - **Un contenu d'élément issu d'une valeur du script.** `#content` prend une chaîne littérale, pas une expression — impossible de dire « la valeur de `Row.amount` pour cette itération ».
 
-La solution est de séparer la page selon l'axe qui varie. Utilise Webson pour les parties dont la forme est fixée au moment du gabarit — le cadre de la page, la barre d'en-tête, la ligne d'en-tête du tableau, les formulaires modaux. Utilise le script pour les parties dont la forme vient des données — les lignes du corps, les sous-totaux mensuels, les totaux calculés. `asedit.as` fait ça pour sa liste de fichiers : un conteneur à défilement attaché via Webson, avec des entrées créées par le script à l'intérieur ; la mise en page ne sait rien du nombre de fichiers possibles.
+La solution est de séparer la page selon l'axe qui varie. Utilise Webson pour les parties dont la forme est fixée au moment du gabarit — le cadre de la page, la barre d'en-tête, la ligne d'en-tête du tableau, les formulaires modaux. Utilise le script pour les parties dont la forme vient des données — les lignes du corps, les sous-totaux mensuels, les totaux calculés. `asedit.allspeak` fait ça pour sa liste de fichiers : un conteneur à défilement attaché via Webson, avec des entrées créées par le script à l'intérieur ; la mise en page ne sait rien du nombre de fichiers possibles.
 
 ### Un tableau piloté par les données
 

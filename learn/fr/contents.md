@@ -40,9 +40,9 @@ Voir [README.md](../README.md) pour savoir comment consulter ce cursus et commen
 5. [Flottants et entiers mis à l'échelle](idioms/05-floats-and-scaled-integers.md) — précision fractionnaire sans flottants.
 6. [REST et asynchrone](idioms/06-rest-and-async.md) — `rest obtiens`, clauses d'échec, rendu de la main pendant l'attente.
 7. [MQTT pub/sub](idioms/07-mqtt-pubsub.md) — le bloc de connexion, les charges utiles en forme de dict, requête/réponse.
-8. [Séparation Webson et AS](idioms/08-webson-and-as-separation.md) — la mise en page dans `.json`, la logique dans `.as`.
+8. [Séparation Webson et AS](idioms/08-webson-and-as-separation.md) — la mise en page dans `.json`, la logique dans `.allspeak`.
 9. [Extraire un module](idioms/09-extracting-a-module.md) — quand et comment scinder un script.
 10. [Écrire en langage neutre](idioms/10-writing-language-neutral.md) — ce que le pack de langue ne traduit pas.
-11. [Déboguer .as](idioms/11-debugging-as.md) — `imprime`, `journalise`, traceur, `factice`.
+11. [Déboguer .allspeak](idioms/11-debugging-as.md) — `imprime`, `journalise`, traceur, `factice`.
 12. [Travailler avec l'IA](idioms/12-working-with-ai.md) — le flux de travail « l'IA écrit, l'humain relit ».
-13. [Le serveur comme application](idioms/13-server-as-application.md) — exécuter `server.as -t edit,<projet>` pour que le serveur *soit* l'application et que les onglets du navigateur soient son interface.
+13. [Le serveur comme application](idioms/13-server-as-application.md) — exécuter `server.allspeak -t edit,<projet>` pour que le serveur *soit* l'application et que les onglets du navigateur soient son interface.

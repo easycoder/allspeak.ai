@@ -104,5 +104,5 @@ This graceful fallback is what enables the plugin architecture—but it requires
 
 ## Contact & Feedback
 
-If you're developing a plugin and unsure whether a keyword is safe, consult this document and test your plugin with the core test suite (`scripts/tests.as` or equivalent). If you discover a collision or ambiguity, report it via the issue tracker.
+If you're developing a plugin and unsure whether a keyword is safe, consult this document and test your plugin with the core test suite (`scripts/tests.allspeak` or equivalent). If you discover a collision or ambiguity, report it via the issue tracker.
 

@@ -31,12 +31,12 @@ fi
 ```
 <hr>
 
-Now write a test script, `hello.as`, containing the following:
+Now write a test script, `hello.allspeak`, containing the following:
 ```
 print `Hello, world!`
 exit
 ```
-(Note the backticks.) This is traditionally the first program to be written in virtually any language. To run it, use `allspeak hello.as`.
+(Note the backticks.) This is traditionally the first program to be written in virtually any language. To run it, use `allspeak hello.allspeak`.
 
 The output will look like this (the version number will likely differ):
 ```
@@ -68,9 +68,9 @@ As you might guess from the above, the `log` command shows the time and the line
 
 Here in the repository is a folder called `scripts` containing some sample scripts:
 
-`fizzbuzz.as` is a simple programming challenge often given at job interviews  
-`tests.as` is a test program containing many of the **_AllSpeak_** features  
-`benchmark.as` allows the performance of **_AllSpeak_** to be compared to other languages if a similar script is written for each one.
+`fizzbuzz.allspeak` is a simple programming challenge often given at job interviews  
+`tests.allspeak` is a test program containing many of the **_AllSpeak_** features  
+`benchmark.allspeak` allows the performance of **_AllSpeak_** to be compared to other languages if a similar script is written for each one.
 
 ## Graphical programming
 **_AllSpeak_** includes a graphical programming environment based on PySide6, that is in under development. Some demo scripts will be included in the `scripts` directory as development proceeds. Anyone wishing to track progress can do so via this repository. At the time of writing we are transitioning from an early version based on PySimpleGUI to one based on PySide, the latter being an open product that matches the needs of a DSL better than does the former.
@@ -96,7 +96,7 @@ See also [How it works](doc/README.md)
 
 ## Extending the language
 
-**_AllSpeak_** can be extended to add new functionality with the use of 'plugins'. These contain compiler and runtime modules for the added language features. **_AllSpeak_** can use the added keywords, values and conditions freely; the effect is completely seamless. There is an outline example in the `plugins` directory called `example.py`, which comprises a module called `Points` with new language syntax to deal with two-valued items such as coordinates. In the `scripts` directory there is `points.as`, which exercises the new functionality.
+**_AllSpeak_** can be extended to add new functionality with the use of 'plugins'. These contain compiler and runtime modules for the added language features. **_AllSpeak_** can use the added keywords, values and conditions freely; the effect is completely seamless. There is an outline example in the `plugins` directory called `example.py`, which comprises a module called `Points` with new language syntax to deal with two-valued items such as coordinates. In the `scripts` directory there is `points.allspeak`, which exercises the new functionality.
 
 A plugin can act as a wrapper around any Python functionality that has a sensible API, thereby hiding its complexity. The only challenge is to devise an unambiguous syntax that doesn't clash with anything already existing in **_AllSpeak_**.
 

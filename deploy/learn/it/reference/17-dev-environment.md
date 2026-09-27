@@ -32,7 +32,7 @@ Esegue un comando shell. Con `background`, il comando viene biforcato in un proc
 
 ```
 system `ls -l > files.txt`
-system background `sleep 2 && allspeak server.as 8080`
+system background `sleep 2 && allspeak server.allspeak 8080`
 ```
 
 `system` è comodo ma lega lo script a un particolare sistema operativo. Preferisci `browse` quando l'obiettivo è aprire un URL, e `download` quando l'obiettivo è recuperare un file: entrambi sono indipendenti dal sistema operativo.
@@ -42,7 +42,7 @@ system background `sleep 2 && allspeak server.as 8080`
 Recupera un URL in un file locale, con una clausola `or` / `on failure` opzionale per la gestione degli errori:
 
 ```
-download `https://allspeak.ai/code/server.as` to BaseDir cat `/server.as` or inizio
+download `https://allspeak.ai/code/server.allspeak` to BaseDir cat `/server.allspeak` or inizio
     stampa `Controllo aggiornamenti fallito`
 fine
 ```
@@ -51,4 +51,4 @@ Aggiungi `binary` per i payload non testuali (immagini, archivi). La grammatica 
 
 ## Quando non esistono
 
-Nel runtime browser JS, `system`, `download` e `browse` non sono definiti. Il sandbox del browser li rende o impossibili (`system`) o ridondanti (`browse` — uno script può navigare tramite `window.location` o aprire tramite `window.open`, e `download` si può fare con `rest ottieni`). Non scrivere codice che usa queste parole chiave se potrebbe dover girare anche nel browser; tienile negli script chiaramente lato Python, come `server.as` e le utility CLI.
+Nel runtime browser JS, `system`, `download` e `browse` non sono definiti. Il sandbox del browser li rende o impossibili (`system`) o ridondanti (`browse` — uno script può navigare tramite `window.location` o aprire tramite `window.open`, e `download` si può fare con `rest ottieni`). Non scrivere codice che usa queste parole chiave se potrebbe dover girare anche nel browser; tienile negli script chiaramente lato Python, come `server.allspeak` e le utility CLI.

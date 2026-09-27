@@ -18,14 +18,14 @@ Use these rules exactly:
 - Do not invent `function`, `end function`, or recursive call syntax unless the user confirms those forms are supported.
 - Do not emit pseudo-keywords from other languages such as `define`, `end define`, `otherwise`, or `endif`.
 - Do not emit callable subroutines like `Name(...)`. Use `gosub Label` and shared variables.
-- In `.as` command lines, expect mostly word-based syntax plus `!`, `:`, and backticks for string literals. Treat other punctuation as suspicious unless explicitly documented.
+- In `.allspeak` command lines, expect mostly word-based syntax plus `!`, `:`, and backticks for string literals. Treat other punctuation as suspicious unless explicitly documented.
 - Do not emit pseudo-loop forms like `repeat ... end repeat` unless the user confirms they are valid in this runtime.
 - Prefer `put ... into Name` over `set Name to ...` unless the user confirms `set` forms are supported.
 
 ## 1) AllSpeak quick reference
 
-AllSpeak is a browser-side scripting language (`.as`) with English-like syntax.
-`index.html` usually loads `https://allspeak.ai/dist/allspeak.js`, then runs an `.as` file.
+AllSpeak is a browser-side scripting language (`.allspeak`) with English-like syntax.
+`index.html` usually loads `https://allspeak.ai/dist/allspeak.js`, then runs an `.allspeak` file.
 
 ### 1a) Declarations and elements
 
@@ -265,7 +265,7 @@ A web UI project has three files:
 
 ```text
 index.html   - loader only (rarely changes)
-project.as  - behavior and state
+project.allspeak  - behavior and state
 project.json - Webson UI layout
 ```
 
@@ -288,7 +288,7 @@ When starting a new project, use the templates below as your starting point. The
     <pre id="allspeak-script" style="display:none">
         script Loader
         variable Script
-        rest get Script from `project.as`
+        rest get Script from `project.allspeak`
         run Script
     </pre>
 </body>
@@ -353,7 +353,7 @@ This Webson layout gives a full-viewport app with a header bar and a scrollable 
 }
 ```
 
-### `project.as`
+### `project.allspeak`
 
 ```text
     script Project
@@ -386,7 +386,7 @@ This Webson layout gives a full-viewport app with a header bar and a scrollable 
 The dev server already serves static files:
 
 ```bash
-allspeak server.as 8080
+allspeak server.allspeak 8080
 ```
 
 Open `http://localhost:8080/index.html`.
@@ -395,7 +395,7 @@ Open `http://localhost:5500/`.
 
 ### Building from the template
 
-To add UI elements, add them to `project.json` (with `@id` attributes) and attach them in `project.as`. For example, to add a button below the message:
+To add UI elements, add them to `project.json` (with `@id` attributes) and attach them in `project.allspeak`. For example, to add a button below the message:
 
 In `project.json`, add to the `$Content` children:
 
@@ -412,7 +412,7 @@ In `project.json`, add to the `$Content` children:
 
 and update `"#": ["$Message", "$ActionBtn"]`.
 
-In `project.as`, declare, attach, and handle:
+In `project.allspeak`, declare, attach, and handle:
 
 ```text
     button ActionBtn
@@ -455,4 +455,4 @@ Before returning AllSpeak code, verify:
 9. No `repeat` / `end repeat` unless user-confirmed.
 10. Prefer `put ... into ...`; avoid `set ... to ...` unless user-confirmed.
 11. For string tasks, if length/character/membership commands are unknown, ask before coding.
-12. In `.as` command lines, treat punctuation beyond `!`, `:`, and backticks as suspicious unless user-confirmed.
+12. In `.allspeak` command lines, treat punctuation beyond `!`, `:`, and backticks as suspicious unless user-confirmed.

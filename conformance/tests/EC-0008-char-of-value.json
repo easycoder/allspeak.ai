@@ -7,7 +7,7 @@
     "2.2",
     "2.6"
   ],
-  "script": "EC-0008-char-of-value.as",
+  "script": "EC-0008-char-of-value.allspeak",
   "expect": {
     "logs": [
       "u",

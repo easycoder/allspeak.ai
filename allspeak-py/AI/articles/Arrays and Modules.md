@@ -38,12 +38,12 @@ Here's an example of invoking a module:
     dictionary SharedData
     variable Result
     ...
-    run `functions.as` as FunctionModule with SharedData and Result
+    run `functions.allspeak` as FunctionModule with SharedData and Result
     if Result is `OK` {do something} else {do something else}
 ```
 The module itself looks like this:
 ```
-!   functions.as -- this is my function module
+!   functions.allspeak -- this is my function module
     script FunctionModule
     import dictionary SharedData and variable Result
     ...
@@ -66,7 +66,7 @@ Each of these modules looks in the map for the parameters and rules that apply t
 
 Here's the code for part of the main program:
 ```
-!   main.as - the main program script
+!   main.allspeak - the main program script
 
     script Main
 
@@ -98,7 +98,7 @@ Here's the code for part of the main program:
         put item R of RoomStates into RoomState
         index DeviceModule to R
         index RoomStates to R
-        run `devices.as` as DeviceModule with Room and RoomStates
+        run `devices.allspeak` as DeviceModule with Room and RoomStates
         increment R
     end
 ```

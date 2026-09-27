@@ -8,11 +8,11 @@ The simpler frame: **the server is the application, and the browser tabs are its
 
 ## The pattern
 
-`server.as` accepts a `-t` / `--tabs` flag whose value is a comma-separated list of page names (without `.html`):
+`server.allspeak` accepts a `-t` / `--tabs` flag whose value is a comma-separated list of page names (without `.html`):
 
 ```
-allspeak server.as -t edit,<project>
-allspeak server.as --tabs edit,<project> 8080
+allspeak server.allspeak -t edit,<project>
+allspeak server.allspeak --tabs edit,<project> 8080
 ```
 
 For each name, the server builds `http://localhost:<port>/<name>.html` and opens it in the user's default browser using [`browse`](../reference/17-dev-environment.md#browse). Port defaults to 8080 and may appear before or after the flag.
@@ -57,7 +57,7 @@ The ordering is load-bearing: phases 3 and 4 must be in that order. If `browse` 
     end
 ```
 
-The full reference implementation is `server.as` in the starter packs.
+The full reference implementation is `server.allspeak` in the starter packs.
 
 ## When to use this pattern
 
@@ -67,7 +67,7 @@ The full reference implementation is `server.as` in the starter packs.
 
 ## When *not* to use this pattern
 
-- **For a deployed app.** Production users won't be running `server.as`. This pattern is for the development workflow only.
+- **For a deployed app.** Production users won't be running `server.allspeak`. This pattern is for the development workflow only.
 - **When the script doesn't run a server.** `browse` works on its own, but the server-as-app framing only makes sense when there are pages to serve.
 - **For ad-hoc one-off launches.** Just type the URL into the browser. The pattern earns its complexity when the launch is repeated.
 
@@ -75,9 +75,9 @@ The full reference implementation is `server.as` in the starter packs.
 
 When an AI is asked to create a GUI project with the starter pack, the expected sequence is:
 
-1. Generate `<project>.html`, `<project>-main.as`, `<project>.json`.
-2. Run `python3 asdoc-check.py --write` on any new `.as` files.
-3. **Immediately** run `allspeak server.as -t edit,<project>` in the background.
+1. Generate `<project>.html`, `<project>-main.allspeak`, `<project>.json`.
+2. Run `python3 asdoc-check.py --write` on any new `.allspeak` files.
+3. **Immediately** run `allspeak server.allspeak -t edit,<project>` in the background.
 4. Tell the user that the app has started and two tabs should have opened.
 
 The user should feel that "the app started" — not that they have to assemble three pieces of infrastructure to see what was just built.

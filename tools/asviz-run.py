@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Node-host counterpart for the Python runtime: run viz.as against a script.
+"""Node-host counterpart for the Python runtime: run viz.allspeak against a script.
 
-The framework (viz.as) is the same file the JS side uses. What differs is the
+The framework (viz.allspeak) is the same file the JS side uses. What differs is the
 host: this one registers the plugin domain and points it at a target, exactly as
 a browser page would load the plugin and hand it the editor buffer.
 
-Usage:  python3 tools/asviz-run.py <script.as> [...]
-        python3 tools/asviz-run.py --run <script.as> [...]   (also run it, and report
+Usage:  python3 tools/asviz-run.py <script.allspeak> [...]
+        python3 tools/asviz-run.py --run <script.allspeak> [...]   (also run it, and report
                                                               the recording its markers made)
-        python3 tools/asviz-run.py --run --trace=<file.json> <script.as>
+        python3 tools/asviz-run.py --run --trace=<file.json> <script.allspeak>
                                                              (also write the recording as a
                                                               Chrome trace; load it at
                                                               ui.perfetto.dev)
-        python3 tools/asviz-run.py --run --trace=<file.json> --trace-pretty <script.as>
+        python3 tools/asviz-run.py --run --trace=<file.json> --trace-pretty <script.allspeak>
                                                              (indent it for reading; the
                                                               default is compact, since a
                                                               trace is mostly read by a
@@ -28,7 +28,7 @@ import subprocess
 import sys
 
 USAGE = """usage: asviz-run.py [--run|-r] [--trace=<file.json>] [--trace-pretty[=<file.json>]]
-                       [--trace-compact[=<file.json>]] <script.as> [...]
+                       [--trace-compact[=<file.json>]] <script.allspeak> [...]
        A trace needs --run, and one target. Either trace flag may carry the path, so
        --trace-pretty=pretrace.json is the same as --trace=pretrace.json --trace-pretty.
 """
@@ -41,7 +41,7 @@ from allspeak import Program          # noqa: E402
 import as_viz                         # noqa: E402
 from as_viz import Viz, VizState, Recorder      # noqa: E402
 
-FRAMEWORK = os.path.join(ROOT, 'viz.as')
+FRAMEWORK = os.path.join(ROOT, 'viz.allspeak')
 ANALYSER = os.path.join(ROOT, 'tools', 'asdoc-check.py')
 
 
@@ -112,7 +112,7 @@ def main(argv):
             sys.stderr.write(f'asviz-run: unknown option: {flag}\n')
             sys.stderr.write(USAGE)
             return 1
-    targets = argv or ['codex/en/code/step13.as']
+    targets = argv or ['codex/en/code/step13.allspeak']
     if trace and not run:
         sys.stderr.write('asviz-run: a trace records a run, so it needs --run too\n')
         return 1
@@ -165,7 +165,7 @@ def main(argv):
                     f'{len(windows)} window(s))\n')
 
         program = Program(FRAMEWORK, testMode=True)
-        program.useClass(Viz)          # the domain must exist before viz.as compiles
+        program.useClass(Viz)          # the domain must exist before viz.allspeak compiles
         # testMode keeps the compile quiet; this keeps its end-of-run test summary
         # quiet too, so the only thing on stdout is the model.
         program.summaryPrinted = True

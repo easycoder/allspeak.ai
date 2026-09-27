@@ -35,8 +35,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Network-first for ECS scripts and API calls
-  if (url.pathname.endsWith('.as') || event.request.method !== 'GET') {
+  // Network-first for AllSpeak scripts and API calls (legacy .as still served)
+  if (url.pathname.endsWith('.allspeak') || url.pathname.endsWith('.as') || event.request.method !== 'GET') {
     event.respondWith(
       fetch(event.request)
         .then(response => {

@@ -3,7 +3,7 @@
 This folder contains implementation-neutral language tests.
 
 Layout:
-- `tests/`: canonical test scripts (`.as`) and metadata (`.json`).
+- `tests/`: canonical test scripts (`.allspeak`) and metadata (`.json`).
 - `runner-contract.md`: shared runner input/output expectations.
 - `parity-report-template.json`: report schema template.
 - `parity-report.initial.json`: starter report before first execution.
@@ -19,7 +19,7 @@ Actuals file format:
 - Value shape: `{ "logs": ["..."], "error": null }`.
 
 Execution model:
-- Each implementation runs the same `.as` scripts.
+- Each implementation runs the same `.allspeak` scripts.
 - Harness compares actual output/errors against each `.json` expectation.
 
 Result categories:

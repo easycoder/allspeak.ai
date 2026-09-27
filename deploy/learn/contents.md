@@ -39,11 +39,11 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 5. [Floats and scaled integers](idioms/05-floats-and-scaled-integers.md) — fractional precision without floats.
 6. [REST and async](idioms/06-rest-and-async.md) — `rest get`, failure clauses, yielding while waiting.
 7. [MQTT pub/sub](idioms/07-mqtt-pubsub.md) — the connection block, dict-shaped payloads, request/reply.
-8. [Webson and AS separation](idioms/08-webson-and-as-separation.md) — layout in `.json`, logic in `.as`.
+8. [Webson and AS separation](idioms/08-webson-and-as-separation.md) — layout in `.json`, logic in `.allspeak`.
 9. [Extracting a module](idioms/09-extracting-a-module.md) — when and how to split a script.
 10. [Writing language-neutral](idioms/10-writing-language-neutral.md) — what the language pack doesn't translate.
-11. [Debugging .as](idioms/11-debugging-as.md) — `print`, `log`, tracer, `dummy`.
+11. [Debugging .allspeak](idioms/11-debugging-as.md) — `print`, `log`, tracer, `dummy`.
 12. [Working with AI](idioms/12-working-with-ai.md) — the AI-writes / human-reviews workflow.
-13. [Server as application](idioms/13-server-as-application.md) — running `server.as -t edit,<project>` so the server *is* the app and the browser tabs are its UI.
+13. [Server as application](idioms/13-server-as-application.md) — running `server.allspeak -t edit,<project>` so the server *is* the app and the browser tabs are its UI.
 14. [Building a desktop window](idioms/14-desktop-gui.md) — a PySide6 window in AllSpeak: declarations, layout, `on` handlers, and the event-loop model.
 15. [Boolean flags](idioms/15-boolean-flags.md) — the on/off state idiom: `clear X` to initialize, `set X`/`clear X` to toggle, bare `if X` to test.

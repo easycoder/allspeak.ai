@@ -1,4 +1,4 @@
-// This contains the code for color-highlighting .as scripts
+// This contains the code for color-highlighting .allspeak scripts
 
 (function (mod) {
 	if (typeof exports == `object` && typeof module == `object`) // CommonJS

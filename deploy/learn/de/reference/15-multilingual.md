@@ -1,6 +1,6 @@
 # Mehrsprachigkeit
 
-AllSpeak lässt Menschen Code in ihrer eigenen Sprache schreiben. Ein französisches `.as`-Skript und ein englisches `.as`-Skript kompilieren zu demselben internen Programm und laufen auf derselben Engine; nur der Quellwortschatz ändert sich.
+AllSpeak lässt Menschen Code in ihrer eigenen Sprache schreiben. Ein französisches `.allspeak`-Skript und ein englisches `.allspeak`-Skript kompilieren zu demselben internen Programm und laufen auf derselben Engine; nur der Quellwortschatz ändert sich.
 
 Dieses Dokument beschreibt, wie die Mehrsprachigkeits-Ebene funktioniert. Für Leitlinien zum Schreiben von Skripten, deren *Logik* eine Übersetzung überlebt (englisch-zentrierte Datenform-Annahmen, Wortstellungs-Eigenheiten usw. vermeiden), siehe [Sprachneutral schreiben](../idioms/writing-language-neutral.md).
 

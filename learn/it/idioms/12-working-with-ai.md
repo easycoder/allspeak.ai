@@ -11,7 +11,7 @@ L'IA abbozza, l'umano revisiona. Si itera.
 1. **Brieffa l'IA** sul compito. Puntala ai file di riferimento e di idiomi pertinenti — farà leva su quelli piuttosto che sui suoi dati di addestramento.
 2. **L'IA produce una bozza.** Trattala come un primo passaggio, non come una risposta finale.
 3. **Leggila con attenzione.** Cerca gli errori comuni elencati sotto.
-4. **Esegui.** La compilazione cattura molti errori; i bug comportamentali richiedono uno `stampa` o un `registra` (vedi [debug di .as](debugging-as.md)).
+4. **Esegui.** La compilazione cattura molti errori; i bug comportamentali richiedono uno `stampa` o un `registra` (vedi [debug di .allspeak](debugging-as.md)).
 5. **Itera.** O sistemi direttamente ciò che è sbagliato, o passa all'IA il sintomo e lascia che riabbozzi.
 
 Il ciclo non è «l'IA fa tutto, l'umano timbra». È **l'IA batte a macchina, l'umano fa ingegneria.**
@@ -73,6 +73,6 @@ Il giusto ordine: umano e IA si accordano sull'intenzione (a voce o in un brief)
 ## Correlati
 
 - [blocchi di documentazione](../reference/doc-blocks.md) — la convenzione di revisionare mentre si documenta.
-- [debug di .as](debugging-as.md) — `stampa` / `registra` per verificare il comportamento.
+- [debug di .allspeak](debugging-as.md) — `stampa` / `registra` per verificare il comportamento.
 - [scrivere in linguaggio neutro](writing-language-neutral.md) — l'IA come primo traduttore.
 - [cat e costruzione di stringhe](cat-and-string-building.md) — l'errore IA singolo più comune.

@@ -7,7 +7,7 @@
     "2.1",
     "2.6"
   ],
-  "script": "EC-0011-check-basic.as",
+  "script": "EC-0011-check-basic.allspeak",
   "expect": {
     "logs": [
       "FAIL: RoomCount is 5 (CheckBasic:7)"

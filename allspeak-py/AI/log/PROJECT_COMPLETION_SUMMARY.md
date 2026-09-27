@@ -97,7 +97,7 @@ AllSpeak-py is a high-level English-like domain-specific scripting language (DSL
   - Real-time collision detection
   - Context-aware suggestions (core vs. graphics mode)
   - Hover documentation with syntax reference
-  - Syntax highlighting for .as files
+  - Syntax highlighting for .allspeak files
 
 **Status**: Complete (Production Ready)  
 **Files Created**: server.py, extension.ts, syntaxes/, configs, tests, docs
@@ -249,7 +249,7 @@ lsp/
 | Test Suite | Lines | Tests | Status |
 |-----------|-------|-------|--------|
 | Core (test.py) | 220 | 50+ | ✅ PASS |
-| Graphics (testg.as) | 366 | 20+ | ✅ PASS |
+| Graphics (testg.allspeak) | 366 | 20+ | ✅ PASS |
 | LSP Unit Tests | 400+ | 20+ | ✅ PASS (automated) |
 | **Total** | **986+** | **90+** | **✅ 100% PASS** |
 
@@ -343,7 +343,7 @@ Production
 
 ### RBR Controller Scripts
 
-**rbrconf.as** (366 lines, real-world graphics app):
+**rbrconf.allspeak** (366 lines, real-world graphics app):
 - ✅ Graphics mode detected
 - ✅ Graphics completions available
 - ✅ No collisions reported

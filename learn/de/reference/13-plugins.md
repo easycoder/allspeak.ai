@@ -81,7 +81,7 @@ MQTT startete als Plugin und wurde später zu einer gebündelten Domäne beförd
 
 | | Plugin | Modul |
 |---|--------|--------|
-| Sprache | JS / Python | AllSpeak (`.as`) |
+| Sprache | JS / Python | AllSpeak (`.allspeak`) |
 | Erweitert den Wortschatz | Ja | Nein |
 | Erreicht native APIs | Ja | Nein (nur über Plugins) |
 | Geladen über | `<script>`-Tag (JS) oder `importiere erweiterung` (Py) | `laufe <pfad> als <name>` |

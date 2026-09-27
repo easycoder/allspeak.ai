@@ -6,7 +6,7 @@ The live application runs at <https://doclets.eclecity.net>. The source is in th
 
 ## One language, full stack
 
-The client (~code:doclets.as~) renders its screens from Webson JSON and talks to the server entirely by MQTT request/reply: no polling, no hand-written API layer. The server (~code:docletServer.as~) is a short ~ec~ script that subscribes to a topic, queues incoming messages, and dispatches each action:
+The client (~code:doclets.allspeak~) renders its screens from Webson JSON and talks to the server entirely by MQTT request/reply: no polling, no hand-written API layer. The server (~code:docletServer.allspeak~) is a short ~ec~ script that subscribes to a topic, queues incoming messages, and dispatches each action:
 
 ```
 on mqtt message append the mqtt message to MessageQueue

@@ -21,14 +21,14 @@ Die Variable startet leer. `laufe` lädt ein Skript hinein.
 **Python** — das Argument ist ein Pfad; die Laufzeit öffnet und kompiliert die Datei:
 
 ```as
-laufe `deviceControl.as` als DeviceController
+laufe `deviceControl.allspeak` als DeviceController
 ```
 
 **JS** — das Argument ist eine Variable, die den Quelltext hält. Hole sie zuerst mit `rest hole`:
 
 ```as
 variable ModuleSrc
-rest hole ModuleSrc von `resources/as/device-control.as?v=` cat jetzt
+rest hole ModuleSrc von `resources/as/device-control.allspeak?v=` cat jetzt
     oder gehe zu LoadFailed
 laufe ModuleSrc als DeviceController
 ```

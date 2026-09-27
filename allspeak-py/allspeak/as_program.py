@@ -800,20 +800,25 @@ class Program:
 		if self.onMessagePC:
 			self.run(self.onMessagePC)
 
-# List all .as files in the current directory
+# List all .allspeak files in the current directory
 def listScripts():
-	files = sorted(globmod.glob('*.as'))
+	files = sorted(set(globmod.glob('*.allspeak') + globmod.glob('*.as')))
 	if files:
 		print('AllSpeak scripts in current directory:')
 		for f in files:
 			print(f'  {f}')
 	else:
-		print('No .as files found in current directory.')
+		print('No .allspeak files found in current directory.')
 
 # Extract and display the info text from a script file
 def showScriptInfo(name):
-	if not name.endswith('.as'):
-		name += '.as'
+	if not name.endswith(('.allspeak', '.as')):
+		if os.path.exists(name + '.allspeak'):
+			name += '.allspeak'
+		elif os.path.exists(name + '.as'):
+			name += '.as'
+		else:
+			name += '.allspeak'
 	if not os.path.exists(name):
 		print(f"Script '{name}' not found.")
 		return
@@ -899,7 +904,7 @@ def Main():
 	else:
 		Program('-v')
 
-# Run one .as file in test mode and return its exit code. A SystemExit here
+# Run one .allspeak file in test mode and return its exit code. A SystemExit here
 # means the script could not be compiled or run (exit code 2), as distinct
 # from tests that merely failed (exit code 1).
 def runOneTestFile(path):
@@ -911,20 +916,21 @@ def runOneTestFile(path):
 		code = e.code
 		return (code if isinstance(code, int) else 2), None
 
-# The '--test' runner: run a file or every .as file in a directory as its own
+# The '--test' runner: run a file or every .allspeak file in a directory as its own
 # suite, print the per-suite summaries plus an overall line for directories,
 # and return the process exit code (0 = all passed, 1 = failures, 2 = broke).
 def runTestSuite(argv):
 	if len(argv) == 0:
-		print('Usage: allspeak --test <file.as | directory>')
+		print('Usage: allspeak --test <file.allspeak | directory>')
 		return 2
 	target = argv[0]
 	if os.path.isdir(target):
-		files = sorted(globmod.glob(os.path.join(target, '*.as')))
+		files = sorted(set(globmod.glob(os.path.join(target, '*.allspeak'))
+		                   + globmod.glob(os.path.join(target, '*.as'))))
 	else:
 		files = [target]
 	if len(files) == 0:
-		print(f'No .as files found in {target}')
+		print(f'No .allspeak files found in {target}')
 		return 2
 	worst = 0
 	totalTests = totalPassedTests = totalFailedTests = 0

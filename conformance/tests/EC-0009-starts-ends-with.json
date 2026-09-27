@@ -6,7 +6,7 @@
   "requirements": [
     "2.9"
   ],
-  "script": "EC-0009-starts-ends-with.as",
+  "script": "EC-0009-starts-ends-with.allspeak",
   "expect": {
     "logs": [
       "starts ok",

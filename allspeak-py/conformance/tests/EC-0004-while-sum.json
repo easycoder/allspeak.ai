@@ -8,7 +8,7 @@
     "2.4",
     "2.6"
   ],
-  "script": "EC-0004-while-sum.as",
+  "script": "EC-0004-while-sum.allspeak",
   "expect": {
     "logs": [
       "15"

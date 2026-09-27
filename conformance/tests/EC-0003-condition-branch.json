@@ -7,7 +7,7 @@
     "2.5",
     "2.6"
   ],
-  "script": "EC-0003-condition-branch.as",
+  "script": "EC-0003-condition-branch.allspeak",
   "expect": {
     "logs": [
       "GT"

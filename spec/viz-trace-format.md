@@ -113,7 +113,7 @@ should say so rather than presenting it as one block's residence.
 
 ## Conformance
 
-`tools/check-trace.py <trace.json> [script.as]` validates a document against this spec: the
+`tools/check-trace.py <trace.json> [script.allspeak]` validates a document against this spec: the
 document shape, required per-event fields, integer microsecond timestamps, non-overlapping
 intervals per lane, one window span per lane, intervals summing to their window's span, and —
 if a script is named — that every `line` exists in it. Any writer for either runtime must

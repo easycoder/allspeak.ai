@@ -34,7 +34,7 @@ I moduli comunicano tramite passaggio di messaggi. Un genitore carica il modulo 
 
 ```as
 ! Genitore
-esegui `mod.as` come ModName
+esegui `mod.allspeak` come ModName
 ...
 invia Input a ModName e assegna risposta a Output
 ```

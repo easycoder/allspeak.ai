@@ -11,7 +11,7 @@ In this example the plugin is a standard ~ec~ one but you can also load third-pa
 
 Once the plugin is loaded it is available to any script that needs it (but not the one that loaded it). Here, any script that includes map commands can be loaded and compiled, as in
 
-~pre:rest get Script from `/resources/ecs/myscript.as`
+~pre:rest get Script from `/resources/ecs/myscript.allspeak`
 run Script~
 
 (This is the simplest form, that assumes you don't need to communicate with the script once it's running.)

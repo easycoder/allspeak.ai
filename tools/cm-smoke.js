@@ -1,6 +1,6 @@
 // Compile-only smoke test for the new codemirror plugin commands.
 // Loads the built bundle + plugin in a stubbed Node context, compiles
-// asedit.as and a focused snippet, and asserts the new commands compile.
+// asedit.allspeak and a focused snippet, and asserts the new commands compile.
 const fs = require(`fs`);
 const vm = require(`vm`);
 global.fs = fs;
@@ -28,19 +28,19 @@ const plugin = fs.readFileSync(`js/plugins/codemirror.js`, `utf8`);
 const testCode = `
 AllSpeak.scripts = {};
 AllSpeak_Language.init(AllSpeak_LanguagePack_en);
-const asedit = fs.readFileSync('asedit.as', 'utf8');
+const asedit = fs.readFileSync('asedit.allspeak', 'utf8');
 const source = AllSpeak.tokeniseFile(asedit.split('\\n'));
 const program = AllSpeak.compileScript(source);
 const warnings = AllSpeak_Compiler.warnings;
-console.log('COMPILED asedit.as: lines=' + source.scriptLines.length + ' tokens=' + source.tokens.length + ' commands=' + program.length);
+console.log('COMPILED asedit.allspeak: lines=' + source.scriptLines.length + ' tokens=' + source.tokens.length + ' commands=' + program.length);
 console.log('WARNINGS: ' + JSON.stringify(warnings));
 
 const cm = program.filter(c => c.domain === 'codemirror');
 const getCursor = cm.filter(c => c.action === 'getCursor');
 const scrollToLine = cm.filter(c => c.action === 'scrollToLine');
 console.log('codemirror commands: ' + cm.length + ', getCursor: ' + getCursor.length + ', scrollToLine: ' + scrollToLine.length);
-if (getCursor.length < 1) throw new Error('no getCursor command compiled from asedit.as');
-if (scrollToLine.length < 1) throw new Error('no scrollToLine command compiled from asedit.as');
+if (getCursor.length < 1) throw new Error('no getCursor command compiled from asedit.allspeak');
+if (scrollToLine.length < 1) throw new Error('no scrollToLine command compiled from asedit.allspeak');
 
 // Focused snippet exercising both new syntaxes with a variable and literal.
 const snip = AllSpeak.tokeniseFile([

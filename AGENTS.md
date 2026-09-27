@@ -17,12 +17,12 @@ Working rule:
 
 AllSpeak is a multilingual scripting engine forked from EasyCoder. Where EasyCoder uses English-like syntax, AllSpeak's goal is to let users write scripts in **any human language** — English, French, Japanese, Arabic, etc. — while sharing a single language-neutral runtime.
 
-Scripts use the `.as` extension. The name "AllSpeak" references the Marvel Comics Asgardian ability to communicate in any language.
+Scripts use the `.allspeak` extension. The name "AllSpeak" references the Marvel Comics Asgardian ability to communicate in any language.
 
 ## Origin
 
 Forked from [EasyCoder](https://github.com/easycoder/easycoder.github.io) on 2026-04-06. The entire EasyCoder codebase was copied and globally renamed:
-- `EasyCoder` → `AllSpeak`, `easycoder` → `allspeak`, `ec_` → `as_`, `.ecs` → `.as`
+- `EasyCoder` → `AllSpeak`, `easycoder` → `allspeak`, `ec_` → `as_`, `.ecs` → `.allspeak`
 
 The original EasyCoder repo continues unchanged as the stable English-only product.
 
@@ -34,7 +34,7 @@ The original EasyCoder repo continues unchanged as the stable English-only produ
 /dist/             Build output — do not edit directly
 /allspeak-py/      Python implementation (not yet adapted for multilingual)
 /spec/             Language and plugin contracts
-/conformance/      Cross-implementation test suite (.as tests + expected JSON output)
+/conformance/      Cross-implementation test suite (.allspeak tests + expected JSON output)
 /vendor/           Third-party libraries (showdown, codemirror)
 /resources/        Website assets (carried over from EasyCoder, to be pruned)
 /codex/            Tutorial IDE (carried over, to be adapted)
@@ -43,7 +43,7 @@ The original EasyCoder repo continues unchanged as the stable English-only produ
 
 ### Canonical source — this repo owns these files
 
-This repository is the **primary source of truth** for the JS runtime (`js/allspeak/`), the editor (`asedit.as`), the doc-block analysers (`tools/asdoc-check*.py/.as`), and the learning material (`learn/`). Other projects may mirror or symlink these files locally (e.g. the doclets project symlinks `allspeak-js/*.js` here via `relink-allspeak.sh` and keeps copies of `asedit.as` / `asdoc-check.py`).
+This repository is the **primary source of truth** for the JS runtime (`js/allspeak/`), the editor (`asedit.allspeak`), the doc-block analysers (`tools/asdoc-check*.py/.allspeak`), and the learning material (`learn/`). Other projects may mirror or symlink these files locally (e.g. the doclets project symlinks `allspeak-js/*.js` here via `relink-allspeak.sh` and keeps copies of `asedit.allspeak` / `asdoc-check.py`).
 
 - Make changes to shared files **here first**, then let consumer projects pick up the mirror.
 - **Never "fix" a shared file in a consumer project's copy** — that silently forks the mirror and the divergence is hard to spot later.
@@ -51,10 +51,10 @@ This repository is the **primary source of truth** for the JS runtime (`js/allsp
 
 ## Working in non-English languages (FR / IT / DE / …)
 
-When writing or debugging `.as` scripts in a non-English language, the English-only utility scripts (`server.as`, `asedit.as`) are **not** a reliable vocabulary reference. Use these instead:
+When writing or debugging `.allspeak` scripts in a non-English language, the English-only utility scripts (`server.allspeak`, `asedit.allspeak`) are **not** a reliable vocabulary reference. Use these instead:
 
 - **Canonical keyword/token map per language:** `js/allspeak/LanguagePack_<lang>.js` — e.g. `LanguagePack_fr.js`, `LanguagePack_it.js`, `LanguagePack_de.js`. Each entry lists the keyword, its grammar patterns, and accepted spelling variants (with/without accents).
-- **Idiomatic working examples:** `codex/<lang>/code/step*.as` — full tutorial scripts already written in the target language.
+- **Idiomatic working examples:** `codex/<lang>/code/step*.allspeak` — full tutorial scripts already written in the target language.
 
 Note: the `patterns` strings in language packs are descriptive hints, not strict grammars. The compiler in `Core.js` may accept tokens not listed in a pattern (e.g. `attends N millis` works in French even though `millis` isn't in the FR `wait` pattern, because `Core.js` `Wait.compile` reads the scale word loosely). When in doubt, check the relevant `compile:` function in `Core.js`, then confirm with a working example under `codex/<lang>/code/`.
 
@@ -79,7 +79,7 @@ The key architectural challenge is separating **language-neutral runtime** from 
 ### Design
 - **Declarative language definitions** — each human language maps its keywords/grammar to the internal command set via a language-pack file (`js/allspeak/LanguagePack_<lang>.js`, mirrored as JSON for Python under `allspeak-py/allspeak/languages/<lang>.json`).
 - **Table-driven compilation** — the compiler resolves source tokens through `AllSpeak_Language.word()` / `reverseWord()` rather than hardcoding English keywords. `Core.js`, `Browser.js`, and `Compile.js` all go through this layer.
-- **One runtime, many front-ends** — a French `.as` script and an English `.as` script compile to the same internal representation and run on the same engine.
+- **One runtime, many front-ends** — a French `.allspeak` script and an English `.allspeak` script compile to the same internal representation and run on the same engine.
 
 ### Current state
 The JS multilingual layer is implemented and in active use: language packs ship for EN, FR, IT, and DE, and the JS runtime resolves keywords through the language layer throughout. The Python runtime has the same loader (`as_language.py`) and JSON packs, but i18n coverage is incomplete — see the project memory notes on Python and JS i18n gaps for known issues.
@@ -112,9 +112,9 @@ Date-time-based: `YYMMDDHHMM` (e.g. `2605101119` = 2026-05-10 at 11:19). Set in 
 - Plugins loaded separately from `/dist/plugins/`
 - Each plugin follows the contract in `/spec/allspeak-plugin-contract.md`
 
-## Doc blocks — required for new `.as` code
+## Doc blocks — required for new `.allspeak` code
 
-Every section of new `.as` code must be wrapped in a doc block:
+Every section of new `.allspeak` code must be wrapped in a doc block:
 
     !! Brief explanation of what this section does and why it exists.
     !! Use multiple lines as needed. A bare `!!` line is a paragraph break.
@@ -133,8 +133,8 @@ Rules:
 
 Both implementations of the analyser validate the same convention:
 - `tools/asdoc-check.py` — Python CLI, recursive over a directory
-- `tools/asdoc-check-cli.as` — runs under the Python AllSpeak runtime
-- (browser-side parsing also lives inline in `asedit.as` for the editor)
+- `tools/asdoc-check-cli.allspeak` — runs under the Python AllSpeak runtime
+- (browser-side parsing also lives inline in `asedit.allspeak` for the editor)
 
 Spec & history: `prompt-260509.md`.
 

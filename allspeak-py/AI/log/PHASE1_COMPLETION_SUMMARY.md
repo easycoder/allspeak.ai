@@ -151,12 +151,12 @@ Phase 1 syntax refactoring has been successfully implemented across the **core**
 #### 4.1 Regression Testing
 **Status**: ✅ All Passed
 
-- **Core test suite** (`tests/tests.as`): 220 lines, 701 tokens → **PASSED**
+- **Core test suite** (`tests/tests.allspeak`): 220 lines, 701 tokens → **PASSED**
   - Compile time: 11ms
   - All assertions passing
   - Optional tokens working (fork to, go to, gosub to, set/put equivalence)
   
-- **Graphics test suite** (`tests/testg.as`): 25 lines, 42 tokens → **PASSED**
+- **Graphics test suite** (`tests/testg.allspeak`): 25 lines, 42 tokens → **PASSED**
   - Compile time: 4ms
   - GUI initialization successful
   - `set the layout of Window to MainPanel` working with skipArticles()

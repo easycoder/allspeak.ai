@@ -8,11 +8,11 @@ Der einfachere Rahmen: **der Server ist die Anwendung, und die Browser-Tabs sind
 
 ## Das Muster
 
-`server.as` akzeptiert ein `-t`-/`--tabs`-Flag, dessen Wert eine kommaseparierte Liste von Seitennamen ist (ohne `.html`):
+`server.allspeak` akzeptiert ein `-t`-/`--tabs`-Flag, dessen Wert eine kommaseparierte Liste von Seitennamen ist (ohne `.html`):
 
 ```
-allspeak server.as -t edit,<projekt>
-allspeak server.as --tabs edit,<projekt> 8080
+allspeak server.allspeak -t edit,<projekt>
+allspeak server.allspeak --tabs edit,<projekt> 8080
 ```
 
 Für jeden Namen baut der Server `http://localhost:<port>/<name>.html` und öffnet ihn mit [`browse`](../reference/17-dev-environment.md#browse) im Standard-Browser des Benutzers. Der Port ist standardmäßig 8080 und darf vor oder nach dem Flag stehen.
@@ -57,7 +57,7 @@ Die Reihenfolge ist tragend: Phase 3 und 4 müssen in dieser Reihenfolge stehen.
     ende
 ```
 
-Die vollständige Referenzimplementierung ist `server.as` in den Starter-Packs.
+Die vollständige Referenzimplementierung ist `server.allspeak` in den Starter-Packs.
 
 ## Wann du dieses Muster verwendest
 
@@ -67,7 +67,7 @@ Die vollständige Referenzimplementierung ist `server.as` in den Starter-Packs.
 
 ## Wann du dieses Muster *nicht* verwendest
 
-- **Für eine deployed App.** Produktionsnutzer werden `server.as` nicht ausführen. Dieses Muster ist nur für den Entwicklungsablauf.
+- **Für eine deployed App.** Produktionsnutzer werden `server.allspeak` nicht ausführen. Dieses Muster ist nur für den Entwicklungsablauf.
 - **Wenn das Skript keinen Server betreibt.** `browse` funktioniert für sich allein, aber der Server-als-App-Rahmen ergibt nur Sinn, wenn es Seiten auszuliefern gibt.
 - **Für Ad-hoc-Einmalstarts.** Tippe die URL einfach in den Browser. Das Muster rechtfertigt seine Komplexität erst, wenn der Start wiederholt wird.
 
@@ -75,9 +75,9 @@ Die vollständige Referenzimplementierung ist `server.as` in den Starter-Packs.
 
 Wenn eine KI gebeten wird, mit dem Starter-Pack ein GUI-Projekt zu erstellen, ist die erwartete Abfolge:
 
-1. `<projekt>.html`, `<projekt>-main.as`, `<projekt>.json` erzeugen.
-2. `python3 asdoc-check.py --write` auf allen neuen `.as`-Dateien ausführen.
-3. **Sofort** `allspeak server.as -t edit,<projekt>` im Hintergrund ausführen.
+1. `<projekt>.html`, `<projekt>-main.allspeak`, `<projekt>.json` erzeugen.
+2. `python3 asdoc-check.py --write` auf allen neuen `.allspeak`-Dateien ausführen.
+3. **Sofort** `allspeak server.allspeak -t edit,<projekt>` im Hintergrund ausführen.
 4. Dem Benutzer sagen, dass die App gestartet ist und sich zwei Tabs geöffnet haben sollten.
 
 Der Benutzer soll das Gefühl haben, dass „die App gestartet ist" — nicht, dass er drei Infrastrukturteile zusammensetzen muss, um zu sehen, was gerade gebaut wurde.

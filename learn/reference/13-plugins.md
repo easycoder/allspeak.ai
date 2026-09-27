@@ -81,7 +81,7 @@ MQTT started life as a plugin and was later promoted to a bundled domain. The sa
 
 | | Plugin | Module |
 |---|--------|--------|
-| Language | JS / Python | AllSpeak (`.as`) |
+| Language | JS / Python | AllSpeak (`.allspeak`) |
 | Adds vocabulary | Yes | No |
 | Reaches native APIs | Yes | No (only via plugins) |
 | Loaded by | `<script>` tag (JS) or `import plugin` (Py) | `run <path> as <name>` |

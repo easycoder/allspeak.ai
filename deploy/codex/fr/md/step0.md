@@ -2,7 +2,7 @@
 
 Bienvenue dans le ~ec~ **_Codex_**, une ressource gratuite et complète où tu peux apprendre à coder en utilisant des scripts proches du langage courant et mettre à profit les compétences acquises pour construire et gérer des sites web de toute complexité. (Développeurs expérimentés : voir la note au bas de cette page.)
 
-Si tu utilises le développement assisté par IA, `codex.as` est une ressource d'apprentissage précieuse, non seulement pour ce qu'il peut faire, mais aussi pour la façon dont il est structuré.
+Si tu utilises le développement assisté par IA, `codex.allspeak` est une ressource d'apprentissage précieuse, non seulement pour ce qu'il peut faire, mais aussi pour la façon dont il est structuré.
 
 Nous avons tous des compétences en programmation. Sans elles, nous ne pourrions pas suivre des instructions simples comme celles pour préparer un repas ou effectuer un entretien automobile de base. Il suffit de regarder une recette ; elle ressemble un peu à un programme informatique écrit dans une sorte de français simplifié. Ce n'est pas surprenant, car les ordinateurs suivent aussi des instructions ; en fait, c'est tout ce qu'ils savent faire. Un programme informatique n'est qu'un ensemble d'instructions, bien que souvent beaucoup plus complexe que celles que nous rencontrons dans la vie quotidienne. Et un codeur est quelqu'un qui a appris à lire et à écrire ces instructions.
 

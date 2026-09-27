@@ -30,7 +30,7 @@ check ZimmerZahl ist 4
 - **Fehlgeschlagen** — wird vermerkt und eine Meldung über den normalen Log-Kanal ausgegeben:
 
   ```
-  FAIL: ZimmerZahl ist 5 (terminplan.as:12)
+  FAIL: ZimmerZahl ist 5 (terminplan.allspeak:12)
   ```
 
   Der eingeklammerte Teil ist der Skriptname (wie mit `script <name>` gesetzt, sonst der Dateiname) und die Zeilennummer der Prüfung. Nach der Meldung läuft die Ausführung **weiter** — eine fehlgeschlagene Prüfung ist ein Bericht, kein Absturz.
@@ -76,14 +76,14 @@ Innerhalb der Aktion hält `der fehler` die Fehlermeldung.
 Die Python-CLI führt ein Skript (oder ein ganzes Verzeichnis) als Testsuite aus:
 
 ```
-allspeak --test terminplan.as
+allspeak --test terminplan.allspeak
 allspeak --test konformanz/tests/
 ```
 
-Ein Verzeichnis führt jede `.as`-Datei als eigene Suite aus und gibt dann eine Gesamtzeile aus. Im Testmodus wird die Zusammenfassung bei `beende` (oder am Skriptende) ausgegeben:
+Ein Verzeichnis führt jede `.allspeak`-Datei als eigene Suite aus und gibt dann eine Gesamtzeile aus. Im Testmodus wird die Zusammenfassung bei `beende` (oder am Skriptende) ausgegeben:
 
 ```
-Test suite: schedule.as
+Test suite: schedule.allspeak
   ✓ Adding a room (2 checks)
   ✗ Advance roll-over (FAIL: the room count is 4 — line 12)
   ✓ Boost expiry (3 checks)

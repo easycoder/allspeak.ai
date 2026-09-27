@@ -212,8 +212,8 @@
 
 | Test | Status | Coverage |
 |------|--------|----------|
-| `tests/tests.as` | ✅ PASSED | 220 lines, 701 tokens, 11ms compile |
-| `tests/testg.as` | ✅ PASSED | 366 lines, 840 tokens, 36ms compile |
+| `tests/tests.allspeak` | ✅ PASSED | 220 lines, 701 tokens, 11ms compile |
+| `tests/testg.allspeak` | ✅ PASSED | 366 lines, 840 tokens, 36ms compile |
 
 ---
 

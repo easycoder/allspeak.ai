@@ -34,7 +34,7 @@ Modules talk by message-passing. A parent loads the module and sends it dictiona
 
 ```as
 ! Parent
-run `mod.as` as ModName
+run `mod.allspeak` as ModName
 ...
 send Input to ModName and assign reply to Output
 ```

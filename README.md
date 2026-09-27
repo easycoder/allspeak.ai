@@ -38,7 +38,7 @@ Both scripts compile to identical internal opcodes and run on the same engine.
 
 | | JavaScript (browser) | Python (CLI) |
 |--|--|--|
-| Runtime | `dist/allspeak.js` (loaded via CDN or self-hosted) | `pip install allspeak-ai`, then `allspeak script.as` |
+| Runtime | `dist/allspeak.js` (loaded via CDN or self-hosted) | `pip install allspeak-ai`, then `allspeak script.allspeak` |
 | Source | `js/allspeak/` | `allspeak-py/allspeak/` |
 | State | Production | Production; some i18n gaps tracked in [`language-pack-issues.md`](language-pack-issues.md) |
 
@@ -65,11 +65,11 @@ For a non-English script, also load the relevant language pack (e.g. `LanguagePa
 
 ```sh
 pip install allspeak-ai
-allspeak hello.as
+allspeak hello.allspeak
 ```
 
 ```text
-!   hello.as
+!   hello.allspeak
     script Hello
     print `Hello, AllSpeak!`
     exit
@@ -90,9 +90,9 @@ allspeak-py/         Python implementation (runtime + CLI + plugins)
 dist/                Built JS bundles — built by ./build-allspeak; do not edit
 deploy/              Web-served mirror of dist/ + per-language starter zips
 spec/                Language contract, plugin contract, versioning policy, opcodes
-conformance/         Cross-implementation test suite (.as scripts + expected output)
+conformance/         Cross-implementation test suite (.allspeak scripts + expected output)
 starter/<lang>/      Source files for the per-language AI-agent starter packs
-codex/<lang>/        Tutorial curriculum (step1.as ... step20.as) per language
+codex/<lang>/        Tutorial curriculum (step1.allspeak ... step20.allspeak) per language
 primer/              Primer materials for AI-assisted project starts
 examples/            Standalone example projects
 chat/                Multilingual chat application (worked example)

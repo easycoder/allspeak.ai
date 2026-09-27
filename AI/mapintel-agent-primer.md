@@ -19,7 +19,7 @@ Environment note:
 1. Start from an empty workspace.
 2. Create initial files:
    - `index.html` (loader/entry page)
-   - `tictactoe.as` (AllSpeak behavior script)
+   - `tictactoe.allspeak` (AllSpeak behavior script)
    - `tictactoe.json` (Webson layout/styling)
    - `.vscode/tasks.json`
    - `.vscode/launch.json`
@@ -88,7 +88,7 @@ Do not default to "let the agent find out why". Ask trainees to investigate firs
 
 ## Codex training reference
 
-For substantial AllSpeak script work, treat `codex/codex.as` as a high-value training artifact:
+For substantial AllSpeak script work, treat `codex/codex.allspeak` as a high-value training artifact:
 
 1. It is a practical feature reference because it exercises many language constructs in one script.
 2. It is also a construction reference because it shows real structure, flow organization, and composition style.

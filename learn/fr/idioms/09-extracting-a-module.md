@@ -34,7 +34,7 @@ Les modules communiquent par passage de messages. Un parent charge le module et 
 
 ```as
 ! Parent
-exécute `mod.as` comme ModName
+exécute `mod.allspeak` comme ModName
 ...
 envoie Input à ModName et assigne réponse à Output
 ```

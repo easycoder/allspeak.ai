@@ -45,10 +45,10 @@ Translators adapted some English-specific asides thoughtfully (step4's "works li
 
 *Noticed 2026-04-24 while producing the FR and DE starter zips.*
 
-The per-language starter zips (`deploy/allspeak-{en,it,fr,de}.zip`) bundle seven files: `AGENTS.md`, `CLAUDE.md`, `server.as`, `edit.html`, `asedit.json`, `asedit.as`, `asdoc-check.py`. Of these, only `AGENTS.md`, `CLAUDE.md` and `edit.html` are per-language. The three shared files are English across every pack, including Italian:
+The per-language starter zips (`deploy/allspeak-{en,it,fr,de}.zip`) bundle seven files: `AGENTS.md`, `CLAUDE.md`, `server.allspeak`, `edit.html`, `asedit.json`, `asedit.allspeak`, `asdoc-check.py`. Of these, only `AGENTS.md`, `CLAUDE.md` and `edit.html` are per-language. The three shared files are English across every pack, including Italian:
 
-- `code/server.as` — the dev-server program. User-visible strings include startup prints (`AllSpeak dev server running on port …`, `Serving files from …`, `Press Ctrl+C to stop`) and error messages (`Warning: could not check for updates`, `Updating from version … to …`, `Update complete`, `Restart requested`, `Forbidden`, `Not found`). All hardcoded English.
-- `asedit.as` — the browser editor script. Builds UI strings for the editor (labels, prompts, error messages) — all hardcoded English.
+- `code/server.allspeak` — the dev-server program. User-visible strings include startup prints (`AllSpeak dev server running on port …`, `Serving files from …`, `Press Ctrl+C to stop`) and error messages (`Warning: could not check for updates`, `Updating from version … to …`, `Update complete`, `Restart requested`, `Forbidden`, `Not found`). All hardcoded English.
+- `asedit.allspeak` — the browser editor script. Builds UI strings for the editor (labels, prompts, error messages) — all hardcoded English.
 - `asedit.json` — Webson layout for the editor UI. Labels inside values (button text, tab names, etc.) are English.
 
 A proper fix would externalise user-visible strings from these three files into per-language JSON (e.g. `strings-<lang>.json`) that gets picked based on the active language directive, and then `build-starters` bundles the matching strings file. Not a blocker for the UNESCO pitch — the zip's agent-facing `AGENTS.md` is what gets Claude behaving in the target language, and that is fully translated.

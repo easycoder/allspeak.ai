@@ -4,12 +4,12 @@
 // where control flow is not simply the next line: labels, `while` tests, and the
 // points where an event handler is entered. It also derives just enough of the
 // control-flow graph to say whether each anchor can be reached at all. Nothing is
-// executed and nothing is drawn; the AllSpeak framework (viz.as) presents it.
+// executed and nothing is drawn; the AllSpeak framework (viz.allspeak) presents it.
 //
 // Host contract (this is the seam that later becomes the dev server's /read):
 //
-//     AllSpeak_Viz.target = `codex/en/code/step13.as`;
-//     AllSpeak_Viz.sources[`codex/en/code/step13.as`] = sourceText;
+//     AllSpeak_Viz.target = `codex/en/code/step13.allspeak`;
+//     AllSpeak_Viz.sources[`codex/en/code/step13.allspeak`] = sourceText;
 //
 // Acquisition — file read, fetch, editor buffer — stays on the host side,
 // because that is where the platform differences live. See tools/asviz-run.js

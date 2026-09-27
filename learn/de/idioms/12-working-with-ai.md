@@ -11,7 +11,7 @@ Die KI entwirft, der Mensch prüft. Iterieren.
 1. **Weise die KI in die Aufgabe ein.** Zeige ihr die relevanten Referenz- und Idiom-Dateien — sie stützt sich eher auf diese als auf ihre Trainingsdaten.
 2. **Die KI erzeugt einen Entwurf.** Behandle ihn als ersten Durchgang, nicht als endgültige Antwort.
 3. **Lies ihn sorgfältig.** Achte auf die unten aufgelisteten häufigen Fehler.
-4. **Führe ihn aus.** Die Kompilierung fängt viele Fehler; Verhaltensfehler brauchen ein `drucke` oder `logge` (siehe [.as debuggen](debugging-as.md)).
+4. **Führe ihn aus.** Die Kompilierung fängt viele Fehler; Verhaltensfehler brauchen ein `drucke` oder `logge` (siehe [.allspeak debuggen](debugging-as.md)).
 5. **Iteriere.** Korrigiere entweder das Falsche direkt oder gib der KI das Symptom und lass sie neu entwerfen.
 
 Die Schleife ist nicht „Die KI macht alles, der Mensch stempelt ab." Es ist **die KI tippt, der Mensch macht die Ingenieursarbeit.**
@@ -73,6 +73,6 @@ Die richtige Reihenfolge: Mensch und KI einigen sich auf die Absicht (mündlich 
 ## Siehe auch
 
 - [Dokumentationsblöcke](../reference/doc-blocks.md) — die Konvention, beim Dokumentieren zu prüfen.
-- [.as debuggen](debugging-as.md) — `drucke` / `logge` zum Verifizieren des Verhaltens.
+- [.allspeak debuggen](debugging-as.md) — `drucke` / `logge` zum Verifizieren des Verhaltens.
 - [Sprachneutral schreiben](writing-language-neutral.md) — die KI als Erstübersetzer.
 - [cat und Zeichenkettenaufbau](cat-and-string-building.md) — der mit Abstand häufigste KI-Fehler.

@@ -34,7 +34,7 @@ Module kommunizieren per Nachrichtenübermittlung. Ein Parent lädt das Modul un
 
 ```as
 ! Elternskript
-laufe `mod.as` als ModName
+laufe `mod.allspeak` als ModName
 ...
 sende Input zu ModName und zuweise antwort zu Output
 ```

@@ -1,4 +1,4 @@
-# Debugging .as
+# Debugging .allspeak
 
 ## Problem
 

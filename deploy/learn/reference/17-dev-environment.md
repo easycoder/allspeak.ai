@@ -32,7 +32,7 @@ Run a shell command. With `background`, the command is forked into a separate pr
 
 ```
 system `ls -l > files.txt`
-system background `sleep 2 && allspeak server.as 8080`
+system background `sleep 2 && allspeak server.allspeak 8080`
 ```
 
 `system` is convenient but ties the script to a particular OS. Prefer `browse` when the goal is opening a URL, and `download` when the goal is fetching a file — both are OS-independent.
@@ -42,7 +42,7 @@ system background `sleep 2 && allspeak server.as 8080`
 Fetch a URL into a local file, with an optional `or` / `on failure` clause for error handling:
 
 ```
-download `https://allspeak.ai/code/server.as` to BaseDir cat `/server.as` or begin
+download `https://allspeak.ai/code/server.allspeak` to BaseDir cat `/server.allspeak` or begin
     print `Update check failed`
 end
 ```
@@ -51,4 +51,4 @@ Add `binary` for non-text payloads (images, archives). The full grammar and per-
 
 ## When these don't exist
 
-In the JS browser runtime, `system`, `download`, and `browse` are not defined. The browser sandbox makes them either impossible (`system`) or redundant (`browse` — a script can navigate via `window.location` or open via `window.open`, and `download` can be done with `rest get`). Don't write code that uses these keywords if it might also need to run in the browser; keep them in scripts that are clearly Python-side, such as `server.as` and CLI utilities.
+In the JS browser runtime, `system`, `download`, and `browse` are not defined. The browser sandbox makes them either impossible (`system`) or redundant (`browse` — a script can navigate via `window.location` or open via `window.open`, and `download` can be done with `rest get`). Don't write code that uses these keywords if it might also need to run in the browser; keep them in scripts that are clearly Python-side, such as `server.allspeak` and CLI utilities.

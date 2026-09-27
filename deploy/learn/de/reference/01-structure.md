@@ -53,7 +53,7 @@ Die Laufzeit selbst ist klein und sprachagnostisch. Sie weiß nicht, was `bei kl
 
 Eine zweite Ebene sitzt zwischen dem Quellskript und den Domänen-Compilern: das **Sprachpaket**. Quell-Tokens in jeder unterstützten Sprache (Englisch, Französisch, Italienisch, Deutsch, …) werden über das Sprachpaket in eine kanonische Form aufgelöst und dann an die Domänen übergeben. Domänen sehen nie die lokalisierten Tokens — sie arbeiten vollständig im kanonischen Wortschatz.
 
-Das bedeutet, dass ein französisches `.as`-Skript und ein englisches `.as`-Skript zum selben Programm-Array kompilieren und auf derselben Engine laufen. Siehe [Mehrsprachigkeit](multilingual.md) für die Funktionsweise der Sprachpakete und wie die `language`-Direktive eines auswählt.
+Das bedeutet, dass ein französisches `.allspeak`-Skript und ein englisches `.allspeak`-Skript zum selben Programm-Array kompilieren und auf derselben Engine laufen. Siehe [Mehrsprachigkeit](multilingual.md) für die Funktionsweise der Sprachpakete und wie die `language`-Direktive eines auswählt.
 
 ## Plugins
 

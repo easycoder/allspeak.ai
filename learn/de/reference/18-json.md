@@ -20,7 +20,7 @@ save Rows zu `data/2024-25/04.json`
 JSON-Ausgabe ist **standardmäßig hübsch formatiert** (Einrückung mit zwei Leerzeichen), sodass gespeicherte Dateien direkt zur menschlichen Prüfung geöffnet werden können. Das gilt für zwei Wege:
 
 - **Automatisch kodiertes dict oder Liste.** Der Serialisierer nutzt `indent=2`, unabhängig vom Dateipfad.
-- **Zeichenketten-Inhalt, der in einen `.json`-Pfad gespeichert wird.** Wenn der Inhalt bereits eine JSON-Zeichenkette ist (z. B. der Request-Body eines POST an den `/write/<file>`-Endpunkt von `server.as`, der von `save` unverändert geschrieben wird), wird er geparst und mit `indent=2` neu ausgegeben. Wenn die Zeichenkette nicht als JSON parst, wird sie unverändert geschrieben — Nicht-JSON-Inhalt in einer `.json`-Datei bleibt unangetastet, statt den Save zum Absturz zu bringen.
+- **Zeichenketten-Inhalt, der in einen `.json`-Pfad gespeichert wird.** Wenn der Inhalt bereits eine JSON-Zeichenkette ist (z. B. der Request-Body eines POST an den `/write/<file>`-Endpunkt von `server.allspeak`, der von `save` unverändert geschrieben wird), wird er geparst und mit `indent=2` neu ausgegeben. Wenn die Zeichenkette nicht als JSON parst, wird sie unverändert geschrieben — Nicht-JSON-Inhalt in einer `.json`-Datei bleibt unangetastet, statt den Save zum Absturz zu bringen.
 
 Die Dateiendung ist eine Dokumentations-Konvention für die *Kodierung* — ein dict oder eine Liste, die in eine Datei ohne Endung gespeichert wird, wird trotzdem als JSON kodiert; eine Nicht-JSON-Zeichenkette, die in `report.json` gespeichert wird, wird trotzdem unverändert geschrieben — aber für die *Formatierung* löst die `.json`-Endung den Pretty-Print-Durchlauf bei Zeichenketten-Inhalt aus.
 

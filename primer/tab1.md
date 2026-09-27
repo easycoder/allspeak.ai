@@ -36,7 +36,7 @@ Here's all you do:
 2. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into that folder.
 3. Install AllSpeak: `pip install -U allspeak-ai`
 4. Install Claude Code (see [claude.ai/code](https://claude.ai/code)).
-5. Start the AllSpeak file server: open a second terminal in the project folder and type `allspeak server.as`. Keep this terminal running — it serves your files while you work.
+5. Start the AllSpeak file server: open a second terminal in the project folder and type `allspeak server.allspeak`. Keep this terminal running — it serves your files while you work.
 6. Open a terminal in that folder and type `claude`.
 7. When Claude starts, type **go**.
 
@@ -51,7 +51,7 @@ Here's all you do:
 1. Install AllSpeak: `pip install -U allspeak-ai`
 2. Download the Reasonix desktop app from [reasonix.io](https://reasonix.io) — select **Download desktop**.
 3. Create an empty folder for your project.
-4. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into your project folder. Then open a terminal in the project folder and type `allspeak server.as`. Keep this terminal running — it serves your files while you work (it's the only terminal you'll need during a session).
+4. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into your project folder. Then open a terminal in the project folder and type `allspeak server.allspeak`. Keep this terminal running — it serves your files while you work (it's the only terminal you'll need during a session).
 5. Start Reasonix desktop — most people add it to their Start menu.
 6. In Reasonix, click **Add new project** and navigate to your project folder.
 7. Tell Reasonix what you'd like to build (on first use it will ask for your DeepSeek API key and save it for you).

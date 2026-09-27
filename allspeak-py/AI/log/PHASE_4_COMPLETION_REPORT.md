@@ -13,7 +13,7 @@ Phase 4 delivers a full-featured Language Server Protocol (LSP) implementation f
 - **Code Completion**: Context-aware keyword suggestions (50+ core + graphics keywords)
 - **Collision Detection**: Real-time warnings for reserved keyword conflicts
 - **Hover Documentation**: Interactive keyword reference with syntax and safety notes
-- **Syntax Highlighting**: TextMate grammar for .as files
+- **Syntax Highlighting**: TextMate grammar for .allspeak files
 - **Plugin-Aware Suggestions**: Load RESERVED_STEMS, operations, and patterns registries
 
 ## Architecture
@@ -326,7 +326,7 @@ AllSpeak Runtime
 
 ### RBR Controller Scripts
 
-**rbrconf.as** (366 lines)
+**rbrconf.allspeak** (366 lines)
 - Graphics mode detected ✅
 - Graphics keywords suggested ✅
 - No collisions reported ✅

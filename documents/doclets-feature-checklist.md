@@ -13,7 +13,7 @@ Status legend: `[ ]` not done · `[~]` in progress · `[x]` done
 - [ ] **Multilingual phrasing is honest.** Any published copy must say: the
       keywords resolve automatically through the language pack; the script
       text and user-visible strings must be authored in the target language.
-      Do NOT claim "the same .as logic runs under any language pack" or name
+      Do NOT claim "the same .allspeak logic runs under any language pack" or name
       Arabic as a supported language (only EN/FR/DE/IT exist; Bulgarian is the
       non-Latin roadmap target).
 - [ ] **Canonical links confirmed.** Whitepaper and website cite
@@ -67,11 +67,11 @@ Status: drafted in this session; deploy pending.
 - [x] **Website Learn links** added to the live site: `deploy/{en,de,fr,it}/nav.md` and
       `topnav.md` (button beside Primer → `../learn/`) and the "Where do I start?" sections
       of `deploy/{en,de,fr,it}/home.md` (incl. JSON-LD FAQ answers). Note: an initial attempt
-      in `resources/ecs/main.as` was reverted — `resources/` is a superseded site generation
+      in `resources/ecs/main.allspeak` was reverted — `resources/` is a superseded site generation
       that the deploy pipeline never ships (deploy-allspeak mirrors only codex/, learn/, primer/).
 - [x] **French pilot (first draft)** — `learn/fr/` with the full curriculum (18 reference +
       13 idioms pages + contents/manifest/strings.json), the reader made language-aware
-      (`learn/reader.as` + `learn/index.html`: `?lang=fr` → `fr/` tree, UI strings per
+      (`learn/reader.allspeak` + `learn/index.html`: `?lang=fr` → `fr/` tree, UI strings per
       language; English stays at the root for backward compat). Mirrored to `deploy/learn/fr/`.
 - [x] **German + Italian first drafts** — same structure under `learn/de/` and `learn/it/`
       (no codex/it exists, so IT relied on the pack alone). Draft-translation banners
@@ -110,7 +110,7 @@ Status: drafted in this session; deploy pending.
 - `documents/whitepaper.md` — §7.2 rewritten (Doclets primary, Account as scale data point)
 - `documents/whitepaper.html` — §7.2 hand-synced to match the .md
 - `resources/md/doclets.md` — new page content
-- `resources/ecs/doclets.as` — new page module
-- `resources/ecs/main.as` — nav wiring (Doclets button + module)
+- `resources/ecs/doclets.allspeak` — new page module
+- `resources/ecs/main.allspeak` — nav wiring (Doclets button + module)
 - `resources/md/examples.md` — list entry + section
 - `documents/outreach-plan.md` — state line updated

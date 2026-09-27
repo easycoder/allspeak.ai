@@ -5,7 +5,7 @@
       "ph": "M",
       "pid": 1,
       "args": {
-        "name": "examples/chemical/parser.as"
+        "name": "examples/chemical/parser.allspeak"
       }
     },
     {
@@ -130,6 +130,6 @@
   "displayTimeUnit": "ms",
   "otherData": {
     "vizTrace": 1,
-    "script": "examples/chemical/parser.as"
+    "script": "examples/chemical/parser.allspeak"
   }
 }

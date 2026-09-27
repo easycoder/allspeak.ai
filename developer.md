@@ -26,7 +26,7 @@ Include either or both of these according to the needs of your project.
 
 Follow these with an outline of your project; what will it do, is it command-line or browser, how does it communicate, what special terminology will you be using, etc. The more you give, the better the agent will understand your needs.
 
-Once you have given the primer prompt you can start asking your agent to write some code. Start with something simple to get familiar with how it works. (If you'd like some examples, see the note at the bottom of this screen about Codex.) Save the script generated as `project.as`.
+Once you have given the primer prompt you can start asking your agent to write some code. Start with something simple to get familiar with how it works. (If you'd like some examples, see the note at the bottom of this screen about Codex.) Save the script generated as `project.allspeak`.
 
 ## Running your script 
 ### Python version
@@ -40,7 +40,7 @@ If AllSpeak is already installed this will update you to the latest version, whi
 
 and to run your script, use
 
-`allspeak project.as`
+`allspeak project.allspeak`
 
 ### JavaScript version
 For local LLM development of a webapp, set up a simple Python local server:
@@ -53,10 +53,10 @@ Then open `http://localhost:5500/` in your browser.
 
 Copy the file at `https://allspeak.ai/index_html` to your own `index.html` and serve this to your browser.
 
-Now create a script file, `project.as` with the following content. It starts by setting up a panel in your browser. Add new code written by your AI agent to the bottom of the script.
+Now create a script file, `project.allspeak` with the following content. It starts by setting up a panel in your browser. Add new code written by your AI agent to the bottom of the script.
 
 ```
-!  project.as 
+!  project.allspeak 
 
    script Project 
 

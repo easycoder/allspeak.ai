@@ -4,16 +4,16 @@ The files here are the bare minimum to get started with AllSpeak. If you are dev
 
 ```
 index.html
-project.as
+project.allspeak
 project.json
 ```
 
 Aim your browser at index.html and you should see a blank screen with the word (empty) in the middle. Now tell your agent what you want next.
 
-If you are developing a client-server application you will need a 4th file, `server.as`. Run it as follows:
+If you are developing a client-server application you will need a 4th file, `server.allspeak`. Run it as follows:
 
 ```
-allspeak server.as?port={port}
+allspeak server.allspeak?port={port}
 ```
 
 where {port} is some number such as 5500. Aim your browser at `http://localhost:{port}.

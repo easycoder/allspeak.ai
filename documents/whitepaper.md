@@ -177,7 +177,7 @@ Several minor internationalisation gaps have been identified and documented. Non
 
 - **Compiler diagnostic strings:** Some error messages bypass the language pack's diagnostics system and emit English text (`Compile error in '...'`, `Warnings:`, `Unrecognised syntax in '...'`). These are known and tracked for resolution.
 
-- **Starter-zip UI strings:** The per-language starter zips bundle three shared files (`server.as`, `asedit.as`, `asedit.json`) whose user-visible strings are currently English across all language packs. This is non-blocking because the agent-facing `AGENTS.md` guide—which is what instructs the AI coding assistant—is fully translated.
+- **Starter-zip UI strings:** The per-language starter zips bundle three shared files (`server.allspeak`, `asedit.allspeak`, `asedit.json`) whose user-visible strings are currently English across all language packs. This is non-blocking because the agent-facing `AGENTS.md` guide—which is what instructs the AI coding assistant—is fully translated.
 
 ---
 
@@ -261,7 +261,7 @@ The Codex steps are:
 | 9 | Visual effects | 19 | Pan and zoom |
 | 10 | Debugging tools | 20 | Image transitions (Ken Burns effect) |
 
-Each step exists as a complete, runnable `.as` script across all four existing languages, plus accompanying tutorial text in `codex/<lang>/md/`.
+Each step exists as a complete, runnable `.allspeak` script across all four existing languages, plus accompanying tutorial text in `codex/<lang>/md/`.
 
 ### 6.4 Educator validation
 
@@ -299,7 +299,7 @@ The Codex is available in all four current languages (EN, FR, DE, IT), with iden
 
 AllSpeak is not only an educational tool. It is also the runtime for a small but complete client–server application: Doclets, a searchable note/document system for a small team, in which the browser client and the MQTT-connected server are both written in AllSpeak (`https://github.com/easycoder/doclets`). Because the stack is deliberately small, one person can understand and change the entire system—UI, messaging, and backend—without a conventional web framework or a separate client language.
 
-The client (`doclets.as`) renders its screens declaratively from Webson JSON and communicates with the server entirely by MQTT request/reply: no polling, and no hand-written API layer. The server (`docletServer.as`) is a short AllSpeak script that subscribes to a topic and dispatches each incoming action to the appropriate handler:
+The client (`doclets.allspeak`) renders its screens declaratively from Webson JSON and communicates with the server entirely by MQTT request/reply: no polling, and no hand-written API layer. The server (`docletServer.allspeak`) is a short AllSpeak script that subscribes to a topic and dispatches each incoming action to the appropriate handler:
 
     on mqtt message append the mqtt message to MessageQueue
     ...
@@ -318,7 +318,7 @@ Doclets also demonstrates the model's incremental quality. Semantic LLM search a
 
 Because AllSpeak separates language from logic, the same architecture can be re-expressed in French, German, or Italian: the keywords resolve automatically through the language pack, and only the script text and user-visible strings need to be authored in the target language. A French-language Doclets client is planned as a demonstration of this property.
 
-AllSpeak's vocabulary is not limited to small applications either. A second deployed system, the Account application, is a spreadsheet-replacement for a one-person event live-streaming service (`https://github.com/easycoder/stream`): approximately 4,500 lines of AllSpeak across five modules (`account-main.as`, `admin-main.as`, `index-main.as`, `build.as`, `seed.as`), in daily use managing real bookings and financial records. Where Doclets demonstrates the breadth of the model in one small system, Account demonstrates its scale.
+AllSpeak's vocabulary is not limited to small applications either. A second deployed system, the Account application, is a spreadsheet-replacement for a one-person event live-streaming service (`https://github.com/easycoder/stream`): approximately 4,500 lines of AllSpeak across five modules (`account-main.allspeak`, `admin-main.allspeak`, `index-main.allspeak`, `build.allspeak`, `seed.allspeak`), in daily use managing real bookings and financial records. Where Doclets demonstrates the breadth of the model in one small system, Account demonstrates its scale.
 
 Together the two applications are a concrete demonstration that AllSpeak's constrained, readable vocabulary is not a limitation. The language that can express a searchable document system, an MQTT server, a plugin boundary, and a production booking system can express a great deal. The readability is not bought at the cost of power.
 

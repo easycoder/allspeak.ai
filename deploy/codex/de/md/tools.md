@@ -11,7 +11,7 @@ In diesem Beispiel handelt es sich um ein Standard-~ec~-Plugin, aber Sie können
 
 Sobald das Plugin geladen ist, steht es jedem Skript zur Verfügung, das es benötigt (nicht aber demjenigen, das es geladen hat). Hier kann jedes Skript, das Kartenbefehle enthält, geladen und kompiliert werden, etwa so
 
-~pre:rest hole Skript von `/resources/ecs/myscript.as`
+~pre:rest hole Skript von `/resources/ecs/myscript.allspeak`
 laufe Skript~
 
 (Dies ist die einfachste Form, die voraussetzt, dass Sie nicht mit dem Skript kommunizieren müssen, sobald es läuft.)

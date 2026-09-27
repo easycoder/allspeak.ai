@@ -1,7 +1,7 @@
 # AllSpeak + Webson Guide (for AI)
 
 ## AllSpeak style in this repo
-- Treat `.as` as the source of high-level behavior
+- Treat `.allspeak` as the source of high-level behavior
 - Make surgical changes; preserve command vocabulary and flow
 - Prefer existing labels/subroutines over introducing new structures
 
@@ -14,7 +14,7 @@
 ## Webson usage here
 - `doclets.json` defines screen layout and element IDs
 - AllSpeak attaches by those IDs
-- Renaming IDs requires matching changes in `.as`
+- Renaming IDs requires matching changes in `.allspeak`
 - Renaming only Webson object keys is safe if IDs stay stable
 
 ## Markdown rendering

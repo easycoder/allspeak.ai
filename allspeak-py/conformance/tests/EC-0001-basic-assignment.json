@@ -8,7 +8,7 @@
     "2.2",
     "2.6"
   ],
-  "script": "EC-0001-basic-assignment.as",
+  "script": "EC-0001-basic-assignment.allspeak",
   "expect": {
     "logs": [
       "hello"

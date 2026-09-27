@@ -237,7 +237,7 @@ When adding new graphics commands or attributes:
 2. **Document variants**: If you add optional forms, document them (e.g., optional article, optional preposition).
 3. **Check reserved stems**: Ensure new stems don't conflict with core or existing plugins.
 4. **Write examples**: Provide both canonical and shorthand forms (if applicable).
-5. **Test**: Run the graphics test suite (`testg.as`) to validate no regressions.
+5. **Test**: Run the graphics test suite (`testg.allspeak`) to validate no regressions.
 
 ---
 

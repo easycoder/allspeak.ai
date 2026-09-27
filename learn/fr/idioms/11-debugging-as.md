@@ -1,4 +1,4 @@
-# Déboguer .as
+# Déboguer .allspeak
 
 ## Problème
 

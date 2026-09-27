@@ -32,7 +32,7 @@ Einen Shell-Befehl ausführen. Mit `background` wird der Befehl in einen separat
 
 ```
 system `ls -l > files.txt`
-system background `sleep 2 && allspeak server.as 8080`
+system background `sleep 2 && allspeak server.allspeak 8080`
 ```
 
 `system` ist praktisch, bindet das Skript aber an ein bestimmtes Betriebssystem. Bevorzuge `browse`, wenn das Ziel das Öffnen einer URL ist, und `download`, wenn das Ziel das Holen einer Datei ist — beides ist betriebssystem-unabhängig.
@@ -42,7 +42,7 @@ system background `sleep 2 && allspeak server.as 8080`
 Eine URL in eine lokale Datei holen, mit optionaler `oder`- / `on failure`-Klausel für die Fehlerbehandlung:
 
 ```
-download `https://allspeak.ai/code/server.as` zu BaseDir cat `/server.as` oder beginn
+download `https://allspeak.ai/code/server.allspeak` zu BaseDir cat `/server.allspeak` oder beginn
     drucke `Update-Prüfung fehlgeschlagen`
 ende
 ```
@@ -51,4 +51,4 @@ Füge `binary` für Nicht-Text-Nutzdaten hinzu (Bilder, Archive). Die vollständ
 
 ## Wenn es sie nicht gibt
 
-In der JS-Browser-Laufzeit sind `system`, `download` und `browse` nicht definiert. Die Browser-Sandbox macht sie entweder unmöglich (`system`) oder überflüssig (`browse` — ein Skript kann über `window.location` navigieren oder über `window.open` öffnen, und `download` ist mit `rest hole` möglich). Schreibe keinen Code mit diesen Schlüsselwörtern, wenn er auch im Browser laufen könnte; halte sie in Skripten, die klar Python-seitig sind, wie `server.as` und CLI-Werkzeuge.
+In der JS-Browser-Laufzeit sind `system`, `download` und `browse` nicht definiert. Die Browser-Sandbox macht sie entweder unmöglich (`system`) oder überflüssig (`browse` — ein Skript kann über `window.location` navigieren oder über `window.open` öffnen, und `download` ist mit `rest hole` möglich). Schreibe keinen Code mit diesen Schlüsselwörtern, wenn er auch im Browser laufen könnte; halte sie in Skripten, die klar Python-seitig sind, wie `server.allspeak` und CLI-Werkzeuge.

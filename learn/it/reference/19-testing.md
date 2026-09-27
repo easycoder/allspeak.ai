@@ -27,7 +27,7 @@ check Contatore è 4
 - **Fallito** — registrato e viene emessa una riga di rapporto attraverso il normale canale di log:
 
   ```
-  FAIL: Contatore è 5 (pianificazione.as:12)
+  FAIL: Contatore è 5 (pianificazione.allspeak:12)
   ```
 
   La parte tra parentesi è il nome dello script (come impostato da `script <nome>`, altrimenti il nome del file) e il numero di riga della verifica. Dopo la registrazione l'esecuzione **continua** — una verifica fallita è un rapporto, non un crash.
@@ -73,14 +73,14 @@ Dentro l'azione, `l errore` contiene il messaggio di fallimento.
 La CLI Python esegue uno script (o un intero elenco di file) come suite di test:
 
 ```
-allspeak --test pianificazione.as
+allspeak --test pianificazione.allspeak
 allspeak --test conformance/tests/
 ```
 
-Una directory esegue ogni file `.as` come propria suite, poi stampa una riga aggregata. In modalità test il riepilogo viene stampato a `esci` (o alla fine dello script):
+Una directory esegue ogni file `.allspeak` come propria suite, poi stampa una riga aggregata. In modalità test il riepilogo viene stampato a `esci` (o alla fine dello script):
 
 ```
-Test suite: schedule.as
+Test suite: schedule.allspeak
   ✓ Adding a room (2 checks)
   ✗ Advance roll-over (FAIL: the room count is 4 — line 12)
   ✓ Boost expiry (3 checks)

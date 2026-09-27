@@ -4,12 +4,12 @@
 //
 // It loads the JS runtime in the bundle order documented in build-allspeak,
 // loads the viz plugin, registers the requested source files as the host side of
-// the plugin contract, and then runs viz.as exactly as a browser page would.
+// the plugin contract, and then runs viz.allspeak exactly as a browser page would.
 // Nothing here draws: it is the same "text first" increment, just with a
 // command line instead of a page.
 //
-// Usage:  node tools/asviz-run.js [script.as ...]
-//         (default target: codex/en/code/step13.as)
+// Usage:  node tools/asviz-run.js [script.allspeak ...]
+//         (default target: codex/en/code/step13.allspeak)
 
 const fs = require('fs');
 const path = require('path');
@@ -122,10 +122,10 @@ for (const note of skipped) {
 // source text. A browser host would fill these from the editor buffer instead.
 const targets = process.argv.slice(2);
 if (targets.length === 0) {
-	targets.push(`codex/en/code/step13.as`);
+	targets.push(`codex/en/code/step13.allspeak`);
 }
 
-const framework = fs.readFileSync(path.join(root, `viz.as`), `utf8`);
+const framework = fs.readFileSync(path.join(root, `viz.allspeak`), `utf8`);
 
 // A failing target is a finding, not a reason to stop: keep going so a whole
 // corpus can be swept in one pass, and report each failure against its name.

@@ -1,6 +1,6 @@
 # Dokumentationsblöcke
 
-Ein Dokumentationsblock ist eine strukturierte Prosa-Erklärung, die an einen Abschnitt von `.as`-Code angehängt ist. Die Konvention existiert, um genaues Lesen zu erzwingen: Das *Warum* aufzuschreiben zwingt dich, wahrzunehmen, was der Code tatsächlich tut, und Prüfer sehen, was der Autor beabsichtigt hat, ohne es aus Variablennamen ableiten zu müssen.
+Ein Dokumentationsblock ist eine strukturierte Prosa-Erklärung, die an einen Abschnitt von `.allspeak`-Code angehängt ist. Die Konvention existiert, um genaues Lesen zu erzwingen: Das *Warum* aufzuschreiben zwingt dich, wahrzunehmen, was der Code tatsächlich tut, und Prüfer sehen, was der Autor beabsichtigt hat, ohne es aus Variablennamen ableiten zu müssen.
 
 Dokumentationsblöcke sind pro Datei optional, aber Pflicht, sobald eine Datei sie übernimmt — eine Datei ohne einen einzigen Dokumentationsblock gilt als abgemeldet, ohne Warnungen in beide Richtungen.
 
@@ -82,7 +82,7 @@ Sobald eine Datei einen Dokumentationsblock hat, erwartet der Analysator, dass d
 Zwei Werkzeuge validieren dieselbe Konvention:
 
 - `tools/asdoc-check.py` — Python-CLI; rekursiv über ein Verzeichnis. Mit `--write` ausführen, um Hashes aufzufrischen.
-- `tools/asdoc-check-cli.as` — läuft unter der Python-AllSpeak-Laufzeit und übt dieselbe Logik aus AllSpeak heraus.
+- `tools/asdoc-check-cli.allspeak` — läuft unter der Python-AllSpeak-Laufzeit und übt dieselbe Logik aus AllSpeak heraus.
 
 Der Blocks-Modus von Asedit validiert auch beim Tippen im Editor.
 

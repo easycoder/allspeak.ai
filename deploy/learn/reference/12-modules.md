@@ -21,14 +21,14 @@ The variable starts empty. `run` loads a script into it.
 **Python** — the argument is a path; the runtime opens and compiles the file:
 
 ```as
-run `deviceControl.as` as DeviceController
+run `deviceControl.allspeak` as DeviceController
 ```
 
 **JS** — the argument is a variable holding the source text. Fetch it first with `rest get`:
 
 ```as
 variable ModuleSrc
-rest get ModuleSrc from `resources/as/device-control.as?v=` cat now
+rest get ModuleSrc from `resources/as/device-control.allspeak?v=` cat now
     or go to LoadFailed
 run ModuleSrc as DeviceController
 ```

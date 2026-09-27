@@ -6,7 +6,7 @@
   "requirements": [
     "2.2"
   ],
-  "script": "EC-0010-param-as-value.as",
+  "script": "EC-0010-param-as-value.allspeak",
   "expect": {
     "logs": [
       "slug",

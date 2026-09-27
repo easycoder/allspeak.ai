@@ -1,0 +1,343 @@
+!	AllSpeak Main
+
+	script Main
+    
+!  div Tracer
+	div Body
+	div Main
+	div Header
+	div Sidebar
+	div Document
+	div Notes
+    div Status
+	img Banner
+	ul ButtonList
+	li ButtonItem
+	button HomeButton
+	button IntroButton
+	button ExamplesButton
+	button DocletsButton
+	button AboutButton
+	button PhilosophyButton
+	button ContactButton
+	button CodexButton
+    button TechnicalButton
+    button WordPressButton
+    button PieButton
+	hr Rule
+	a ShowNotes
+	module ShowdownModule
+	module HomeModule
+	module IntroModule
+	module ExamplesModule
+	module DocletsModule
+	module AboutModule
+	module PhilosophyModule
+	module ContactModule
+	module LifeModule
+	module TechnicalModule
+	module HowItWorksModule
+	module WordPressModule
+	module PieModule
+	module CurrentModule
+	module CodexModule
+	variable Script
+	variable ButtonStyle
+	variable Message
+    variable Args
+    variable Arg
+	
+!  create Tracer
+!  set attribute `id` of Tracer to `allspeak-tracer`
+
+	create Body
+	if mobile set the style of Body to `width:calc(100vw - 1em);margin:0 auto`
+	else set the style of Body to `width:calc(100vw - 1em);max-width:1200px;margin:0 auto`
+	
+	on message
+	begin
+		put the message into Message
+		if Message is `hide`
+		begin
+			send `pause` to CurrentModule
+			set style `display` of Body to `none`
+		end
+		else if Message is `restore`
+		begin
+			set style `display` of Body to `block`
+			send `resume` to CurrentModule
+		end
+		else if Message is `life` go to ShowLife
+		else if Message is `howitworks` go to ShowHowItWorks
+	end
+    
+BuildPage:
+	create Header in Body
+	if mobile
+		set the style of Header to `text-align:center`
+	else
+		set the style of Header to `margin:0 2em;text-align:center`
+	
+	create Banner in Header
+	if mobile set the style of Banner to `width:100%`
+	else set the style of Banner to `width:50%;margin:0 auto`
+	set attribute `src` of Banner to `resources/img/banner.png`
+	
+	create Rule in Body
+	
+	create Main in Body
+	if not mobile
+	begin
+		set style `display` of Main to `flex`
+	end
+	
+	if mobile
+	begin
+		create Document in Main
+		create Sidebar in Main
+	end
+	else
+	begin
+		create Sidebar in Main
+		set the style of Sidebar to `width:250px;margin-right:2em`
+		create Document in Main
+		set the style of Document to `flex:1`
+	end
+    
+    create Status in Body
+    set the id of Status to `ec-status`
+
+	require js `dist/plugins/showdown.js`
+
+	rest get Script from `/resources/ecs/showdown.allspeak?v=` cat now
+	run Script with Document as ShowdownModule
+	rest get Script from `/resources/ecs/home.allspeak?v=` cat now
+	run Script with ShowdownModule as HomeModule
+	rest get Script from `/resources/ecs/intro.allspeak?v=` cat now
+	run Script with ShowdownModule as IntroModule
+	rest get Script from `/resources/ecs/examples.allspeak?v=` cat now
+	run Script with ShowdownModule as ExamplesModule
+	rest get Script from `/resources/ecs/doclets.allspeak?v=` cat now
+	run Script with ShowdownModule as DocletsModule
+	rest get Script from `/resources/ecs/about.allspeak?v=` cat now
+	run Script with ShowdownModule as AboutModule
+	rest get Script from `/resources/ecs/philosophy.allspeak?v=` cat now
+	run Script with ShowdownModule as PhilosophyModule
+	rest get Script from `/resources/ecs/contact.allspeak?v=` cat now
+	run Script with ShowdownModule as ContactModule
+	rest get Script from `/resources/ecs/life.allspeak?v=` cat now
+	run Script with ShowdownModule as LifeModule
+	rest get Script from `/resources/ecs/technical.allspeak?v=` cat now
+	run Script with ShowdownModule as TechnicalModule
+	rest get Script from `/resources/ecs/howitworks.allspeak?v=` cat now
+	run Script with ShowdownModule as HowItWorksModule
+	rest get Script from `/resources/ecs/wordpress.allspeak?v=` cat now
+	run Script with ShowdownModule as WordPressModule
+	rest get Script from `/resources/ecs/pie.allspeak?v=` cat now
+	run Script with ShowdownModule as PieModule
+
+	alias CurrentModule to HomeModule
+	send to HomeModule
+
+	create ButtonList in Sidebar
+	set the style of ButtonList to `margin-left:0px;padding-left:0px;list-style-type:none`
+	
+	put `width:100%;height:2em;margin-bottom:0.5em;font-size:110%` into ButtonStyle
+
+	create ButtonItem in ButtonList
+	create HomeButton in ButtonItem
+	set the style of HomeButton to ButtonStyle
+	set style `background` of HomeButton to `darkgray`
+	if not mobile set style `margin-top` of HomeButton to `1em`
+	set the text of HomeButton to `Home`
+	on click HomeButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of HomeButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to HomeModule
+		send to HomeModule
+	end
+    
+	create ButtonItem in ButtonList
+	create IntroButton in ButtonItem
+	set the style of IntroButton to ButtonStyle
+	set style `margin-top` of IntroButton to `1em`
+	set the text of IntroButton to `Introduction`
+	on click IntroButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of IntroButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to IntroModule
+		send to IntroModule
+	end
+    
+	create ButtonItem in ButtonList
+	create ExamplesButton in ButtonItem
+	set the style of ExamplesButton to ButtonStyle
+	set style `margin-top` of ExamplesButton to `0.25em`
+	set the text of ExamplesButton to `Examples`
+	on click ExamplesButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of ExamplesButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to ExamplesModule
+		send to ExamplesModule
+	end
+    
+	create ButtonItem in ButtonList
+	create DocletsButton in ButtonItem
+	set the style of DocletsButton to ButtonStyle
+	set style `margin-top` of DocletsButton to `0.25em`
+	set the text of DocletsButton to `Doclets`
+	on click DocletsButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of DocletsButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to DocletsModule
+		send to DocletsModule
+	end
+    
+	create ButtonItem in ButtonList
+	create AboutButton in ButtonItem
+	set the style of AboutButton to ButtonStyle
+	set style `margin-top` of AboutButton to `0.25em`
+	set the text of AboutButton to `About AllSpeak`
+	on click AboutButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of AboutButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to AboutModule
+		send to AboutModule
+	end
+    
+	create ButtonItem in ButtonList
+	create PhilosophyButton in ButtonItem
+	set the style of PhilosophyButton to ButtonStyle
+	set style `margin-top` of PhilosophyButton to `0.25em`
+	set the text of PhilosophyButton to `Philosophy`
+	on click PhilosophyButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of PhilosophyButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to PhilosophyModule
+		send to PhilosophyModule
+	end
+    
+	create ButtonItem in ButtonList
+	create ContactButton in ButtonItem
+	set the style of ContactButton to ButtonStyle
+	set style `margin-top` of ContactButton to `0.25em`
+	set the text of ContactButton to `Contacts`
+	on click ContactButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of ContactButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to ContactModule
+		send to ContactModule
+	end
+
+	create ButtonItem in ButtonList
+	create TechnicalButton in ButtonItem
+	set the style of TechnicalButton to ButtonStyle
+	set style `margin-top` of TechnicalButton to `0.25em`
+	set the text of TechnicalButton to `Technical Overview`
+	on click TechnicalButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of TechnicalButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to TechnicalModule
+		send to TechnicalModule
+	end
+
+	create ButtonItem in ButtonList
+	create WordPressButton in ButtonItem
+	set the style of WordPressButton to ButtonStyle
+	set style `margin-top` of WordPressButton to `0.25em`
+	set the text of WordPressButton to `WordPress`
+	on click WordPressButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of WordPressButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to WordPressModule
+		send to WordPressModule
+	end
+
+	create ButtonItem in ButtonList
+	create PieButton in ButtonItem
+	set the style of PieButton to ButtonStyle
+	set style `margin-top` of PieButton to `0.25em`
+	set the text of PieButton to `Programming in English`
+	on click PieButton
+	begin
+		gosub to DeselectAllButtons
+		set style `background` of PieButton to `darkgray`
+		send `pause` to CurrentModule
+		alias CurrentModule to PieModule
+		send to PieModule
+	end
+
+	create ButtonItem in ButtonList
+	create CodexButton in ButtonItem
+	set the style of CodexButton to ButtonStyle
+	set style `margin-top` of CodexButton to `0.25em`
+	set the text of CodexButton to `Codex`
+	on click CodexButton go to RunCodex
+
+	create Notes in Main
+	create ShowNotes in Notes
+DoNotes:
+	set the content of ShowNotes to `Show Developer Notes`
+	on click ShowNotes
+	begin
+		attach Notes to `developer-notes`
+		set style `display` of Notes to `block`
+		set the content of ShowNotes to `Hide Developer Notes`
+		on click ShowNotes
+		begin
+			set style `display` of Notes to `none`
+			go to DoNotes
+		end
+	end
+
+  	json parse url the location as Args
+    put property `arg` of Args into Arg
+    if Arg is empty stop
+
+RunCodex:
+	location `https://allspeak.ai/codex.html`
+    stop
+
+ShowLife:
+    gosub to DeselectAllButtons
+    send `pause` to CurrentModule
+    alias CurrentModule to LifeModule
+    send to LifeModule
+    stop
+
+ShowHowItWorks:
+    gosub to DeselectAllButtons
+    send `pause` to CurrentModule
+    alias CurrentModule to HowItWorksModule
+    send to HowItWorksModule
+    stop
+
+DeselectAllButtons:
+	set style `background` of HomeButton to ``
+    set style `background` of IntroButton to ``
+	set style `background` of ExamplesButton to ``
+    set style `background` of DocletsButton to ``
+    set style `background` of AboutButton to ``
+    set style `background` of PhilosophyButton to ``
+    set style `background` of ContactButton to ``
+    set style `background` of TechnicalButton to ``
+    set style `background` of WordPressButton to ``
+    return

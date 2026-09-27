@@ -1,6 +1,6 @@
 # Blocchi di documentazione
 
-Un blocco di documentazione è una spiegazione in prosa strutturata, attaccata a una sezione di codice `.as`. La convenzione esiste per forzare una lettura attenta: mettere per iscritto il *perché* ti obbliga a notare che cosa fa davvero il codice, e i revisori vedono ciò che l'autore intendeva senza doverlo dedurre dai nomi delle variabili.
+Un blocco di documentazione è una spiegazione in prosa strutturata, attaccata a una sezione di codice `.allspeak`. La convenzione esiste per forzare una lettura attenta: mettere per iscritto il *perché* ti obbliga a notare che cosa fa davvero il codice, e i revisori vedono ciò che l'autore intendeva senza doverlo dedurre dai nomi delle variabili.
 
 I blocchi di documentazione sono facoltativi per file, ma obbligatori una volta che un file li adotta: un file senza blocchi è considerato fuori dalla convenzione, senza avvisi da nessuna delle due parti.
 
@@ -82,7 +82,7 @@ Una volta che un file ha un blocco, l'analizzatore si aspetta che l'intero file 
 Due strumenti validano la stessa convenzione:
 
 - `tools/asdoc-check.py` — CLI Python; ricorsiva su una directory. Esegui con `--write` per aggiornare gli hash.
-- `tools/asdoc-check-cli.as` — gira sotto il runtime Python di AllSpeak, esercitando la stessa logica dall'interno di AllSpeak stesso.
+- `tools/asdoc-check-cli.allspeak` — gira sotto il runtime Python di AllSpeak, esercitando la stessa logica dall'interno di AllSpeak stesso.
 
 Anche il modo Blocchi di Asedit esegue la validazione nell'editor mentre scrivi.
 

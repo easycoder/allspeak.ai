@@ -11,7 +11,7 @@ Dans cet exemple, le plugin est un plugin ~ec~ standard mais tu peux aussi charg
 
 Une fois le plugin chargé, il est disponible pour tout script qui en a besoin (mais pas pour celui qui l'a chargé). Ici, tout script qui inclut des commandes de carte peut être chargé et compilé, comme dans
 
-~pre:rest obtiens Script depuis `/resources/ecs/myscript.as`
+~pre:rest obtiens Script depuis `/resources/ecs/myscript.allspeak`
 exécute Script~
 
 (C'est la forme la plus simple, qui suppose que tu n'as pas besoin de communiquer avec le script une fois qu'il est en cours d'exécution.)

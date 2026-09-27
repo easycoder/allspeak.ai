@@ -17,7 +17,7 @@
 	const repoBase = 'https://raw.githubusercontent.com/easycoder/allspeak.ai/master/scripted/';
 	const ui = await fetch(repoBase + 'scripted.json').then(r => r.text());
 	document.getElementById('scripted-ui').textContent = ui;
-	const ecs = await fetch(repoBase + 'scripted.as').then(r => r.text());
+	const ecs = await fetch(repoBase + 'scripted.allspeak').then(r => r.text());
 	document.getElementById('allspeak-script').textContent = ecs;
 
 	const scripts = [

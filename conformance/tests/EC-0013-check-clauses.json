@@ -7,7 +7,7 @@
     "2.1",
     "2.6"
   ],
-  "script": "EC-0013-check-clauses.as",
+  "script": "EC-0013-check-clauses.allspeak",
   "expect": {
     "logs": [
       "recovered",

@@ -2,7 +2,7 @@
 
 AllSpeak's Browser domain provides the vocabulary for building and manipulating DOM elements: buttons, divs, inputs, forms, the works. The Webson companion language is a JSON dialect for describing layout — it lets you keep UI structure in a separate `.json` resource, away from the AllSpeak logic.
 
-A typical AllSpeak UI puts layout in Webson, behaviour in `.as`, and uses `attach` to bind the two.
+A typical AllSpeak UI puts layout in Webson, behaviour in `.allspeak`, and uses `attach` to bind the two.
 
 ## DOM variable types
 

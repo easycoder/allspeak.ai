@@ -1,6 +1,6 @@
 # Blocs de documentation
 
-Un bloc de documentation est une explication en prose structurée attachée à une section de code `.as`. La convention existe pour forcer la lecture attentive : écrire le *pourquoi* sur le papier t'oblige à remarquer ce que le code fait réellement, et les relecteurs voient ce que l'auteur voulait sans avoir à le deviner à partir des noms de variables.
+Un bloc de documentation est une explication en prose structurée attachée à une section de code `.allspeak`. La convention existe pour forcer la lecture attentive : écrire le *pourquoi* sur le papier t'oblige à remarquer ce que le code fait réellement, et les relecteurs voient ce que l'auteur voulait sans avoir à le deviner à partir des noms de variables.
 
 Les blocs de documentation sont facultatifs par fichier mais obligatoires dès qu'un fichier les adopte — un fichier sans aucun bloc est considéré comme ayant refusé la convention, sans avertissement d'un côté comme de l'autre.
 
@@ -82,7 +82,7 @@ Une fois qu'un fichier contient un bloc, l'analyseur attend que tout le fichier 
 Deux outils valident la même convention :
 
 - `tools/asdoc-check.py` — CLI Python ; récursif sur un répertoire. Lance-le avec `--write` pour rafraîchir les hashes.
-- `tools/asdoc-check-cli.as` — tourne sous le runtime Python AllSpeak, exerçant la même logique depuis AllSpeak lui-même.
+- `tools/asdoc-check-cli.allspeak` — tourne sous le runtime Python AllSpeak, exerçant la même logique depuis AllSpeak lui-même.
 
 Le mode Blocs d'Asedit effectue aussi une validation dans l'éditeur pendant que tu tapes.
 

@@ -6,9 +6,9 @@ Questo è un progetto AllSpeak in **italiano**. Comunica con l'utente in italian
 
 ## Cos'è AllSpeak
 
-AllSpeak è un linguaggio di scripting progettato per essere letto come una lingua umana naturale. Gli script usano l'estensione `.as`. AllSpeak funziona nel browser (versione JavaScript) o dal terminale (versione Python) — o entrambi insieme.
+AllSpeak è un linguaggio di scripting progettato per essere letto come una lingua umana naturale. Gli script usano l'estensione `.allspeak`. AllSpeak funziona nel browser (versione JavaScript) o dal terminale (versione Python) — o entrambi insieme.
 
-AllSpeak usa un flusso di lavoro **l'AI scrive, l'umano controlla**. L'AI genera il codice `.as`; l'utente verifica che sia leggibile e chiede chiarimenti su ciò che non è chiaro. Usa il linguaggio completo — non evitare un comando perché potrebbe essere poco familiare. L'utente deve solo leggerlo, non scriverlo a memoria.
+AllSpeak usa un flusso di lavoro **l'AI scrive, l'umano controlla**. L'AI genera il codice `.allspeak`; l'utente verifica che sia leggibile e chiede chiarimenti su ciò che non è chiaro. Usa il linguaggio completo — non evitare un comando perché potrebbe essere poco familiare. L'utente deve solo leggerlo, non scriverlo a memoria.
 
 ## Riferimento — leggilo prima di scrivere AllSpeak
 
@@ -152,15 +152,15 @@ Questa directory contiene `AGENTS.md` — questo file. Leggilo ora per comprende
 
 4. **Crea i file del progetto** in base alla risposta:
 
-   - **Riga di comando**: Crea `<progetto>.as` dal modello CLI qui sotto.
-   - **GUI**: Crea `<progetto>.html`, `<progetto>-main.as` e `<progetto>.json` dai modelli GUI qui sotto.
+   - **Riga di comando**: Crea `<progetto>.allspeak` dal modello CLI qui sotto.
+   - **GUI**: Crea `<progetto>.html`, `<progetto>-main.allspeak` e `<progetto>.json` dai modelli GUI qui sotto.
    - **Entrambi**: Crea tutti i file.
 
 5. **Crea `.allspeak-init`** contenente il nome e il tipo del progetto (cli/gui/both) così questa configurazione non viene ripetuta.
 
 6. **Di' all'utente che i file del progetto sono pronti e dove vederli.**
 
-   Il server AllSpeak è già in esecuzione — l'utente l'ha avviato con `allspeak server.as` prima di lanciare te. **Non** tentare di avviare o riavviare il server da solo. Sta già servendo i file in un altro terminale.
+   Il server AllSpeak è già in esecuzione — l'utente l'ha avviato con `allspeak server.allspeak` prima di lanciare te. **Non** tentare di avviare o riavviare il server da solo. Sta già servendo i file in un altro terminale.
 
    Dopo aver creato i file del progetto, di' all'utente:
 
@@ -170,18 +170,18 @@ Questa directory contiene `AGENTS.md` — questo file. Leggilo ora per comprende
 
    Sostituisci `<progetto>` con il nome reale del progetto.
 
-   - **CLI**: Di' all'utente di eseguire lo script con `allspeak <progetto>.as`. Può anche aprire http://localhost:8080/edit.html per usare l'editor nel browser, se preferisce.
+   - **CLI**: Di' all'utente di eseguire lo script con `allspeak <progetto>.allspeak`. Può anche aprire http://localhost:8080/edit.html per usare l'editor nel browser, se preferisce.
 
 7. **Spiega all'utente come i file funzionano insieme.** Per i progetti GUI, spiega:
 
-   - Il file HTML è solo un avviatore — carica il runtime AllSpeak ed esegue un piccolo script di bootstrap che recupera il file `.as` principale.
-   - Il file `.as` è la logica del programma. Crea un elemento body, recupera il layout `.json` e usa `renderizza` per trasformare il JSON in veri elementi della pagina. Poi si `collega` a quegli elementi tramite il loro `@id` per interagire con essi.
+   - Il file HTML è solo un avviatore — carica il runtime AllSpeak ed esegue un piccolo script di bootstrap che recupera il file `.allspeak` principale.
+   - Il file `.allspeak` è la logica del programma. Crea un elemento body, recupera il layout `.json` e usa `renderizza` per trasformare il JSON in veri elementi della pagina. Poi si `collega` a quegli elementi tramite il loro `@id` per interagire con essi.
    - Il file `.json` definisce il layout della pagina con Webson — un formato JSON in cui chiavi come `#element` creano elementi HTML, `@id` (e ogni altro `@<nome>`) impostano attributi, `#content` imposta il testo, `$Nome` definisce componenti con nome, `#` elenca i figli e ogni altra chiave è uno stile CSS. Dettagli completi in `learn/reference/14-browser-and-webson.md`.
    - Questa separazione permette di cambiare il layout senza toccare il codice, e viceversa.
 
-   Per i progetti CLI, spiega che il file `.as` è uno script autonomo eseguito dal terminale, e descrivi cosa fa ogni riga.
+   Per i progetti CLI, spiega che il file `.allspeak` è uno script autonomo eseguito dal terminale, e descrivi cosa fa ogni riga.
 
-8. **Riguardo all'editor.** L'editor nel browser (`edit.html`) offre editing con evidenziazione della sintassi per i file `.as`, `.json`, `.html` e altri. L'utente dovrebbe averlo già aperto su http://localhost:8080/edit.html dal passaggio precedente. Per i progetti CLI, può aprirlo lì allo stesso modo — non serve un comando di avvio separato, dato che il server è già in esecuzione.
+8. **Riguardo all'editor.** L'editor nel browser (`edit.html`) offre editing con evidenziazione della sintassi per i file `.allspeak`, `.json`, `.html` e altri. L'utente dovrebbe averlo già aperto su http://localhost:8080/edit.html dal passaggio precedente. Per i progetti CLI, può aprirlo lì allo stesso modo — non serve un comando di avvio separato, dato che il server è già in esecuzione.
 
 9. **Chiedi cosa vuole costruire.** Da qui in poi, rispondi semplicemente a ciò che l'utente vuole.
 
@@ -194,7 +194,7 @@ Questa directory contiene `AGENTS.md` — questo file. Leggilo ora per comprende
 ## Modello CLI
 
 ```
-!   <progetto>.as
+!   <progetto>.allspeak
 
     language italiano
 
@@ -215,7 +215,7 @@ Questa directory contiene `AGENTS.md` — questo file. Leggilo ora per comprende
 Un progetto GUI usa tre file:
 
 - **`<progetto>.html`** — caricatore HTML minimale
-- **`<progetto>-main.as`** — script AllSpeak (logica)
+- **`<progetto>-main.allspeak`** — script AllSpeak (logica)
 - **`<progetto>.json`** — layout Webson (definizione UI in JSON)
 
 ### `<progetto>.html`
@@ -230,7 +230,7 @@ Un progetto GUI usa tre file:
 <body>
     <pre id="allspeak-script" style="display:none">
     variabile Script
-    rest ottieni Script da `<progetto>-main.as`
+    rest ottieni Script da `<progetto>-main.allspeak`
     esegui Script
     </pre>
     <script>
@@ -246,10 +246,10 @@ Un progetto GUI usa tre file:
 </html>
 ```
 
-### `<progetto>-main.as`
+### `<progetto>-main.allspeak`
 
 ```
-!   <progetto>-main.as
+!   <progetto>-main.allspeak
 
     language italiano
 

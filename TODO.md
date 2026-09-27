@@ -8,19 +8,20 @@ Items identified during real project work. Each should be implemented in both JS
 
 **Open, in order:**
 
-1. Native review of the fr/de/it `AGENTS.md`: they were machine-drafted in this session, so a reading pass is worth doing before they ship — the viz-word review is the precedent.
-2. Block-level aggregation over a trace, then the first screen in `asedit.as` — both described in the Visualiser section below.
-3. The label bodies after `ListSorter` in `codex.as`, and the run-panel region that still sits outside any block.
-4. The JS recorder, still missing — needed before traces from the two runtimes can be compared.
-5. Propagate the logging recommendation (root `AGENTS.md`, "Diagnostics while debugging") to the four starter packs — drafts in fr/de/it for review, as with the diff-notes sections.
-6. `learn/{,fr,de,it}/idioms/13-server-as-application.md` (and the `deploy/` mirrors) still say the starter packs' `CLAUDE.md` default is to launch the server with `-t edit,<project>`. The packs now say the user starts the server and the agent must not — so that line is stale in all four languages. Worth fixing when `learn/` is next touched.
+1. **Branch `ext-allspeak` awaits review** (not master): the source extension was renamed `.as` → `.allspeak` across the repo — 318 files renamed, ~326 docs/config swept, both extensions accepted by the runtimes during the transition. Review with `git diff master...ext-allspeak --stat`; the open question is whether to merge, and whether to re-verify the 14 `verify-stale` blocks in `asedit.allspeak` that the sweep touched.
+2. Native review of the fr/de/it `AGENTS.md`: they were machine-drafted in this session, so a reading pass is worth doing before they ship — the viz-word review is the precedent.
+3. Block-level aggregation over a trace, then the first screen in `asedit.allspeak` — both described in the Visualiser section below.
+4. The label bodies after `ListSorter` in `codex.allspeak`, and the run-panel region that still sits outside any block.
+5. The JS recorder, still missing — needed before traces from the two runtimes can be compared.
+6. Propagate the logging recommendation (root `AGENTS.md`, "Diagnostics while debugging") to the four starter packs — drafts in fr/de/it for review, as with the diff-notes sections.
+7. `learn/{,fr,de,it}/idioms/13-server-as-application.md` (and the `deploy/` mirrors) still say the starter packs' `CLAUDE.md` default is to launch the server with `-t edit,<project>`. The packs now say the user starts the server and the agent must not — so that line is stale in all four languages. Worth fixing when `learn/` is next touched.
 
 **Traps that have cost hours here — worth reading before editing anything:**
 
 - **Text compared with numbers.** A number read *out of* text — a record field, `the content of`, `the index of` — stays text, and text comparison is lexical: `\`29\`` is not less than `\`1000001\``. Nothing errors; the condition simply answers the wrong way. Convert with `add 0 to X` or `the value of X`. The two runtimes differ — the browser does not coerce a mixed comparison, the terminal does — so verify in the runtime where the problem appears.
 - **An undeclared `variable`** is reported as a *token* error at the first statement using it ("I don't understand 'put'"), not as "not declared". If a compile fails that way, look for a missing declaration.
-- **Editing `asedit.as`:** use content anchors with assertions, never positional spans. Afterwards check that `commands` is non-zero *as well as* the analyser reporting 0 errors — a broken editor still analyses clean.
-- **The served editor is cached.** `asedit.as` is fetched with a `?v=` stamp; if a change does not appear, check the fetch before the code.
+- **Editing `asedit.allspeak`:** use content anchors with assertions, never positional spans. Afterwards check that `commands` is non-zero *as well as* the analyser reporting 0 errors — a broken editor still analyses clean.
+- **The served editor is cached.** `asedit.allspeak` is fetched with a `?v=` stamp; if a change does not appear, check the fetch before the code.
 
 ## High priority
 
@@ -78,23 +79,23 @@ already records the reason: the deploy pipeline never ships it (`deploy-allspeak
 argument for pruning it rather than keeping it as one unit:
 
 - **18 files dated 2026-04-06** (the fork day) — the old site's pages.
-- `scripted.as` / `scripted-server.as` / `scripted.html` / `scripted.json` / `README.md`
+- `scripted.allspeak` / `scripted-server.allspeak` / `scripted.html` / `scripted.json` / `README.md`
   (04-08) — the self-contained "scripted" colour-coded editor, a five-file bundle described in
   `resources/ecs/README.md`, which now sits among unrelated pages.
-- `docman.as` (04-17), `doclets.as` (08-04), `main.as` (08-19) — the more recent page work.
+- `docman.allspeak` (04-17), `doclets.allspeak` (08-04), `main.allspeak` (08-19) — the more recent page work.
 
 Renaming the folder is not worth doing on its own: if it is pruned, the name goes with it; if a
 subset survives, name it after what it is (`scripted/`).
 
 **Clear these first — each is a reference the prune would leave dangling:**
 
-1. `project.html:13` loads `/resources/ecs/project-main.as`, which does not exist. Fix or retire
+1. `project.html:13` loads `/resources/ecs/project-main.allspeak`, which does not exist. Fix or retire
    `project.html`.
-2. `codex/{en,de,fr,it}/md/tools.md` use `/resources/ecs/myscript.as` as an example path. Repoint
+2. `codex/{en,de,fr,it}/md/tools.md` use `/resources/ecs/myscript.allspeak` as an example path. Repoint
    to a path that exists.
 3. The four `resources/doc/*/core.json` translation caches link to `resources/ecs/sample/factory`,
    which does not exist. Repoint or drop the links.
-4. `index.html:21` and `codex/codex.as:303` load `main.as` and `docman.as` from the folder. Decide
+4. `index.html:21` and `codex/codex.allspeak:303` load `main.allspeak` and `docman.allspeak` from the folder. Decide
    whether those entry points survive.
 5. `resources/ecs/README.md` describes a five-file bundle but sits in a folder of unrelated pages.
    Move the `scripted*` files out together with their README, or drop them.
@@ -207,7 +208,7 @@ must pass. `tools/asviz-run.py --run --trace=<file.json>` writes one.
 **Next, in order — deliberately trimmed:**
 1. Block-level aggregation over a trace (sections and anchors × visits/steps) — what the picture
    draws, and where the static model and the trace are joined. No user-visible surface.
-2. The first screen in `asedit.as`: one row per block in file order, coloured by activity, with
+2. The first screen in `asedit.allspeak`: one row per block in file order, coloured by activity, with
    prose from the analyser, and click-through to the editor. It reads a **trace file**, so it
    needs nothing new from the runtime.
 3. Only if it earns its place: running the script in-browser (which needs the JS recorder), an

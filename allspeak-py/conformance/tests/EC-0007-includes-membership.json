@@ -6,7 +6,7 @@
   "requirements": [
     "2.8"
   ],
-  "script": "EC-0007-includes-membership.as",
+  "script": "EC-0007-includes-membership.allspeak",
   "expect": {
     "logs": [
       "11"

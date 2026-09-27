@@ -31,7 +31,7 @@
         { "slug": "webson-and-as-separation", "path": "idioms/08-webson-and-as-separation.md", "title": "Webson and AS separation" },
         { "slug": "extracting-a-module", "path": "idioms/09-extracting-a-module.md", "title": "Extracting a module" },
         { "slug": "writing-language-neutral", "path": "idioms/10-writing-language-neutral.md", "title": "Writing language-neutral" },
-        { "slug": "debugging-as", "path": "idioms/11-debugging-as.md", "title": "Debugging .as" },
+        { "slug": "debugging-as", "path": "idioms/11-debugging-as.md", "title": "Debugging .allspeak" },
         { "slug": "working-with-ai", "path": "idioms/12-working-with-ai.md", "title": "Working with AI" },
         { "slug": "server-as-application", "path": "idioms/13-server-as-application.md", "title": "Server as application" },
         { "slug": "desktop-gui", "path": "idioms/14-desktop-gui.md", "title": "Building a desktop window" },

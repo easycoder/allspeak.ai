@@ -81,7 +81,7 @@ MQTT a commencé comme extension et a ensuite été promu domaine fourni. Le mê
 
 | | Extension | Module |
 |---|--------|--------|
-| Langage | JS / Python | AllSpeak (`.as`) |
+| Langage | JS / Python | AllSpeak (`.allspeak`) |
 | Ajoute du vocabulaire | Oui | Non |
 | Accède aux API natives | Oui | Non (via les extensions uniquement) |
 | Chargée par | balise `<script>` (JS) ou `importe plugin` (Py) | `exécute <path> comme <name>` |

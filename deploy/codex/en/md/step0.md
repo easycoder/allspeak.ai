@@ -1,7 +1,7 @@
 # Coding can be fun! #
 Welcome to the ~ec~ **_Codex_**, a comprehensive free resource where you can learn to code using English-like scripts and use the skills you gain to build and manage websites of any complexity. (Experienced developers: See the note at the foot of this page.)
 
-If you are using AI-assisted development, `codex.as` is a valuable training resource not only for what it can do but also for how it is structured.
+If you are using AI-assisted development, `codex.allspeak` is a valuable training resource not only for what it can do but also for how it is structured.
 
 We all have coding skills. Without them we wouldn't be able to follow simple instructions such as how to cook a meal or do simple car maintenance. Just look at a recipe; it's a bit like a computer program written in a kind of simplified English. That's not surprising, because computers also follow instructions; in fact, that's all they can do. A computer program is just a set of instructions, though often a lot more complex than the ones we find in everyday life. And a coder is someone who has learned how to read and write these instructions.
 

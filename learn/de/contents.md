@@ -40,9 +40,9 @@ Siehe [README.md](../README.md) für die Nutzung dieses Kurses und das Hinzufüg
 5. [Gleitkommazahlen und skalierte Ganzzahlen](idioms/05-floats-and-scaled-integers.md) — fraktionale Genauigkeit ohne Gleitkomma.
 6. [REST und asynchron](idioms/06-rest-and-async.md) — `rest hole`, Fehlerklauseln, Abgabe der Kontrolle während des Wartens.
 7. [MQTT pub/sub](idioms/07-mqtt-pubsub.md) — der Verbindungsblock, dict-förmige Nutzdaten, Anfrage/Antwort.
-8. [Webson-und-AS-Trennung](idioms/08-webson-and-as-separation.md) — Layout in `.json`, Logik in `.as`.
+8. [Webson-und-AS-Trennung](idioms/08-webson-and-as-separation.md) — Layout in `.json`, Logik in `.allspeak`.
 9. [Ein Modul extrahieren](idioms/09-extracting-a-module.md) — wann und wie ein Skript aufgeteilt wird.
 10. [Sprachneutral schreiben](idioms/10-writing-language-neutral.md) — was das Sprachpaket nicht übersetzt.
-11. [.as debuggen](idioms/11-debugging-as.md) — `drucke`, `logge`, Tracer, `attrappe`.
+11. [.allspeak debuggen](idioms/11-debugging-as.md) — `drucke`, `logge`, Tracer, `attrappe`.
 12. [Mit KI arbeiten](idioms/12-working-with-ai.md) — der Arbeitsablauf « KI schreibt, Mensch prüft ».
-13. [Der Server als Anwendung](idioms/13-server-as-application.md) — `server.as -t edit,<projekt>` ausführen, damit der Server *die* Anwendung ist und die Browser-Tabs seine Oberfläche sind.
+13. [Der Server als Anwendung](idioms/13-server-as-application.md) — `server.allspeak -t edit,<projekt>` ausführen, damit der Server *die* Anwendung ist und die Browser-Tabs seine Oberfläche sind.

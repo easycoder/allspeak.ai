@@ -2,7 +2,7 @@
 
 ## Problem
 
-You need to track an on/off state — hide/show a widget, pause/resume a task, run a one-time guard. The clumsy version uses a numeric flag (which the original `graphics-demo.as` did):
+You need to track an on/off state — hide/show a widget, pause/resume a task, run a one-time guard. The clumsy version uses a numeric flag (which the original `graphics-demo.allspeak` did):
 
 ```as
 variable HiddenFlag

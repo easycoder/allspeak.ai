@@ -14,7 +14,7 @@
 </head>
 <body>
 	<h1>Doc-block check</h1>
-	<p>Path is relative to the AllSpeak server root. Defaults to <code>asedit.as</code>.</p>
+	<p>Path is relative to the AllSpeak server root. Defaults to <code>asedit.allspeak</code>.</p>
 	<div class="row">
 		<input type="text" id="asdoc-filename">
 		<button id="asdoc-check-btn">Check</button>
@@ -25,7 +25,7 @@
 	<script>
 	(async function () {
 		const t = Date.now();
-		const src = await fetch('/read/tools/asdoc-check.as?v=' + t).then(r => r.text());
+		const src = await fetch('/read/tools/asdoc-check.allspeak?v=' + t).then(r => r.text());
 		document.getElementById('allspeak-script').textContent = src;
 		await new Promise((resolve, reject) => {
 			const s = document.createElement('script');

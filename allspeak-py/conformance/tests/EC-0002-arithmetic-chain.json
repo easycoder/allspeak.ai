@@ -8,7 +8,7 @@
     "2.3",
     "2.6"
   ],
-  "script": "EC-0002-arithmetic-chain.as",
+  "script": "EC-0002-arithmetic-chain.allspeak",
   "expect": {
     "logs": [
       "18"

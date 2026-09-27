@@ -9,7 +9,7 @@ You have a UI larger than a handful of elements. Creating each one inline in All
 Split the UI in two:
 
 - **Layout in a Webson `.json` file.** Element tree, styling, IDs.
-- **Logic in a `.as` file.** Loading data, handling events, transforming state.
+- **Logic in a `.allspeak` file.** Loading data, handling events, transforming state.
 - **`attach` bridges them.** After rendering the Webson, the AS script claims each element by ID.
 
 ```as
@@ -80,7 +80,7 @@ Inline `create` is fine when:
 }
 ```
 
-`app.as` (AllSpeak logic):
+`app.allspeak` (AllSpeak logic):
 
 ```as
 variable Layout
@@ -139,7 +139,7 @@ The Webson + attach pattern stops being sufficient when the shape isn't known at
 - **Variable element counts.** Webson can declare a fixed number of rows; it can't declare "one row per record in the data file".
 - **Element content sourced from a script value.** `#content` takes a string literal, not an expression — there's no way to say "the value of `Row.amount` for this iteration".
 
-The fix is to split the page by which axis varies. Use Webson for the parts whose shape is fixed at template time — page chrome, header bar, table header row, modal forms. Use script for the parts whose shape comes from data — body rows, monthly subtotals, computed totals. `asedit.as` does this for its file-list: a Webson-attached scroller container with script-created entries inside; the layout knows nothing about how many files there might be.
+The fix is to split the page by which axis varies. Use Webson for the parts whose shape is fixed at template time — page chrome, header bar, table header row, modal forms. Use script for the parts whose shape comes from data — body rows, monthly subtotals, computed totals. `asedit.allspeak` does this for its file-list: a Webson-attached scroller container with script-created entries inside; the layout knows nothing about how many files there might be.
 
 ### A data-driven table
 

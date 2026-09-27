@@ -6,7 +6,7 @@ This document defines the runner input/output contract used by all AllSpeak impl
 
 A runner must accept:
 - Path to a test metadata file (`conformance/tests/EC-xxxx-*.json`).
-- Path to the matching `.as` script (from the metadata `script` field).
+- Path to the matching `.allspeak` script (from the metadata `script` field).
 - Optional timeout in milliseconds.
 
 ## 2. Expected Metadata Fields

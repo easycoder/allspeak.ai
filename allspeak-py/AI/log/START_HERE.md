@@ -44,7 +44,7 @@ Phase 1: Syntax              Phase 2: Registry         Phase 3: Patterns        
 
 ✅ Tests
   ├─ test.py: 220 lines → PASS ✅
-  └─ testg.as: 366 lines → PASS ✅
+  └─ testg.allspeak: 366 lines → PASS ✅
 ```
 
 **Status**: ✅ Complete (0 regressions)
@@ -249,7 +249,7 @@ code --install-extension /path/to/lsp
 # Reload VS Code
 # Cmd+R (Mac) or Ctrl+R (Windows/Linux)
 
-# Open .as file
+# Open .allspeak file
 # Enjoy: Ctrl+Space for completions, hover for docs! 🎉
 ```
 
@@ -392,7 +392,7 @@ cd lsp && npm install && npm run compile
 
 ### Reporting Issues
 - Include exact steps to reproduce
-- Attach relevant .as file
+- Attach relevant .allspeak file
 - Check logs first
 - Include version information
 

@@ -23,7 +23,7 @@ This phase aligns graphics module syntax with Phase 1 core refactoring (optional
    - Create `doc/graphics/PATTERNS.md` guide for attribute access.
    - Update keyword docs to show optional [to] and article variants.
 
-5. **Validate with existing graphics test suite** (`testg.as`).
+5. **Validate with existing graphics test suite** (`testg.allspeak`).
    - Ensure no regressions; test new optional forms compile correctly.
 
 ---
@@ -144,7 +144,7 @@ if Window is shown log `Visible!`
   - Note reserved stems in graphics (e.g., "title", "size", "enabled").
 
 ### Testing
-- [ ] Run existing `testg.as` to ensure no regressions.
+- [ ] Run existing `testg.allspeak` to ensure no regressions.
 - [ ] Create test cases for new optional forms (if any syntax changes made).
 - [ ] Test `the X of Widget` value expressions.
 - [ ] Validate error messages for malformed graphics commands.
@@ -158,7 +158,7 @@ After Phase 1:
 - ✅ Documentation clearly shows canonical and alternative forms.
 - ✅ Keyword handlers follow standardized patterns (skip(), skipArticles()).
 - ✅ Value expressions extend to graphics attributes (`the title of Window`).
-- ✅ Existing `testg.as` still passes; new forms validate correctly.
+- ✅ Existing `testg.allspeak` still passes; new forms validate correctly.
 - ✅ Graphics-specific patterns guide available for plugin developers (prevents collisions).
 
 ---

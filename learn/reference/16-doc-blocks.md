@@ -1,6 +1,6 @@
 # Doc blocks
 
-A doc block is a structured prose explanation attached to a section of `.as` code. The convention exists to force close reading: writing the *why* down forces you to notice what the code actually does, and reviewers see what the author intended without inferring it from variable names.
+A doc block is a structured prose explanation attached to a section of `.allspeak` code. The convention exists to force close reading: writing the *why* down forces you to notice what the code actually does, and reviewers see what the author intended without inferring it from variable names.
 
 Doc blocks are optional per file but mandatory once a file adopts them — a file with zero doc blocks is treated as opting out, with no warnings either way.
 
@@ -82,7 +82,7 @@ Once a file has any doc block, the analyser expects the whole file to be covered
 Two tools validate the same convention:
 
 - `tools/asdoc-check.py` — Python CLI; recursive over a directory. Run with `--write` to refresh hashes.
-- `tools/asdoc-check-cli.as` — runs under the Python AllSpeak runtime, exercising the same logic from inside AllSpeak itself.
+- `tools/asdoc-check-cli.allspeak` — runs under the Python AllSpeak runtime, exercising the same logic from inside AllSpeak itself.
 
 Asedit's Blocks mode also performs in-editor validation as you type.
 

@@ -21,14 +21,14 @@ La variabile parte vuota. `esegui` vi carica uno script.
 **Python** — l'argomento è un percorso; il runtime apre e compila il file:
 
 ```as
-esegui `deviceControl.as` come DeviceController
+esegui `deviceControl.allspeak` come DeviceController
 ```
 
 **JS** — l'argomento è una variabile che contiene il testo sorgente. Recuperalo prima con `rest ottieni`:
 
 ```as
 variabile ModuleSrc
-rest ottieni ModuleSrc da `resources/as/device-control.as?v=` cat now
+rest ottieni ModuleSrc da `resources/as/device-control.allspeak?v=` cat now
     o vai a LoadFailed
 esegui ModuleSrc come DeviceController
 ```

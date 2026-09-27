@@ -2,7 +2,7 @@
 
 Il dominio Browser di AllSpeak fornisce il vocabolario per costruire e manipolare elementi DOM: bottoni, div, input, form, e chi più ne ha più ne metta. Il linguaggio compagno Webson è un dialetto JSON per descrivere il layout: ti permette di tenere la struttura dell'interfaccia in una risorsa `.json` separata, lontana dalla logica AllSpeak.
 
-Una tipica interfaccia AllSpeak mette il layout in Webson, il comportamento in `.as`, e usa `collega` per legare le due cose.
+Una tipica interfaccia AllSpeak mette il layout in Webson, il comportamento in `.allspeak`, e usa `collega` per legare le due cose.
 
 ## I tipi di variabile DOM
 

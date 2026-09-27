@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """AllSpeak Python-CLI conformance adapter.
 
-Runs each canonical .as test using the installed allspeak runtime, captures log
+Runs each canonical .allspeak test using the installed allspeak runtime, captures log
 output and errors, and writes an actuals JSON file suitable for use with
 run_conformance.py --actuals.
 
@@ -35,7 +35,7 @@ def run_script(script_path: Path) -> dict[str, Any]:
     """Invoke the AllSpeak runtime on script_path and capture output.
 
     A temp file with `exit` appended is used so the Python CLI runtime
-    terminates without hanging. The canonical .as scripts do not include exit
+    terminates without hanging. The canonical .allspeak scripts do not include exit
     so they remain implementation-neutral.
     """
     import tempfile, os
@@ -47,7 +47,7 @@ def run_script(script_path: Path) -> dict[str, Any]:
 
     # Build a temporary script with `exit` appended for CLI termination
     source = script_path.read_text(encoding="utf-8")
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".as", delete=False, encoding="utf-8") as tmp:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".allspeak", delete=False, encoding="utf-8") as tmp:
         tmp.write(source)
         if not source.rstrip().endswith("exit"):
             tmp.write("\nexit\n")

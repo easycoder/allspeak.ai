@@ -53,7 +53,7 @@ The runtime itself is small and language-agnostic. It does not know what `on cli
 
 A second layer sits between the source script and the domain compilers: the **language pack**. Source tokens in any supported language (English, French, Italian, German, …) are resolved through the language pack to a canonical form, then handed to the domains. Domains never see the localised tokens — they work entirely in the canonical vocabulary.
 
-This means a French `.as` script and an English `.as` script compile to the same program array and run on the same engine. See [multilingual](multilingual.md) for how language packs work and how the `language` directive selects one.
+This means a French `.allspeak` script and an English `.allspeak` script compile to the same program array and run on the same engine. See [multilingual](multilingual.md) for how language packs work and how the `language` directive selects one.
 
 ## Plugins
 

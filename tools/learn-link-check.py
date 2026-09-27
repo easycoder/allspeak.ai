@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """learn-link-check.py — validate cross-references in the Learn curriculum.
 
-The Learn reader (learn/reader.as) resolves in-content links by *slug*: the
+The Learn reader (learn/reader.allspeak) resolves in-content links by *slug*: the
 click shim in learn/index.html intercepts a relative `.md` link, strips the
 directory, the `.md` suffix and any leading `NN-` prefix to form a bare slug,
 and navigates to the manifest page with that slug (learn/manifest.json). The

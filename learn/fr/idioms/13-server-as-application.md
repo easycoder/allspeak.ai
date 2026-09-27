@@ -8,11 +8,11 @@ Le cadre plus simple : **le serveur est l'application, et les onglets du navigat
 
 ## Le schéma
 
-`server.as` accepte un indicateur `-t` / `--tabs` dont la valeur est une liste de noms de pages séparés par des virgules (sans `.html`) :
+`server.allspeak` accepte un indicateur `-t` / `--tabs` dont la valeur est une liste de noms de pages séparés par des virgules (sans `.html`) :
 
 ```
-allspeak server.as -t edit,<projet>
-allspeak server.as --tabs edit,<projet> 8080
+allspeak server.allspeak -t edit,<projet>
+allspeak server.allspeak --tabs edit,<projet> 8080
 ```
 
 Pour chaque nom, le serveur construit `http://localhost:<port>/<nom>.html` et l'ouvre dans le navigateur par défaut de l'utilisateur avec [`browse`](../reference/17-dev-environment.md#browse). Le port par défaut est 8080 et peut apparaître avant ou après l'indicateur.
@@ -57,7 +57,7 @@ L'ordre est déterminant : les phases 3 et 4 doivent être dans cet ordre. Si `b
     fin
 ```
 
-L'implémentation de référence complète est `server.as` dans les packs de démarrage.
+L'implémentation de référence complète est `server.allspeak` dans les packs de démarrage.
 
 ## Quand utiliser ce schéma
 
@@ -67,7 +67,7 @@ L'implémentation de référence complète est `server.as` dans les packs de dé
 
 ## Quand ne pas utiliser ce schéma
 
-- **Pour une application déployée.** Les utilisateurs en production ne lanceront pas `server.as`. Ce schéma est uniquement pour le flux de développement.
+- **Pour une application déployée.** Les utilisateurs en production ne lanceront pas `server.allspeak`. Ce schéma est uniquement pour le flux de développement.
 - **Quand le script ne fait pas tourner de serveur.** `browse` fonctionne tout seul, mais le cadrage serveur-comme-application n'a de sens que quand il y a des pages à servir.
 - **Pour des lancements ponctuels.** Tape simplement l'URL dans le navigateur. Le schéma mérite sa complexité quand le lancement est répété.
 
@@ -75,9 +75,9 @@ L'implémentation de référence complète est `server.as` dans les packs de dé
 
 Quand on demande à une IA de créer un projet GUI avec le pack de démarrage, la séquence attendue est :
 
-1. Générer `<projet>.html`, `<projet>-main.as`, `<projet>.json`.
-2. Exécuter `python3 asdoc-check.py --write` sur tout nouveau fichier `.as`.
-3. Exécuter **immédiatement** `allspeak server.as -t edit,<projet>` en arrière-plan.
+1. Générer `<projet>.html`, `<projet>-main.allspeak`, `<projet>.json`.
+2. Exécuter `python3 asdoc-check.py --write` sur tout nouveau fichier `.allspeak`.
+3. Exécuter **immédiatement** `allspeak server.allspeak -t edit,<projet>` en arrière-plan.
 4. Dire à l'utilisateur que l'application a démarré et que deux onglets devraient s'être ouverts.
 
 L'utilisateur doit avoir le sentiment que « l'application a démarré » — pas qu'il doive assembler trois morceaux d'infrastructure pour voir ce qui vient d'être construit.

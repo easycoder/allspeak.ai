@@ -2,7 +2,7 @@
 
 Le domaine Navigateur d'AllSpeak fournit le vocabulaire pour construire et manipuler les éléments DOM : boutons, divs, inputs, formulaires, tout l'attirail. Le langage compagnon Webson est un dialecte JSON pour décrire la mise en page — il te permet de garder la structure de l'interface dans une ressource `.json` séparée, loin de la logique AllSpeak.
 
-Une interface AllSpeak typique met la mise en page dans Webson, le comportement dans `.as`, et utilise `attache` pour lier les deux.
+Une interface AllSpeak typique met la mise en page dans Webson, le comportement dans `.allspeak`, et utilise `attache` pour lier les deux.
 
 ## Les types de variables DOM
 

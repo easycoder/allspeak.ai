@@ -77,7 +77,7 @@ end
 AllSpeak runs in two environments:
 
 - **In the browser** — load a single JavaScript file, write scripts in your HTML
-- **As a command-line tool** — `pip install allspeak-ai`, run `.as` files directly
+- **As a command-line tool** — `pip install allspeak-ai`, run `.allspeak` files directly
 
 No build step. No package manager. No framework. One file in, working application out.
 

@@ -34,9 +34,9 @@ end
 AllSpeak runs in two environments:
 
 - **In the browser** — load a single JavaScript file and write scripts embedded in your HTML page
-- **As a command-line tool** — install via `pip install allspeak-ai` and run `.as` script files directly
+- **As a command-line tool** — install via `pip install allspeak-ai` and run `.allspeak` script files directly
 
-Scripts use the `.as` extension and require no build step, no package manager, and no compiler toolchain.
+Scripts use the `.allspeak` extension and require no build step, no package manager, and no compiler toolchain.
 
 ---
 
@@ -75,7 +75,7 @@ end
 
 ...and understand exactly what it does.
 
-**There is no build system.** Browser applications are a single HTML file and a script. CLI applications are a single `.as` file. No `npm install`, no Webpack, no virtual environments to configure.
+**There is no build system.** Browser applications are a single HTML file and a script. CLI applications are a single `.allspeak` file. No `npm install`, no Webpack, no virtual environments to configure.
 
 **Claude Code can modify the code it wrote.** Because AllSpeak scripts are concise and readable, Claude Code can re-read them and make targeted changes. This is fundamentally different from asking an AI to modify 500 lines of opaque JavaScript.
 
@@ -180,7 +180,7 @@ When you give Claude Code a task, it reads your existing files, writes or modifi
 
 **You:** "Add a button that fetches the current weather from this API and displays the temperature in the Output span."
 
-**Claude Code:** *(reads your .as file, adds the button declaration, the REST call, and the display logic, then explains the changes)*
+**Claude Code:** *(reads your .allspeak file, adds the button declaration, the REST call, and the display logic, then explains the changes)*
 
 Because AllSpeak scripts are short and readable, Claude Code can read the whole script in seconds and produce targeted changes without creating conflicts or unintended side effects.
 
@@ -265,7 +265,7 @@ That's the complete extension. No refactoring, no framework changes, no new depe
 
 ## Building a CLI Application
 
-The Python AllSpeak runtime runs `.as` files from the command line. This is ideal for automation scripts, data processing tools, and personal utilities.
+The Python AllSpeak runtime runs `.allspeak` files from the command line. This is ideal for automation scripts, data processing tools, and personal utilities.
 
 Here's a simple file-line counter:
 
@@ -280,7 +280,7 @@ Here's a simple file-line counter:
     put arg 0 into FileName
     if FileName is empty
     begin
-        print `Usage: ec line-counter.as <filename>`
+        print `Usage: ec line-counter.allspeak <filename>`
         stop
     end
 
@@ -300,7 +300,7 @@ Here's a simple file-line counter:
 Run it:
 
 ```bash
-allspeak line-counter.as mydata.csv
+allspeak line-counter.allspeak mydata.csv
 ```
 
 Ask Claude Code to add filtering, CSV parsing, summary statistics, or output to a file. The script stays readable throughout.
@@ -317,12 +317,12 @@ The screenshot above shows a script open in the editor — note the syntax highl
 
 ### Setup
 
-The editor files (`edit.html` and `server.as`) are included in the [starter pack](https://allspeak.ai/code.zip). Unzip into your project root. The editor script and UI definition are fetched automatically from GitHub when you open the page.
+The editor files (`edit.html` and `server.allspeak`) are included in the [starter pack](https://allspeak.ai/code.zip). Unzip into your project root. The editor script and UI definition are fetched automatically from GitHub when you open the page.
 
 ### Start the server
 
 ```bash
-allspeak server.as 8080
+allspeak server.allspeak 8080
 ```
 
 You should see:
@@ -356,7 +356,7 @@ Because both work on the same files on disk, they complement each other naturall
 
 ## Setting Up a Client/Server Application
 
-For applications that need to read from or write to the server (rather than just using browser localStorage), you need a server that provides `/read/` and `/write/` routes. The `server.as` server already provides exactly this — it acts as both the editor's file server and as a general-purpose backend for your applications.
+For applications that need to read from or write to the server (rather than just using browser localStorage), you need a server that provides `/read/` and `/write/` routes. The `server.allspeak` server already provides exactly this — it acts as both the editor's file server and as a general-purpose backend for your applications.
 
 ### Routes provided
 

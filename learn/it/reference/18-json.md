@@ -20,7 +20,7 @@ save Rows to `data/2024-25/04.json`
 L'output JSON è **pretty-printed di default** (indentazione di due spazi) così i file salvati possono essere aperti direttamente per l'esame umano. Vale per due percorsi:
 
 - **Dict o lista a codifica automatica.** Il serializzatore usa `indent=2`, indipendentemente dal percorso del file.
-- **Contenuto stringa salvato in un percorso `.json`.** Se il contenuto è già una stringa JSON (per es. il corpo della richiesta di un POST verso l'endpoint `/write/<file>` di `server.as`, che `save` scrive verbatim), viene analizzato e riemesso con `indent=2`. Se la stringa non si analizza come JSON, viene scritta verbatim: il contenuto non-JSON in un file `.json` viene lasciato com'è piuttosto che far crashare il salvataggio.
+- **Contenuto stringa salvato in un percorso `.json`.** Se il contenuto è già una stringa JSON (per es. il corpo della richiesta di un POST verso l'endpoint `/write/<file>` di `server.allspeak`, che `save` scrive verbatim), viene analizzato e riemesso con `indent=2`. Se la stringa non si analizza come JSON, viene scritta verbatim: il contenuto non-JSON in un file `.json` viene lasciato com'è piuttosto che far crashare il salvataggio.
 
 L'estensione del file è una convenzione documentale per la *codifica*: un dict o una lista salvati in un file senza estensione sono comunque codificati come JSON; una stringa non-JSON salvata in `report.json` è comunque scritta verbatim. Ma per la *formattazione*, l'estensione `.json` attiva sì il passaggio di pretty-print sul contenuto stringa.
 

@@ -2,7 +2,7 @@
 
 Willkommen zum ~ec~ **_Codex_**, einer umfassenden, kostenlosen Ressource, in der Sie mit Skripten, die natürlicher Sprache ähneln, programmieren lernen und die erworbenen Fähigkeiten nutzen können, um Websites beliebiger Komplexität zu erstellen und zu verwalten. (Erfahrene Entwickler: Beachten Sie den Hinweis am Ende dieser Seite.)
 
-Wenn Sie KI-gestützte Entwicklung nutzen, ist `codex.as` nicht nur wegen seiner Fähigkeiten, sondern auch wegen seiner Struktur eine wertvolle Trainingsressource.
+Wenn Sie KI-gestützte Entwicklung nutzen, ist `codex.allspeak` nicht nur wegen seiner Fähigkeiten, sondern auch wegen seiner Struktur eine wertvolle Trainingsressource.
 
 Wir alle haben Programmierfähigkeiten. Ohne sie könnten wir keine einfachen Anweisungen befolgen, etwa wie man eine Mahlzeit kocht oder einfache Arbeiten am Auto erledigt. Sehen Sie sich einfach ein Rezept an; es ist ein bisschen wie ein Computerprogramm, geschrieben in einer Art vereinfachtem Deutsch. Das ist nicht verwunderlich, denn auch Computer folgen Anweisungen; genau genommen ist das alles, was sie tun können. Ein Computerprogramm ist nur eine Reihe von Anweisungen, wenn auch oft viel komplexer als diejenigen, die wir im Alltag finden. Und ein Programmierer ist jemand, der gelernt hat, diese Anweisungen zu lesen und zu schreiben.
 
