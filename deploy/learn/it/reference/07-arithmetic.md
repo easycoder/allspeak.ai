@@ -108,7 +108,7 @@ L'operando di sinistra deve essere una stringa decimale pulita (`3`, `3.14`, `.5
 
 ## Componenti di tempo
 
-`l anno di X`, `il mese di X`, `il giorno di X`, `il daynumber di X`, `l ora di X`, `il minuto di X`, `il secondo di X` estraggono componenti da un timestamp Unix (secondi dall'epoca). Restituiscono sempre un numero:
+`l anno di X`, `il mese di X`, `il giorno di X`, `il daynumber di X`, `l ora di X`, `il minuto di X`, `il secondo di X` estraggono componenti da un timestamp Unix (millisecondi dall'epoca). Restituiscono sempre un numero:
 
 | Accessore | Restituisce | Intervallo |
 |---|---|---|

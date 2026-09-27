@@ -108,7 +108,7 @@ L'opérande de gauche doit être une chaîne décimale propre (`3`, `3.14`, `.5`
 
 ## Composantes de temps
 
-`l année de X`, `le mois de X`, `le jour de X`, `le numerodujour de X`, `l heure de X`, `la minute de X`, `la seconde de X` extraient des composantes d'un horodatage Unix (secondes depuis l'époque). Elles renvoient toujours un nombre :
+`l année de X`, `le mois de X`, `le jour de X`, `le numerodujour de X`, `l heure de X`, `la minute de X`, `la seconde de X` extraient des composantes d'un horodatage Unix (millisecondes depuis l'époque). Elles renvoient toujours un nombre :
 
 | Accesseur | Renvoie | Plage |
 |---|---|---|

@@ -108,7 +108,7 @@ Der linke Operand muss eine saubere Dezimal-Zeichenkette sein (`3`, `3.14`, `.5`
 
 ## Zeitkomponenten
 
-`das jahr von X`, `der monat von X`, `der tag von X`, `die tagesnummer von X`, `die stunde von X`, `die minute von X`, `die sekunde von X` extrahieren Komponenten aus einem Unix-Zeitstempel (Sekunden seit der Epoche). Sie geben immer eine Zahl zurück:
+`das jahr von X`, `der monat von X`, `der tag von X`, `die tagesnummer von X`, `die stunde von X`, `die minute von X`, `die sekunde von X` extrahieren Komponenten aus einem Unix-Zeitstempel (Millisekunden seit der Epoche). Sie geben immer eine Zahl zurück:
 
 | Zugriff | Gibt zurück | Bereich |
 |---|---|---|

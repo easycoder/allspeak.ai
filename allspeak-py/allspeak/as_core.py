@@ -2971,6 +2971,21 @@ class Core(Handler):
                     value.format = self.nextValue() # type: ignore
             return value
 
+        # Time components: `the year of X`, `the hour of X`, and for the weekday
+        # and day-of-month `the day of X` / `the day number of X` (month likewise).
+        # The operand is a Unix time in milliseconds; with no operand it reads now.
+        canon = language.reverse_word(token)
+        if canon in ('month', 'day') and language.reverse_word(self.peek()) == 'number':
+            self.nextToken()
+            canon = canon + 'number'
+        if canon in ('year', 'month', 'monthnumber', 'day', 'daynumber', 'hour', 'minute', 'second'):
+            value.setType(canon)
+            value.timestamp = None # type: ignore
+            if language.reverse_word(self.peek()) == 'of':
+                self.nextToken()
+                value.timestamp = self.nextValue() # type: ignore
+            return value
+
         if token == 'entries':
             token = self.nextToken()
             if token in ['in', 'of']:
@@ -3122,6 +3137,42 @@ class Core(Handler):
         else:
             fmt = self.textify(fmt)
         return ECValue(type=str, content=datetime.fromtimestamp(ts/1000).strftime(fmt))
+
+    # Shared base for the time-component reads. The operand is a Unix time in
+    # milliseconds — the house convention shared with now/timestamp/today and
+    # datime — and no operand means "now".
+    def timeComponent(self, v):
+        ts = getattr(v, 'timestamp', None)
+        if ts == None:
+            return datetime.now()
+        return datetime.fromtimestamp(self.textify(ts) / 1000)
+
+    def v_year(self, v):
+        return ECValue(type=int, content=self.timeComponent(v).year)
+
+    # Month is 0-indexed (JavaScript's getMonth) so `the month of` agrees with
+    # the browser runtime.
+    def v_month(self, v):
+        return ECValue(type=int, content=self.timeComponent(v).month - 1)
+
+    def v_monthnumber(self, v):
+        return ECValue(type=int, content=self.timeComponent(v).month - 1)
+
+    # Day of the week, 0 = Sunday — JavaScript's getDay, not Python's 0 = Monday.
+    def v_day(self, v):
+        return ECValue(type=int, content=(self.timeComponent(v).weekday() + 1) % 7)
+
+    def v_daynumber(self, v):
+        return ECValue(type=int, content=self.timeComponent(v).day)
+
+    def v_hour(self, v):
+        return ECValue(type=int, content=self.timeComponent(v).hour)
+
+    def v_minute(self, v):
+        return ECValue(type=int, content=self.timeComponent(v).minute)
+
+    def v_second(self, v):
+        return ECValue(type=int, content=self.timeComponent(v).second)
 
     def v_decode(self, v):
         content = self.textify(v.getContent())

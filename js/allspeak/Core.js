@@ -4407,7 +4407,7 @@ const AllSpeak_Core = {
 			case `year`:
 				var year = new Date().getFullYear();
 				if (value.timestamp) {
-					year = new Date(program.getValue(value.timestamp) * 1000).getFullYear();
+					year = new Date(program.getValue(value.timestamp)).getFullYear();
 				}
 				return {
 					type: `constant`,
@@ -4417,7 +4417,7 @@ const AllSpeak_Core = {
 			case `month`:
 				var month = new Date().getMonth();
 				if (value.timestamp) {
-					month = new Date(program.getValue(value.timestamp) * 1000).getMonth();
+					month = new Date(program.getValue(value.timestamp)).getMonth();
 				}
 				return {
 					type: `constant`,
@@ -4427,7 +4427,7 @@ const AllSpeak_Core = {
 			case `day`:
 				var day = new Date().getDay();
 				if (value.timestamp) {
-					day = new Date(program.getValue(value.timestamp) * 1000).getDay();
+					day = new Date(program.getValue(value.timestamp)).getDay();
 				}
 				return {
 					type: `constant`,
@@ -4437,7 +4437,7 @@ const AllSpeak_Core = {
 			case `hour`:
 				var hour = new Date().getHours();
 				if (value.timestamp) {
-					hour = new Date(program.getValue(value.timestamp) * 1000).getHours();
+					hour = new Date(program.getValue(value.timestamp)).getHours();
 				}
 				return {
 					type: `constant`,
@@ -4447,7 +4447,7 @@ const AllSpeak_Core = {
 			case `minute`:
 				var minute = new Date().getMinutes();
 				if (value.timestamp) {
-					minute = new Date(program.getValue(value.timestamp) * 1000).getMinutes();
+					minute = new Date(program.getValue(value.timestamp)).getMinutes();
 				}
 				return {
 					type: `constant`,
@@ -4457,7 +4457,7 @@ const AllSpeak_Core = {
 			case `second`:
 				var second = new Date().getSeconds();
 				if (value.timestamp) {
-					second = new Date(program.getValue(value.timestamp) * 1000).getSeconds();
+					second = new Date(program.getValue(value.timestamp)).getSeconds();
 				}
 				return {
 					type: `constant`,
@@ -4467,7 +4467,7 @@ const AllSpeak_Core = {
 			case `monthnumber`:
 				var monthNumber = new Date().getMonth();
 				if (value.timestamp) {
-					monthNumber = new Date(program.getValue(value.timestamp) * 1000).getMonth();
+					monthNumber = new Date(program.getValue(value.timestamp)).getMonth();
 				}
 				return {
 					type: `constant`,
@@ -4477,7 +4477,7 @@ const AllSpeak_Core = {
 			case `daynumber`:
 				var dayNumber = new Date().getDate();
 				if (value.timestamp) {
-					dayNumber = new Date(program.getValue(value.timestamp) * 1000).getDate();
+					dayNumber = new Date(program.getValue(value.timestamp)).getDate();
 				}
 				return {
 					type: `constant`,

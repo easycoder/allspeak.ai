@@ -108,7 +108,7 @@ The left operand must be a clean decimal string (`3`, `3.14`, `.5`, `-3.14`); an
 
 ## Time components
 
-`the year of X`, `the month of X`, `the day of X`, `the day number of X`, `the hour of X`, `the minute of X`, `the second of X` extract components from a Unix timestamp (seconds since epoch). They always return a number:
+`the year of X`, `the month of X`, `the day of X`, `the day number of X`, `the hour of X`, `the minute of X`, `the second of X` extract components from a Unix time in milliseconds — the same unit as `now`/`timestamp`/`today`, so `the year of the timestamp` reads the current year. They always return a number:
 
 | Accessor | Returns | Range |
 |---|---|---|
