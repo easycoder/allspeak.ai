@@ -10,6 +10,8 @@ deploy/config/gmap-key.txt
 # editor, not a record of the project — it must never land in a commit.
 DIFF.md
 
-# diffshow's saved window position and size. Local to this machine, rewritten when the
-# window closes — the tool regenerates it, so it has no place in a commit.
+# diffshow — a local working tool that opens DIFF.md in a desktop window. Its script and
+# the window geometry it saves (rewritten on close) are local to this machine and stay
+# out of the repo.
 .diffshow.conf
+diffshow.allspeak
