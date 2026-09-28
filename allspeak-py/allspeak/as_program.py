@@ -54,7 +54,12 @@ class Program:
 		if len(arg) == 0:
 			print('No script supplied')
 			exit()
-		if arg in ['-v', '--version']: return
+		if arg in ['-v', '--version']:
+			# Version request: the banner above is the whole output. Exit here
+			# rather than return — there is no script to run, and returning
+			# would hand Main() a half-initialised Program whose start() then
+			# dies on the first unset attribute (self.debugging).
+			sys.exit()
 		if arg[0:6] == 'debug ':
 			print('Debug mode requested')
 			parts = arg[6:].split()
