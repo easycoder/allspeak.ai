@@ -56,3 +56,20 @@ Oddity: not a graphics bug. `program.getVariable()` (also `getSymbolValue`, `tex
 Applied. `ensureRunning()` now raises `RuntimeError` instead of a compile-time `FatalError` (matching its sibling `ensureNotRunning`). A second gap surfaced immediately: `RuntimeError.__init__` indexes `program.code[program.pc]`, and an idle program has `pc == None`, so the first attempt died with `TypeError: list indices must be integers or slices, not NoneType`. `RuntimeError` now falls back to a line-less message when there is no current statement (pc None or out of range).
 
 Verified: idle misuse prints `Runtime Error in EndStop:` / `-> Improper use of runtime function` (honest label, no bogus line, no crash); an in-run error still names its line (`Runtime Error in RT at line 3 (add 1 to N)`); conformance unchanged (15 files / 5 tests / 3 failed — CheckBlocks/CheckClauses/CheckClauses2 exercise the onError routing); the file/readonly and save/filter harnesses still pass; `FatalError` is still imported and used elsewhere. DIFF.md and TODO.md updated.
+
+## 11:41
+
+Another request, for the following:
+set the title of MainWindow to Text — the direct counterpart of create {window} title ….
+
+**Assistant**
+
+Added `set the title of {window}/{group}/{dialog} to {value}` in the Python graphics runtime — the counterpart of `create … title`.
+
+- `k_set` gains a `title` branch (targets `ECWindow`/`ECGroup`/`ECDialog`); `r_set` gains a `title` branch that calls `setTitle` for a group box and `setWindowTitle` for a window or dialog. The value may be a literal or a variable.
+- Scope note: `create … title` applies to window, group and dialog, so all three are covered — window is what was asked for, and group/dialog close the gap (a title you can set at create should be settable later).
+- Documented in `learn/reference/20-graphics.md` (the `set` example list, the "Targets are type-checked" line, and the window-attribute note), `allspeak-py/doc/graphics/keywords/set.md` (examples + supported attributes); mirrored to `deploy/learn/`; `DIFF.md`/`TODO.md` updated.
+
+Verified headless (`QT_QPA_PLATFORM=offscreen`) with a harness that reads the Qt widgets after the run: `set the title of MainWindow to \`Renamed\`` → window title `Renamed`; `set the title of Box to V` (via a variable) → group caption `Group Renamed`; `set the title of Dlg to \`Dlg Renamed\`` → dialog title `Dlg Renamed`. All PASS; conformance unchanged (15 files / 5 tests / 3 failed); learn-link-check 0 errors.
+
+Note: the previous turn's work (native file dialogs, readonly multiline, ensureRunning fix) is committed as 2609281118, so this turn's diff is only the `set the title of` change.

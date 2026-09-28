@@ -1573,6 +1573,7 @@ class Graphics(Handler):
     # set [the] width/height [of] {widget} [to] {value}
     # set [the] layout of {window}/{widget} to {layout}
     # set [the] spacing of {layout} to {value}
+    # set [the] title of {window}/{group}/{dialog} to {title}
     # set [the] text [of] {label}/{button}/{lineinput}/{multiline} [to] {text}
     # set [the] color [of] {label}/{button}/{lineinput}/{multiline} [to] {color}
     # set [the] state [of] {checkbox} [to] {state}
@@ -1623,6 +1624,18 @@ class Graphics(Handler):
             if self.nextIsSymbol():
                 record = self.getSymbolRecord()
                 if self.isObjectType(record, ECLayout):
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif token == 'title':
+            # The counterpart of `create {window}/{group}/{dialog} title …`:
+            # a window's/dialog's window title, or a group box's caption.
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, (ECWindow, ECGroup, ECDialog)):
                     command['name'] = record['name']
                     self.skipWord('to')
                     command['value'] = self.nextValue()
@@ -1775,6 +1788,14 @@ class Graphics(Handler):
                 widget.setMarkdown(str(text))  # type: ignore
             if self.isObjectType(record, ECPushButton):
                 widget.setAccessibleName(str(text))  # type: ignore
+        elif what == 'title':
+            record = self.getVariable(command['name'])
+            widget = self.getInnerObject(record)
+            title = str(self.textify(command['value']))
+            if self.isObjectType(record, ECGroup):
+                widget.setTitle(title)  # type: ignore
+            else:
+                widget.setWindowTitle(title)  # type: ignore
         elif what == 'state':
             record = self.getVariable(command['name'])
             if self.isObjectType(record, ECCheckBox):

@@ -6,6 +6,7 @@
 ## Examples:
 ```
 set the layout of Window to MainPanel
+set the title of Window to `My App`
 set text of Button to `Click Me`
 set the state of CheckBox to checked
 set the background color of Label to 255 255 200
@@ -19,6 +20,7 @@ Set an attribute of a graphic widget or container. The optional article `the` is
 ### Supported Attributes
 
 - **layout** — assign a layout to a window, panel, or group
+- **title** — set a window's or dialog's window title, or a group box's caption (the counterpart of `create … title`)
 - **text** — set text for buttons, labels, line inputs, or multiline editors
 - **state** — set checkbox state (checked or unchecked)
 - **color** — set label text color

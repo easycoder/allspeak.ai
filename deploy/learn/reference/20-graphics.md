@@ -71,7 +71,7 @@ create HelpPanel cols 40 rows 6
 create RoundCard type roundrect radius 16 fill `#FFFFFF` border `#ECECEC` borderwidth 1
 ```
 
-- **window**: `title`, `at X Y`, `size W H`, `layout`. Defaults: title `AllSpeak Main Window`, size 640×480, centered. The `layout` attribute attaches a layout to the window directly (the layout must exist already) — `set the layout of … to …` does the same thing at any time.
+- **window**: `title`, `at X Y`, `size W H`, `layout`. Defaults: title `AllSpeak Main Window`, size 640×480, centered. The `layout` attribute attaches a layout to the window directly (the layout must exist already) — `set the layout of … to …` does the same thing at any time, and `set the title of … to …` renames the window at any time.
 - **layout**: `type` must be one of the four Qt layout classes; anything else falls back to `QVBoxLayout`.
 - **group**: optional `title`.
 - **label**: `text`, `size` (approx. width in 'm' characters), `width` (fixed), `expand`, `align left|right|center|centre|justify`.
@@ -136,6 +136,7 @@ The `set` command reads like English; `the` is optional sugar:
 
 ```as
 set the layout of MainWindow to MainPanel
+set the title of MainWindow to `Settings — edited`
 set the text of SaveButton to `Apply`
 set the state of InvertFlag to checked          ! or: unchecked | {value}
 set the color of StatusLabel to `red`
@@ -149,7 +150,7 @@ set the spacing of MainPanel to 5
 set blocked true
 ```
 
-Targets are type-checked at runtime: `text` applies to label/pushbutton/lineinput/multiline/mdpanel (mdpanel interprets it as markdown), `state` to checkbox, `layout` to window/group/panel, `alignment` flags are `left hcenter right top vcenter bottom center` (any combination).
+Targets are type-checked at runtime: `text` applies to label/pushbutton/lineinput/multiline/mdpanel (mdpanel interprets it as markdown), `title` to window/group/dialog (it sets a window's or dialog's window title, or a group box's caption — the counterpart of `create … title`), `state` to checkbox, `layout` to window/group/panel, `alignment` flags are `left hcenter right top vcenter bottom center` (any combination).
 
 ## Visibility and state
 
