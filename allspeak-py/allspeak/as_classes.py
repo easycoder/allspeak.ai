@@ -71,10 +71,18 @@ class RuntimeError(BaseException):
 				program.errorRouted = True
 				program.run(program.onError)
 		else:
-			code = program.code[program.pc]
-			lino = code['lino']
-			script = program.script.lines[lino].strip()
-			print(f'Runtime Error in {program.name} at line {lino + 1} ({script}):\n-> {message}')
+			# The current statement is not always available: a runtime function
+			# misused while the program is idle has pc == None, and an error
+			# raised past the end of the code has pc out of range. Fall back to
+			# a message without a line rather than crashing on the lookup.
+			pc = program.pc
+			code = program.code[pc] if isinstance(pc, int) and 0 <= pc < len(program.code) else None
+			if code is not None:
+				lino = code['lino']
+				script = program.script.lines[lino].strip()
+				print(f'Runtime Error in {program.name} at line {lino + 1} ({script}):\n-> {message}')
+			else:
+				print(f'Runtime Error in {program.name}:\n-> {message}')
 			sys.exit()
 
 class NoValueRuntimeError(RuntimeError):

@@ -21,6 +21,7 @@ show Notes
 **Notes:**
 - Use `set text of Notes to '...'` to set the input value.
 - Use `on click Notes` to handle user input events.
+- Add `readonly` when creating to make the widget a plain-text view the user cannot type into: `create SourceView readonly cols 40 rows 5`. `set text of` still writes to it, so it can display a file's contents.
 
 Next: [on](on.md)  
 Prev: [move](move.md)

@@ -65,6 +65,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QMessageBox,
     QDialogButtonBox,
+    QFileDialog,
     QGraphicsDropShadowEffect
 )
 from allspeak.as_program import flush
@@ -334,7 +335,7 @@ class Graphics(Handler):
         object.setValue(element)
 
     def dialogTypes(self):
-        return ['confirm', 'lineedit', 'multiline', 'generic']
+        return ['confirm', 'lineedit', 'multiline', 'generic', 'file', 'save']
     
     #############################################################################
     # Keyword handlers
@@ -757,6 +758,12 @@ class Graphics(Handler):
             elif next == 'rows':
                 self.nextToken()
                 command['rows'] = self.nextValue()
+            elif next == 'readonly':
+                # `create {multiline} readonly` builds the field as a
+                # read-only plain-text view: the same widget, but the user
+                # cannot type into it. `set the text of` still writes to it.
+                self.nextToken()
+                command['readonly'] = True
             else: break;
         self.add(command)
         return True
@@ -834,6 +841,12 @@ class Graphics(Handler):
             elif language.reverse_word(self.peek()) == 'value':
                 self.nextToken()
                 command['value'] =  self.nextValue()
+            elif language.reverse_word(self.peek()) == 'filter':
+                # Native choosers take a Qt filter string, e.g. `*.txt` or
+                # `Texts (*.txt);;All files (*)`. Passed through unchanged;
+                # only the `file` and `save` types use it.
+                self.nextToken()
+                command['filter'] = self.nextValue()
             elif language.reverse_word(self.peek()) == 'with':
                 self.nextToken()
                 command['layout'] =  self.nextToken()
@@ -1004,6 +1017,8 @@ class Graphics(Handler):
     
     def r_createMultiLineEdit(self, command, record):
         textinput = ECPlainTextEditWidget()
+        if 'readonly' in command:
+            textinput.setReadOnly(True)
         if 'cols' in command and 'rows' in command:
             fontMetrics = textinput.fontMetrics()
             charWidth = fontMetrics.horizontalAdvance('x')
@@ -1092,6 +1107,16 @@ class Graphics(Handler):
                 layout = self.getInnerObject(self.getVariable(command['layout']))
                 mainLayout.addLayout(layout)
             dialog.setLayout(mainLayout)
+        elif dialogType in ('file', 'save'):
+            # A native file chooser has no widgets of its own: `show` opens a
+            # QFileDialog (open or save) and stores the chosen path as the
+            # dialog's result. The parent window is kept so the chooser opens
+            # over it; `filter`, when given, is a Qt filter string.
+            dialog.window = win
+            dialog.filter = (self.textify(command['filter']) if 'filter' in command else '') or ''
+            title = self.textify(command['title'])
+            if not title: title = 'Save a file' if dialogType == 'save' else 'Open a file'
+            dialog.setWindowTitle(title)
         else:
             dialog.setWindowTitle(self.textify(command['title']))
             prompt = self.textify(command['prompt'])
@@ -1913,6 +1938,20 @@ class Graphics(Handler):
                 if dialog.exec() == QDialog.DialogCode.Accepted:
                     object.result = dialog.textEdit.toPlainText()  # type: ignore
                 else: object.result = dialog.value  # type: ignore
+            elif dialog.dialogType in ('file', 'save'):
+                # Native chooser. The result is the chosen path, or an empty
+                # string if the user cancelled, so a script tests it with
+                # `if Path is empty`. `file` picks an existing file to read;
+                # `save` picks a name to write (the file is not created here —
+                # the script writes it). Both return a (path, filter) pair.
+                parent = getattr(dialog, 'window', None)
+                title = dialog.windowTitle() or ('Save a file' if dialog.dialogType == 'save' else 'Open a file')
+                filterText = getattr(dialog, 'filter', '') or ''
+                if dialog.dialogType == 'save':
+                    path, _ = QFileDialog.getSaveFileName(parent, title, '', filterText)
+                else:
+                    path, _ = QFileDialog.getOpenFileName(parent, title, '', filterText)
+                object.result = path
         elif 'name' in command:
             record = self.getVariable(command['name'])
             self.getInnerObject(record).show()  # type: ignore

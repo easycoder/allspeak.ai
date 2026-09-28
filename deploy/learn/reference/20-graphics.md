@@ -41,6 +41,7 @@ pushbutton SaveButton
 checkbox InvertFlag
 lineinput NameInput
 multiline Description
+multiline SourceView
 mdpanel HelpPanel
 listbox DeviceList
 combobox SystemCombo
@@ -50,7 +51,7 @@ dialog ConfirmDlg
 messagebox MessageBox
 ```
 
-Types: `window`, `layout`, `group`, `label`, `pushbutton`, `checkbox`, `lineinput`, `multiline`, `mdpanel` (read-only markdown preview), `listbox`, `combobox`, `panel`, `shape`, `dialog`, `messagebox`.
+Types: `window`, `layout`, `group`, `label`, `pushbutton`, `checkbox`, `lineinput`, `multiline` (editable text; add `readonly` for a plain-text view the user can't type into), `mdpanel` (read-only markdown preview), `listbox`, `combobox`, `panel`, `shape`, `dialog`, `messagebox`.
 
 ## Creating widgets
 
@@ -65,6 +66,7 @@ create SaveButton text `Save` size 12
 create CheckBox text `Inverted`
 create NameInput text `guest` size 40
 create Description cols 40 rows 6
+create SourceView readonly cols 40 rows 6
 create HelpPanel cols 40 rows 6
 create RoundCard type roundrect radius 16 fill `#FFFFFF` border `#ECECEC` borderwidth 1
 ```
@@ -76,7 +78,7 @@ create RoundCard type roundrect radius 16 fill `#FFFFFF` border `#ECECEC` border
 - **pushbutton**: `text`, `icon {path}` (loaded as a pixmap, scaled to height `size` or 24), `size`.
 - **checkbox**: `text`.
 - **lineinput**: `text`, `size` (width in characters).
-- **multiline / mdpanel**: `cols`, `rows` (fixed character grid; without them the widget expands).
+- **multiline / mdpanel**: `cols`, `rows` (fixed character grid; without them the widget expands). `multiline` is editable; `create Description readonly` builds it as a plain-text view the user cannot type into — the plain-text counterpart of the always-read-only `mdpanel`. `set the text of` still writes to a read-only field, so it is the way to show a file's contents.
 - **shape**: `type rect|roundrect|ellipse|circle` (default `roundrect`), `radius` (corner radius, default 12; ignored for `rect`), `fill` (fill colour), `border` (border colour), `borderwidth` (border thickness). The border thickness is called `borderwidth` — plain `width` is the widget width elsewhere in the domain, so `create Card … width 1` would be ambiguous.
 - **listbox / combobox / panel**: no attributes.
 
@@ -248,9 +250,39 @@ Types and results:
 - `confirm` — prompt plus OK/Cancel; result is `true`/`false`.
 - `lineedit` — prompt plus a text field prefilled with `value`; result is the entered text, or the original `value` if cancelled.
 - `multiline` — as `lineedit` but multi-line.
+- `file` — the operating system's own **file-open chooser** (a `QFileDialog`), so the user browses the real filesystem. The result is the **full path of the chosen file**, or an **empty string** if the user cancelled — so a script tests it with `if Path is empty` and then reads the file with the usual keywords.
+- `save` — the same native chooser in **save mode**: the user picks a name to write. The file is *not* created for you — the script writes it (e.g. `save Text to Path`). The result rule is the same: the chosen path, or `''` on cancel.
 - `generic` — a 500×500 frameless modal with a title bar you can add your own layout to via `with {layout}`; result is the dialog's exec code.
 
 Reading the result before `show` returns `None` — read it after `show` for the actual result.
+
+`file` and `save` take just two attributes, both optional: `title` (defaults to `Open a file` / `Save a file`) and `filter`, a Qt filter string — a bare pattern like `*.txt`, or several groups separated by `;;` (`Texts (*.txt);;All files (*)`). The chooser opens over the window named in `on {window}`; leave `on` off for a bare top-level chooser.
+
+The `file` and `save` types are the two dialogs not built from prompt/OK/Cancel widgets; `show` hands control to the native chooser and blocks until it closes, exactly like the other modal types:
+
+```as
+dialog OpenDlg
+dialog SaveDlg
+variable Path
+variable Text
+
+create OpenDlg on MainWindow type file title `Open a file` filter `*.allspeak`
+create SaveDlg on MainWindow type save title `Save as`
+
+show OpenDlg
+put OpenDlg into Path
+if Path is empty
+    log `cancelled`
+else
+    log `chose ` cat Path
+end
+
+show SaveDlg
+put SaveDlg into Path
+if Path is not empty
+    save Text to Path
+end
+```
 
 ## Message boxes
 

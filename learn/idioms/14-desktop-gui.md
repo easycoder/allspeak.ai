@@ -149,6 +149,42 @@ create Window title `Settings` at X Y size W H
 
 The first run has no file, so the `else` branch supplies the defaults — the same `420 300` the skeleton above asks for, only now the position is ours rather than Qt's centring. `x` and `y` are read frame-*excluded*, the convention `create … at` writes with, so a saved position comes back unchanged instead of walking up and to the left by the window border on every restart. [JSON](../reference/json.md) covers `load` and `json of`; the geometry reads themselves are in the [reference page](../reference/graphics.md).
 
+## Opening a file and showing it read-only
+
+A `file` dialog and a `readonly` multiline are the two halves of "let the user pick a file, then show it to them without letting them edit it". `create OpenDlg on Window type file` sets up the operating system's own open chooser; `show OpenDlg` blocks in it; `put OpenDlg into Path` returns the chosen path, or an empty string if the user cancelled — so `if Path is empty` is the cancel test. `create SourceView readonly` builds a multiline the user cannot type into, and `set the text of` still writes to it: the plain-text counterpart of `mdpanel`, which renders markdown. Declare the pieces with the rest, build them in the setup section, and let one button do the work:
+
+```as
+dialog OpenDlg
+multiline SourceView
+pushbutton OpenButton
+variable Path
+variable Text
+
+! --- in the setup section ---
+create OpenButton text `Open…`
+add OpenButton to Panel
+create SourceView readonly cols 60 rows 20
+add SourceView to Panel
+create OpenDlg on Window type file title `Open a file`
+on click OpenButton go to OpenClick
+
+OpenClick:
+    show OpenDlg
+    put OpenDlg into Path
+    if Path is empty
+        set the text of StatusLabel to `No file chosen`
+    else
+        load Text from Path
+        set the text of SourceView to Text
+        set the text of StatusLabel to `Opened ` cat Path
+    end
+    stop
+```
+
+`load Text from Path` reads the file whose path is *in a variable*, not only a literal, so the path the dialog returned goes straight in. The `file` type opens over the window named in `create … on Window` — leave `on` off and the chooser is a bare top-level window.
+
+For the write side, `create SaveDlg on Window type save` is the same chooser in save mode: it returns the path the user typed, or `''` if they cancelled, and the script then writes the file itself (`save Text to Path`). Add `filter \`*.txt\`` to either type to narrow the listing to a pattern (or several groups: `filter \`Texts (*.txt);;All files (*)\``).
+
 ## Anti-patterns
 
 - **Creating the window before the layout it references** — `create Window … layout Panel` attaches the layout at create time, so `Panel` must already exist. Build and populate layouts first, then create the window; `set the layout of Window to Panel` works at any later point.

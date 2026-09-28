@@ -339,7 +339,13 @@ class Program:
 	# Ensure the program is running
 	def ensureRunning(self):
 		if not self.running:
-			raise FatalError(self.compiler, 'Improper use of runtime function')
+			# A runtime-only API (getVariable, evaluate, textify, getSymbolValue)
+			# was called while the program was idle — e.g. a host reading state
+			# after the run, or an event arriving with the main flow parked.
+			# Report it as the runtime error it is (correct line, and the
+			# `onError` handler is honoured), not as a compile-time FatalError,
+			# which named the script's last line and killed the host process.
+			raise RuntimeError(self, 'Improper use of runtime function')
 	
 	# Ensure the program is not running
 	def ensureNotRunning(self):
