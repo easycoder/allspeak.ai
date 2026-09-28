@@ -215,3 +215,17 @@ Made the test as frictionless as it can be. Surveyed the other projects for scri
 Generated them into `various/silhouette-bill.html` and `various/silhouette-spike.html`, and fixed a wart found on the way: the wrapper stripped only `.allspeak`, so a `.as` input was producing `silhouette-bill.as.html`.
 
 Gave a falsifiable watch-list rather than "does it help": can you say what the script is *for* without reading it; do the gutter dots say where to start or are they decoration; does the bar say anything the `§N 21–35` label did not (my suspicion: barely, which is the block-metric question); at what zoom the line view stops being useful; does the hover prose change what you would read next; and — the decisive one — did it change what you would read *first*. Asked for the moment it failed, which is worth more than a verdict.
+
+## 15:20
+
+Item 6 in TODO.md - the marker option words look fine to me. Item 7 - several questions. I'm OK with working from a trace file, for the time being at least. The rest of the item is mostly fine; the 2-panel view isn't now "decided" but may re-surface if it doesn't work with one panel. The 2 views on clicking Blocks are interesting... [sketch feedback: hover shows unreadable line text at compressed zoom; prefer marker + doc prose, with a toggle; the bars-without-text view is a poor navigator; prefer ONE continuous view — the compressed picture at different zooms, ending where line height reaches normal]
+
+**Assistant**
+
+[code omitted]
+
+Mapped the numbering first rather than guessing: item 6 is `### 6` (the viz marker option words), and what he called item 7 is the **unnumbered `## Visualiser` section** sitting after `### 7. modifyValue` — his two remarks being verbatim from it ("working from a trace file", "the 2-panel view isn't now decided"). Said so explicitly so we do not talk past each other.
+
+Recorded in TODO.md: item 6 reviewed and closed (provisional fr/it forms stand); the dual-pane view demoted from "Decided" to "Proposed, no longer settled"; trace-file working agreed for now; and the Visualiser section rewritten with the four sketch findings and his read of them — which also fixes the stale handover flagged earlier (item 4 had still described block aggregation as ahead of us).
+
+Identified the crux to confirm before building: that the one continuous view means block rows **unfolding into their own lines** as zoom rises, not two representations behind a switch.

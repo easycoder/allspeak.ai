@@ -117,7 +117,7 @@ with a release in flight.
 
 ## Language packs
 
-### 6. The `viz` marker's option words — decided; pending native review
+### 6. ~~The `viz` marker's option words~~ ✓ Reviewed 2026-09-28 — the words stand, provisional fr/it forms included
 
 `viz` is core syntax (a no-op command) with the grammar
 `viz start|stop [on <label>] [once|every] [until thread] [limit <count>]`. Every option
@@ -200,11 +200,12 @@ each learning step is small. Three rules follow, and future work should be check
 our own. Anchor names and doc-block prose arrive in the author's language already, because they
 *are* the author's text.
 
-**Decided:** a **dual-pane** view — the script on one side, the picture on the other, with the
-script *following* the user's navigation of the picture. Two consequences already built into the
-trace format: every event names a `line` (the join key the editor scrolls to), and every event
-carries `steps` alongside its timing (the deterministic axis, since timings are not comparable
-across runs or runtimes).
+**Proposed, and no longer settled:** a **dual-pane** view — the script on one side, the picture on
+the other, with the script *following* the user's navigation. The sketches below suggest one pane
+can carry it; two may re-surface if one turns out too cluttered (Graham, 2026-09-28). Two
+consequences hold either way, and are already built into the trace format: every event names a
+`line` (the join key the editor scrolls to), and every event carries `steps` alongside its timing
+(the deterministic axis, since timings are not comparable across runs or runtimes).
 
 **In place:** `viz` markers as core syntax (no-ops without a recorder); the static model
 (sections, prose, anchors, routes, windows, findings); the Python recorder; and now the recording
@@ -212,13 +213,42 @@ as a **file** — `spec/viz-trace-format.md` (Chrome Trace Event Format, the sub
 meaning of each `args` field) with `tools/check-trace.py` as the conformance check both runtimes
 must pass. `tools/asviz-run.py --run --trace=<file.json>` writes one.
 
+**Sketches, and what they established** (2026-09-28; `various/`, gitignored — run
+`./various/silhouette <script>`, which prints the path and opens it). They render the *static*
+model only: no trace, no runtime change, because the riskiest assumption was whether an unreadable
+shape is useful at all.
+
+- A whole-file view of a 626-line script **cannot** show per-line shape: 1.26 px per line leaves
+  indentation sub-pixel. Resolution is the limit, not the encoding.
+- The block rows have no zoom dimension — the whole file's form always fits — so a single zoom
+  control cannot govern them and per-line rows at once.
+- A block's bounding box cannot show nesting: every AllSpeak block starts at column 0, so the
+  shallowest indent is 0 for all of them.
+- The x-axis cannot be both glyph-proportional and whole-file legible. `parser.allspeak`'s longest
+  line is 461 chars, which at glyph scale fills 238 px of a 1400 px pane — 17%, i.e. collapsed
+  into the left margin. Hence the per-density x (percentage for blocks, glyphs for lines) — which
+  Graham's read below now calls into question.
+
+**From Graham's read of the sketches (2026-09-28):**
+
+- Hover in the **compressed** view should show the **current marker and any doc prose**, not the
+  line's text — individual commands are meaningless at that zoom. Line text belongs there only
+  once zoom makes it legible; a toggle in the detail pane should offer either.
+- The bars-without-text rendering is a poorer navigation aid than the compressed one. He would
+  rather have **one continuous view**: the compressed picture at different levels of zoom, ending
+  where the text's line height reaches normal. That replaces the mode switch, and implies one
+  geometry rather than two.
+- The gutter of marker dots and the doc-block prose are the parts he would keep.
+
 **Next, in order — deliberately trimmed:**
-1. Block-level aggregation over a trace (sections and anchors × visits/steps) — what the picture
-   draws, and where the static model and the trace are joined. No user-visible surface.
-2. The first screen in `asedit.allspeak`: one row per block in file order, coloured by activity, with
-   prose from the analyser, and click-through to the editor. It reads a **trace file**, so it
-   needs nothing new from the runtime.
-3. Only if it earns its place: running the script in-browser (which needs the JS recorder), an
+1. Rebuild the sketch as **one continuous view** — blocks unfolding into their own lines as zoom
+   rises, one geometry throughout — with the hover rule above (marker + prose at low zoom, line
+   text once legible, and a toggle).
+2. The **heat layer**, stepped along the run on `steps` (not wall-clock), which the trace already
+   carries.
+3. The first screen in `asedit.allspeak`, reading a **trace file** — agreed 2026-09-28: work from a
+   trace for now; needs nothing new from the runtime.
+4. Only if it earns its place: running the script in-browser (which needs the JS recorder), an
    overlay/code-map mode, and `viz diff`.
 
 **Cut for now,** because they add artefacts or steps without answering the first screen's
@@ -230,9 +260,8 @@ what the portable format was for.
 documents validate against the format as specified, but the rendering needs an eye on a browser —
 `ui.perfetto.dev` accepts the file directly, so that is a one-minute check for whoever has one.
 
-**Not yet decided:** whether the trace file becomes the editor's only input (records joined with
-`asdoc-check.py --json` for prose), or whether the editor also runs the script itself in-browser.
-The first is needed either way; the second is the difference between JS-Recorder-first and
+**Working from a trace file is agreed for now** (Graham, 2026-09-28). Still open: whether the
+editor *also* runs the script itself in-browser — the difference between JS-Recorder-first and
 Editor-first.
 
 ### 8. Flags: `it` / `fr` / `de` are provisional
