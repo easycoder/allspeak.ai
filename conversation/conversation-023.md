@@ -73,3 +73,13 @@ Added `set the title of {window}/{group}/{dialog} to {value}` in the Python grap
 Verified headless (`QT_QPA_PLATFORM=offscreen`) with a harness that reads the Qt widgets after the run: `set the title of MainWindow to \`Renamed\`` → window title `Renamed`; `set the title of Box to V` (via a variable) → group caption `Group Renamed`; `set the title of Dlg to \`Dlg Renamed\`` → dialog title `Dlg Renamed`. All PASS; conformance unchanged (15 files / 5 tests / 3 failed); learn-link-check 0 errors.
 
 Note: the previous turn's work (native file dialogs, readonly multiline, ensureRunning fix) is committed as 2609281118, so this turn's diff is only the `set the title of` change.
+
+## 12:04
+
+allspeak --version is broken in the runtime as it stands: it prints the version and then dies with AttributeError: 'Program' object has no attribute 'debugging', exit 1.
+
+**Assistant**
+
+Fixed. `Program.__init__` returned early for a version request (`if arg in ['-v', '--version']: return` at as_program.py:57) — before `self.debugging` and every other attribute was set — and `Main()` then called `.start()` on that half-initialised object, which reads `self.debugging` on its first line. It now `sys.exit()`s after printing the banner, so `allspeak --version` / `-v` print the version and exit 0. `allspeak` with no arguments (Main's `Program('-v')` branch) also exits 0; running a script, `debug …`, `info` and `--test` are untouched.
+
+Verified through the exact entry-point path with the repo on PYTHONPATH (`from allspeak.as_program import Main; sys.exit(Main())`): `--version` and `-v` → version, exit 0; a normal script compiles and runs (exit 0); conformance unchanged (15 files / 5 tests / 3 failed). Also confirmed the installed copy under ~/.local differed from the repo only by this hunk, so a reinstall is all that is needed — and noticed DIFF.md's reinstall command was wrong (`pip install --no-deps allspeak-py` is read as a PyPI name; it must be `./allspeak-py`), now corrected. Could not reinstall to verify the installed CLI directly: the sandbox reports ~/.local as a read-only filesystem.
