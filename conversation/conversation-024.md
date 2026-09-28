@@ -83,3 +83,17 @@ Four things the experiment produced, three of them only visible by looking:
 4. Two bugs found by looking rather than reasoning: bars sized in `ch` of the *root* font while the text scales (6× too wide, a grey wall), and `--lh` never set in blocks mode, so the gutter dots had no size and vanished.
 
 Net: the block stack *does* now fit and read, and the gutter works at both densities; the per-line density remains right for zoomed work. The honest gap is that "shape" at block level is currently just extent, not structure.
+
+## 14:31
+
+Is there anything I can run?
+
+**Assistant**
+
+[code omitted]
+
+Checked rather than guessed. `allspeak` **is** on PATH (`/home/graham/.local/bin/allspeak`, reporting `2609281204`) and it **does** carry the time components — the install is a *copy* under `~/.local/lib/python3.12/site-packages/allspeak`, made at 12:04 today, which is after the 22:56 change on the 27th, so it is current for runtime purposes.
+
+Four things to run, in order of usefulness: the sketches themselves (`xdg-open various/viz-silhouette.html` — the Blocks/Lines switch and the hover are the parts a screenshot cannot show, which is the whole reason to open it); **point the generator at your own script** (`python3 tools/asviz-run.py <script>.allspeak > /tmp/x.model` then `python3 various/make-viz-silhouette.py /tmp/x.model <script>.allspeak /tmp/x.html`) — the sketches have only ever been tried on `parser.allspeak` and a 49-line fixture; the visualiser that already exists (`--run --trace=` for a trace file, `tools/check-trace.py` to validate it, then Perfetto, or the model records as text without `--run`); and the project's own checks (`python3 tools/asdoc-check.py .`).
+
+One caveat worth stating: because `allspeak` is a copy and not the repo, **edits to `allspeak-py/` will not take effect through the `allspeak` command** until `pip install --no-deps ./allspeak-py` — whereas `tools/asviz-run.py` runs against the repo.
