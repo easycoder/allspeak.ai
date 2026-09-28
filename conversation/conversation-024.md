@@ -111,3 +111,19 @@ My mistake: I put `<script>` inside a copy-pasteable block, and bash read it as 
 Found and fixed a real gap on the way: with no doc blocks the block density was **empty** — which is exactly the case for most of the scripts someone would point it at. It now falls back to control-flow regions (each marker starts one), so `tools/trace-run.allspeak` went from 0 blocks to 9.
 
 Also noted: `asviz-run` compiles a *script*, so pointing it at `viz.allspeak` fails ("I don't understand 'model'") because that file is the framework and needs its domain registered. Expected, not a defect.
+
+## 14:45
+
+DIFF.md isn't being rewritten - did the rule in AGENTS.md arrive too late to be picked up?
+
+**Assistant**
+
+[code omitted]
+
+No — the rule is at `AGENTS.md:194` ("**rewritten** after every change") and was in my standing instructions from the first message of this session. I had it, and I mis-applied it: I read "after every change" as "after every change that needs action".
+
+What is true is that the silence was *consistent* with what I committed: every commit since the other session's last (12:05) touched only `conversation/*.md` — `d286ffc`, `be49190`, `38e5cdf`, `1669dc3`, `eb4a2a1`. So DIFF.md correctly stood still for those.
+
+That is not a defence, because of what I did **not** commit. The sketches live in `various/`, which is gitignored, so they appear in no commit and no `git status` — which made DIFF.md the **only** channel that could tell you they existed, and I left it silent for three hours. The misreading bites hardest exactly where a change is invisible to git, and that is where it happened.
+
+Fixed: DIFF.md rewritten to cover the sketch work (action = none, but here is what to look at and how to open it), which is what it should have said when the first sketch was built. Proposed a clause for AGENTS.md so the loophole closes: silence is not an option, and gitignored artefacts are the case that proves it.
