@@ -39,3 +39,28 @@ You chose to fix the mock's three gaps and to open a file for today. The gaps ar
 Verified by screenshot: §14 `ReadSymbol` opens highlighted with its `stop 1` badge, the `viz start`/`viz stop` markers and the `gosub RejectFormula` visible in context, with §11–§19 captioned alongside.
 
 Logged in `conversation-024.md`: `023` was taken by the graphics session (file dialogs, `set the title of`, the `--version` fix, to 12:04) and `022` by the window-position work before it.
+
+## 13:45
+
+[Pasted text: a design vision for the visualiser — two whole-file panels, geometry-matched, one with text and one with per-line grey bars, heat (blue→red by recorded activity) behind them, marker dots, flow lines between events, and a toggle for the lines. Ends: "Let's have a discussion about it before we try to implement anything."]
+
+**Assistant**
+
+[code omitted]
+
+Discussed, not built — the request was a discussion. I opened by saying theirs is the better idea and why: my mock was a *list of blocks*, theirs is *geometry*, and a whole-file silhouette preserves the program's shape, so "where am I" is answered without the user having to think about it.
+
+Checked what the records already give it, and it is mostly better news than expected: **per-line activity** (the recorder bumps a counter on *every* step; only the *visit* list is marker-filtered), **visits with `perf_counter_ns()`**, **anchors carrying kind and reachability** (so a dot encodes "nothing enters this" for free — the orphan signal), and **routes**. Three things to settle first: **`fork` produces no route edge** (it is understood — targets marked entered, `entry-fork` in the shape census, `blockEnd` follows it — but the routes builder emits only call/jump/falls-out); the **x-axis should be `steps`, not time** (the repo already chose the deterministic axis, and that window is 691 µs end to end); and **live vs recorded** (today it records then renders).
+
+Where I pushed back: the two panels must stay in *perfect register*, which is the fragile part — a single pane with the heat behind the text makes register free, and a gutter is cheap; don't smear heat to the next marker when the counts are per line; the design has no words but the doc-block prose is the most valuable thing we own, so put it on hover; and it must be good with **no trace and no markers**, or it becomes the steep step the governing rule forbids.
+
+You chose: silhouette first, steps as the axis, one pane if possible, plus a gutter, plus doc information on hover.
+
+**Built** (design sketch, in `various/`, gitignored): `various/make-viz-silhouette.py`, rendering one file as a gutter of marker dots + a per-line bar whose left edge is the indentation, with a fitted-on-load zoom slider (whole file ↔ readable) and hover showing the line, its block and that block's prose. Static model only — no trace, no runtime change, which was the point: the riskiest assumption was whether an unreadable shape is useful.
+
+**Two things the test showed.**
+
+1. **A bug and a constraint in the same result.** The bars were sized in `ch` of the *root* font while the text scaled, so they came out ~6× too wide — a grey wall. Fixed, and then the constraint appeared: at fitted zoom a 626-line file gives **1.26 px per line**, where indentation is *sub-pixel*. So per-line shape is not merely blurry at whole-file scale, it is unrecoverable — the limit is resolution, not the encoding. Mapping the x-axis to the file's own character range (not glyph width) spends the full width on the shape and is the right fix, but it cannot create vertical resolution that is not there.
+2. **Where it works, it works.** On `tools/trace-run.allspeak` (49 lines) the file fits legibly and the design does what it promised: the loop body's indentation, the labels, and the markers (blue label, purple loop, green marker) are all visible at a glance without reading a word. So the shape reads in a band of roughly 50–150 lines on screen, and beyond that you need to **aggregate — per block, not per line** — to keep any shape at all.
+
+That is the design conclusion worth carrying: the same picture needs two densities, per-line when zoomed and per-block when whole-file, and the gutter works at both.
