@@ -159,3 +159,15 @@ But raising it exposed something I had not noticed: with x as a percentage of th
 Resolved by giving the two densities different x semantics: **Blocks** keeps the percentage (no text to align with, and a glyph axis collapses it), **Lines** goes back to the glyph scale so each bar sits under the line it marks. Verified by screenshot in Lines mode. Added `#lines` / `#blocks` URL hashes so either view can be opened directly.
 
 DIFF.md rewritten per the rule added minutes earlier, including the "nothing to action" entry it now requires.
+
+## 15:00
+
+What's happening here? [same failing command again]
+
+**Assistant**
+
+[code omitted]
+
+`xdg-open` takes exactly one argument — its own synopsis is `xdg-open { file | URL }` — and the line gives it two: `various/silhouette` (to open) and the parser path, which it rejects. It is the wrong verb: the wrapper is meant to be *run*, not *opened*.
+
+The thing worth knowing is that `xdg-open` is not needed at all: `./various/silhouette` generates the HTML *and* opens it. One command, `./various/silhouette examples/chemical/parser.allspeak`; with no argument it uses the parser sample. `xdg-open` is only for a sketch already drawn, and then with a single argument and no script path.
