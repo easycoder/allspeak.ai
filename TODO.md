@@ -240,15 +240,38 @@ shape is useful at all.
   geometry rather than two.
 - The gutter of marker dots and the doc-block prose are the parts he would keep.
 
+**Settled by Graham, 2026-09-28** (after the sketches above; his own words noted where the choice
+was made without confidence):
+
+- **One view, and lines from the start.** Every line is a row; at low zoom they are sub-pixel and
+  read as one compressed band per block, with the block label above it. *"I'll go with 2, but
+  without being confident the one or the other is the right choice."* — so build it cheaply and
+  judge it from the picture.
+- **The bar is not a shape device — it is the heat channel.** *"What should be visible behind the
+  text is a series of rectangular elements whose colours represent how busy that block is at that
+  point in time (the sequence). Once the program flow moves away they revert to blue."* So "what
+  should the bar measure" (extent, nesting) was the wrong question, and the per-density x argument
+  goes with it.
+- **The hover rule.** At low zoom, show the current marker and any doc prose — not the line's
+  command, which is meaningless at that size. Line text belongs there only once zoom makes it
+  legible; a toggle in the detail pane should offer either.
+
+**A data gap that constrains the heat.** The recorder keeps per-line activity as **totals**
+(`line_counts`) and a *sequence* only for anchors (`visits`: pc, steps, timestamp). So activity
+over the run is derivable at **block granularity** — between consecutive visits, which is the
+original "all the rows under the marked line, down to the next marker, take the same shade" rule —
+but not per line. A per-line timeline would need the recorder to keep a series rather than a total.
+
 **Next, in order — deliberately trimmed:**
-1. Rebuild the sketch as **one continuous view** — blocks unfolding into their own lines as zoom
-   rises, one geometry throughout — with the hover rule above (marker + prose at low zoom, line
-   text once legible, and a toggle).
-2. The **heat layer**, stepped along the run on `steps` (not wall-clock), which the trace already
-   carries.
+1. The **heat layer** first, at block granularity, as a gradient along the sequence (blue, reddening
+   while busy, decaying back to blue). First because it is what the picture is actually made of,
+   and because the colour bands sit *inside* whatever row geometry we choose — so it settles the
+   geometry the one-view choice above leaves open.
+2. That single view at one geometry: one row per line, compressed at low zoom, block labels above,
+   with the hover rule above.
 3. The first screen in `asedit.allspeak`, reading a **trace file** — agreed 2026-09-28: work from a
-   trace for now; needs nothing new from the runtime.
-4. Only if it earns its place: running the script in-browser (which needs the JS recorder), an
+   trace for now; it needs nothing new from the runtime.
+4. Only if it earns its place: running the script in-browser (needs the JS recorder), an
    overlay/code-map mode, and `viz diff`.
 
 **Cut for now,** because they add artefacts or steps without answering the first screen's

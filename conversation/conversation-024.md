@@ -243,3 +243,15 @@ Took the correction as the important part: I had been treating the bar as a **sh
 Checked the data against it and found a real gap: the recorder stores `line_counts` as **totals** per line, plus the anchor `visits` sequence (pc, steps, timestamp). Activity *over the sequence* is therefore derivable at **block** granularity — between consecutive visits, which is exactly his original "all the rows under the marked line, down to the next marker, take the same shade" rule — but not per line, which would need the recorder to keep a per-line series. Said so rather than sketching a heat map the records cannot fill.
 
 Consequence for order: heat first (block-level, a gradient along the sequence, blue with decay back to blue), because that is what the picture is actually made of and because it will settle the row geometry that his one-view choice leaves open. His stated lack of confidence in option 2 is matched by mine, so it should be built cheaply and judged from the picture.
+
+## 15:35
+
+I was going to wind up at about this point. There's a lot going back and forth inside my head so I'll give it time to gel and pick it up in the next session.
+
+**Assistant**
+
+[code omitted]
+
+Checked the handover before closing and caught it stale again in the same way: TODO.md's "Next, in order" still recorded the option I had *recommended* (blocks unfolding into lines), not the one he chose, and nothing about the bar being the heat channel. Corrected — the section now carries his two decisions in his own words, the data gap that constrains the heat (per-line totals vs the anchor sequence), and a reordered plan (heat first, because it settles the row geometry the one-view choice leaves open).
+
+Final state: tree clean apart from Reasonix's metadata, 14 commits unpushed, DIFF.md and TODO.md both current. Left `git push` as the one outstanding action rather than doing it unasked.
