@@ -171,3 +171,19 @@ What's happening here? [same failing command again]
 `xdg-open` takes exactly one argument — its own synopsis is `xdg-open { file | URL }` — and the line gives it two: `various/silhouette` (to open) and the parser path, which it rejects. It is the wrong verb: the wrapper is meant to be *run*, not *opened*.
 
 The thing worth knowing is that `xdg-open` is not needed at all: `./various/silhouette` generates the HTML *and* opens it. One command, `./various/silhouette examples/chemical/parser.allspeak`; with no argument it uses the parser sample. `xdg-open` is only for a sketch already drawn, and then with a single argument and no script path.
+
+## 15:05
+
+I get a popup saying "Configuration file "/home/graham/.config/kde-openrc" not writable."
+
+**Assistant**
+
+[code omitted]
+
+Not the sketch — the *opener*. `XDG_CURRENT_DESKTOP=KDE`, so `xdg-open` (the generic script at /usr/bin) delegates to `kde-open5`, and something in that chain wants to write `~/.config/kde-openrc` and cannot. The file does not even exist, so it is failing to create it.
+
+This is a documented KDE popup class (KDE Bug 492887 and relatives): xdg-settings/xdg-open → kreadconfig → cannot write its own `*rc` → kdialog. The usual cause is ownership — a file or directory in `~/.config` owned by root, typically because something once ran under `sudo` and wrote into the home directory.
+
+Honest caveat stated: my probe cannot settle it, because in this sandbox `/home` is mounted read-only (only the workspace is re-mounted rw), so writes to `~/.config` fail here by construction and my ownership check ran against that. The user needs to check on their own session.
+
+Two fixes: the immediate workaround is to bypass the desktop opener (`firefox <path>`); and the wrapper no longer insists on xdg-open — it prints the absolute path, prefers firefox, and honours `SILHOUETTE_OPEN=off`. DIFF.md updated.
