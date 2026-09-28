@@ -97,3 +97,17 @@ Checked rather than guessed. `allspeak` **is** on PATH (`/home/graham/.local/bin
 Four things to run, in order of usefulness: the sketches themselves (`xdg-open various/viz-silhouette.html` — the Blocks/Lines switch and the hover are the parts a screenshot cannot show, which is the whole reason to open it); **point the generator at your own script** (`python3 tools/asviz-run.py <script>.allspeak > /tmp/x.model` then `python3 various/make-viz-silhouette.py /tmp/x.model <script>.allspeak /tmp/x.html`) — the sketches have only ever been tried on `parser.allspeak` and a 49-line fixture; the visualiser that already exists (`--run --trace=` for a trace file, `tools/check-trace.py` to validate it, then Perfetto, or the model records as text without `--run`); and the project's own checks (`python3 tools/asdoc-check.py .`).
 
 One caveat worth stating: because `allspeak` is a copy and not the repo, **edits to `allspeak-py/` will not take effect through the `allspeak` command** until `pip install --no-deps ./allspeak-py` — whereas `tools/asviz-run.py` runs against the repo.
+
+## 14:40
+
+[Pasted shell session: `python3 tools/asviz-run.py <script>.allspeak > /tmp/x.model` fails with "bash: script: No such file or directory"]
+
+**Assistant**
+
+[code omitted]
+
+My mistake: I put `<script>` inside a copy-pasteable block, and bash read it as a redirect from a file named `script`. Rather than just apologising I removed the plumbing — added `various/silhouette`, a one-command wrapper (no argument = the parser sample; otherwise give it a path). It runs `asviz-run` for the model, generates the HTML into `various/`, and opens it. Verified on three scripts.
+
+Found and fixed a real gap on the way: with no doc blocks the block density was **empty** — which is exactly the case for most of the scripts someone would point it at. It now falls back to control-flow regions (each marker starts one), so `tools/trace-run.allspeak` went from 0 blocks to 9.
+
+Also noted: `asviz-run` compiles a *script*, so pointing it at `viz.allspeak` fails ("I don't understand 'model'") because that file is the framework and needs its domain registered. Expected, not a defect.
