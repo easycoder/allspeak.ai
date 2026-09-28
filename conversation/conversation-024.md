@@ -141,3 +141,21 @@ Added to the root AGENTS.md, closing the gap the question exposed:
 > Rewrite it even when there is nothing to action — say so, and say what to look at. That matters most for artefacts git ignores (`various/`), where no other channel reports the change.
 
 Committed with this turn's log.
+
+## 14:55
+
+The graphics do look something like what I had in mind. It had occurred to me that scaling might have to be done only for the Y axis, otherwise everything would collapse into the left-hand margin. So that's a good start. Am I calling this right? [followed by `xdg-open various/silhouette examples/chemical/parser.allspeak` failing]
+
+**Assistant**
+
+[code omitted]
+
+Answering the command first: no — that called `xdg-open` on the *wrapper* and passed the script as a second argument to it. The correct form is `./various/silhouette examples/chemical/parser.allspeak`; `xdg-open` is only for opening an HTML file that already exists. Second time one of my code blocks invited that blend, so I have started keeping "run" and "open" in separate blocks.
+
+On the scaling: **your instinct is right, and the numbers confirm it.** `parser.allspeak`'s longest line is 461 characters, so a glyph-proportional x-axis at fitted zoom fills 238 px of a 1400 px pane — 17%, exactly the collapse into the left margin you predicted. So x *must* be independent for a whole-file shape view.
+
+But raising it exposed something I had not noticed: with x as a percentage of the pane, the bars stop corresponding to the text. In Lines mode a 461-char line is 1909 px of text against a bar capped at 1400 px — so the bars mislead in precisely the density where text is on screen.
+
+Resolved by giving the two densities different x semantics: **Blocks** keeps the percentage (no text to align with, and a glyph axis collapses it), **Lines** goes back to the glyph scale so each bar sits under the line it marks. Verified by screenshot in Lines mode. Added `#lines` / `#blocks` URL hashes so either view can be opened directly.
+
+DIFF.md rewritten per the rule added minutes earlier, including the "nothing to action" entry it now requires.
