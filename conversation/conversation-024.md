@@ -127,3 +127,17 @@ What is true is that the silence was *consistent* with what I committed: every c
 That is not a defence, because of what I did **not** commit. The sketches live in `various/`, which is gitignored, so they appear in no commit and no `git status` — which made DIFF.md the **only** channel that could tell you they existed, and I left it silent for three hours. The misreading bites hardest exactly where a change is invisible to git, and that is where it happened.
 
 Fixed: DIFF.md rewritten to cover the sketch work (action = none, but here is what to look at and how to open it), which is what it should have said when the first sketch was built. Proposed a clause for AGENTS.md so the loophole closes: silence is not an option, and gitignored artefacts are the case that proves it.
+
+## 14:47
+
+[Decision] AGENTS.md — add the clarification (recommended).
+
+**Assistant**
+
+[code omitted]
+
+Added to the root AGENTS.md, closing the gap the question exposed:
+
+> Rewrite it even when there is nothing to action — say so, and say what to look at. That matters most for artefacts git ignores (`various/`), where no other channel reports the change.
+
+Committed with this turn's log.

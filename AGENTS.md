@@ -191,6 +191,6 @@ Use `date +%H:%M` if you need the time. Omit fenced code blocks (triple-backtick
 
 ## Diff notes for the human
 
-Keep `DIFF.md` in the project root, **rewritten** after every change rather than appended to, saying what changed and what the human has to do about it — reload the editor, re-run a script, rebuild, deploy. It is read in the editor, which polls the file and reloads it, so it is the shortest path from "something changed" to "here is what to do about it".
+Keep `DIFF.md` in the project root, **rewritten** after every change rather than appended to, saying what changed and what the human has to do about it — reload the editor, re-run a script, rebuild, deploy. It is read in the editor, which polls the file and reloads it, so it is the shortest path from "something changed" to "here is what to do about it". Rewrite it even when there is nothing to action — say so, and say what to look at. That matters most for artefacts git ignores (`various/`), where no other channel reports the change.
 
 Keep it short, and lead with the action. It is **not** a changelog: it describes this change only, and the previous contents are not worth keeping — git has them.
