@@ -187,3 +187,17 @@ This is a documented KDE popup class (KDE Bug 492887 and relatives): xdg-setting
 Honest caveat stated: my probe cannot settle it, because in this sandbox `/home` is mounted read-only (only the workspace is re-mounted rw), so writes to `~/.config` fail here by construction and my ownership check ran against that. The user needs to check on their own session.
 
 Two fixes: the immediate workaround is to bypass the desktop opener (`firefox <path>`); and the wrapper no longer insists on xdg-open — it prints the absolute path, prefers firefox, and honours `SILHOUETTE_OPEN=off`. DIFF.md updated.
+
+## 15:10
+
+Where do we go next?
+
+**Assistant**
+
+[code omitted]
+
+Grounded it in TODO.md rather than memory, and noticed the handover is now wrong: item 4 still reads "block-level aggregation over a trace, then the first screen in `asedit.allspeak`" as if both were ahead, when the sketches have moved that on and turned up four findings. Nothing in TODO mentions the sketches at all — the other session's edits to "Working and verified" cover the graphics work, not these.
+
+Recommended the cheapest highest-information step, which is not code: try a sketch on **code you don't already understand**. The whole visualiser thread rests on an untested assumption the user stated plainly ("I can't be certain how much it will help"), and heat, flow lines, the block metric and the asedit screen are all investment a negative answer would waste.
+
+The two alternatives offered: continue the sketch (settle the block metric — the bar currently means code extent, not structure — then add the heat layer on the steps axis), or park the visualiser for the canonicalisation gap, which is the biggest item in the backlog and the one that undermines the multilingual promise in the terminal. Proposed fixing TODO's Visualiser section either way.
