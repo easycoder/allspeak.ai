@@ -64,3 +64,22 @@ You chose: silhouette first, steps as the axis, one pane if possible, plus a gut
 2. **Where it works, it works.** On `tools/trace-run.allspeak` (49 lines) the file fits legibly and the design does what it promised: the loop body's indentation, the labels, and the markers (blue label, purple loop, green marker) are all visible at a glance without reading a word. So the shape reads in a band of roughly 50–150 lines on screen, and beyond that you need to **aggregate — per block, not per line** — to keep any shape at all.
 
 That is the design conclusion worth carrying: the same picture needs two densities, per-line when zoomed and per-block when whole-file, and the gutter works at both.
+
+## 14:20
+
+[Decision] Add the per-block density (recommended).
+
+**Assistant**
+
+[code omitted]
+
+Rebuilt the sketch with **two densities in one pane**: *Blocks* (one row per block — `§N`, its line span, a bar, its markers in the gutter; all 23 fit, so the whole file's form is on screen) and *Lines* (the previous per-line view, driven by the zoom). `various/viz-silhouette.html` + `.png`, small file alongside.
+
+Four things the experiment produced, three of them only visible by looking:
+
+1. **The single zoom control has to become mode + zoom.** The block rows are a fixed height — the form always fits — so they have no zoom dimension at all. A slider governing both would do nothing across most of its range. The sketch now has a mode switch beside the zoom.
+2. **A block's bounding box cannot show nesting in this language.** Every block in AllSpeak starts with a column-0 `!!` line *and* its label sits at the left margin, so the shallowest indentation is 0 for every block: the bar's left edge is uniform by construction. What varies is the furthest *code* line, so the bar reads as "how much code is in this block" — useful, but not the nesting signal it was meant to be. Nesting would need a different metric (deepest indent, or size), not a bounding box.
+3. **Prose distorts every length measure.** Bounding each block by all its lines flattened the whole stack into identical bars, because the longest line in a doc-block-heavy file is always some paragraph. Bounding by code lines only fixed it.
+4. Two bugs found by looking rather than reasoning: bars sized in `ch` of the *root* font while the text scales (6× too wide, a grey wall), and `--lh` never set in blocks mode, so the gutter dots had no size and vanished.
+
+Net: the block stack *does* now fit and read, and the gutter works at both densities; the per-line density remains right for zoomed work. The honest gap is that "shape" at block level is currently just extent, not structure.
