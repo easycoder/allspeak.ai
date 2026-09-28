@@ -229,3 +229,17 @@ Mapped the numbering first rather than guessing: item 6 is `### 6` (the viz mark
 Recorded in TODO.md: item 6 reviewed and closed (provisional fr/it forms stand); the dual-pane view demoted from "Decided" to "Proposed, no longer settled"; trace-file working agreed for now; and the Visualiser section rewritten with the four sketch findings and his read of them — which also fixes the stale handover flagged earlier (item 4 had still described block aggregation as ahead of us).
 
 Identified the crux to confirm before building: that the one continuous view means block rows **unfolding into their own lines** as zoom rises, not two representations behind a switch.
+
+## 15:25
+
+[Decisions] One view: "I'll go with 2" — lines from the start, merging at low zoom — "but without being confident the one or the other is the right choice." The bar: "I think my description of the bars was over-simplistic. What should be visible behind the text is a series of rectangular elements whose colours represent how busy that block is at that point in time (the sequence). Once the program flow moves away they revert to blue."
+
+**Assistant**
+
+[code omitted]
+
+Took the correction as the important part: I had been treating the bar as a **shape** device (extent of code, and where nesting should go), and he has said it is the **heat** device — a series of background rectangles per line whose colour says how busy that region is at that point in the sequence, returning to blue as the flow leaves. So the extent bar is the wrong widget, and tuning its metric was the wrong argument to be having.
+
+Checked the data against it and found a real gap: the recorder stores `line_counts` as **totals** per line, plus the anchor `visits` sequence (pc, steps, timestamp). Activity *over the sequence* is therefore derivable at **block** granularity — between consecutive visits, which is exactly his original "all the rows under the marked line, down to the next marker, take the same shade" rule — but not per line, which would need the recorder to keep a per-line series. Said so rather than sketching a heat map the records cannot fill.
+
+Consequence for order: heat first (block-level, a gradient along the sequence, blue with decay back to blue), because that is what the picture is actually made of and because it will settle the row geometry that his one-view choice leaves open. His stated lack of confidence in option 2 is matched by mine, so it should be built cheaply and judged from the picture.
