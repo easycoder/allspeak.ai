@@ -201,3 +201,17 @@ Grounded it in TODO.md rather than memory, and noticed the handover is now wrong
 Recommended the cheapest highest-information step, which is not code: try a sketch on **code you don't already understand**. The whole visualiser thread rests on an untested assumption the user stated plainly ("I can't be certain how much it will help"), and heat, flow lines, the block metric and the asedit screen are all investment a negative answer would waste.
 
 The two alternatives offered: continue the sketch (settle the block metric — the bar currently means code extent, not structure — then add the heat layer on the steps axis), or park the visualiser for the canonicalisation gap, which is the biggest item in the backlog and the one that undermines the multilingual promise in the terminal. Proposed fixing TODO's Visualiser section either way.
+
+## 15:15
+
+[Decision] Test the sketch on unfamiliar code (recommended).
+
+**Assistant**
+
+[code omitted]
+
+Made the test as frictionless as it can be. Surveyed the other projects for scripts that are documented but not in the head, then **pre-flighted both so a compile failure could not spoil the test**: `dojo/energy/bill.as` (287 lines, 15 blocks, 8 anchors, 12 routes) and `rbr/.scratch/spike/spike.as` (158 lines, 4 blocks, 5 anchors). Both compile and render, and both are `.as` — the old extension — so the run also quietly confirms the pipeline does not care about the extension.
+
+Generated them into `various/silhouette-bill.html` and `various/silhouette-spike.html`, and fixed a wart found on the way: the wrapper stripped only `.allspeak`, so a `.as` input was producing `silhouette-bill.as.html`.
+
+Gave a falsifiable watch-list rather than "does it help": can you say what the script is *for* without reading it; do the gutter dots say where to start or are they decoration; does the bar say anything the `§N 21–35` label did not (my suspicion: barely, which is the block-metric question); at what zoom the line view stops being useful; does the hover prose change what you would read next; and — the decisive one — did it change what you would read *first*. Asked for the moment it failed, which is worth more than a verdict.
