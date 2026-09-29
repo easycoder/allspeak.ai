@@ -30,3 +30,8 @@ reasonix.toml
 # documentation, and they expose the thinking behind decisions rather than the decisions.
 # Local only — never commit them.
 conversation/
+
+# The visualiser's calibration: how long a drawing took on *this* machine, written by the editor
+# after each Graph. It describes the machine rather than the project, would be wrong for anyone
+# else, and the editor relearns it in one run — so it stays local.
+.viz-calibration.json
