@@ -1,36 +1,43 @@
 # Examples and Patterns
 
-## Example: Doclets reader pattern
-Use this pattern when building AllSpeak browser apps:
-1. Render screen from Webson JSON
-2. Attach all required elements by stable IDs
-3. Register click/change handlers once
-4. Maintain explicit state variable for response processing
-5. Recompute button/label state after every relevant transition
+Patterns that are already used in this repo. For the rules behind them, see `AI/ALLSPEAK_CODING_GUIDELINES.md`; for the doc-block convention that new `.allspeak` code is expected to follow, see the root `AGENTS.md`.
 
-## Example: Topic selection UX pattern
-- Dialog has select all / deselect all / confirm
-- Persist selected topics to storage
-- Display label states:
-  - "No topics chosen" (warning color)
-  - "All topics chosen" (success/info color)
-  - explicit topic list for partial
+## Example: Webson for shape, script for data
+Use Webson for the parts whose shape is fixed at template time, and the script for the parts whose shape comes from the data. `asedit` does this for its file list: a Webson-attached scroller container, with the rows created by the script inside it. The layout knows nothing about how many files there might be. The same split applies to table bodies, list items, and repeated cards.
 
-## Example: Dist/debug pattern
-- Use `allspeak.js` (unminified) while diagnosing runtime errors
-- Switch to `allspeak-min.js` once stable
-- Keep `Webson.js` loaded when `render` command is used
+## Example: one array, one handler
+For repeated UI items — a grid of cells, a row of buttons:
+1. Declare one array-style variable and set its element count (`set the elements of Cell to 12`).
+2. Create the items in a loop, using one variable for the whole group.
+3. Register one handler on the array (`on click Cell`), not one handler per item.
+4. Find the item inside the handler with `the index of Cell`, and drive the logic from that index.
 
-## Example: Codex training script pattern
-- Use `codex/codex.allspeak` as a primary training reference when learning or generating non-trivial AllSpeak scripts.
-- Treat it as both a feature map and a style map:
-  - feature map: it exercises many core AllSpeak constructs in one real script.
-  - style map: it demonstrates practical structure, flow organization, and readable script composition.
-- When proposing architecture for new scripts, prefer patterns already visible in `codex/codex.allspeak` unless the user requests a different style.
+## Example: follow a request with an `or` clause
+Every REST or MQTT call that can fail should say what happens when it does. There is no try/catch and no callback:
 
-## Candidate onboarding task for unfamiliar AI
+```
+rest get Config from `/read/config.json` or
+begin
+    set the content of Status to `Could not load configuration`
+    stop
+end
+```
+
+The clause runs on any failure, for any reason.
+
+## Example: explicit state, recompute the derived UI
+Keep one explicit state variable per concern, and recompute the labels, badges and enabled/disabled states after every transition that can change them, rather than setting them where the change happened. `asedit` does this for its toolbar: one badge and one sidebar colour are derived from the current block's hash and verification states, and every transition re-derives them.
+
+## Example: the dist/debug pattern
+- Use the unminified `allspeak.js` while diagnosing runtime errors; switch to `allspeak-min.js` once stable.
+- Keep `Webson.js` loaded whenever the `render` command is used.
+
+## Example: the Codex as a training reference
+`codex/codex.allspeak` is the largest worked script in the repo — a feature map (it exercises most core AllSpeak constructs in one real script) and a style map (structure, flow organisation, readable composition). When proposing an architecture for a new script, prefer patterns already visible there unless the user asks for something different.
+
+## Candidate onboarding task for an unfamiliar AI
 Tic-Tac-Toe applet (human vs computer):
 - UI via Webson JSON
-- game logic in AllSpeak script
-- explicit state machine for turns/win/draw
-- no direct DOM string hacks outside established patterns
+- game logic in AllSpeak: an explicit state machine for turns, win and draw
+- one array for the board, one click handler, `the index of` to identify the cell
+- no direct DOM string manipulation outside the established patterns

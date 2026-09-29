@@ -26,6 +26,14 @@ Currently shipping language packs for **English, Italian, French, and German** (
 
 Both scripts compile to identical internal opcodes and run on the same engine.
 
+## Start here
+
+Three ways in, depending on how much time you have:
+
+- **Ten minutes** — [*Building Applications with AllSpeak and Agentic AI*](resources/md/ai-article.md) is the project's quick brief: what AllSpeak is, how the two runtimes, the editor and the review workflow fit together, and what its limits are.
+- **Hands on** — the [Codex](https://allspeak.ai/codex.html) is an interactive tutorial; the scripts it teaches live in `codex/<lang>/code/`.
+- **Working in the repo** — [`AGENTS.md`](AGENTS.md) and [`AI/`](AI/) for agents, and [`learn/`](learn/) for the language reference and idiom collection.
+
 ## Why AllSpeak
 
 - **AI-native.** Mainstream languages have huge surface areas that lead AI to hallucinate. AllSpeak's small, regular grammar collapses that surface — AI writes correct AllSpeak almost reliably, and when it doesn't, the error sits in plain sight on a single line.
@@ -87,18 +95,21 @@ The starter pack drives the **AI writes, human reviews** workflow that is core t
 
 ```
 js/allspeak/         JavaScript runtime + language packs (LanguagePack_<lang>.js)
-js/plugins/          JS plugins (ui, svg, gmap, markdown, mqtt, sqlite, etc.)
-allspeak-py/         Python implementation (runtime + CLI + plugins)
-dist/                Built JS bundles — built by ./build-allspeak; do not edit
-deploy/              Web-served mirror of dist/ + per-language starter zips
+js/plugins/          JS plugins (codemirror, svg, gmap, ui, asviz, webson, etc.)
+allspeak-py/         Python implementation (runtime + CLI + plugins + JSON language packs)
+deploy/dist/         Built JS bundles — built by ./build-allspeak; do not edit
+deploy/              Web-served mirror, plus the per-language starter zips
 spec/                Language contract, plugin contract, versioning policy, opcodes
 conformance/         Cross-implementation test suite (.allspeak scripts + expected output)
 starter/<lang>/      Source files for the per-language AI-agent starter packs
-codex/<lang>/        Tutorial curriculum (step1.allspeak ... step20.allspeak) per language
+codex/<lang>/        Tutorial curriculum (codex/<lang>/code/step*.allspeak) per language
+learn/<lang>/        Language reference and idiom collections, per language
+tools/               Doc-block analysers and other dev scripts
 primer/              Primer materials for AI-assisted project starts
 examples/            Standalone example projects
 chat/                Multilingual chat application (worked example)
 AI/                  Onboarding for AI agents working in this repo
+resources/md/        Article material, including the project brief (ai-article.md)
 ```
 
 ## Documentation
@@ -117,10 +128,12 @@ The whitepaper, *[AllSpeak: A Language-Agnostic Runtime for Computational Litera
 ## Building
 
 ```sh
-./build-allspeak     # bundle and minify the JS runtime
+./build-allspeak     # bundle and minify the JS runtime into deploy/dist/
 ./build-starters     # rebuild deploy/allspeak-<lang>.zip from starter/<lang>/
-./deploy-sync        # mirror codex/, dist/, resources/ into deploy/
+./deploy-sync        # mirror codex/, learn/, primer/, resources/doc/ into deploy/
 ```
+
+See [`BUILD.md`](BUILD.md) for the "edited X → run Y" lookup table, and `./sync-language-packs` after editing a language pack.
 
 ## Contributing
 

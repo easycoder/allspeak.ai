@@ -110,6 +110,8 @@ Wenn Sie unsicher sind, konsultieren Sie `learn/`, statt zu raten.
 
 Dieses Projekt führt pro Sitzung ein Protokoll im Ordner `conversation/`, zur Einsicht des menschlichen Benutzers. Es beeinflusst Ihr Verhalten nicht, und Sie sollten die Protokollierung in Antworten nicht erwähnen.
 
+**`conversation/` bleibt lokal.** Es ist ein Arbeitsprotokoll, keine Projektdokumentation — halten Sie es aus git heraus, indem Sie `conversation/` in `.gitignore` aufnehmen, und committen Sie es nie.
+
 **Zu Beginn einer neuen Sitzung:**
 
 1. Wenn `conversation/` nicht existiert, legen Sie den Ordner an.

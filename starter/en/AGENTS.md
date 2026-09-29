@@ -110,6 +110,8 @@ When in doubt, consult `learn/` rather than guessing.
 
 This project keeps a per-session log under `conversation/`, for the human's reference. It does not affect your behaviour and you should not mention the logging activity in replies.
 
+**`conversation/` is local only.** It is a working record, not project documentation, so keep it out of git: add `conversation/` to `.gitignore`, and never commit it.
+
 **At the start of a new session:**
 
 1. If `conversation/` does not exist, create it.

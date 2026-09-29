@@ -6,6 +6,8 @@ Required first read:
 1. `AI/README.md`
 2. Follow the mandatory order listed there, starting with `AI/ALLSPEAK_CODING_GUIDELINES.md`.
 
+If the task is to get oriented rather than to change something, read `resources/md/ai-article.md` first: it is the project's quick brief — what AllSpeak is, how the two runtimes and the editor fit together, and the review workflow everything else serves.
+
 Working rule:
 - Treat `AI/ALLSPEAK_CODING_GUIDELINES.md` as required policy for AllSpeak and Webson implementation choices.
 
@@ -29,16 +31,20 @@ The original EasyCoder repo continues unchanged as the stable English-only produ
 ## Repository Structure
 
 ```
-/js/allspeak/      JS runtime source (Core.js, Browser.js, Compile.js, Run.js, etc.)
-/js/plugins/       JS plugin modules (ui, svg, gmap, mqtt, etc.)
-/dist/             Build output — do not edit directly
-/allspeak-py/      Python implementation (not yet adapted for multilingual)
-/spec/             Language and plugin contracts
+/js/allspeak/      JS runtime source (Core.js, Browser.js, Compile.js, Run.js, etc.) + language packs
+/js/plugins/       JS plugin modules (codemirror, svg, gmap, ui, asviz, webson, etc.)
+/deploy/dist/      Build output — do not edit directly; produced by ./build-allspeak
+/allspeak-py/      Python implementation (CLI + desktop); language packs mirrored as JSON
+/spec/             Language and plugin contracts, opcodes, versioning policy
 /conformance/      Cross-implementation test suite (.allspeak tests + expected JSON output)
 /vendor/           Third-party libraries (showdown, codemirror)
-/resources/        Website assets (carried over from EasyCoder, to be pruned)
-/codex/            Tutorial IDE (carried over, to be adapted)
-/examples/         Demo apps (carried over)
+/resources/        Website assets; resources/md/ holds the article material
+/codex/<lang>/     Tutorial curriculum (codex/<lang>/code/step*.allspeak) per language
+/learn/<lang>/     Language reference and idiom collections, per language
+/starter/<lang>/   Source for the per-language AI-agent starter packs
+/tools/            Doc-block analysers and other dev scripts
+/primer/           Primer materials for AI-assisted project starts
+/examples/         Demo apps
 ```
 
 ### Canonical source — this repo owns these files
@@ -89,7 +95,7 @@ The JS multilingual layer is implemented and in active use: language packs ship 
 | | JS | Python |
 |--|--|--|
 | Source | `/js/allspeak/` | `/allspeak-py/allspeak/` |
-| Build output | `/dist/allspeak.js`, `/dist/allspeak-min.js` | pip package |
+| Build output | `deploy/dist/allspeak.js`, `deploy/dist/allspeak-min.js` | pip package |
 | Runtime | Browser | CLI |
 | Core files | `Core.js`, `Browser.js`, `Compile.js`, `Run.js`, `Main.js` | `as_core.py`, `as_compiler.py`, `as_program.py` |
 
@@ -99,7 +105,7 @@ Both implementations have the multilingual layer wired in (loader + language pac
 
 See [BUILD.md](BUILD.md) for the "edited X → run Y" lookup table covering all four dev scripts (`build-allspeak`, `sync-language-packs`, `build-starters`, `deploy-sync`) and the GitHub deploy workflow.
 
-`./build-allspeak` concatenates the JS runtime into `/dist/allspeak.js` and minifies to `/dist/allspeak-min.js`. Bundle order: `Core.js` → `Browser.js` → `MarkdownRenderer.js` → `Webson.js` → `JSON.js` → `MQTT.js` → `REST.js` → `Compare.js` → `Condition.js` → `Value.js` → `Run.js` → `Compile.js` → `Main.js` → `AllSpeak.js`. **Never edit files in `/dist/` directly.**
+`./build-allspeak` concatenates the JS runtime into `deploy/dist/allspeak.js` and minifies to `deploy/dist/allspeak-min.js`. Bundle order: `Core.js` → `Browser.js` → `MarkdownRenderer.js` → `Webson.js` → `JSON.js` → `MQTT.js` → `REST.js` → `Compare.js` → `Condition.js` → `Value.js` → `Run.js` → `Compile.js` → `Main.js` → `AllSpeak.js`. **Never edit anything under `deploy/dist/` directly** — it is build output, and the rolling CDN path `https://allspeak.ai/dist/allspeak.js` is served from it.
 
 ## Versioning
 
@@ -109,7 +115,7 @@ Date-time-based: `YYMMDDHHMM` (e.g. `2605101119` = 2026-05-10 at 11:19). Set in 
 
 - Scripts are embedded in HTML inside a `<pre id="allspeak-script">` element
 - Runtime loaded as `allspeak.js` or `allspeak-min.js`
-- Plugins loaded separately from `/dist/plugins/`
+- Plugins loaded separately from the `plugins/` path served alongside the runtime
 - Each plugin follows the contract in `/spec/allspeak-plugin-contract.md`
 
 ## Doc blocks — required for new `.allspeak` code
@@ -166,6 +172,8 @@ When no specific message is given, use a date-time stamp in `YYMMDDHHMM` form (e
 ## Conversation log
 
 This project keeps a per-session log under `conversation/`, for the human's reference. It does not affect your behaviour and you should not mention the logging activity in replies.
+
+**`conversation/` is local only and is in `.gitignore`.** It is a working record, not project documentation — do not commit it, and do not `git add -f` anything inside it. If you find it tracked (for example after a `git add -A`), untrack it: `git rm -r --cached conversation/`.
 
 **At the start of a new session:**
 

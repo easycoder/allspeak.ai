@@ -1,29 +1,30 @@
 # Working Rules for AI Contributors
 
 ## Primary goal
-Fix or implement requested behavior with minimal collateral change.
+Fix or implement the requested behaviour with minimal collateral change.
+
+The project's standing rules are in the root `AGENTS.md` — doc blocks, the `DIFF.md` habit, the conversation log, diagnostics, commit style — and the language rules are in `AI/ALLSPEAK_CODING_GUIDELINES.md`. Read those. What follows is only what they do not cover.
 
 ## Repo-specific rules
-- Use Webson for UI structure updates in `doclets.json`
-- Use AllSpeak scripts for behavior and flow updates
-- Keep IDs stable unless all attach/click references are updated
-- Prefer explicit state handling over hidden side effects
+- Behaviour and flow go in AllSpeak scripts; UI structure goes in Webson JSON. Never embed HTML in script logic.
+- Check whether a command already exists in core or in a plugin before writing a plugin of your own.
+- Keep element IDs stable unless every reference to them is updated in the same change.
+- Variables are global within a script. For private working state, move the logic into its own script and pass data by shared variable or by `send` / `on message`.
+- For repeated UI items, use one array-style variable and one handler registered on the array; find the item with `the index of`.
+- Offline or in a consumer project? Do not change a file this repo owns (see `AGENTS.md`, "Canonical source").
 
-## Build/update rules
-If you edit AllSpeak component JS files used in build-allspeak:
-1. update file(s)
-2. run `build-allspeak` in allspeak repo
-3. verify doclets uses the intended dist file (minified vs unminified)
-
-## Symlink workflow
-This repo may use local symlinks to AllSpeak sources and dist files.
-Use `relink-allspeak.sh` to refresh links.
+## Build and update rules
+- Rebuild what you touched. `./build-allspeak` (runtime bundles), `./build-starters` (per-language zips), `./deploy-sync` (mirror `codex/`, `learn/`, `primer/`, `resources/doc/` into `deploy/`). `BUILD.md` is the lookup table.
+- Never edit `deploy/dist/` — it is build output.
+- Editing a language pack? Change `js/allspeak/LanguagePack_<lang>.js`, then run `./sync-language-packs` to regenerate the Python JSON mirror.
+- Change code inside a doc block, and the block's hash is now stale: `python3 tools/asdoc-check.py --write <file>` refreshes `@hash` and leaves `@verified` alone, so the stale verifications stay yours to review.
 
 ## Debug checklist
-- UI glyphs/text appearing unexpectedly: inspect literal HTML around script tags
-- "engine not loaded": verify corresponding script include is active
-- startup state issues: verify initialization order plus post-load recompute
-- compile keyword collisions: domain handlers are tried in order and may fall through; avoid emitting warnings/throws in a handler when syntax can legitimately belong to another domain
+- Reach for `log` before a theory. It writes to the browser console and prints in the Python runtime, and unlike a dialog the line is copyable.
+- **An undeclared `variable`** is reported as a *token* error at the first statement that uses it ("I don't understand 'put'"), not as "not declared". A compile failing that way usually means a missing declaration.
+- **A number read out of text stays text.** Comparison is then lexical, so `` `29` `` is not less than `` `1000001` ``. Convert with `add 0 to X` or `the value of X`.
+- **"Webson engine is not loaded"** — verify the page loads `Webson.js`.
+- **A served file is cached** — check the fetch (the editor uses a `?v=` stamp) before the code.
 
 ## Document as you go
 Add short notes for any non-obvious fix that would save another AI 15+ minutes.

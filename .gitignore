@@ -15,3 +15,18 @@ DIFF.md
 # out of the repo.
 .diffshow.conf
 diffshow.allspeak
+
+# Reasonix agent state and its per-project config — machine-local, rewritten on every
+# session, and no use to anyone else. The desktop-topic files hold session titles and
+# timestamps, the task tree holds runtime logs and lock files, and the autoresearch specs
+# embed pasted conversation transcripts. None of that belongs in a public repo.
+.reasonix/
+reasonix.toml
+
+# Sync-tool conflict copies (Syncthing and friends) — never merge these by hand.
+*.sync-conflict-*
+
+# The per-session conversation logs. They are a working record for the human, not project
+# documentation, and they expose the thinking behind decisions rather than the decisions.
+# Local only — never commit them.
+conversation/

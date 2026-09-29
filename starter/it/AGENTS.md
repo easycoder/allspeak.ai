@@ -110,6 +110,8 @@ Se hai dubbi, consulta `learn/` invece di tirare a indovinare.
 
 Questo progetto mantiene un log per sessione nella cartella `conversation/`, a beneficio dell'umano. Non influenza il tuo comportamento e non devi menzionare l'attività di logging nelle risposte.
 
+**`conversation/` resta locale.** È un registro di lavoro, non documentazione di progetto: tienilo fuori da git aggiungendo `conversation/` a `.gitignore`, e non committarlo mai.
+
 **All'inizio di una nuova sessione:**
 
 1. Se `conversation/` non esiste, creala.

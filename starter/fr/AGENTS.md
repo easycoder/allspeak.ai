@@ -110,6 +110,8 @@ En cas de doute, consulte `learn/` plutôt que de deviner.
 
 Ce projet conserve un journal par session dans le dossier `conversation/`, à l'intention de l'utilisateur humain. Cela n'affecte pas ton comportement et tu ne dois pas mentionner l'activité de journalisation dans tes réponses.
 
+**`conversation/` reste local.** C'est un journal de travail, pas de la documentation de projet : garde-le hors de git en ajoutant `conversation/` à `.gitignore`, et ne le commite jamais.
+
 **Au début d'une nouvelle session :**
 
 1. Si `conversation/` n'existe pas, crée-le.
