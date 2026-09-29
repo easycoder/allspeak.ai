@@ -1,7 +1,7 @@
-# AllSpeak Viz Trace Format (Draft 1)
+# AllSpeak Viz Trace Format (Draft 2)
 
 Status: Draft
-Version: 1
+Version: 2
 Applies to:
 - AllSpeak JS browser runtime (`allspeak.ai`)
 - AllSpeak Python CLI runtime (`allspeak-py`)
@@ -27,7 +27,7 @@ writers emit the object so `displayTimeUnit` and provenance can travel with the 
     {
       "traceEvents": [ ... ],
       "displayTimeUnit": "ms",
-      "otherData": { "vizTrace": 1, "script": "<path as given to the host>" }
+      "otherData": { "vizTrace": 2, "script": "<path as given to the host>" }
     }
 
 Timestamps (`ts`) and durations (`dur`) are **integer microseconds**, as the format requires.
@@ -57,7 +57,8 @@ a compact document can be pretty-printed without recording again (`python3 -m js
 
 ## Events
 
-Two event kinds are written. Both are `X` (complete) events, carrying `ts` and `dur` together.
+Three event kinds are written. Two are `X` (complete) events, carrying `ts` and `dur`
+together; the third is an instant, carrying `ts` alone.
 
 ### `cat: "window"`
 
@@ -68,6 +69,12 @@ One per lane, spanning the window from the marker that opened it to the moment i
       "args": { "from_line": 379, "mode": "once", "limit": 100000, "until": null,
                 "visits": 4, "anchors": 3, "steps": 20, "truncated": false,
                 "line_counts": { "379": 1, "387": 2, "403": 1 } } }
+
+`stopped` is absent when the run ended on its own, `"work"` when a host's budget on the program's
+*own* work ended it, and `"wall"` when a host's ceiling on elapsed time did. A viewer should say
+so rather than presenting a cut-off recording as a complete one: it is the difference between "this
+is all the program did" and "this is as much as it was allowed to do". A host that sets neither
+writes nothing here, and the field is optional.
 
 `line_counts` is the number of times each **command** on a line executed, keyed by line number
 as a string, omitting lines that never ran. It is the per-line channel: with it the file is
@@ -94,13 +101,74 @@ Required `args`, emitted by both runtimes:
 - `name` — the anchor's display name (a label name, `loop@<line>`, `event@<line>`, or
   `viz-<request>@<line>`). May be empty for an unnamed anchor.
 - `steps` — the cumulative count of executed commands at this arrival. **This is the comparable
-  axis**: it is deterministic, so two runs of one script, or one script on two runtimes, can be
-  laid against each other even where their timings differ.
+  axis**: it is deterministic, so two runs of one script can be laid against each other even where
+  their timings differ. Across runtimes it is close but not equal — see "Where the two runtimes
+  differ" — so traces from the two are joined on `line`, and `steps` compares within one runtime.
 - `visit` — 1-based index of the arrival within its window.
 
 When a window has `truncated: true`, visit collection stopped at the cap while counting went on:
 the final interval therefore covers everything after the last collected arrival, and a viewer
 should say so rather than presenting it as one block's residence.
+
+### `cat: "transfer"`
+
+One per control transfer — an arrival that is not the command after the last one. This is
+where the program's flow becomes visible: a call, a return, a jump, a loop's back-edge, and an
+`if`'s skip all appear here and nowhere else. Instants (`ph: "i"`, `s: "t"`), because a transfer
+is a moment rather than a span, and an interval would claim a duration it never had.
+
+    { "name": "call 28->42", "cat": "transfer", "ph": "i", "s": "t", "pid": 1, "tid": 1,
+      "ts": 1234567,
+      "args": { "from_line": 28, "to_line": 42, "kind": "call", "steps": 3 } }
+
+- `from_line`, `to_line` — the 1-based lines control left and arrived at. Both are join keys
+  like an anchor's `line`, and both are attributed to the *author's* line: a written `gosub`
+  or `go` names its own, while a compiler jump carries the line of the statement it belongs to
+  rather than where the jump happens, so it names the line the previous command ran on.
+- `kind` — one of `call` (`gosub`), `jump` (a written `go`/`goto`), `return`, `branch` (a jump
+  the compiler generated — a loop's back-edge or exit, an `if`'s or `wait`'s skip, a `try`'s
+  recovery skip). A writer must not file a compiler jump under `jump`: **a written jump names
+  a label, a generated one carries a numeric target**, and that is the test, because the two
+  runtimes spell the scaffolding differently — Python's conditions compile to `gotoPC`, while
+  JS's compile to `goto`, the same keyword its `Go` uses. Filed together, the `else` of every
+  `if` would read as a `go` the author wrote.
+- `steps` — the cumulative command count at the transfer, on the same axis as an anchor's
+  `steps`, so a transfer can be placed against the visits around it.
+
+Transfers carry no `dur` and take no part in tiling: the anchor intervals still cover the
+window between them and still sum to its span. A window with no transfers is a conforming
+document — the kind is optional and records only what the run did.
+
+**How a writer finds them, and the bound that comes with it.** A transfer is inferred from the pc
+sequence — an arrival that is not the command after the last one — because that one rule catches a
+call, a return, a jump, a loop's back-edge and an `if`'s skip without knowing how any of them work.
+The bound is that a run which *suspends and resumes* through the runtime's queue can present the
+same shape: the resume pc is not the command after the last one either, and if the last command to
+run was a jump, the arrival is reported as a transfer of that jump's kind. The record is still true
+as a statement of where control arrived from; only its `kind` — and therefore its `to_line` as a
+call or return target — may be misleading. A viewer that treats a transfer as "the flow went from
+here to there" is unaffected; one that counts calls is.
+
+## Where the two runtimes differ
+
+Both runtimes now write this format, and comparing their traces is what it is for. Three
+differences are expected and none of them is a conformance failure:
+
+- **`pc` is runtime-specific.** The two number commands differently, so it is never compared.
+- **The two compile different numbers of commands for the same source.** The JS runtime emits no
+  command for a label — a label is a symbol pointing at the command after it — while Python emits
+  one. So the same run reports a different `steps` total (on a three-iteration loop into a
+  subroutine, `25` against `22`) and Python's `line_counts` carries an entry for the label's own
+  line that a JS trace cannot have. Every arrival, transfer and other line count still agrees.
+- **A label and the command after it are one pc in the JS runtime and two in Python**, so an
+  anchor list can differ in *size* as well as in lines: where a label is immediately followed by a
+  marker — `Worker:` then `viz start` — Python reports two arrivals and JS one, named for the label.
+  A viewer should treat an arrival as "this pc was reached" rather than as a count of landmarks.
+- **A command the compiler emitted with no source line of its own** is attributed to the line of
+  the last command that had one. Python's compiler jumps carry the line of the statement they
+  belong to, so they need no such rule; JS's carry none, which would otherwise name line 0 — not
+  a line anything can scroll to. A compiler jump that goes *backwards* is attributed to the loop
+  test it returns to, which is where Python puts it too, so a loop's cost lands on the loop.
 
 ## What the format deliberately does not carry
 
@@ -115,6 +183,7 @@ should say so rather than presenting it as one block's residence.
 
 `tools/check-trace.py <trace.json> [script.allspeak]` validates a document against this spec: the
 document shape, required per-event fields, integer microsecond timestamps, non-overlapping
-intervals per lane, one window span per lane, intervals summing to their window's span, and —
-if a script is named — that every `line` exists in it. Any writer for either runtime must
+intervals per lane, one window span per lane, intervals summing to their window's span, the
+`cat: "transfer"` instants being instants with both lines named, and — if a script is named —
+that every `line`, `from_line` and `to_line` exists in it. Any writer for either runtime must
 produce a document that passes it.

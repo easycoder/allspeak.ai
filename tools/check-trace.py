@@ -55,7 +55,9 @@ def main(argv):
 
     lanes = {}          # tid -> {'window': event or None, 'intervals': [(ts, dur, line)]}
     counts_seen = 0
+    transfers_seen = 0
     counted_lines = set()
+    lines_used = set()
     for index, event in enumerate(events_):
         where = f'event {index}'
         if not isinstance(event, dict):
@@ -68,6 +70,34 @@ def main(argv):
         if phase == 'M':
             if not isinstance(event.get('name'), str) or not event.get('name'):
                 fail(problems, f'{where}: metadata event with no name')
+            continue
+        if phase == 'i':
+            # Instants are legal in the format generally; a transfer is the one we write.
+            # It is checked here rather than below because an instant has no `dur`, and
+            # everything below is about spans.
+            if event.get('cat') != 'transfer':
+                continue                   # someone else's instant; legal, not ours
+            if not isinstance(event.get('name'), str) or not event.get('name'):
+                fail(problems, f'{where}: every event needs a name')
+            tid = event.get('tid')
+            pid = event.get('pid')
+            if not isCount(pid) or not isCount(tid):
+                fail(problems, f'{where}: pid/tid must be non-negative integers')
+            if not isCount(event.get('ts')):
+                fail(problems, f'{where}: ts must be a non-negative integer of microseconds')
+            if 'dur' in event:
+                fail(problems, f'{where}: a transfer is an instant and must not carry dur')
+            args = event.get('args') or {}
+            for key in ('from_line', 'to_line'):
+                if not isCount(args.get(key)) or args.get(key) < 1:
+                    fail(problems, f'{where}: transfer needs args.{key}, 1-based')
+                else:
+                    lines_used.add(args[key])
+            if not isinstance(args.get('kind'), str) or not args.get('kind'):
+                fail(problems, f'{where}: transfer needs args.kind')
+            if not isCount(args.get('steps')):
+                fail(problems, f'{where}: transfer needs args.steps')
+            transfers_seen += 1
             continue
         if phase != 'X':
             continue                       # other phases are legal, just not written by us
@@ -100,14 +130,21 @@ def main(argv):
                 fail(problems, f'{where}: window needs args.mode')
             if not isCount(args.get('steps')):
                 fail(problems, f'{where}: window needs args.steps')
+            stopped = args.get('stopped')
+            if stopped is not None and stopped not in ('work', 'wall'):
+                fail(problems, f'{where}: args.stopped must be absent, "work" or "wall"')
             counts = args.get('line_counts')
             if not isinstance(counts, dict):
                 fail(problems, f'{where}: window needs args.line_counts')
             else:
                 for line, count in counts.items():
-                    if not line.isdigit() or not isCount(count) or count < 1:
-                        fail(problems, f'{where}: line_counts[{line!r}] must be a '
-                                       'count against a line number')
+                    # 1-based, like every other line in the document: line 0 is not a line an
+                    # editor can scroll to, which is the whole point of naming a line. This is
+                    # what a runtime whose compiler emits a command with no source line
+                    # produces, so it is worth failing on.
+                    if not line.isdigit() or int(line) < 1 or not isCount(count) or count < 1:
+                        fail(problems, f'{where}: line_counts[{line!r}] must be a count '
+                                       'against a 1-based line number')
                         break
                     counted_lines.add(int(line))
         elif event.get('cat') == 'anchor':
@@ -125,7 +162,6 @@ def main(argv):
             counts_seen += 1
             lane['intervals'].append((ts, dur, args.get('line'), where))
 
-    lines_used = set()
     for tid in sorted(lanes):
         lane = lanes[tid]
         if lane['window'] is None:
@@ -161,6 +197,7 @@ def main(argv):
     spans = [lane['window']['dur'] for lane in lanes.values() if lane['window']]
     print(f'  lanes (windows): {len(lanes)}')
     print(f'  anchor intervals: {counts_seen}')
+    print(f'  transfers: {transfers_seen}')
     print(f'  lines referenced: {len(lines_used)} anchor line(s), '
           f'{len(counted_lines)} with counts'
           + (f' of {total}' if script else ''))

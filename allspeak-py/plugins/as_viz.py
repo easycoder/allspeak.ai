@@ -34,6 +34,69 @@ import time
 # outlive the thread that opened it and pick up whatever that thread set in motion.
 DEFAULT_LIMIT = 100000
 
+# A run has to be bounded, because the editor is what usually asks for one and a script under
+# review is not to be trusted with the editor's responsiveness. The bound is a *time* budget
+# rather than a count of commands, because the two failure shapes are not alike: a loop that waits
+# or calls out between iterations reaches any command count eventually, so a step counter either
+# fires early on a script that was only waiting, or has to be set so high that a genuinely busy
+# loop runs for minutes. The budget measures the program's own work instead, which is the thing a
+# runaway actually burns.
+DEFAULT_BUDGET_NS = 2_000_000_000       # 2 s of the program's own work
+
+# And a ceiling on the whole run, because the budget above bounds only what the program *does*.
+# A loop that waits between iterations never spends its budget and would otherwise run for ever,
+# so the editor would still be hangable by `while true ... wait 1 second ... end`. The ceiling is
+# generous, and it is not the same statement as the budget: one says "this script is computing
+# too much", the other "this script has been running too long to be a review of anything".
+DEFAULT_CEILING_NS = 20_000_000_000     # 20 s of wall clock, whatever it is doing
+#
+# The ceiling is not a compromise that has to be set high enough to spare honest scripts: a loop
+# that waits and never returns is a *coding error*, so catching it is the point rather than the
+# cost (Graham, 2026-09-29). Which is also why the two reasons are told apart and reported — one is
+# slow code, the other is usually wrong code, and the person reviewing the script is the one who
+# needs to know which.
+
+# Commands whose time is not the program's own: they wait by design, or they make a call that
+# times out on its own. A `url` field is checked rather than a keyword, because the fetch spells
+# itself several ways. Plugin domains are excluded wholesale by `countsAsWork`, so a domain that
+# talks to a device, a database or a network needs nothing added here.
+WAITING_KEYWORDS = frozenset(('wait', 'every', 'release', 'input', 'download', 'alert'))
+
+# A single gap longer than this is waiting, not work — a scheduled callback arriving, or an idle
+# program. Without the cap an idle program would look busy, since a gap can only be attributed to
+# the command before it.
+GAP_CAP_NS = 20_000_000                 # 20 ms
+
+
+# What a jump is called in the trace, and how to tell a written one from the compiler's.
+def transferKind(command):
+    """How a command's jump is named in the trace, or None if it is not a jump at all.
+
+    A *written* jump names a label; the compiler's own jumps carry a numeric target. That is
+    the test rather than the keyword, because the two runtimes spell their scaffolding
+    differently — Python's `if`/`while`/`wait`/`try` compile to `gotoPC`, while JS's compile
+    to `goto`, the same keyword its `Go` uses — so the keyword alone would call the `else` of
+    every `if` a program jump. Only the shape of the target tells them apart.
+
+    This is why `branch` exists as well as `jump`: a view that drew them together would show
+    the scaffolding of every condition as though the author had written a `go` there.
+    """
+    keyword = command.get('keyword')
+    if keyword == 'gosub':
+        return 'call'
+    if keyword == 'return':
+        return 'return'
+    if keyword in ('goto', 'go'):
+        # `goto` (string) is Python's label name, `label` is JS's, and a computed
+        # `go ... label <expr>` carries `gotoExpr` instead of either.
+        namesLabel = (isinstance(command.get('goto'), str)
+                      or isinstance(command.get('label'), str)
+                      or 'gotoExpr' in command)
+        return 'jump' if namesLabel else 'branch'
+    if keyword == 'gotoPC':
+        return 'branch'
+    return None
+
 
 class VizState:
     """What the host and the plugin share. Nothing here needs a run."""
@@ -54,10 +117,19 @@ class Recorder:
     exactly like a run without one.
     """
 
-    def __init__(self):
+    def __init__(self, budget=None, ceiling=None):
         self.windows = []
         self.current = None
         self.sealed = False     # a `once` window has been recorded; further starts ignored
+        # The guard. `budget` of None means no guard, which is what the command-line tools pass:
+        # a host that is itself disposable has nothing to protect.
+        self.budget = budget
+        self.ceiling = ceiling
+        self.busy = 0           # the program's own work so far, in nanoseconds
+        self.lastAt = None
+        self.lastCommand = None
+        self.started = None
+        self.stopped = None     # 'work' or 'wall' when a guard ended the run
 
     def anchorsOf(self, program):
         """The pcs worth timestamping: labels, loop tests, events, and the markers.
@@ -107,9 +179,16 @@ class Recorder:
             'counts': [0] * len(program.code),
             'linos': [c.get('lino', 0) + 1 for c in program.code],
             'steps': 0,
+            'transfers': [],
+            # Bookkeeping for the transfer test: the command that ran before the current one,
+            # and the lines the last two commands ran on.
+            'last_pc': None,
+            'last_line': command.get('lino', 0) + 1,
+            'line_before': command.get('lino', 0) + 1,
             't0': time.perf_counter_ns(),
             't1': None,
-            'truncated': False
+            'truncated': False,
+            'stopped': None
         }
 
     def finish(self):
@@ -149,6 +228,8 @@ class Recorder:
         # runs as an ordinary script when no recorder is attached, and the recorder only
         # has to notice the commands as they pass.
         command = program.code[pc] if pc < len(program.code) else None
+        if self.account(program, command):
+            return False        # the guard ended the run; the runtime breaks on this
         marker = None
         if command is not None and command.get('keyword') == 'viz':
             marker = command.get('request')
@@ -159,6 +240,7 @@ class Recorder:
             return
         window['counts'][pc] += 1
         window['steps'] += 1
+        self.noteTransfer(program, pc, window)
         # `until thread`: outside the block the window was opened in, and the call stack
         # back to where it was when the window opened. That covers a `return`, falling off
         # the end of the block, and a `gosub` inside it — with no thread bookkeeping.
@@ -174,6 +256,93 @@ class Recorder:
         window['visits'].append((pc, window['steps'], time.perf_counter_ns()))
         if marker == 'stop':
             self.stop()
+
+    # ---------------------------------------------------------------- the guard
+
+    def countsAsWork(self, command):
+        """Whether the time a command took is the program's own.
+
+        Two exclusions. A command that waits by design, or that carries a `url` — its duration is
+        waiting for something else, and a loop of such commands is not a runaway. And every
+        command outside the `core` domain: a plugin domain is there to talk to a database, a
+        device or a network, so its time is not the language's work either. Loop *control* is
+        always core, so a runaway loop still trips on the statements that make it a loop.
+        """
+        if command.get('keyword') in WAITING_KEYWORDS:
+            return False
+        if 'url' in command:
+            return False
+        return command.get('domain') == 'core'
+
+    def account(self, program, command):
+        """Add this command's share of the clock to the budget, and say whether the run must end.
+
+        A gap is the time the *previous* command took, so the exclusion and the cap are both
+        applied to the command that ran, not to the one about to run.
+        """
+        now = time.perf_counter_ns()
+        previous, last = self.lastCommand, self.lastAt
+        self.lastCommand, self.lastAt = command, now
+        if self.started is None:
+            self.started = now
+        if previous is not None and last is not None and self.countsAsWork(previous):
+            self.busy += min(now - last, GAP_CAP_NS)
+
+        reason = None
+        if self.ceiling is not None and now - self.started > self.ceiling:
+            reason = 'wall'
+        elif self.budget is not None and self.busy > self.budget:
+            reason = 'work'
+        if reason is not None:
+            self.stopped = reason
+            if self.current is not None:
+                self.current['stopped'] = reason
+                self.stop()
+            # Marked stopped, but *not* halted from here: the runtime breaks out of its own loop
+            # on the return value, so no command runs with the program already stopped.
+            program.running = False
+            return True
+        return False
+
+    def noteTransfer(self, program, pc, window):
+        """Record where control came from, when it did not simply fall through.
+
+        The test is the pc sequence rather than the command's own type: an arrival that is
+        not the command after the last one *is* a transfer, and that one rule catches a
+        call, a return, a jump, a loop's back-edge and an `if`'s skip without the recorder
+        having to know how any of them work. The command that ran last then names the kind —
+        `transferKind` decides that, and keeps the compiler's own jumps out of `jump`, since
+        the `else` of an `if` is not something the author wrote a `go` for.
+
+        The line it is attributed to is the author's, not the compiler's. A written `gosub`
+        or `go` names its own line. A compiler jump carries the line of the statement it
+        belongs to — the `while` — which is not where the jump happens, so it gets the line of
+        the command that ran last: the end of the loop body, which is where control left from.
+
+        The bound on the rule: a run that suspends and resumes through the runtime's queue looks
+        the same from here, so a resume can be reported as a transfer of the last command's kind.
+        Where control arrived from is still true; the `kind` may not be. See the trace spec.
+        """
+        previous = window['last_pc']
+        window['last_pc'] = pc
+        line = window['linos'][pc]
+        # `last_line` is the line of the command that ran before this arrival and
+        # `line_before` the one before that, which is the pair a compiler jump needs.
+        line_before = window['line_before']
+        window['line_before'] = window['last_line']
+        window['last_line'] = line
+        if previous is None or pc == previous + 1:
+            return
+        source = program.code[previous] if previous < len(program.code) else {}
+        kind = transferKind(source)
+        if kind is None:
+            return
+        # A written jump names its own line; a compiler jump names the line of the statement
+        # it belongs to, which is where the loop *is* rather than where control left from.
+        window['transfers'].append((
+            window['steps'], time.perf_counter_ns(),
+            line_before if kind == 'branch' else source.get('lino', 0) + 1,
+            line, kind))
 
 
 class Viz(Handler):
@@ -281,6 +450,21 @@ class Viz(Handler):
                 f"steps={window['steps']} | span-ms={span_ns / 1e6:.3f} | "
                 + (f"limit={window['limit']} | truncated=yes" if window['truncated']
                    else 'truncated=no'))
+            # Why the recording ends where it does, when a guard ended it. Told apart because
+            # they mean different things to whoever is reviewing the script: one is slow code,
+            # the other is usually a loop that never returns, which is a mistake rather than a
+            # cost. An overrun that is only visible as a short trace is a puzzle; said out loud
+            # it is a diagnosis.
+            if window.get('stopped') == 'work':
+                out.append(f"stopped | window={n + 1} | reason=work | "
+                           f"elapsed-ms={span_ns / 1e6:.0f} | "
+                           f"own-work-ms={recorder.busy / 1e6:.1f} | "
+                           "the run was stopped: it spent its whole budget computing")
+            elif window.get('stopped') == 'wall':
+                out.append(f"stopped | window={n + 1} | reason=wall | "
+                           f"elapsed-ms={span_ns / 1e6:.0f} | "
+                           f"own-work-ms={recorder.busy / 1e6:.1f} | "
+                           "the run was stopped: a loop that never returns is usually a mistake")
             for i, (pc, steps, _stamp) in enumerate(visits[:seq]):
                 out.append(f"seq | n={i + 1} | steps={steps} | line={linos[pc]} | "
                            f"name={window['anchors'].get(pc, '?')}")
@@ -1039,7 +1223,7 @@ class Viz(Handler):
 # The container is the Chrome Trace Event Format — see spec/viz-trace-format.md for the
 # subset used, the meaning of each args field, and why `line` and `steps` carry the join and
 # the comparable axis respectively.
-TRACE_VERSION = 1
+TRACE_VERSION = 2
 
 
 def traceDocument(script, windows):
@@ -1092,14 +1276,21 @@ def traceDocument(script, windows):
                 'anchors': len(window['anchors']),
                 'steps': window['steps'],
                 'truncated': bool(window['truncated']),
+                'stopped': window.get('stopped'),
                 'line_counts': counts
             }
         })
+        # The lane's two kinds of event are collected together and written in time order, so
+        # the file reads as the run happened and nothing downstream has to sort to find the
+        # flow. Transfers are instants, not spans: they are the moment control left one line
+        # for another, and something that took no time cannot be an interval without claiming
+        # a duration it never had.
+        timeline = []
         for position, (pc, steps, stamp) in enumerate(visits):
             following = visits[position + 1][2] if position + 1 < len(visits) else end
             line = window['linos'][pc]
             name = window['anchors'].get(pc, '')
-            events.append({
+            timeline.append((stamp, {
                 'name': name or f'line {line}',
                 'cat': 'anchor',
                 'ph': 'X',
@@ -1114,7 +1305,24 @@ def traceDocument(script, windows):
                     'steps': steps,
                     'visit': position + 1
                 }
-            })
+            }))
+        for steps, stamp, from_line, to_line, kind in window.get('transfers', []):
+            timeline.append((stamp, {
+                'name': f'{kind} {from_line}->{to_line}',
+                'cat': 'transfer',
+                'ph': 'i',
+                's': 't',
+                'pid': 1,
+                'tid': index,
+                'ts': stamp // 1000,
+                'args': {
+                    'from_line': from_line,
+                    'to_line': to_line,
+                    'kind': kind,
+                    'steps': steps
+                }
+            }))
+        events.extend(event for _stamp, event in sorted(timeline, key=lambda item: item[0]))
     return {
         'traceEvents': events,
         'displayTimeUnit': 'ms',

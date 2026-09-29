@@ -12082,6 +12082,13 @@ const AllSpeak_Run = {
 				program.pc = queue.shift();
 				program.watchdog = 0;
 				while (program.running) {
+				// The visualiser's recorder, if one is attached. One attribute test and,
+				// when armed, one or two list writes — nothing when it is not. It sits here
+				// because this is where every command passes exactly once, in execution
+				// order, which is the whole of what a recording needs.
+				if (program.vizRecorder) {
+					program.vizRecorder.tick(program, program.pc);
+				}
 				const activeCommand = program[program.pc];
 				if (activeCommand && activeCommand.lino) {
 					program.lastLino = activeCommand.lino;

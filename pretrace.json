@@ -32,8 +32,8 @@
       "ph": "X",
       "pid": 1,
       "tid": 1,
-      "ts": 33629037882,
-      "dur": 558,
+      "ts": 226980760729,
+      "dur": 1038,
       "args": {
         "from_line": 379,
         "mode": "once",
@@ -43,6 +43,7 @@
         "anchors": 27,
         "steps": 20,
         "truncated": false,
+        "stopped": null,
         "line_counts": {
           "379": 1,
           "380": 1,
@@ -68,8 +69,8 @@
       "ph": "X",
       "pid": 1,
       "tid": 1,
-      "ts": 33629037889,
-      "dur": 297,
+      "ts": 226980760742,
+      "dur": 519,
       "args": {
         "line": 379,
         "pc": 266,
@@ -84,8 +85,8 @@
       "ph": "X",
       "pid": 1,
       "tid": 1,
-      "ts": 33629038187,
-      "dur": 191,
+      "ts": 226980761261,
+      "dur": 355,
       "args": {
         "line": 387,
         "pc": 275,
@@ -95,13 +96,43 @@
       }
     },
     {
+      "name": "branch 390->395",
+      "cat": "transfer",
+      "ph": "i",
+      "s": "t",
+      "pid": 1,
+      "tid": 1,
+      "ts": 226980761545,
+      "args": {
+        "from_line": 390,
+        "to_line": 395,
+        "kind": "branch",
+        "steps": 14
+      }
+    },
+    {
+      "name": "branch 395->387",
+      "cat": "transfer",
+      "ph": "i",
+      "s": "t",
+      "pid": 1,
+      "tid": 1,
+      "ts": 226980761613,
+      "args": {
+        "from_line": 395,
+        "to_line": 387,
+        "kind": "branch",
+        "steps": 16
+      }
+    },
+    {
       "name": "loop@387",
       "cat": "anchor",
       "ph": "X",
       "pid": 1,
       "tid": 1,
-      "ts": 33629038378,
-      "dur": 58,
+      "ts": 226980761616,
+      "dur": 147,
       "args": {
         "line": 387,
         "pc": 275,
@@ -111,12 +142,42 @@
       }
     },
     {
+      "name": "branch 387->397",
+      "cat": "transfer",
+      "ph": "i",
+      "s": "t",
+      "pid": 1,
+      "tid": 1,
+      "ts": 226980761686,
+      "args": {
+        "from_line": 387,
+        "to_line": 397,
+        "kind": "branch",
+        "steps": 18
+      }
+    },
+    {
+      "name": "branch 397->403",
+      "cat": "transfer",
+      "ph": "i",
+      "s": "t",
+      "pid": 1,
+      "tid": 1,
+      "ts": 226980761762,
+      "args": {
+        "from_line": 397,
+        "to_line": 403,
+        "kind": "branch",
+        "steps": 20
+      }
+    },
+    {
       "name": "viz-stop@403",
       "cat": "anchor",
       "ph": "X",
       "pid": 1,
       "tid": 1,
-      "ts": 33629038437,
+      "ts": 226980761764,
       "dur": 2,
       "args": {
         "line": 403,
@@ -129,7 +190,7 @@
   ],
   "displayTimeUnit": "ms",
   "otherData": {
-    "vizTrace": 1,
+    "vizTrace": 2,
     "script": "examples/chemical/parser.allspeak"
   }
 }

@@ -71,6 +71,161 @@ Distinct from #5: that item is about keeping the existing Quick Reference auto-s
 ### 13. (low-priority, cosmetic) Internal Python class names still carry `EC` prefix
 The 2026-04-06 EasyCoder→AllSpeak global rename caught file paths, package names, the `.allspeak` extension, and source-level identifiers, but internal Python classes still carry the EC prefix: `ECValue`, `ECVariable`, `ECDictionary`, `ECList`, `ECObject`, `ECValueHolder`, `ECFile`, `ECModule`, `ECSSH`, `ECQueue`. These aren't user-visible — only plugin authors and runtime contributors see them — so the inconsistency is cosmetic. Worth a sweep eventually for naming consistency, but not a priority.
 
+### 14. `dictionary` / `list` in the JS flavour — the "severe implications" was never tested, and measuring it says it cost almost nothing
+
+The standing assumption has been that implementing `dictionary` and `list` in the JS runtime
+would have severe implications. **No rationale for it is recorded anywhere** — not in the packs,
+not in `learn/`, not in `AI/`, not in the conversation logs. It was inherited from EasyCoder. What
+*was* measured (conversation-017, April 2026) is the consequence of not having them: **8 of 148
+scripts could not even compile under the JS runtime** because of `use`, `list` and `dictionary`.
+
+Measured 2026-09-29, now that both runtimes run headlessly (`tools/asviz-run.py --run`,
+`tools/asviz-run.js --run`):
+
+**The container types are not missing from JS — only the keywords are.** JS has both shapes under
+the spellings `learn/reference/04-collections.md` already documents, and they work: `set X to
+object` + `set property K of X to V` + `put property K of X into V` reads back correctly, and
+`set X to array` + `set element N of X` does too (a probe printed `100`, `first`, `second`).
+
+**`entry` is half-wired, and asymmetrically.** One spelling per file, because a compile error is
+fatal:
+
+| spelling | JS runtime |
+|---|---|
+| `set X to object` / `set X to array` | works |
+| `set property K of X to V` | works |
+| `put property K of X into V` | works |
+| `X has entry K` / `X has no entry K` | **works** — `Core.js`'s `has` accepts `property`, `element` *and* `entry` |
+| `set entry K of X to V` | compile error: "I don't understand 'set'" |
+| `put entry K of X into V` | runtime error: "Undefined value: 'entry'" |
+| `dictionary X` | compile error: "I don't understand 'dictionary'" |
+| `list X` | compile error: "I don't understand 'list'" |
+
+The `has` handler accepting `entry` while its neighbours do not looks accidental, not designed.
+
+**The cost, counted** — browser-relevant scripts, excluding `allspeak-py/` and `tools/`:
+
+| gap | scripts | which ones |
+|---|---|---|
+| `use` (modules) | 10 | every one a server script (`server.allspeak`, `starter/*/server.allspeak`, `chat/chat-server.allspeak`, `deploy/code/server.allspeak`) plus `diffshow.allspeak` — **none of them browser scripts** |
+| `load … from` (file read) | 10 | the same population |
+| `save` | 9 | the same population |
+| `dictionary` | 3 | the same population, **plus `examples/chemical/parser.allspeak`** |
+| `list` | 1 | `parser.allspeak` |
+
+So exactly **one** script is kept out of the browser by `dictionary`/`list`, and it is kept out by
+`load … from` as well — file I/O, which is inherently browser-hostile rather than merely
+unimplemented. A three-rule mechanical rewrite of it (25 line changes) clears every declaration and
+entry-access error and then fails on `load`, which is the honest boundary.
+
+**What that does and does not say.** Selection effect: scripts that would have used a dictionary
+were never written for the browser, so the count understates demand. The real cost is not
+throughput but the **portability promise** — `parser.allspeak`'s header claims the browser page is
+the same parser, and it cannot be one script on both runtimes, which is the fork's premise.
+
+**If this is ever picked up:**
+1. **Lower `dictionary X` / `list X` to what the docs already tell JS authors to write**
+   (`variable X` + `set X to object` / `set X to array`). Small, and it gives the declarations one
+   spelling on both runtimes — the cheapest step towards the portability promise.
+2. **Make `entry` consistent** in the JS runtime: accept it wherever `property` is, or stop
+   accepting it in `has`. Note `04-collections.md` currently *forbids* each runtime's spelling in
+   the other, so this is a design decision rather than a repair.
+3. **`use` and file I/O are the bigger gaps** by count — but every script they block is a server or
+   desktop script, where Python is the right runtime anyway. The honest reading is that the browser
+   is short of *scripts*, not of features.
+
+
+### 14b. The same question, prototyped — feasible in four edits, but it would mislead rather than help
+
+Built 2026-09-29 as an **in-memory prototype**: `js/allspeak/Core.js`'s text is patched as it is
+loaded and never written to the tree (`/tmp/proto/run.js`). Four edits, all in `Core.js`:
+
+1. two compile handlers (`Dictionary`, `List`, ~8 lines each) that lower to `variable X` +
+   `set X to object` / `set X to array`;
+2. two lines registering them in `_buildCompileHandlers`, the way the file already registers the
+   untranslated `ulog`;
+3. `case \`entry\`:` beside `case \`property\`:` in `Set.compile`, so `set entry K of X to V` works;
+4. `|| token === \`entry\`` in the value parser, so `put entry K of X into V` works. (`has entry`
+   already did.)
+
+**Nothing else is needed, and in particular no language pack change:** `dictionary` and `list` are
+absent from the `words` map in **all four** packs already — they are untranslated technical
+keywords, exactly like `json`, `mqtt` and `viz` — and `Language.word()` falls back to the canonical
+when a pack has no entry. The one thing that *must* be true is that the declarations lower to
+`keyword: 'variable'`: **18 places test `keyword === 'variable'`** (Core 7, JSON 9, Browser 1,
+REST 1), so a distinctive keyword would have to be added to every one of them.
+
+**It works.** With the prototype, `dictionary X`, `list X`, `set entry`, `put entry` and `has entry`
+all behave, and `examples/chemical/parser.allspeak` moves from failing at line 43 (`dictionary`) to
+failing at line 45 (`load … from`) — file I/O, which is inherently browser-hostile.
+
+**But it would mislead, because the two runtimes' declared lists are different data structures.**
+Measured, one spelling per file:
+
+| | Python | JS |
+|---|---|---|
+| declare | `list X` | `list X` (new) / `variable X` + `set X to array` |
+| initialise | `reset X` | done by the lowering — **JS has no `reset` at all** ("I don't understand 'reset'") |
+| add | `append V to X` works; assigning to an index that does not exist dies with *list assignment index out of range* | `set element 4 of X to V` **auto-extends** an empty array |
+| read | `item N of X` (`put element 0 of Names into First` **does not compile**) | `element N of X` |
+
+So a script written with `list` + `element` would **compile on both runtimes and run on JS while
+failing to compile on Python.** Today the failure is unambiguous — the JS runtime says "I don't
+understand 'dictionary'". After the addition it would be a silent divergence, which is worse.
+
+And `learn/reference/04-collections.md` already points the wrong way: it documents
+`set element 0 of Items to` under the **Python** heading, which is the JS spelling and does not
+compile on Python.
+
+**Verdict:** option 1 above, taken alone, is not advisable. Adding the declarations is four edits —
+the cheap part — but doing it *properly* means settling one idiom for both runtimes: whether `reset`
+exists in JS, whether the accessor is `item` or `element`, and whether index-assign grows the list.
+That is a language decision, and the honest conclusion of testing the old assumption is that it was
+right in spirit and wrong in location: **the implications are real, and they are in the list
+semantics rather than in the declarations.**
+
+
+### 14c. Decided 2026-09-29 — leave the JS runtime as it is; the visualiser needs nothing
+
+**Graham's rule:** the JS variant must follow the time-honoured JS principle of **adding without
+taking away**. If the addition cannot meet that, leave things as they are and work around it in the
+visualiser instead.
+
+**Tested against the rule** — 319 `.allspeak` scripts compiled twice, once with the vanilla runtime
+and once with the four-edit prototype loaded, comparing per-file verdicts:
+
+| | vanilla | patched |
+|---|---|---|
+| compiled OK | 149 | 149 |
+| **compiled before, failed after** | — | **0** |
+| verdict changed at all | — | 4, all `FAIL` → `FAIL` |
+
+So the rule *is* satisfied — nothing is taken away. (The four changes are all the failure moving
+*later*: `wordlist` and `asdoc-check-cli` get past the declarations and stop on `url` and `argc`,
+values only the Python plugins provide; `parser` stops on `load`; `benchmark` stops on a further
+`entry` form.)
+
+**But it still should not be done, for two reasons.**
+
+1. **It doesn't finish anything, it moves a boundary.** The sweep found a **fifth** site the
+   four-edit version misses: `log entry \`k\` in D` — Python's preposition is `in` where JS's
+   `property` form uses `of`, and it needs another change to the value parser. Every script it
+   unblocks then stops on the next Python-only thing.
+2. **It would mislead about portability**, per the list-semantics table in #14b: a script written
+   with `list` + `element` would compile on both runtimes, run on JS, and fail on Python. Today the
+   failure is unambiguous; afterwards it would look portable and not be.
+
+**And the workaround the rule asks for is not needed, because there is nothing to work around.**
+The visualiser is already independent of the JS runtime's container vocabulary:
+
+- The **trace format is portable**, so a script the JS runtime cannot run is recorded by the Python
+  runtime and drawn by the same picture — `./various/plot examples/chemical/parser.allspeak` works
+  today, and `./various/plot --js` draws a JS-recording of the same script.
+- **Browser projects are unaffected**: a JS AllSpeak app is written in JS vocabulary and cannot have
+  used `dictionary`/`list`, and the JS recorder landed 2026-09-29, so those projects record.
+- **`viz.allspeak` itself uses neither** — plain variables and element counts — and runs on both
+  runtimes, which is what lets it be the shared framework.
+
 ## Resolved
 
 ### 2026-04-29 — `on failure` recovery clause added as alternative to `or`

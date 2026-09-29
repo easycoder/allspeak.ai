@@ -643,10 +643,15 @@ class Program:
 			while self.running:
 				command = self.code[self.pc]
 				
-				# The visualiser's recorder, if one is attached. One attribute test and,
-				# when armed, one or two list writes — nothing when it is not.
-				if self.recorder is not None:
-					self.recorder.tick(self, self.pc)
+				# The visualiser's recorder, if one is attached. One attribute test and, when
+				# armed, one or two list writes — nothing when it is not.
+				#
+				# `False` means the recorder's guard ended the run. It is a return value rather
+				# than the recorder halting the program itself because a handler that finds the
+				# program already stopped reports "Improper use of runtime function" — a lie
+				# about what happened. Breaking here runs no further command.
+				if self.recorder is not None and self.recorder.tick(self, self.pc) is False:
+					break
 				
 				# Check if debugger wants to halt before executing this command
 				if self.debugger != None:

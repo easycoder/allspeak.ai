@@ -9,7 +9,13 @@
 // command line instead of a page.
 //
 // Usage:  node tools/asviz-run.js [script.allspeak ...]
+//         node tools/asviz-run.js --run [--trace=<file.json>] <script.allspeak>
 //         (default target: codex/en/code/step13.allspeak)
+//
+// `--run` also runs the target with a recorder attached, so the markers it carries produce a
+// recording — the same "text first" increment the Python host made, now on this runtime. The
+// trace is written before the framework runs, because a recording is a fact about the run and
+// not about the report, and it should survive a framework failure.
 
 const fs = require('fs');
 const path = require('path');
@@ -18,6 +24,11 @@ const { execFileSync } = require('child_process');
 
 const root = path.resolve(__dirname, `..`);
 const ANALYSER = path.join(root, `tools`, `asdoc-check.py`);
+
+// Targets resolve against the repository root, so the tool can be run from anywhere — but an
+// absolute path is taken as given, which is what lets a throwaway script be tried without
+// putting it in the tree.
+const resolve = (target) => path.isAbsolute(target) ? target : path.join(root, target);
 
 // The doc-block model comes from the canonical analyser rather than a second parser:
 // shelling out keeps its --json output as the single contract between host and
@@ -120,10 +131,57 @@ for (const note of skipped) {
 
 // The host side of the plugin contract: which script is being looked at, and its
 // source text. A browser host would fill these from the editor buffer instead.
-const targets = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const flag = (name) => argv.indexOf(name) >= 0;
+const value = (name) => {
+	const at = argv.findIndex(a => a.startsWith(name + `=`));
+	return at < 0 ? null : argv[at].slice(name.length + 1);
+};
+const wantsRun = flag(`--run`) || flag(`-r`);
+const tracePath = value(`--trace`) || value(`--trace-pretty`) || value(`--trace-compact`);
+const pretty = flag(`--trace-pretty`) || value(`--trace-pretty`) !== null;
+const targets = argv.filter(a => !a.startsWith(`-`));
 if (targets.length === 0) {
 	targets.push(`codex/en/code/step13.allspeak`);
 }
+if (tracePath && !wantsRun) {
+	process.stderr.write(`asviz-run: a trace records a run, so it needs --run too\n`);
+	process.exitCode = 1;
+	return;
+}
+
+// Run the target with a recorder attached, and hand back the recorder. The script's own
+// output goes to stderr: it is not what this tool is for, and on stdout it would land in the
+// middle of the model records. Redirected rather than discarded, because a bare `print` is how
+// a probe reports what a value turned out to be.
+const runTarget = function (target) {
+	const text = fs.readFileSync(resolve(target), `utf8`);
+	const source = AllSpeak.tokeniseFile(text.split(`\n`));
+	const program = AllSpeak.compileScript(source, null, null, null);
+	delete AllSpeak.scripts[program.script];
+	program.script = AllSpeak.scriptIndex++;
+	AllSpeak.scripts[program.script] = program;
+	// Attached by the host rather than asked for by the script, because collecting data is
+	// not something a script should have to say. Given to the plugin under the path it was
+	// asked for, so the report can say what the run collected — the counterpart of the Python
+	// host's `VizState.trace[program.scriptName] = program.recorder`.
+	program.vizRecorder = new AllSpeak_Viz.Recorder();
+	AllSpeak_Viz.trace[target] = program.vizRecorder;
+	const out = console.log;
+	console.log = (...args) => { process.stderr.write(args.join(` `) + `\n`); };
+	try {
+		program.running = true;
+		AllSpeak_Run.run(program, 0);
+	} finally {
+		console.log = out;
+		// A window still open ends when the *run* ends, including a run that failed: the
+		// recorder is already published for the report, and `finishedWindows` stamps an open
+		// window as of whenever it is next read — so without this a failed run would report a
+		// duration covering however long the host spent in between.
+		program.vizRecorder.finish();
+	}
+	return program.vizRecorder;
+};
 
 const framework = fs.readFileSync(path.join(root, `viz.allspeak`), `utf8`);
 
@@ -133,14 +191,43 @@ let failures = 0;
 const firstLine = (err) => String((err && err.message) || err).split(`\n`)[0];
 
 for (const target of targets) {
-	if (!fs.existsSync(path.join(root, target))) {
+	if (!fs.existsSync(resolve(target))) {
 		process.stderr.write(`asviz-run: no such file: ${target}\n`);
 		failures++;
 		continue;
 	}
+	if (wantsRun) {
+		process.stderr.write(`asviz-run: running ${target}\n`);
+		// A target that will not run is still worth analysing: the model is built from a
+		// compile-only pass that tolerates failure, so the report below is produced either
+		// way. Only the recording is lost, and a failed target must not end the sweep.
+		let recorder = null;
+		try {
+			recorder = runTarget(target);
+		} catch (err) {
+			process.stderr.write(`FAIL ${target}: run: ${firstLine(err)}\n`);
+			failures++;
+		}
+		if (wantsRun && tracePath && recorder) {
+			const windows = recorder.finishedWindows();
+			const document = AllSpeak_Viz.traceDocument(target, windows);
+			try {
+				// Compact by default: whitespace does not matter to a JSON reader, and a
+				// trace's first consumer is a viewer rather than a person.
+				fs.writeFileSync(tracePath, JSON.stringify(document, null, pretty ? 2 : 0));
+			} catch (err) {
+				process.stderr.write(`asviz-run: cannot write ${tracePath}: ${err.message}\n`);
+				failures++;
+				continue;
+			}
+			process.stderr.write(`asviz-run: trace: ${tracePath} ` +
+				`(${document.traceEvents.length} events, ${windows.length} window(s))\n`);
+		}
+	}
+
 	AllSpeak_Viz.target = target;
-	AllSpeak_Viz.sources[target] = fs.readFileSync(path.join(root, target), `utf8`);
-	AllSpeak_Viz.sections[target] = sectionsFor(path.join(root, target));
+	AllSpeak_Viz.sources[target] = fs.readFileSync(resolve(target), `utf8`);
+	AllSpeak_Viz.sections[target] = sectionsFor(resolve(target));
 	AllSpeak_Viz.problems = [];
 
 	// Compile the framework ourselves rather than via AllSpeak.start: start() is

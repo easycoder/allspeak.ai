@@ -22,6 +22,7 @@ Paths are relative to the current directory, which is where `Program` resolves
 them from too, so run it from the repository root.
 """
 
+import contextlib
 import json
 import os
 import subprocess
@@ -75,9 +76,14 @@ def runTarget(target):
     # collecting data is not something the script should have to ask for.
     program.recorder = Recorder()
     VizState.trace[program.scriptName] = program.recorder
-    program.start()
-    # The run is over, so a window still open ends here rather than whenever a reader looks.
-    program.recorder.finish()
+    try:
+        program.start()
+    finally:
+        # A window still open ends when the *run* ends, including a run that failed: the
+        # recorder is already published for the report, and `finishedWindows` stamps an open
+        # window as of whenever it is next read — so without this a failed run would report a
+        # duration covering however long the host spent in between.
+        program.recorder.finish()
     return program.recorder
 
 
@@ -140,10 +146,23 @@ def main(argv):
 
         if run:
             sys.stderr.write(f'asviz-run: running {target}\n')
-            recorder = runTarget(target)
+            # A target that will not run is still worth analysing: the framework's model comes
+            # from a compile-only pass that tolerates failure, so the report is produced either
+            # way. Only the recording is lost, and a failed target must not end the sweep.
+            try:
+                # The script's own output goes to stderr: it is not what this tool is for, and
+                # on stdout it would land in the middle of the model records. The JS host does
+                # the same, so a `print` in the target behaves identically under both.
+                with contextlib.redirect_stdout(sys.stderr):
+                    recorder = runTarget(target)
+            except BaseException as e:     # noqa: BLE001 - report per target, keep going
+                detail = str(e) or f'{type(e).__name__} (see the log above)'
+                sys.stderr.write(f'FAIL {target}: run: {detail}\n')
+                failures += 1
+                recorder = None
             # Written before the framework runs so a trace survives a framework failure,
             # and because a recording is a fact about the run, not about the report.
-            if trace:
+            if trace and recorder is not None:
                 windows = recorder.finishedWindows()
                 document = as_viz.traceDocument(target, windows)
                 try:

@@ -11,9 +11,18 @@ Items identified during real project work. Each should be implemented in both JS
 1. **Extension rename is on `master`** (merged fast-forward, 3 commits; `origin/master` not yet pushed). `.as` → `.allspeak` across the repo: 318 files renamed, ~326 docs/config swept, both extensions accepted by the runtimes. Remaining: `git push` when ready, and re-verify the 14 `verify-stale` blocks in `asedit.allspeak` (Blocks mode) if that matters.
 2. **Consumer projects** still carry the old names. `~/dev/doclets` is the only project *coupled* to this repo — it holds copies of `asedit.as`, `asdoc-check.py` and `allspeak-js/*.js`. Nothing is *broken* (the runtimes accept `.as`), so renaming the rest is cosmetic; the `.as` counts per project are in `conversation-021.md`. Update doclets in its own session, never in place here.
 3. Native review of the fr/de/it `AGENTS.md`: they were machine-drafted, so a reading pass is worth doing before they ship — the viz-word review is the precedent.
-4. Block-level aggregation over a trace, then the first screen in `asedit.allspeak` — both described in the Visualiser section below.
+4. **The run picture is drawn, but not yet judged.** A trace now carries control transfers
+   (format draft 2) and `./various/plot` draws the run — arrivals as dots, transfers as faint
+   strokes, two colour rules behind a toggle, independent axis stretch. The next input is Graham's
+   eye on it; the first screen in `asedit.allspeak` follows. Both described in the Visualiser
+   section below.
 5. The label bodies after `ListSorter` in `codex.allspeak`, and the run-panel region that still sits outside any block.
-6. The JS recorder, still missing — needed before traces from the two runtimes can be compared.
+6. ~~The JS recorder~~ **Done 2026-09-29.** `js/plugins/asviz.js` now carries the Recorder and the trace
+   writer, `js/allspeak/Run.js` calls `program.vizRecorder.tick()` once per command, and
+   `tools/asviz-run.js --run --trace=` records. `./various/plot --js <script>` draws it. The two
+   runtimes now agree on every arrival, transfer and line count for `tools/trace-run.allspeak` —
+   only `steps` differs (25 against 22), by the label commands Python emits and JS does not, which
+   is now recorded in the spec under "Where the two runtimes differ".
 6. Propagate the logging recommendation (root `AGENTS.md`, "Diagnostics while debugging") to the four starter packs — drafts in fr/de/it for review, as with the diff-notes sections.
 7. `learn/{,fr,de,it}/idioms/13-server-as-application.md` (and the `deploy/` mirrors) still say the starter packs' `CLAUDE.md` default is to launch the server with `-t edit,<project>`. The packs now say the user starts the server and the agent must not — so that line is stale in all four languages. Worth fixing when `learn/` is next touched.
 8. **Runtime bugs the three old `allspeak-py/tests` scripts exposed** (2026-09-27 — the scripts themselves are fixed; see `DIFF.md` for the repros). `set property \`k\` of D to v` compiles and then poisons the dictionary — the next read dies with `TypeError: argument of type 'ECValue' is not iterable`; `set entry \`k\` of D to v` is the spelling that works. `put json \`{}\` into X` on a plain `variable` reports "I don't understand 'put'" rather than naming the type mismatch. `dummy` and `debug symbol(s)` exist in JS (and the packs) but not in the Python runtime. Take them one at a time, JS-parity first.
@@ -172,7 +181,28 @@ next doc regeneration will change some French/Italian/German lines. That is most
 want for syntax lines, but the substitution is word-level and will also touch prose
 containing those words. Worth eyeballing those diffs before the next `deploy-sync`.
 
-### 7. `modifyValue` is still undocumented in the plugin contract
+### 7. `dictionary` / `list` in the JS flavour — measured 2026-09-29, see `language-pack-issues.md` #14
+
+The assumption that implementing them in JS "would have severe implications" is recorded nowhere
+and was never tested. Measuring it says they cost almost nothing: JS already has both *shapes*
+under the spellings the reference documents, and the keywords would lower to the two lines it
+already tells JS authors to write. `entry` is half-wired (`has entry` works, `set entry` and
+`put entry` do not) — that looks accidental. The scripts actually kept out of the browser by these
+two keywords number **one** (`examples/chemical/parser.allspeak`), and file I/O blocks it anyway.
+Full measurements and three options in `language-pack-issues.md` #14.
+
+**Also prototyped 2026-09-29 (#14b):** feasible in **four edits, all in `Core.js`, with no pack
+change** — `dictionary`/`list` are untranslated keywords in all four packs already, like `json` and
+`mqtt` — provided the declarations lower to `keyword: 'variable'` (18 places test that). It works,
+and it moves `parser.allspeak` from failing at line 43 to line 45. **But it would mislead:** the two
+runtimes' lists are different structures — Python has no `element` (it is `item`), JS has no `reset`,
+Python dies on index-assign to a non-existent slot where JS auto-extends — so `list` + `element`
+would compile on both, run on JS and fail on Python. Doing it properly means settling one idiom for
+both runtimes first, which is a language decision.
+
+**Decided 2026-09-29 — leave it alone.** Graham's rule is that the JS variant must follow "adding without taking away"; testing the prototype against it **passes** (319 scripts compiled with and without: 149 OK either way, **0 regressions**, the 4 verdict changes all `FAIL` → `FAIL`) but it still should not be done: it moves a boundary rather than closing a gap (the sweep found a fifth `entry` site), and it would advertise a portability that the list semantics do not support. **No visualiser workaround is needed** — the trace format is portable, so a script the JS runtime cannot run is recorded by Python and drawn by the same picture; `viz.allspeak` itself uses no containers and runs on both. See `language-pack-issues.md` #14b and #14c.
+
+### 7b. `modifyValue` is still undocumented in the plugin contract
 
 `as_value.py` calls `domain.modifyValue(value)` on every registered domain, and the JS twin
 of that bug was fixed earlier by guarding `handler.value`. Any plugin domain must define
@@ -211,7 +241,20 @@ consequences hold either way, and are already built into the trace format: every
 (sections, prose, anchors, routes, windows, findings); the Python recorder; and now the recording
 as a **file** — `spec/viz-trace-format.md` (Chrome Trace Event Format, the subset used and the
 meaning of each `args` field) with `tools/check-trace.py` as the conformance check both runtimes
-must pass. `tools/asviz-run.py --run --trace=<file.json>` writes one.
+must pass. `tools/asviz-run.py --run --trace=<file.json>` writes one. As of 2026-09-29 the file
+also carries **control transfers** (`cat: "transfer"`, `ph: "i"`, format **draft 2**): one instant
+per arrival that is not the command after the last, with `from_line`, `to_line`, `steps` and a
+`kind` of `call`/`jump`/`return`/`branch`. That closes the gap that left the flow invisible — a
+call, a return, a jump and a loop's back-edge are now in the record. `branch` is the compiler's own
+jumps (`if`/`while`/`wait`/`try` scaffolding), kept apart from `jump` because **a written jump
+names a label and a generated one carries a numeric target** — Python's conditions compile to
+`gotoPC` but JS's compile to `goto`, the same keyword its `Go` uses, so the keyword alone would
+report the `else` of every `if` as an author's `go`. `pretrace.json` was regenerated. And
+`./various/plot` (2026-09-29, `various/`, gitignored) draws it: **the script down the left, the
+sequence across** — two bands in one canvas sharing y, because the script cannot share the plot's
+x, where x means *when* and text has no position on it. Text appears once a row can hold it (both
+sample scripts fit at 22–26 px/line), the anchor *names* take over below that, the arrival dots
+keep their own column so none is lost to the sampling, and hovering a row lights it in both bands.
 
 **Sketches, and what they established** (2026-09-28; `various/`, gitignored — run
 `./various/silhouette <script>`, which prints the path and opens it). They render the *static*
@@ -256,23 +299,138 @@ was made without confidence):
   command, which is meaningless at that size. Line text belongs there only once zoom makes it
   legible; a toggle in the detail pane should offer either.
 
+**Settled by Graham, 2026-09-29** — the colour channel, and the transfers:
+
+- **Colour: both, behind a toggle, in one prototype.** The two readings of "how busy" are (a) two
+  colours — blue for an anchor the program *has* against red for an arrival the run *made*, which
+  shows the shape of the flow without ranking it — and (b) one ramp, each arrival shaded by that
+  line's visit count *so far* against the busiest line in the window, so the most-revisited line
+  ends at full red. He is not sure which reads better and a toggle is the cheap way to find out.
+  Whether the **instruction count** should drive the shade instead of the visit count is
+  unanswered, so the sketch shows the line's instruction count in the readout, where the two can be
+  compared before choosing.
+- **Transfers: recorded, not inferred.** The faint lines at each `go`/`gosub`/`return` come from the
+  run (`cat: "transfer"`, built 2026-09-29), so each lands at its own moment. The compiler's own
+  jumps are recorded too, but as `branch` and drawn only when asked for: `if`/`while`/`wait`
+  scaffolding is not a program jump, and Graham's own caution about that is what the separate kind
+  is for. Static edges from the model were the alternative — no runtime change, but not tied to the
+  run, and only section-to-section.
+- **Build: a throwaway sketch first** — `various/plot` (gitignored), judged from the picture,
+  before anything in `asedit.allspeak`.
+- **The pane count is still open.** Graham's 2026-09-29 note: *"when I say left and right panes I
+  forgot it may be a single pane."* What follows from the plot having x = sequence is that the
+  script cannot share that axis — in the sequence plot the text has no place — which is exactly why
+  a second pane would have to follow the first vertically. Two panes side by side, or one pane
+  whose x means something different once zoom crosses the text-legible threshold, is the question
+  left open. **Built as the cheapest reading of it, not as a decision:** one canvas holding two
+  bands — the script on the left, the sequence on the right — sharing y and nothing else, with the
+  script toggleable so the plot can have the full width. It is a sketch, so the question is still
+  where it was; the difference is that there is now a picture to argue about.
+
 **A data gap that constrains the heat.** The recorder keeps per-line activity as **totals**
 (`line_counts`) and a *sequence* only for anchors (`visits`: pc, steps, timestamp). So activity
 over the run is derivable at **block granularity** — between consecutive visits, which is the
 original "all the rows under the marked line, down to the next marker, take the same shade" rule —
 but not per line. A per-line timeline would need the recorder to keep a series rather than a total.
+The *transfers* are a sequence now (2026-09-29), so the flow has a timeline even though the work
+does not.
 
 **Next, in order — deliberately trimmed:**
-1. The **heat layer** first, at block granularity, as a gradient along the sequence (blue, reddening
-   while busy, decaying back to blue). First because it is what the picture is actually made of,
-   and because the colour bands sit *inside* whatever row geometry we choose — so it settles the
-   geometry the one-view choice above leaves open.
-2. That single view at one geometry: one row per line, compressed at low zoom, block labels above,
-   with the hover rule above.
+1. **Look at the run picture** — `./various/plot` (2026-09-29). The script down the left with its
+   marker dots, the run across the right: x is the sequence in steps, y is the line, arrivals are
+   dots, transfers are faint vertical strokes, the two colour rules are on a toggle, and each axis
+   stretches on its own with drag-to-pan. Judgement is the next input, and the questions it should
+   answer are: does the row height the fit chooses want to be bigger; does the band want to be
+   wider than 46% (one constant, `BAND`); and is the split honest, or is a *second* pane with its
+   own scroll the better shape after all. One trap found while building it, and worth carrying into
+   the real screen: the axes have to be *relative to the fitted scale*, not absolute — the fitted
+   scale is whatever makes the window fit, which is 51.6 px/step for a 25-step window and 0.7 for a
+   2000-step one, so any fixed slider range is pinned at one end before the user touches it.
+2. **The doc-block prose, in the band.** The 2026-09-28 read said the prose is one of the parts to
+   keep, and the block list is not in the sketch yet: the sections and their paragraphs are already
+   in the model the generator reads (`section |` and `prose |`), so this is a draw pass and a
+   decision about where a paragraph goes in a one-row-per-line layout. It is the cheapest remaining
+   step that adds interpretation rather than decoration.
 3. The first screen in `asedit.allspeak`, reading a **trace file** — agreed 2026-09-28: work from a
    trace for now; it needs nothing new from the runtime.
 4. Only if it earns its place: running the script in-browser (needs the JS recorder), an
    overlay/code-map mode, and `viz diff`.
+
+### The editor route — agreed 2026-09-29, and the next work
+
+**The aim, in Graham's words:** the job of visualisation is to help the user *review new code as it
+is created*, so the best place to invoke it is from inside `asedit`, where the new code lands. For
+Python that means adding `viz` commands (by hand or by prompt), running the code to capture the
+record, and then a **third editor view** — the picture. The JS route is similar. **A crucial aim is
+to hide the plumbing.**
+
+**The shape it takes, given what already exists** (`server.allspeak` already serves `/list`,
+`/read`, `/write`, `/version`, `/restart` in AllSpeak, and asedit already talks to them with
+`rest get`/`rest post`):
+
+1. **`viz record`** — a plugin command that runs a script (from a path *or from the buffer text*)
+   with a recorder attached and hands back what the picture needs. The counterpart of the existing
+   `viz model`, and the piece every host below needs. *(Not built yet.)*
+2. **A `/viz` route** in `server.allspeak` — a handful of AllSpeak lines, mirroring `/read`.
+3. **A third view in `asedit.allspeak`** — the canvas, drawing from the fetched data. The drawing
+   code exists in `various/make-viz-plot.py` but is *generated* into a page; it has to become a
+   fetch-and-draw so it can live in the editor.
+
+**Run safety — decided and built (2026-09-29).** Recording *runs* the script, so a runaway would
+hang the editor. The guard is a **time budget on the program's own work** rather than a count of
+commands, because a loop that waits or calls out between iterations reaches any command count
+eventually. Graham's refinement: *ignore programmed delays, and actions that are known to time out
+themselves such as REST calls*. Measured, and it works — a busy loop stops after **2000.0 ms of own
+work**, while a loop of `wait 200 ms` accumulates only 25.6 ms and is left alone.
+
+**But the budget alone cannot be the only bound, and the test proved it:** a loop that *waits*
+between iterations never spends its budget, so the first version ran until the test harness killed
+it. So there are two, with distinct jobs — `budget` (own work, 2 s: "this script is computing too
+much") and `ceiling` (wall clock, 20 s: "this script has been running too long to be a review of
+anything"). Graham's reading of the second: *a wait loop that never returns is likely to be a
+coding error* — so the ceiling is not a compromise set high enough to spare honest scripts, it is
+the guard for a mistake. That is why the two reasons are told apart and *reported*, not just
+recorded: `stopped | reason=wall | elapsed-ms=20000 | own-work-ms=26 | the run was stopped: a loop
+that never returns is usually a mistake`, against `reason=work` for slow code. An overrun that
+shows only as a short trace is a puzzle; said out loud it is a diagnosis.
+
+**One defect found by testing the guard, worth remembering.** Halting a run by setting
+`program.running = False` from inside the recorder does *not* stop it cleanly: the command already
+being dispatched runs anyway, finds the program stopped, and reports *"Improper use of runtime
+function"* — a lie about what happened. The recorder's `tick` now returns `False` to mean "end the
+run", and `as_program.py`'s loop breaks on it, so no command runs with the program already stopped.
+That is a one-line hook in the runtime's loop, alongside the recorder call it already had.
+
+The JS recorder has neither bound yet — a deliberate divergence to close when the JS route is
+attempted.
+
+### The agent-assisted flow (Graham, 2026-09-29)
+
+The idea, in his words: since an agent is writing the code it can also place the markers. *"Show
+me what happens when I click the Add button"* — the agent works out where `viz start` and `viz
+stop` belong, runs the script, captures the recording and shows the picture.
+
+**Settled: the markers are reverted after capturing.** The author's file goes back exactly as it
+was; the markers were scaffolding for one question. `viz start on <label>` is the preferred form
+where a label exists, because it puts the edit a line or two *outside* the block being studied
+rather than an opening brace inside it.
+
+**Three obstacles, and only one of them is the prompt.** They are worth knowing before the flow is
+built, because each lands on different work:
+
+1. **Placing markers mutates the author's file.** Runtime-safe — `viz` is a no-op without a
+   recorder — but the doc-block `@hash`es go stale, so a revert is the only clean end state.
+2. **Running is the hard half for a browser app**, and "when I click Add" makes the *event* the
+   subject, so the run has to be a real click in a real DOM. Both jsdom and Playwright are already
+   devDependencies.
+3. **Displaying** is currently `./various/plot`, a Python generator writing an HTML file, and now
+   `./various/plot --js`. That covers a trace from either runtime, but "in the browser, in the
+   editor" is the asedit screen, which is not built.
+
+**The cheap kill:** the workflow half needs nothing new on the Python side — `./various/plot`
+already finds a script, runs it, records it and draws it. So the prompt and the marker step can be
+tested today, before any browser work, which is the cheapest way to find out whether the idea
+survives contact.
 
 **Cut for now,** because they add artefacts or steps without answering the first screen's
 question: a separate report document, and `viz diff`. The JS recorder is no longer a prerequisite
@@ -283,9 +441,27 @@ what the portable format was for.
 documents validate against the format as specified, but the rendering needs an eye on a browser —
 `ui.perfetto.dev` accepts the file directly, so that is a one-minute check for whoever has one.
 
+**The two halves of the visualiser are now in line** (2026-09-29). The JS plugin gained the
+**recording report** — `AllSpeak_Viz.trace` for the host to hand the recorder to, and
+`traceRecords()`, emitting `trace`, `seq`, `unvisited`, `cold-anchor`, `hot-anchor` and `hot-line`
+records exactly as the Python plugin does. Measured: with no recording the two sides' record kinds
+are **identical**; with one, the only difference is `hot-line` 7 against 8 — Python's extra line
+being the label command it executes and JS does not, which is the documented `steps` difference
+showing through. The mirror-image wart was fixed at the same time: the Python host's target output
+now goes to stderr like the JS host's, so a `print` can no longer land in the middle of the model
+records. The spec gained a fourth runtime difference, observed concretely here: a label and the
+command after it are one pc in JS and two in Python (`Worker:` + `viz start`), so an anchor list
+can differ in size as well as in lines.
+
 **Working from a trace file is agreed for now** (Graham, 2026-09-28). Still open: whether the
 editor *also* runs the script itself in-browser — the difference between JS-Recorder-first and
-Editor-first.
+Editor-first. The **JS recorder landed 2026-09-29**, so the first half of that question is
+answered: `js/allspeak/Run.js` ticks a `program.vizRecorder` once per command, `js/plugins/asviz.js`
+carries the Recorder and the draft-2 writer, and `tools/asviz-run.js --run --trace=` writes one.
+`./various/plot --js` draws it, and the two runtimes' traces agree event for event on
+`tools/trace-run.allspeak`. What is still missing for the browser is an *attach point*: the node
+CLI attaches the recorder, and nothing in a page does, so a browser run records only if the page
+wires it.
 
 ### 8. Flags: `it` / `fr` / `de` are provisional
 

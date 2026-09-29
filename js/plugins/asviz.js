@@ -24,6 +24,10 @@
 // outlive the thread that opened it and pick up whatever that thread set in motion.
 const VIZ_DEFAULT_LIMIT = 100000;
 
+// The trace format version this writer emits — spec/viz-trace-format.md, draft 2, which
+// added `cat: "transfer"`. Kept in step with the Python writer's TRACE_VERSION.
+const VIZ_TRACE_VERSION = 2;
+
 // eslint-disable-next-line no-unused-vars
 const AllSpeak_Viz = {
 
@@ -38,6 +42,10 @@ const AllSpeak_Viz = {
 	// The analyser's --json output, keyed by path. The host supplies it; the plugin
 	// interprets it. An absent entry just means no prose.
 	sections: {},
+	// Recordings, keyed by path — the recorder the host attached, so the report can say what
+	// the run collected as well as what the script is made of. An absent entry means nothing
+	// was recorded, and the report simply carries no `trace` records.
+	trace: {},
 
 	Model: {
 
@@ -583,6 +591,7 @@ const AllSpeak_Viz = {
 		const reached = {};
 		const ignored = {};
 		const windowRecords = [];
+		const covered = {};        // every pc the declared windows could reach
 		const windowFindings = [];
 		for (const start of starts) {
 			if (ignored[start.pc]) continue;
@@ -632,6 +641,8 @@ const AllSpeak_Viz = {
 				}
 				near = within;
 			}
+
+			for (const key of Object.keys(near)) covered[key] = true;
 
 			// Which anchors fall inside is a graph question, not a line range: a window
 			// opened `on <label>` runs from that label until its stop, wherever the calls
@@ -782,6 +793,9 @@ const AllSpeak_Viz = {
 			`exit-branch-out=${tally(`exit-branch-out`)} | exit-jump=${tally(`exit-jump`)} | ` +
 			`exit-stop=${tally(`exit-stop`)} | exit-exit=${tally(`exit-exit`)} | ` +
 			`exit-no-exit=${tally(`exit-no-exit`)}`);
+		// The recording, when the host supplied one: stated plainly, before the window
+		// pre-flight that says what a window *would* capture.
+		for (const text of vizTraceRecords(path, covered)) out.push(text);
 		for (const text of windowRecords) out.push(text);
 
 		// ---- the narrative ----
@@ -959,3 +973,460 @@ function parseSections(text) {
 	const files = (data && data.files) || [];
 	return files.length > 0 ? (files[0].sections || []) : [];
 }
+
+// ---------------------------------------------------------------- the recording
+
+// The recorder: what the runtime collects while a window is open, and nothing more. The host
+// attaches one to a program; the markers arm and stop it. It never changes the program's own
+// state, so a run with a recorder behaves exactly like a run without one.
+//
+// This is the second writer of the trace format, and the reason the format exists: a
+// recording made here and one made by the Python runtime have to be the same kind of file, so
+// the two can be laid against each other. The parts where the runtimes differ — no command is
+// emitted for a label here, so a label is a symbol whose pc is the command that follows it —
+// are absorbed below rather than pushed into the format.
+const AllSpeak_Viz_Recorder = function () {
+	this.windows = [];
+	this.current = null;
+	this.sealed = false;        // a `once` window has been recorded; further starts ignored
+};
+
+AllSpeak_Viz_Recorder.prototype = {
+
+	// The line of a label, which this runtime does not store: a label is a tokeniser token
+	// ending in ':', and the compiled symbol points past it. Recovering it here is what makes
+	// a label's arrival carry the same line the Python runtime reports — and therefore what
+	// makes a `gosub` here and a `gosub` there land on the same line in a comparison.
+	labelsOf: function (program) {
+		if (!program._vizLabels) {
+			const map = {};
+			for (const name in program.symbols) {
+				const at = program.symbols[name].pc;
+				if (typeof at !== `number`) continue;
+				const record = program[at];
+				if (record && record.isSymbol) continue;      // a variable, not a label
+				map[at] = { name: name, lino: this.labelLine(program, name) };
+			}
+			program._vizLabels = map;
+		}
+		return program._vizLabels;
+	},
+
+	labelLine: function (program, name) {
+		const tokens = (program.source && program.source.tokens) || [];
+		for (const token of tokens) {
+			if (token.token === name + `:`) return token.lino;
+		}
+		return 0;
+	},
+
+	// The line each pc's *instruction* belongs to, with one rule the other runtime gets for
+	// free: a command this compiler emitted **with no line of its own** — a loop's back-edge
+	// `goto` — takes the line of the last command that had one, and for a block's first
+	// command that is the label written just above it. Without that the line is 0: not a line
+	// the editor can scroll to, and a `line_counts` entry for a line that is not one.
+	lineTable: function (program) {
+		if (!program._vizLines) {
+			const labels = this.labelsOf(program);
+			const table = [];
+			let last = 0;
+			for (let pc = 0; pc < program.length; pc++) {
+				const command = program[pc];
+				let line = command && command.lino ? command.lino : 0;
+				if (!line && labels[pc]) line = labels[pc].lino;
+				// A compiler jump that goes *backwards* is a loop closing, so it belongs to the
+				// loop test it returns to rather than to the line it happens to follow: the
+				// cost of iterating is the loop's cost, and the test's line is already in the
+				// table because the target comes before the jump. That is also the line the
+				// Python runtime reports for the same command, whose `gotoPC` carries it.
+				if (!line && typeof command.goto === `number` && command.goto < pc) {
+					line = table[command.goto];
+				}
+				if (!line) line = last;
+				if (line) last = line;
+				table.push(line);
+			}
+			program._vizLines = table;
+		}
+		return program._vizLines;
+	},
+
+	// Where an *arrival* at a pc is reported: the label's own line where a label owns the pc,
+	// the instruction's line otherwise. Kept apart from `lineTable` because here the two
+	// genuinely differ — the command following a label is the block's first instruction, so it
+	// is *counted* on its own line while the *arrival* is reported at the label. Python has
+	// both as commands and reports both, so this is what makes a `gosub` land on the same line
+	// in a trace from either runtime.
+	anchorLineTable: function (program) {
+		if (!program._vizAnchorLines) {
+			const labels = this.labelsOf(program);
+			program._vizAnchorLines = this.lineTable(program).map(function (line, pc) {
+				return (labels[pc] && labels[pc].lino) || line;
+			});
+		}
+		return program._vizAnchorLines;
+	},
+
+	// The pcs worth timestamping: labels, loop tests, events, and the markers. Computed from
+	// the running program rather than from a file, so it is the same program the numbers come
+	// from. A label claims its pc — without that a block entry would be invisible here, since
+	// the runtime emits no command for it.
+	anchorsOf: function (program) {
+		if (!program._vizAnchors) {
+			const labels = this.labelsOf(program);
+			const found = {};
+			for (let pc = 0; pc < program.length; pc++) {
+				const command = program[pc];
+				if (!command) continue;
+				if (labels[pc]) {
+					found[pc] = labels[pc].name;
+					continue;
+				}
+				if (command.keyword === `while`) found[pc] = `loop@` + command.lino;
+				else if (vizIsEvent(command)) found[pc] = `event@` + command.lino;
+				else if (command.keyword === `viz` && command.request) {
+					found[pc] = `viz-` + command.request + `@` + command.lino;
+				}
+			}
+			program._vizAnchors = found;
+		}
+		return program._vizAnchors;
+	},
+
+	arm: function (program, command, pc) {
+		// `once` records one window and nothing more until the recording is cleared: with a
+		// start and a stop inside a subroutine, every call would otherwise open and close its
+		// own window, which is what `every` is for.
+		if (command.mode === `once` && (this.sealed || this.current !== null)) return;
+		if (this.current !== null) this.stop();          // `every`: latest window wins
+		const labels = this.labelsOf(program);
+		let blockEnd = program.length;
+		for (const at of Object.keys(labels)) {
+			const n = Number(at);
+			if (n > pc && n < blockEnd) blockEnd = n;
+		}
+		this.current = {
+			start_pc: pc,
+			line: command.lino,
+			mode: command.mode || `once`,
+			limit: command.limit || VIZ_DEFAULT_LIMIT,
+			until: command.until === undefined ? null : command.until,
+			anchors: this.anchorsOf(program),
+			block_end: blockEnd,
+			depth: (program.programStack || []).length,
+			visits: [],
+			counts: new Array(program.length).fill(0),
+			lines: this.lineTable(program).slice(),
+			anchorLines: this.anchorLineTable(program).slice(),
+			steps: 0,
+			transfers: [],
+			// Bookkeeping for the transfer rule: the command that ran before the current one,
+			// and the lines the last two commands belong to.
+			last_pc: null,
+			last_line: command.lino,
+			line_before: command.lino,
+			t0: vizClock(),
+			t1: null,
+			truncated: false
+		};
+	},
+
+	stop: function () {
+		if (this.current === null) return;
+		this.current.t1 = vizClock();
+		if (this.current.mode === `once`) this.sealed = true;
+		this.windows.push(this.current);
+		this.current = null;
+	},
+
+	// Close a window left open when the program ended. The end of a window that never saw its
+	// stop is the end of the *run*, not the moment some tool next looks at the recorder —
+	// otherwise the report and the trace file disagree about how long it lasted.
+	finish: function () {
+		this.stop();
+	},
+
+	// The windows worth reporting: the stopped ones, plus a window still open when the run
+	// ended, punched as of now. A `viz start` with no stop is not a mistake — it is the
+	// deliberate "watch until the end" case — but it is still a window, and a copy is taken so
+	// stamping it cannot surprise a reader holding the original.
+	finishedWindows: function () {
+		const windows = this.windows.slice();
+		if (this.current !== null) {
+			const closed = Object.assign({}, this.current);
+			closed.t1 = vizClock();
+			windows.push(closed);
+		}
+		return windows;
+	},
+
+	tick: function (program, pc) {
+		const command = program[pc];
+		const marker = command && command.keyword === `viz` ? command.request : undefined;
+		if (marker === `start`) this.arm(program, command, pc);
+		const window = this.current;
+		if (!window || pc >= window.counts.length) return;
+		window.counts[pc]++;
+		window.steps++;
+		this.noteTransfer(program, pc, window);
+		// `until thread`: outside the block the window was opened in, and the call stack back
+		// to where it was when the window opened. That covers a `return`, falling off the end
+		// of the block and a `gosub` inside it — with no thread bookkeeping.
+		if (window.until === `thread` && pc >= window.block_end &&
+			(program.programStack || []).length <= window.depth) {
+			this.stop();
+			return;
+		}
+		if (window.anchors[pc] === undefined) return;
+		if (window.visits.length >= window.limit) {
+			window.truncated = true;        // keep counting, stop collecting visits
+			return;
+		}
+		window.visits.push({ pc: pc, steps: window.steps, at: vizClock() });
+		if (marker === `stop`) this.stop();
+	},
+
+	// Where control came from, when it did not simply fall through.
+	//
+	// The test is the pc sequence rather than the command's own type: an arrival that is not
+	// the command after the last one *is* a transfer, and that one rule catches a call, a
+	// return, a jump, a loop's back-edge and an `if`'s skip without the recorder having to know
+	// how any of them work. The command that ran last then names the kind — vizTransferKind
+	// decides that, and keeps the compiler's own jumps out of `jump`, since the `else` of an
+	// `if` is not something the author wrote a `go` for.
+	//
+	// The line it is attributed to is the author's, not the compiler's: a written `gosub` or
+	// `go` names its own line, while a compiler jump carries the line of the statement it
+	// belongs to — the `while` — which is not where the jump happens, so it gets the line of
+	// the command that ran last, the end of the loop body.
+	//
+	// The bound on the rule: a run that suspends and resumes through the runtime's queue looks
+	// the same from here, so a resume can be reported as a transfer of the last command's kind.
+	// Where control arrived from is still true; the `kind` may not be. See the trace spec.
+	noteTransfer: function (program, pc, window) {
+		const previous = window.last_pc;
+		window.last_pc = pc;
+		const line_before = window.line_before;
+		window.line_before = window.last_line;
+		window.last_line = window.lines[pc];
+		if (previous === null || pc === previous + 1) return;
+		const source = program[previous] || {};
+		const kind = vizTransferKind(source);
+		if (kind === null) return;
+		window.transfers.push({
+			steps: window.steps,
+			at: vizClock(),
+			// A written jump names its own line. A compiler jump names the line it *belongs*
+			// to (a backward one is the loop's, which is what `lines` holds), and that is where
+			// the loop is rather than where control left from — so the transfer is attributed
+			// to the command before it, the end of the body. Two questions, two lines.
+			from_line: kind === `branch` ? line_before : window.lines[previous],
+			to_line: window.anchorLines[pc],
+			kind: kind
+		});
+	}
+};
+
+// What a jump is called in the trace, and how to tell a written one from the compiler's. The
+// test is the *shape* of the target, not the keyword, because this runtime spells its
+// scaffolding with `goto` — the same keyword it uses for a written `go`'s numeric sibling —
+// while the Python runtime's conditions compile to `gotoPC`. A written jump names a label; a
+// generated one carries a numeric target. Filed together, the `else` of every `if` would read
+// as a `go` the author wrote.
+const vizTransferKind = function (command) {
+	const keyword = command.keyword;
+	if (keyword === `gosub`) return `call`;
+	if (keyword === `return`) return `return`;
+	if (keyword === `goto` || keyword === `go`) {
+		const namesLabel = typeof command.label === `string` ||
+			typeof command.goto === `string` || command.gotoExpr !== undefined;
+		return namesLabel ? `jump` : `branch`;
+	}
+	if (keyword === `gotoPC`) return `branch`;
+	return null;
+};
+
+// The events this runtime compiles a handler registration to. `on` and `every` both compile
+// to a registration, a skip-jump and a body, which is why the entry is pc+2.
+const vizIsEvent = function (command) {
+	const opcode = String(command.opcode || ``);
+	return opcode.indexOf(`ON_`) === 0 || opcode === `EVERY` ||
+		command.keyword === `on` || command.keyword === `every`;
+};
+
+// Microseconds on a monotonic clock, which is the unit the format wants. Node's hrtime is
+// nanoseconds and finer; `performance.now` is milliseconds and exists in both hosts.
+const vizClock = function () {
+	if (typeof process !== `undefined` && process.hrtime && process.hrtime.bigint) {
+		return Number(process.hrtime.bigint() / 1000n);
+	}
+	return Math.round(performance.now() * 1000);
+};
+
+// The whole recording as one Chrome-trace document. One lane per window, one interval per
+// anchor arrival: from that arrival to the next, which is time spent inside the block the
+// arrival named. The intervals tile the window without overlapping, so their durations sum to
+// the window's span — the property that makes the height of a row mean something, and one that
+// tools/check-trace.py checks.
+const vizTraceDocument = function (script, windows) {
+	const events = [{ name: `process_name`, ph: `M`, pid: 1, args: { name: script } }];
+	windows.forEach(function (window, index) {
+		const tid = index + 1;
+		const visits = window.visits;
+		const last = visits.length > 0 ? visits[visits.length - 1].at : window.t0;
+		const end = window.t1 || last;
+		events.push({ name: `thread_name`, ph: `M`, pid: 1, tid: tid,
+			args: { name: `window ${tid} (line ${window.line})` } });
+		events.push({ name: `thread_sort_index`, ph: `M`, pid: 1, tid: tid,
+			args: { sort_index: tid } });
+
+		const counts = {};
+		window.counts.forEach(function (count, pc) {
+			if (!count) return;
+			const line = String(window.lines[pc]);
+			counts[line] = (counts[line] || 0) + count;
+		});
+		// Keyed and ordered by line number: this map is read by people.
+		const ordered = {};
+		for (const line of Object.keys(counts).sort(function (a, b) { return a - b; })) {
+			ordered[line] = counts[line];
+		}
+		events.push({
+			name: `window ${tid}`, cat: `window`, ph: `X`, pid: 1, tid: tid,
+			ts: window.t0, dur: Math.max(0, end - window.t0),
+			args: {
+				from_line: window.line,
+				mode: window.mode,
+				limit: window.limit,
+				until: window.until,
+				visits: visits.length,
+				anchors: Object.keys(window.anchors).length,
+				steps: window.steps,
+				truncated: !!window.truncated,
+				line_counts: ordered
+			}
+		});
+
+		// The lane's two kinds of event are collected together and written in time order, so
+		// the file reads as the run happened and nothing downstream has to sort to find the
+		// flow. Transfers are instants, not spans: they are the moment control left one line
+		// for another, and something that took no time cannot be an interval without claiming
+		// a duration it never had.
+		const timeline = [];
+		visits.forEach(function (visit, position) {
+			const following = position + 1 < visits.length ? visits[position + 1].at : end;
+			const line = window.anchorLines[visit.pc];
+			const name = window.anchors[visit.pc] || ``;
+			timeline.push([visit.at, {
+				name: name || `line ${line}`, cat: `anchor`, ph: `X`, pid: 1, tid: tid,
+				ts: visit.at, dur: Math.max(0, following - visit.at),
+				args: { line: line, pc: visit.pc, name: name, steps: visit.steps,
+					visit: position + 1 }
+			}]);
+		});
+		window.transfers.forEach(function (transfer) {
+			timeline.push([transfer.at, {
+				name: `${transfer.kind} ${transfer.from_line}->${transfer.to_line}`,
+				cat: `transfer`, ph: `i`, s: `t`, pid: 1, tid: tid, ts: transfer.at,
+				args: { from_line: transfer.from_line, to_line: transfer.to_line,
+					kind: transfer.kind, steps: transfer.steps }
+			}]);
+		});
+		timeline.sort(function (a, b) { return a[0] - b[0]; });
+		for (const item of timeline) events.push(item[1]);
+	});
+	return {
+		traceEvents: events,
+		displayTimeUnit: `ms`,
+		otherData: { vizTrace: VIZ_TRACE_VERSION, script: script }
+	};
+};
+
+// What the run collected, stated plainly: the sequence, then the hot spots. This is the
+// text-first half of the visualiser — the picture is drawn from the same recording — and it is
+// what makes a recording *reported* as well as written, which the Python side has always done
+// and this side had not.
+//
+// The line numbers come from the run's own program rather than from the file, so editing the
+// script afterwards cannot relabel an old recording. Two of them are needed, because an arrival
+// names its *anchor* line — a label claims the line it is written on — while a `hot-line` count
+// names the line the instruction is on. The trace file makes the same split.
+const vizTraceRecords = function (path, covered, seq, top) {
+	const recorder = AllSpeak_Viz.trace[path];
+	if (!recorder) return [];          // nothing recorded: the report says nothing about a run
+	seq = seq === undefined ? 20 : seq;
+	top = top === undefined ? 10 : top;
+	const out = [];
+
+	recorder.finishedWindows().forEach(function (window, n) {
+		const visits = window.visits;
+		const anchorLine = (pc) => window.anchorLines[pc];
+		const nameOf = (pc) => (window.anchors[pc] === undefined ? `?` : window.anchors[pc]);
+		const end = window.t1 || (visits.length ? visits[visits.length - 1].at : window.t0);
+		const reached = {};
+		for (const visit of visits) reached[visit.pc] = true;
+		out.push(`trace | window=${n + 1} | from=line ${window.line} | ` +
+			`visits=${visits.length} | anchors=${Object.keys(reached).length} | ` +
+			`steps=${window.steps} | span-ms=${((end - window.t0) / 1000).toFixed(3)} | ` +
+			(window.truncated ? `limit=${window.limit} | truncated=yes` : `truncated=no`));
+
+		visits.slice(0, seq).forEach(function (visit, i) {
+			out.push(`seq | n=${i + 1} | steps=${visit.steps} | line=${anchorLine(visit.pc)} | ` +
+				`name=${nameOf(visit.pc)}`);
+		});
+		if (visits.length > seq) out.push(`seq | ... ${visits.length - seq} more visits`);
+
+		// What the run did not reach is as useful as what it did, and the top-list alone cannot
+		// say it — the capped list looks the same either way. Only anchors the declared windows
+		// could have reached count: a narrow window leaves most of a program untouched, and
+		// listing all of it as "not reached" says nothing useful.
+		const cold = [];
+		for (const key of Object.keys(window.anchors)) {
+			const pc = Number(key);
+			if (reached[pc]) continue;
+			if (covered && !covered[pc]) continue;
+			cold.push([pc, window.anchors[key]]);
+		}
+		cold.sort((a, b) => a[0] - b[0]);
+		if (cold.length > 0) {
+			out.push(`unvisited | n=${cold.length} | anchors in this program that ` +
+				`the recording did not reach`);
+			for (const item of cold.slice(0, top)) {
+				out.push(`cold-anchor | line=${anchorLine(item[0])} | name=${item[1]}`);
+			}
+		}
+
+		const counted = {};
+		for (const visit of visits) counted[visit.pc] = (counted[visit.pc] || 0) + 1;
+		const hot = Object.keys(counted).map(Number).sort((a, b) => counted[b] - counted[a]);
+		for (const pc of hot.slice(0, top)) {
+			const share = visits.length ? (100 * counted[pc]) / visits.length : 0;
+			out.push(`hot-anchor | count=${counted[pc]} | share=${share.toFixed(1)}% | ` +
+				`line=${anchorLine(pc)} | name=${nameOf(pc)}`);
+		}
+
+		const byLine = {};
+		window.counts.forEach(function (count, pc) {
+			if (!count) return;
+			const line = window.lines[pc];
+			byLine[line] = (byLine[line] || 0) + count;
+		});
+		const total = window.steps;
+		const busiest = Object.keys(byLine).map(Number).sort((a, b) => byLine[b] - byLine[a]);
+		for (const line of busiest.slice(0, top)) {
+			const share = total ? (100 * byLine[line]) / total : 0;
+			out.push(`hot-line | count=${byLine[line]} | share=${share.toFixed(1)}% | ` +
+				`line=${line}`);
+		}
+	});
+	return out;
+};
+
+// The host's entry points: the recorder to attach, the writer to turn its windows into a trace
+// document, and the report that says what the recording holds. Nothing in the runtime reaches for
+// these — `Run` tests `program.vizRecorder` and nothing else — so an instrumented script still
+// runs with no plugin loaded at all.
+AllSpeak_Viz.Recorder = AllSpeak_Viz_Recorder;
+AllSpeak_Viz.traceDocument = vizTraceDocument;
+AllSpeak_Viz.traceRecords = vizTraceRecords;
+AllSpeak_Viz.transferKind = vizTransferKind;
