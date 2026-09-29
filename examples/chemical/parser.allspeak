@@ -17,8 +17,7 @@
 !   so they are exact. A formula containing an element outside the table still
 !   reports its counts, with the missing weight named.
 
-    script Parser
-!! Constants: the digit characters, and the size at which a group expansion is refused.
+    script Parser!! Constants: the digit characters, and the size at which a group expansion is refused.
 !!
 !! Element symbols are an uppercase letter followed by lowercase letters, and both halves of that are conditions in the language, so no alphabet needs listing here. Digits have no equivalent test — `is numeric` asks whether a value *is* a number, and a single-character string never is — so the ten digits are listed and membership is asked with `includes`.
 !!
@@ -149,7 +148,6 @@
 !! `-u` picks the unit the masses are shown in and every other argument is a formula. With no formulas at all the worked examples stand in, so `allspeak parser` on its own shows what the parser does — `allspeak parser -u kg/mol` shows the same five in kilograms. A bad command line ends the run instead of guessing: a `-u` with nothing after it, or a unit that is not in the table.
 !!
 !! Each formula passes through MeasureFormula and prints as one line; the self-checks have the last word before the run ends.
-    viz start
     put `g/mol` into Unit
     reset Formulas
     put argc into ArgCount
@@ -194,7 +192,6 @@
     end
 
     gosub SelfChecks
-    viz stop
     exit
 !! @hash 8a6c91c5
 !! @verified 8a6c91c5
@@ -205,15 +202,17 @@
 !!
 !! Input: `Formula`, holding the formula as typed.
 MeasureFormula:
+    if FormulaIndex is 1 viz start
     put Formula into Original
     gosub ExpandGroups
     if not IsValid return
     gosub ParseFormula with Expanded
     if not IsValid return
     gosub ComputeMass
+    viz stop
     return
-!! @hash 608b8d3e
-!! @verified 608b8d3e
+!! @hash 8d8fe6ab
+!! @verified 8d8fe6ab
 !!!
 !! ExpandGroups: spell every bracketed group out in full, leaving a bracket-free formula in `Expanded`.
 !!
@@ -402,8 +401,8 @@ ReadSymbol:
         gosub RejectFormula with Problem
     end
     return
-!! @hash b3a5a1db
-!! @verified b3a5a1db
+!! @hash d2277232
+!! @verified d2277232
 !!!
 !! ReadCount: read the digits after a symbol, taking a missing count as one atom.
 !!

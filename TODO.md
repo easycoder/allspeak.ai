@@ -1,43 +1,83 @@
 # AllSpeak — Language Enhancement TODO
 
 Items identified during real project work. Each should be implemented in both JS and Python.
-
 ## Where things stand
 
-**Working and verified:** the four starter packs are consolidated onto a single instructions document per language — `AGENTS.md` — with `CLAUDE.md` reduced to a one-line pointer, so the two can no longer drift. The fr/de/it `AGENTS.md` now carry the same sections as EN: the "Required practices" (doc blocks, consult `learn/`) and "Common mistakes to avoid" sections that were missing, a reference section listing the current 20 reference / 15 idiom files, and the newer first-time-setup flow (the *user* starts the server; the agent must not). The hand-maintained Quick Reference is gone — it duplicated `learn/` — which closes item #5 in `language-pack-issues.md`. The orphan flag works end to end — the plugin's `reachable=no` anchor, the editor's walk over the model records, the range test, and the sidebar row's red background, strike-through and tooltip. Switching tabs (or opening a file) now leaves Blocks mode automatically. The string-versus-number trap is documented in `learn/` (`idioms/12-working-with-ai.md`, `reference/06-conditions.md`), and the `DIFF.md` habit is a rule in the root `AGENTS.md` and in all four starter packs' `AGENTS.md`. The **Python graphics domain gained native file dialogs** (`create {dialog} type file` to open, `type save` to save — each with an optional `filter` — result is the chosen path or `''`), a **`readonly` option on `multiline`** (a plain-text field the user cannot type into), and **`set the title of {window}/{group}/{dialog} to …`** (the counterpart of `create … title`) — documented in `learn/reference/20-graphics.md` and `learn/idioms/14-desktop-gui.md`; Python-only, so there is no JS counterpart to build. Separately, `ensureRunning()` now raises a `RuntimeError` rather than a compile-time `FatalError`, so misusing a runtime API (`getVariable` and friends) while the program is idle no longer reports a bogus "Compile error … at line <last line>" and kills the host — and `RuntimeError` no longer crashes when `program.pc` is `None`.
+**The visualiser is in the editor and working.** `asedit.allspeak` has a **Graph** pane: a third view fed by a
+run recording, drawn in AllSpeak with the `svg` plugin. It gained the **heat** (the marks coloured by how
+much work each line carried, four bands, now the only scheme), a **caption** naming the run it drew,
+**yielding** every hundred marks so a long draw cannot freeze the browser, and a **prediction** of how long
+a draw will take — learned from the previous one and kept in `.viz-calibration.json` (gitignored,
+per-machine). It also gained the **JSON prettify** on open (one-line files only) and the `Marks`/`Heat`
+toggle was **folded away** on Graham's call, so there are two buttons for two panes.
 
-**Open, in order:**
+**Corrected this session — the "stale copy" diagnosis did not fit Graham's page.** He runs the editor at
+`http://localhost:8080/edit.html`, served from the **repo root** by the `allspeak server` started there, and
+its `/asedit.allspeak` is **byte-identical to the root file** (both `bbd58e04…`, 82,668 bytes). So the root
+copy is what he sees, always: `./deploy-sync` was never needed for him, and `deploy-sync` in any case does
+**not** touch `deploy/code/` (only `deploy-allspeak` step 3, `cp asedit.allspeak … deploy/code/`, does).
+The stale copy is real but it is the **live site's**: `https://allspeak.ai/code/asedit.allspeak` is
+**byte-identical to `deploy/code/asedit.allspeak`** — 77,488 bytes, **no `Heat` anywhere** — i.e. the editor
+published at allspeak.ai/code is the one from the 19:03 deploy, and it is what anybody off this machine
+gets. Reachable locally too, one URL away: `localhost:8080/deploy/code/edit.html` runs that same old copy.
 
-1. **Extension rename is on `master`** (merged fast-forward, 3 commits; `origin/master` not yet pushed). `.as` → `.allspeak` across the repo: 318 files renamed, ~326 docs/config swept, both extensions accepted by the runtimes. Remaining: `git push` when ready, and re-verify the 14 `verify-stale` blocks in `asedit.allspeak` (Blocks mode) if that matters.
-2. **Consumer projects** still carry the old names. `~/dev/doclets` is the only project *coupled* to this repo — it holds copies of `asedit.as`, `asdoc-check.py` and `allspeak-js/*.js`. Nothing is *broken* (the runtimes accept `.as`), so renaming the rest is cosmetic; the `.as` counts per project are in `conversation-021.md`. Update doclets in its own session, never in place here.
-3. Native review of the fr/de/it `AGENTS.md`: they were machine-drafted, so a reading pass is worth doing before they ship — the viz-word review is the precedent.
-4. **The run picture is drawn, but not yet judged.** A trace now carries control transfers
-   (format draft 2) and `./various/plot` draws the run — arrivals as dots, transfers as faint
-   strokes, two colour rules behind a toggle, independent axis stretch. The next input is Graham's
-   eye on it; the first screen in `asedit.allspeak` follows. Both described in the Visualiser
-   section below.
-5. The label bodies after `ListSorter` in `codex.allspeak`, and the run-panel region that still sits outside any block.
-6. ~~The JS recorder~~ **Done 2026-09-29.** `js/plugins/asviz.js` now carries the Recorder and the trace
-   writer, `js/allspeak/Run.js` calls `program.vizRecorder.tick()` once per command, and
-   `tools/asviz-run.js --run --trace=` records. `./various/plot --js <script>` draws it. The two
-   runtimes now agree on every arrival, transfer and line count for `tools/trace-run.allspeak` —
-   only `steps` differs (25 against 22), by the label commands Python emits and JS does not, which
-   is now recorded in the spec under "Where the two runtimes differ".
-6. Propagate the logging recommendation (root `AGENTS.md`, "Diagnostics while debugging") to the four starter packs — drafts in fr/de/it for review, as with the diff-notes sections.
-7. `learn/{,fr,de,it}/idioms/13-server-as-application.md` (and the `deploy/` mirrors) still say the starter packs' `CLAUDE.md` default is to launch the server with `-t edit,<project>`. The packs now say the user starts the server and the agent must not — so that line is stale in all four languages. Worth fixing when `learn/` is next touched.
-8. **Runtime bugs the three old `allspeak-py/tests` scripts exposed** (2026-09-27 — the scripts themselves are fixed; see `DIFF.md` for the repros). `set property \`k\` of D to v` compiles and then poisons the dictionary — the next read dies with `TypeError: argument of type 'ECValue' is not iterable`; `set entry \`k\` of D to v` is the spelling that works. `put json \`{}\` into X` on a plain `variable` reports "I don't understand 'put'" rather than naming the type mismatch. `dummy` and `debug symbol(s)` exist in JS (and the packs) but not in the Python runtime. Take them one at a time, JS-parity first.
-9. ~~**`the year of X` / `the month of X` / `the day of X` / `the hour of X` and friends**~~ **Done 2026-09-27.** They now work in both runtimes and take **milliseconds** — the same unit as `now`/`timestamp`/`today` — so the doc's own example (`put the timestamp into Now` … `put the year of Now into YYYY`) is correct. Two further faults surfaced: the JS accessors multiplied their operand by 1000 (seconds), so that example yielded `NaN` in the browser; and the two reference pages contradicted each other on units (`05-values-and-types.md` said milliseconds, `07-arithmetic.md` said seconds). Both fixed; `07` now says milliseconds. **Left open:** the Python value parser does not canonicalise translated keywords, so `l horodatage` / `l année de` fail where `the timestamp` / `the year of` work. That gap is wider than these accessors — it is every translated value keyword — and wants its own fix (JS canonicalises with `AllSpeak_Language.reverseWord`).
-10. **`weekday` and `day` disagree.** Python has `[the] weekday` = 0 = Monday, today only (documented in `allspeak-py/doc/`); JS and the packs have `the day of X` = 0 = Sunday. Two near-synonyms on different bases is a footgun — pick one (the documented `day`) and retire or reconcile the other.
-11. **Two conformance suites fail** — `allspeak --test conformance/tests/` reports 15 files, 5 tests, 3 failed (`CheckBasic` "RoomCount is 5", `CheckBlocks` "X is 3"). Pre-existing, not touched by the 2026-09-27 work.
-12. The new "interactive debugger" section in `learn/idioms/11-debugging-as.md` is **English only** — the fr/de/it copies need the same block (the EN page is the source).
-12. **Two graphics-domain defects found while adding `on close {window}` and `the x of` / `the y of`** (2026-09-27). (a) `as_debug.py`'s `closeEvent` saves `self.x()` / `self.y()` and restores with `setGeometry`, which excludes the frame — so the debugger window creeps up and to the left on every run. The graphics reads now use `geometry()`; the debugger's own save is the same two-word fix. (b) `r_on`'s click/select handler calls the module-level `flush()`, which under `python3 -m allspeak.as_program` resolves to the *second* copy of `as_program` (the runtime is loaded twice — hence the `RuntimeWarning`) whose `queue` is never created: every click/select prints `NameError: name 'queue' is not defined` and the handler is deferred to the next 250 ms timer flush (verified: with `-m` the main flow overtakes the handler; via the `allspeak` entry point the handler runs synchronously). Harmless-but-noisy for a click, fatal for anything that must finish before a window goes — the new `on close` path drains the running program's queue with `self.program.flushCB()` instead.
+**The tiny dots on a return to Graph are diagnosed and fixed — and it was never the cap.** The two
+renders differ in exactly one thing: `stroke-width`, **14 on the first draw and 3 on every redraw**.
+Measured by running the view once and twice through the harness and diffing the serialised SVG: the five
+mark paths and the axis are otherwise byte-identical, caps included in both. The cause is an
+order-of-passes fault in `VizBuilt`: the size was computed in the per-draw block at the *top* of the pass,
+which is before pass one has measured the span, so the first draw divided `VizPlotH` by an empty
+`VizSpanLines` (Infinity → the ceiling, 14) and each redraw divided it by the *previous* draw's span
+(580/249 = 2 → the floor, 3). Hence "right the first time, tiny from the second onwards", in his words and
+now in the arithmetic. Fixed by computing the size after `VizSpanLines` is known and dropping the
+row-proportional rule that produced the 3: it only ever applied to spans of 41–193 lines (shorter ones
+were clamped up to 14 anyway), and on a long run a row is about two units, so its floor was a pinprick by
+construction. One size, 14 — which is what the first draw has always shown him. The per-draw block at the
+top is now purely a reset, and the invariant is worth keeping: **nothing before pass one may depend on what
+pass one measures.** Verified: first draw and redraw are now byte-identical, his recording still draws 44
+arrivals and 99 transfers, the fixture is unchanged, and `asedit` compiles at 1656 commands, 0 errors.
 
-**Traps that have cost hours here — worth reading before editing anything:**
+**The harness puzzle is solved, and it was the yield — not the trace.** `wait 1 millis` resumes from a
+timer, so `AllSpeak_Run.run` returns with the picture half drawn; the harness reported in that same tick,
+before the rest arrived. Graham's 147 events cross the hundred-mark yield threshold, a nine-event fixture
+never does, and his browser is fine because yielding is what it is for. With the report moved to a settle
+detector, his recording draws **44 arrivals (15+9+8+12) and 99 transfers**, caption
+`lines 206-481, 325 steps` — and the inert `VizArrivalDots` path stays empty in the same run, which is the
+evidence that deleting it is safe.
 
-- **Text compared with numbers.** A number read *out of* text — a record field, `the content of`, `the index of` — stays text, and text comparison is lexical: `\`29\`` is not less than `\`1000001\``. Nothing errors; the condition simply answers the wrong way. Convert with `add 0 to X` or `the value of X`. The two runtimes differ — the browser does not coerce a mixed comparison, the terminal does — so verify in the runtime where the problem appears.
-- **An undeclared `variable`** is reported as a *token* error at the first statement using it ("I don't understand 'put'"), not as "not declared". If a compile fails that way, look for a missing declaration.
-- **Editing `asedit.allspeak`:** use content anchors with assertions, never positional spans. Afterwards check that `commands` is non-zero *as well as* the analyser reporting 0 errors — a broken editor still analyses clean.
-- **The served editor is cached.** `asedit.allspeak` is fetched with a `?v=` stamp; if a change does not appear, check the fetch before the code.
+**Where the work goes next, in order:**
+
+1. **His eyeball on the size of a mark** — 14 units is now the single value, chosen because it is what the
+   first draw has always given him. It is one line, and the alternative (row-proportional with a legible
+   floor) is in the code's own comment for whenever he wants smaller marks on a long run.
+2. **Delete the inert plain `VizArrivalDots` path** from the view. It is dead — the heat is the only scheme,
+   and the last harness run put all 44 marks in the four bands with the plain path empty — and it is the
+   template every cap-related mistake came from. (It also no longer carries a `stroke-width`, since the
+   only line that set one lived in the block this fix deleted; harmless while it is empty, and gone with
+   the path.)
+3. **The legend** — a heat picture without one is a mystery, since the colours mean nothing until a reader
+   can see which counts each band covers.
+4. **The `verify-stale` sign-offs** — three blocks in `asedit.allspeak` want his re-verify in Blocks mode
+   (line 508, pre-existing, plus the two sections touched today). They are his by convention, not the
+   agent's.
+5. **The two copies of `asedit.allspeak`** — hygiene now, not a bug: nothing he runs reads the second one.
+   The options are set out in `DIFF.md`; the recommendation is to have `deploy-sync` refresh `deploy/code/`
+   from the root, so the local published copy cannot be stale *and* so `BUILD.md`'s claim that the `cp` step
+   is enough becomes true. Publishing to the live site is still `./deploy-allspeak`, and nothing short of it
+   updates what allspeak.ai serves.
+
+**Working methods that earned their place**, worth keeping: `tools/asedit-check.js` exists because a check
+that loads every plugin verifies a program nobody runs — it caught `I don't understand 'VizBands'` when
+"declare before use" turned out to be positional in the file. **Never redirect stderr on a check whose
+stderr is its verdict** — hours were lost running the harness `2>/dev/null`, which discarded the
+`Non-numeric value` report it was written to produce. **"Fail closed" means build the result in memory,
+assert, then write once**: a patch that wrote per-file left the sketch half-changed and broke the harness
+for a turn. And **a check that reads a value mid-flight reports the half-finished state as the answer** —
+which is the whole of the puzzle above, and a cousin of the stderr lesson: the instrument was measuring at
+the wrong moment. And the tiny dots had a third cousin, the most expensive of the three: **a value computed
+before the pass that measures it silently uses the previous draw's number.** Both readings are plausible, so
+the fault never looks like a fault — the first render is "right" and every later one is not, which is what
+made it read as a cap problem for two rounds.
 
 ## High priority
 
@@ -808,3 +848,168 @@ Graham's ruling, worth remembering: the wait is *acceptable* — other machines 
 example is extreme, and a visualiser should highlight parts of a run rather than trace whole ones. He
 also made the good point that having to wait makes the next request more considered. So **the slow
 case stays slow**: the message explains it and nothing refuses to draw. The `element N` re-parse stays.
+
+
+**A tab change now leaves Graph mode** (2026-09-29). Opening a file while the graph was up loaded it
+into `ContentEditor`, which the pane had hidden — so the file opened correctly and invisibly, and only
+the **Edit** button revealed it. This was not a new rule but an old one not applied: `ActivateTab`
+already began `if BlocksMode is 1 gosub to DoExitBlocks`, so it now does the same for `GraphMode`, and
+`ActivateTab` is the one place every route to showing a file passes through. `DoExitGraph` already
+restored the pane, so the fix is a call rather than new code.
+
+Worth carrying as a *shape* of bug: **a mode that owns a global flag has to be left by every path that
+wants the screen back**, and the tell is a pane that hides the thing you just asked for.
+
+
+**Two simplifications from Graham's validation of `asedit`** (2026-09-29). The empty block 24 was the
+view's own documentation header, closed by a `!!!` of its own — prose with no code, which Blocks
+renders as a blank pane. The prose was right and the terminator wrong: it now opens the section
+holding the view's code, in both copies, 25 sections → 24. And the nested `if` at line 1459 collapsed
+to one range test with `and` — verified equivalent, since both sides are plain integer comparisons and
+nothing on the right can fail when the left is false. **It is the only one of that shape in the file**,
+so the pattern is not widespread. `and` itself was checked before use.
+
+
+**The heat is built and verified, but not yet switchable** (2026-09-29). Four band paths with a
+cool-to-hot ramp whose hottest band is the plain marks' own colour; `line_counts` from the window
+("the number of times each command on a line executed") read per arrival; bands over the counts' range
+across the marks' own lines, so the ramp fits the run. **`VizBands` is the toggle** — view-declared,
+host-settable, and unset means 1, which is exactly the old picture. Verified both ways: the default
+carries the same 9 marks with the bands empty, and at four bands the bands carry 2+3+0+4 = 9 — no mark
+lost, none double-counted. 18 elements now (was 14).
+
+**Next, both small:** a top-bar control that sets `VizBands` (1 and 4), and a legend — a heat picture
+without one is a mystery, since the colours say nothing until a reader can see what each band covers.
+
+
+**A corruption found in `examples/chemical/parser.allspeak` and repaired** (2026-09-29): two lines
+joined — `!! Constants: …` welded onto `    script Parser` — plus rewritten hashes, which is the
+signature of a doc-block write-back from Blocks mode. **And his `viz start`/`viz stop` markers are not
+in the file**, so something wrote it back without them. Candidates: the Blocks write-back (rewrites the
+buffer from parsed sections) and `PollFile` (reloads from disk when the tab is clean). **A write path
+that silently drops an edit outranks the rest of the visualiser work.**
+
+
+**The heat is switchable** (2026-09-29): a `Heat` button in the top bar that flips `VizBands` between 1
+(plain marks) and 4 (the ramp), redrawing on the spot. **`VizBands` is a host input like `VizTrace`** —
+declared by the host, read by the view, so a host that never sets it gets the old picture. Verified: the
+toggle flips 1→4→1 (handler extracted and run), the bands carry 2+3+0+4 = 9 marks with none lost, and
+the default path is byte-identical. 1670 commands, 0 errors.
+
+**And the checker earned its keep:** it refused the first attempt with `I don't understand 'VizBands' at
+line 1580` — the view declared it *after* the host code using it, because "declare before use" is
+**positional in the file**, which I had reasoned my way around and got wrong. The tool written this
+morning for a different bug caught this one.
+
+**Left: the legend** — the colours mean nothing until a reader can see which counts each band covers.
+
+
+**`Non-numeric value` on the first Graph, fixed** (2026-09-29). `add 1 to VizBreathe` ran before anything
+put a number in it — declared but never initialised, unlike every other scratch value in the view. The
+runtime's report is not fatal, so the picture appeared anyway and the *yield silently never ran* — which
+matters, because the yield is what keeps the browser alive on a long pass. Fixed with `put 0 into
+VizBreathe` at the top of the draw.
+
+**And the harness had reported it all along:** `various/plotview-check.js` writes runtime errors to
+stderr — with a comment saying that is the point — and I had been running it `2>/dev/null` for hours,
+discarding the evidence the line exists to preserve. **Never redirect stderr on a check whose stderr is
+its verdict.**
+
+**Unexplained:** on Graham's recording (44 arrivals, 99 transfers) the harness draws nothing at all and
+reports no error, while the same harness draws a small recording correctly. His browser shows the graph,
+which points at the harness, but that is a guess. **First job next session.**
+
+
+**The learned rate, seen working** (2026-09-29): the first Graph warned 51 s for a drawing that took
+under 1 s. The calibration explains it — it now holds **7 ms/Kb** (predicting 166 ms for the 24 KB
+recording) while 51 s implies **2140 ms/Kb**, so the sample was **~306x slower** than the machine is.
+That sample was genuine: it was the tens-of-seconds drawing made while the yielding was dead from the
+`VizBreathe` bug. **A broken yield made a run slow, and the slowness was learned as the machine's
+speed** — then corrected by the next run, because `VizRemember` overwrites rather than averages. The
+warning now says its number is a measurement of the last drawing rather than a promise.
+
+
+**Marks and Heat are one view: the fold is agreed but NOT landed** (2026-09-29). Graham's call: with the
+heat always on, Marks differs only in the colour of the markers, which does not justify a second view.
+The fold: the heat becomes the only scheme, the view owns the band count (fixed at four), the button,
+its handler, and the plain `VizArrivalDots` path all go.
+
+**The attempt failed halfway and left nothing changed in the editor.** My patch wrote the scratch sketch
+*before* asserting the result was sane, so a failed assertion left the sketch half-changed — its
+`path VizArrivalDots` declaration and creation gone, five references still in place. `asedit.json` lost
+its Heat button mid-attempt; **I put it back**, so it matches `asedit.allspeak` again (verified).
+`asedit.allspeak` itself was untouched and compiles at 1671 commands, 0 errors.
+
+**The lesson, and it is operative: "fail closed" means build the whole result in memory, assert, then
+write once.** Earlier patches here did that; this one wrote per-file and did not.
+
+**First job next session, before the legend:** regenerate `various/plotview.allspeak` **from
+`asedit.allspeak`**, which holds the view verbatim — then make the fold properly. Until then the
+harness cannot run, so no headless verification is available, and the "draws nothing on his recording"
+puzzle stays open.
+
+
+**The tiny dots in Heat, fixed** (2026-09-29): the four band paths never got `stroke-linecap: round`,
+so `M x y h0.01` drew a 0.01-long rectangle instead of a dot — while the plain path had the line **and
+a comment explaining why**. The rule was documented one screen above the code that broke it. Fixed in
+all four; verified in the generated HTML (5 round caps; band 0 = colour + cap + width 14).
+
+**And the sketch is repaired by regeneration:** `various/plotview.allspeak` now comes **from
+`asedit.allspeak`**, which holds the view verbatim — one source and a one-line regeneration, rather than
+two copies kept in step by hand. The harness works again, so headless verification is back.
+
+**Next: the fold.** Heat becomes the only scheme, the view owns the band count (four), and the button,
+its handler and the plain `VizArrivalDots` path all go. **Build the whole result in memory, assert, then
+write once** — the discipline whose absence broke the sketch last turn.
+
+
+**The fold landed: two buttons, one colour scheme** (2026-09-29). Graham's point was exact — three
+buttons for two panes, and the third was mine. The heat is the only scheme now: the `Heat`/`Marks`
+button, its handler and its layout entry are gone, and **the view owns the band count** (fixed at four),
+so nothing carries across a re-open. His question about disabling the current view's button is answered
+by the editor's own convention, which is better: **the current pane's button offers the way back**,
+reading `Edit` — what Blocks has always done, and now what Graph does. Verified: 1659 commands, 0
+errors, layout valid, and the heat drawing 2+3+0+4 = 9 marks on the small recording with no stderr. The
+plain marks path is left **inert** and should be removed next time that code is open.
+
+**Open puzzle, two explanations dead:** Graham's recording draws nothing **in the harness** while his
+browser draws it and the harness draws a small one. Not backticks or `${` (0 of each — so not the
+harness's template literal) and not the 24 KB single source line (pretty-printing changes nothing).
+**The browser is ground truth and it works**, so it is a harness limitation — cause still unknown, and
+I stopped guessing rather than dressing one up.
+
+
+**Small dots from the second Graph onward, fixed** (2026-09-29). An asymmetry: `stroke-width` was set in
+**both** the built-once block and the per-draw block, while `stroke-linecap` was set in the built-once
+block **only** — so a redraw restored the width and lost the cap, and a mark without a round cap is a
+0.01-long rectangle. Fixed by setting the cap beside the width in the per-draw block; the build-time
+copies stay, as the width's do.
+
+**The class, named — it has bitten twice:** **an attribute that must survive a redraw belongs in the
+per-draw block.** The plain marks path had its cap right; when I added the band paths I copied the
+colours faithfully and missed the cap. That is an argument for deleting the inert plain path rather than
+leaving it: it is the template the mistake came from.
+
+Verified: compiles, 0 errors, the cap at line 463 beside the width at 462, sketch in step. **Not
+verifiable headlessly** — the harness's stub DOM does not reproduce whatever the browser does between
+draws, the same limitation as the recording that draws nothing there and fine in his browser. His click
+is the test.
+
+
+**SOLVED: the tiny dots were a STALE COPY, not a code bug** (2026-09-29). `edit.html` fetches
+`asedit.allspeak` **relative to the page**, and Graham was running the **deployed** copy —
+`deploy/code/asedit.allspeak`, **77,488 bytes vs the root's 82,668**, with **no heat paths at all** and
+its single `VizArrivalDots` path taking its `stroke-linecap` **only at build** while restating
+`stroke-width` per draw. That is precisely "right the first time, small from the second onwards". The
+fix had been in the root copy for two rounds and **never reached the copy he runs**.
+
+**Fix: `./deploy-sync`.** Found by a read-only `explore` subagent after I had spent two rounds editing
+the wrong file — a good argument for delegating a hunt when the obvious suspect is exhausted.
+
+**Landing lesson:** there are **two copies of the editor** and the page runs whichever is beside it, so a
+root change is invisible until synced. **Next session: make the deployed editor load the way the plugins
+do — one copy, not two to keep in step.**
+
+**Also landed:** `PollFile` now skips Graph mode as it already skipped Blocks (the poll was replacing the
+editor's content every three seconds behind an open pane). **Still to do:** delete the inert plain
+`VizArrivalDots` path from the root copy — it is the template this whole class of mistake came from.

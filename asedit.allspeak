@@ -4,7 +4,7 @@
 
     script ASEditor
 !! @hash 57eacdb1
-!! @verified 7ad312d2
+!! @verified 57eacdb1
 !!!
 !! Variable declarations
 !! The script uses a lot of variables; they are grouped here by function.
@@ -172,8 +172,8 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash b8bb31fd
-!! @verified b4ba77d2
+!! @hash a75a79e4
+!! @verified a75a79e4
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -212,7 +212,7 @@
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
 !! @hash 8cb592d8
-!! @verified e1a4268e
+!! @verified 8cb592d8
 !!!
 !! Some general initialisation
 !   -- CodeMirror --
@@ -309,7 +309,7 @@ SetStrings:
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
 !! @hash 5633e443
-!! @verified 57698f27
+!! @verified 5633e443
 !!!
 !! The editor checks on startup and periodically for updates to itself.
 !! (explain)
@@ -383,7 +383,7 @@ VersionDone:
     put 0 into GraphMode
     put 0 into BlockDirty
 !! @hash d1c37c34
-!! @verified 562a8033
+!! @verified d1c37c34
 !!!
 !! While editor is running it periodically saves changes made by the user
 !! and updates the display to show updates made externally.
@@ -449,7 +449,7 @@ SaveFailed:
     fork to AutoSave
     stop
 !! @hash 63538f67
-!! @verified a9c8ba92
+!! @verified 63538f67
 !!!
 !! Every 3 seconds, the current file is re-read into FileContent.
 !!
@@ -466,6 +466,10 @@ PollFile:
     ! a silent reload would clobber the user's pane edits. Skip until they
     ! exit Blocks mode.
     if BlocksMode is 1 go to PollNext
+    ! And the same for the Graph pane, which is the same rule: a mode that owns the screen must not have
+    ! its content reloaded underneath it. Without this the poll replaced the editor's content every
+    ! three seconds while the graph was up, which is when the drawing was seen to be overwritten.
+    if GraphMode is 1 go to PollNext
     index TabPath to ActiveTab
     if TabPath is empty go to PollNext
     rest get FileContent from `/read/` cat TabPath or go PollNext
@@ -500,8 +504,8 @@ PollFile:
 PollNext:
     fork to PollFile
     stop
-!! @hash 7000417a
-!! @verified 528a0f6d
+!! @hash 0a946205
+!! @verified 0a946205
 !!!
 !! File browser overlay behind the Open button: lists the current directory, navigates into folders and back to the project root, and hands the chosen file to the tab-management section to open.
 !   -- File browser with directory navigation --
@@ -611,6 +615,7 @@ CloseBrowser:
 !! @verified ac5d5c01
 !!!
 !! This section is tab management; creating a new tab, opening a file, selecting a tab and closing a tab.
+!! Activating a tab leaves Blocks mode first. A tab is a different file, and Blocks mode belongs to the file you were reading — so switching tabs, and opening a file, both land in the flat editor rather than refusing to move until you leave the mode by hand.
 !   -- New empty tab --
 NewFile:
     put TabCount into N
@@ -739,15 +744,15 @@ CloseTab:
     end
     go to ActivateTab
 
-!! Activating a tab leaves Blocks mode first. A tab is a different file, and Blocks mode belongs to the file you were reading — so switching tabs, and opening a file, both land in the flat editor rather than refusing to move until you leave the mode by hand.
 ActivateTab:
     if BlocksMode is 1 gosub to DoExitBlocks
+    if GraphMode is 1 gosub to DoExitGraph
     index TabSaved to ActiveTab
     codemirror set content of ContentEditor to TabSaved
     gosub to RebuildTabBar
     stop
-!! @hash 80b6d623
-!! @verified 14377e61
+!! @hash e1b6db5e
+!! @verified e1b6db5e
 !!!
 !! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
 RebuildTabBar:
@@ -1102,7 +1107,7 @@ ScoreWithCode:
     else put `verified-stale` into VerifyState
     return
 !! @hash fab5b751
-!! @verified 56254133
+!! @verified fab5b751
 !!!
 !! Blocks view.
 !! ToggleBlocks switches between flat and Blocks panes.
@@ -1427,8 +1432,8 @@ NoteMarker:
     put MarkDigits into FlagLine
     return
 !! @hash e3dfc5f8
+!! @verified e3dfc5f8
 !!!
-
 !! Say, in the status line, why the analysis could not run. The plugin reports a script it could not compile as a `problem` record, and without this the result is indistinguishable from a file with nothing wrong in it.
 NoteProblem:
     put the position of `| does not compile` in MarkRecord into Pos
@@ -1441,8 +1446,8 @@ NoteProblem:
     set the content of StatusSpan to MarkRest
     return
 !! @hash 09c88156
+!! @verified 09c88156
 !!!
-
 !! Decide whether one block's line range holds a flagged line. The bounds are widened by one so that both tests can be positive: `is not less than` is a form the editor avoids elsewhere.
 BlockFlagged:
     put 0 into Found
@@ -1455,16 +1460,13 @@ BlockFlagged:
     begin
         index FlagLine to K
         put FlagLine into MarkLine
-        if MarkLine is greater than FromCheck
-        begin
-            if MarkLine is less than ToCheck put 1 into Found
-        end
+        if MarkLine is greater than FromCheck and MarkLine is less than ToCheck put 1 into Found
         add 1 to K
     end
     return
-!! @hash 5af211ef
+!! @hash b832c0aa
+!! @verified b832c0aa
 !!!
-
 !! Blocks TOC. Renders one row per parsed section in the BlocksToc
 !! sidebar, highlighting the current block. Each row's label is the
 !! first prose line of its section, truncated. Clicking a row flushes
@@ -1559,9 +1561,8 @@ JumpToBlock:
     gosub to RenderBlock
     stop
 !! @hash 56b2a0d3
-!! @verified 426884b9
+!! @verified 56b2a0d3
 !!!
-
 !! Graph mode: a third view — the run drawn, not the script.
 !!
 !! Blocks mode reads the script's *shape*; this reads what a *run* did. Those are different questions asked of the same file, which is why it is a third pane rather than another setting on either existing one: a code review asks what the code is made of, and a run review asks where the flow went.
@@ -1571,6 +1572,8 @@ JumpToBlock:
 !! **The plumbing is one sentence.** Markers decide what is recorded, and a script without them has nothing to show; rather than explain that in the pane, the message names the file it looked for, because that is the one thing a reader needs in order to produce one.
 !!
 !! The drawing itself is a portable section, appended below and kept verbatim from `various/plotview.allspeak`, so the same AllSpeak can be lifted into another host. Its declarations must come *before* their use in this file, which is why `VizTrace` is declared with the editor's own variables rather than with the section.
+!!
+!! **Leaving is automatic when a tab changes.** A mode owns the screen, so opening or switching to a file drops back to the flat editor rather than loading the new script into a pane nobody can see — which is what happened the first time this pane was used, and what Blocks has always done. The rule lives in `ActivateTab`, so every path that shows a file obeys it.
 ToggleGraph:
     if GraphMode is 0 go to EnterGraph
     gosub to DoExitGraph
@@ -1618,7 +1621,10 @@ VizPredictJudged:
     divide VizPredicted by 1024 giving VizPredicted
     if VizPredicted is less than 5000 return
     divide VizPredicted by 1000 giving VizPredicted
-    alert `This recording is ` cat TraceSize cat ` bytes, and drawing it will take about ` cat VizPredicted cat ` seconds on this machine. Carry on, or narrow the viz start and viz stop markers to the part you want to watch.`
+    ! Say where the number comes from. It is a measurement of the last drawing, not a promise, and
+    ! a stale one is self-explanatory when the reader knows that — which matters, because a single
+    ! slow run sets the rate and the next run corrects it.
+    alert `This recording is ` cat TraceSize cat ` bytes, and the last drawing of one this size took about ` cat VizPredicted cat ` seconds on this machine, so this may too. Carry on, or narrow the viz start and viz stop markers to the part you want to watch.`
     return
 
 !   And remember what it actually cost, so the next prediction is a measurement rather than a guess.
@@ -1647,10 +1653,9 @@ DoExitGraph:
     set style `display` of VizHost to `none`
     set style `display` of EditorArea to `block`
     return
-!! @hash a803300f
+!! @hash 13815292
+!! @verified 13815292
 !!!
-
-!!
 !! plotview.allspeak — the run as a picture, drawn in AllSpeak with the svg plugin.
 !!
 !! The third view's drawing, grown from the front. Plot-only on purpose: the editor already renders
@@ -1672,8 +1677,6 @@ DoExitGraph:
 !! lexically — `9` is not less than `10` — so the range-finding below converts with `add 0 to …`
 !! before it compares anything. Without that the picture is silently wrong, which is the failure
 !! mode the project's own notes warn about.
-!!!
-
 !! The view's own symbols, all prefixed `Viz…`.
 !!
 !! Names are the scarce resource in a flat table of declared symbols — which is not a figure of
@@ -1701,6 +1704,16 @@ DoExitGraph:
     variable VizDotSize
     variable VizCaptionText
     variable VizBreathe
+    variable VizLineCounts  ! per-line command counts, from the window
+    variable VizMaxCount
+    variable VizBandSize
+    variable VizCount
+    variable VizBand
+    variable VizHeatD
+    variable VizHeatE
+    variable VizHeatF
+    variable VizHeatG
+    variable VizBands
     variable VizMargin
     variable VizPlotW
     variable VizPlotH
@@ -1726,6 +1739,10 @@ DoExitGraph:
     svg VizCanvas
     rect VizFrame
     path VizArrivalDots
+    path VizHeat0           ! the same marks, coloured by how much work the line carried
+    path VizHeat1
+    path VizHeat2
+    path VizHeat3
     path VizFlowLines
     ! Scratch values are named by role rather than pushed on a stack, which would be the neater
     ! idiom in Python: the view has to run in the JS runtime, where there is no `stack` type and
@@ -1807,6 +1824,25 @@ Draw:
     set attribute `fill` of VizArrivalDots to `none`
     set attribute `stroke` of VizArrivalDots to `#e5484d`
     set attribute `stroke-linecap` of VizArrivalDots to `round`
+    ! The heat ramp's four bands, coolest first. The last is the colour the plain marks path already
+    ! uses, so the busiest lines look the same in both schemes and only the quiet ones change.
+    create VizHeat0 in VizCanvas
+    set attribute `fill` of VizHeat0 to `none`
+    set attribute `stroke` of VizHeat0 to `#6b8fa8`
+    set attribute `stroke-linecap` of VizHeat0 to `round`
+    create VizHeat1 in VizCanvas
+    set attribute `fill` of VizHeat1 to `none`
+    set attribute `stroke` of VizHeat1 to `#c9a227`
+    set attribute `stroke-linecap` of VizHeat1 to `round`
+    create VizHeat2 in VizCanvas
+    set attribute `fill` of VizHeat2 to `none`
+    set attribute `stroke` of VizHeat2 to `#e07b39`
+    set attribute `stroke-linecap` of VizHeat2 to `round`
+    create VizHeat3 in VizCanvas
+    set attribute `fill` of VizHeat3 to `none`
+    set attribute `stroke` of VizHeat3 to `#e5484d`
+    set attribute `stroke-linecap` of VizHeat3 to `round`
+
     create VizFlowLines in VizCanvas
     set attribute `stroke` of VizFlowLines to `#e0a44a`
     set attribute `stroke-width` of VizFlowLines to 2
@@ -1817,15 +1853,25 @@ VizBuilt:
     ! ---- drawn every time ----
     ! Cleared first, so a redraw of a different run cannot leave a mark from the last one behind.
     put `` into VizArrivals
+    put `` into VizHeatD
+    put `` into VizHeatE
+    put `` into VizHeatF
+    put `` into VizHeatG
     put `` into VizTransfers
-    ! The dot's size follows the row, so it reads as a mark on a line however many lines the run
-    ! spans. A constant made it a bead four rows deep on a 276-line trace, and would have made it a
-    ! pinprick on a ten-line one. Clamped, because a one-line span has no row height worth using.
-    divide VizPlotH by VizSpanLines giving VizDotSize
-    if VizDotSize is less than 3 put 3 into VizDotSize
-    if VizDotSize is greater than 14 put 14 into VizDotSize
-    set attribute `stroke-width` of VizArrivalDots to VizDotSize
+    ! The marks are blanked here and written again at the end of the pass, once the size is known.
+    ! Blanking first is what a redraw interrupted by a yield depends on: without it the last run's
+    ! marks would sit under the new run's axis for a frame, which is the flicker this pane was first
+    ! reported with.
+    !
+    ! This block resets and nothing more: no value here may depend on what the passes below measure,
+    ! because on a redraw it would silently carry the *previous* draw's number. The size of a mark is
+    ! where that cost two rounds to spot — its own note says how — and the rule is worth keeping as
+    ! the reason this block has no arithmetic in it.
     set attribute `d` of VizArrivalDots to VizArrivals
+    set attribute `d` of VizHeat0 to VizHeatD
+    set attribute `d` of VizHeat1 to VizHeatE
+    set attribute `d` of VizHeat2 to VizHeatF
+    set attribute `d` of VizHeat3 to VizHeatG
     set attribute `d` of VizFlowLines to VizTransfers
     set the text of VizYLabel0 to ``
     set the text of VizYLabel1 to ``
@@ -1838,6 +1884,9 @@ VizBuilt:
     set the text of VizCaption to ``
 
     ! ---- pass one: the frame the picture is drawn in ----
+    put 4 into VizBands       ! the ramp is the only scheme; four bands is enough to see a hot line
+    put 0 into VizMaxCount
+    put 0 into VizBreathe
     put 999999 into VizMinLine
     put 0 into VizMaxLine
     put 0 into VizMaxSteps
@@ -1859,12 +1908,19 @@ VizBuilt:
         if VizCategory is `window`
         begin
             put property `steps` of VizArgs into VizMaxSteps
+            put property `line_counts` of VizArgs into VizLineCounts
             add 0 to VizMaxSteps
         end
         if VizCategory is `anchor`
         begin
             put property `line` of VizArgs into VizLine
             add 0 to VizLine
+            if VizBands is greater than 1
+            begin
+                put property VizLine of VizLineCounts into VizCount
+                add 0 to VizCount
+                if VizCount is greater than VizMaxCount put VizCount into VizMaxCount
+            end
             if VizLine is less than VizMinLine put VizLine into VizMinLine
             if VizLine is greater than VizMaxLine put VizLine into VizMaxLine
             put property `steps` of VizArgs into VizSteps
@@ -1889,14 +1945,40 @@ VizBuilt:
     take VizMinLine from VizMaxLine giving VizSpanLines
     add 1 to VizSpanLines
 
+    ! ---- the size of a mark ----
+    ! One size for every mark, and it is set *here* because this is the first point at which the span
+    ! is known. It used to live in the per-draw block at the top of this pass, which is before pass
+    ! one has measured anything, so it divided VizPlotH by the span of the *previous* draw — and by
+    ! nothing at all on the first draw, where an empty span divides to Infinity and clamps down to
+    ! the ceiling of 14. So a first draw drew 14-unit dots and every redraw drew 3-unit ones, which
+    ! is what "returning to Graph reduces the markers to tiny dots" was.
+    !
+    ! The row-proportional rule it replaces also only ever applied between 41 and 193 lines: shorter
+    ! runs were clamped up to 14 anyway, and on a long run a row is a couple of units, so the floor
+    ! of 3 was a pinprick by construction. That clamp — not the cap — was the mistake, and a mark has
+    ! to stay legible at the pane's scale to be a mark at all. When this view takes the host panel's
+    ! size rather than asserting a 1000x700 frame, this is the number that should come from it.
+    put 14 into VizDotSize
+
     ! No scale factors are kept, and that is deliberate. AllSpeak's arithmetic is integer-first and
     ! division truncates (`divide 10 by 3` is 3), so a fraction here would be lost: a 626-line span
     ! against a 580-unit pane gives 0, and the picture would collapse onto a single line. Multiplying
     ! *before* dividing keeps the intermediate large and the result exact to a unit — the documented
     ! scaled-integer pattern, applied where it matters most.
 
+    put 1 into VizBandSize
+    if VizBands is greater than 1
+    begin
+        divide VizMaxCount by VizBands giving VizBandSize
+        if VizBandSize is less than 1 put 1 into VizBandSize
+    end
+
     ! ---- pass two: the marks, at those scales ----
     put `` into VizArrivals
+    put `` into VizHeatD
+    put `` into VizHeatE
+    put `` into VizHeatF
+    put `` into VizHeatG
     put `` into VizTransfers
     put 0 into VizIndex
     while VizEvents has element VizIndex
@@ -1926,7 +2008,18 @@ VizBuilt:
             multiply VizOffset by VizPlotH giving VizY
             divide VizY by VizSpanLines giving VizY
             add VizMargin to VizY
-            put VizArrivals cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizArrivals
+            if VizBands is 1 put VizArrivals cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizArrivals
+            if VizBands is greater than 1
+            begin
+                put property VizLine of VizLineCounts into VizCount
+                add 0 to VizCount
+                divide VizCount by VizBandSize giving VizBand
+                if VizBand is greater than 3 put 3 into VizBand
+                if VizBand is 0 put VizHeatD cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatD
+                if VizBand is 1 put VizHeatE cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatE
+                if VizBand is 2 put VizHeatF cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatF
+                if VizBand is 3 put VizHeatG cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatG
+            end
         end
         if VizCategory is `transfer`
         begin
@@ -2030,7 +2123,20 @@ VizBuilt:
     set the text of VizCaption to VizCaptionText
 
     set attribute `d` of VizArrivalDots to VizArrivals
+    set attribute `d` of VizHeat0 to VizHeatD
+    set attribute `d` of VizHeat1 to VizHeatE
+    set attribute `d` of VizHeat2 to VizHeatF
+    set attribute `d` of VizHeat3 to VizHeatG
+    set attribute `stroke-width` of VizHeat0 to VizDotSize
+    set attribute `stroke-width` of VizHeat1 to VizDotSize
+    set attribute `stroke-width` of VizHeat2 to VizDotSize
+    set attribute `stroke-width` of VizHeat3 to VizDotSize
+    set attribute `stroke-linecap` of VizHeat0 to `round`
+    set attribute `stroke-linecap` of VizHeat1 to `round`
+    set attribute `stroke-linecap` of VizHeat2 to `round`
+    set attribute `stroke-linecap` of VizHeat3 to `round`
     set attribute `d` of VizFlowLines to VizTransfers
     return
-!! @hash 5a6a577b
+!! @hash ec4bd506
+!! @verified ec4bd506
 !!!
