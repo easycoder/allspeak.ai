@@ -226,6 +226,125 @@ The visualiser is already independent of the JS runtime's container vocabulary:
 - **`viz.allspeak` itself uses neither** — plain variables and element counts — and runs on both
   runtimes, which is what lets it be the shared framework.
 
+### 15. `the count of <array>` exists in Python and not in JS — and the shared reference implies both
+
+Found 2026-09-29 while working out how a view would walk a parsed JSON trace. `learn/reference/18-json.md`
+says a value parsed with `json of` "can be indexed, iterated, or counted with the usual
+array/dictionary commands". Indexed, yes, on both. **Counted, no, on JS:**
+
+| | Python | JS |
+|---|---|---|
+| `put json of Text into Rows` | needs a *typed* target — `list Rows` first (a plain `variable` gives the misleading "I don't understand 'put'", TODO item 8) | works on a plain `variable` |
+| `put the count of Rows into N` | **3** ✓ | not a command: "Undefined value: 'the'" |
+| iterating | `while Index is less than the count of Rows` | `while Rows has element Index` ✓ (verified, including past the end) |
+
+There is no `COUNT` opcode in any pack, so `count` is a word with nothing behind it in the JS
+runtime; Python implements it. The JS idiom is the `has element` guard, which is arguably the
+better loop anyway — it needs no separate count and cannot go out of step with the array.
+
+**The documentation fix belongs with this:** `18-json.md` should say how to *iterate*, not just that
+counting is possible, because the two runtimes need different loops. Worth doing when `learn/` is
+next touched, alongside the Python-list error in `04-collections.md` (#14b).
+
+### 16. `push` / `pop` mean *different things* in the two runtimes, and the `stack` type is Python-only
+
+Found 2026-09-29, following Graham's note that the duplicate-variable-name error bites scratch
+variables rather than elements, and that he added a **stack** type so a name can be pushed on entry
+and popped on exit and re-used in between.
+
+**In Python it works** — `stack S` + `push 10 onto S` + `push 20 onto S` + `pop V from S` gives
+`popped: 20` ✓ (LIFO, and note the form is `pop <target> from <stack>`, not `pop <stack> giving …`).
+
+**In JS there is no `stack` at all** ("I don't understand 'stack'"), which is the same shape as
+`dictionary` / `list` (#14). But the words themselves diverge *harder* than those two do:
+
+| | Python | JS |
+|---|---|---|
+| `stack S` | declares an `ECStack` | not a keyword |
+| `push 10 onto S` | pushes onto that stack | `push {value}` is the **argument stack** (`Core.js` `PUSH: this.Push`) |
+| `pop V from S` | pops the stack into `V` | `pop [into] {variable}` is the **call stack** |
+
+So the *same two words* name a declared collection on one runtime and parameter passing on the
+other. A script that reaches for the Python idiom in JS therefore fails in a way that has nothing to
+do with what it meant — worse than a plain absence, because the words are there.
+
+**And the type is undocumented:** `learn/reference/04-collections.md` presents "the four shapes" —
+variable arrays, object properties, key-value collections, ordered sequences — and a stack or queue
+is not among them, though both exist in Python (`ECStack`, `ECQueue`, and `k_queue`). Worth adding
+there when `learn/` is next touched, with the cross-runtime note.
+
+**Consequence for the view:** it must run in the JS runtime, so it cannot use a stack for its scratch
+values; it names them by role instead (`TY0`…`TX3`), which for a view reads better anyway. An
+element or a value that only Python can hold is not available to the third view at all.
+
+### 17. The divergence map — where the two runtimes actually differ, and why it is not the opcodes
+
+Gathered 2026-09-29, after Graham said the alignment question was "too complex for me to visualise
+and judge". That is the problem to solve: not to opine, but to make it visible. Every row below was
+*measured* this session, not read off a document.
+
+**The engine is already in line.** All **151** opcodes the packs name are dispatched by the JS
+runtime when its plugins are loaded — core 101, browser 34, json 11, mqtt 3, rest 2 — and Python
+implements 97 of them under the same names (and the 54 it does not are the browser, json, mqtt and
+rest families — exactly what you would expect — so the measure looks sound, though note it is a proxy:
+method *presence*, where the JS figure came from asking each domain for a handler, which is the real
+dispatch path). So "implement the missing opcodes" is not the work.
+
+**The surface language is where the two part company, and none of it is an opcode.** Declarations and
+value/statement forms are compile-time vocabulary, so the packs cannot show a difference at all:
+
+| | Python | JS | kind |
+|---|---|---|---|
+| `dictionary X` | declares `ECDictionary` | not a keyword — `variable X` + `set X to object` | declaration |
+| `list X` | declares `ECList` | not a keyword — `variable X` + `set X to array` | declaration |
+| `stack X` / `queue X` | declares one | not a keyword | declaration |
+| `push 10 onto S` / `pop V from S` | the declared stack | **the argument and call stacks** | same words, different meaning |
+| a list's accessor | `item N of X`; grown with `append` | `element N of X`; `set element N of X to V` grows it | value/statement form |
+| `the count of X` | the length | no such form — `while X has element N` | value form |
+| `entry K of X` | dictionary access | **works** — the `has` condition accepts `entry`; `set entry` / `put entry` do not | half-wired |
+| `use <module>` | modules | not a keyword | declaration |
+| `load` / `save` | file I/O | `rest get` / `rest post` | statement form |
+| `json of <string>` into a plain variable | needs a typed target | works | strictness |
+
+**Two readings follow, and they point opposite ways.**
+
+- *Towards a port*: the surface differences are few and each looks small in isolation — four
+  declarations, one count, one accessor.
+- *Away from it*: `04-collections.md` is built **on** the difference (its whole point is that the JS
+  column is not a valid fallback in Python), so unifying the surface contradicts a documented design
+  decision rather than filling a gap; and each change is visible to every existing script, which is
+  what the "adding without taking away" rule exists to prevent.
+
+**The recommendation, and the reason it is the cheap one:** the engine is already aligned, so the
+work worth doing is **documentation and visibility, not porting** — the three doc defects fixed
+alongside this note (the Python list example, the iteration loop, the missing stack shape) were each
+found by using the thing, and a reader could not have known any of them from the page. If the
+divergence is ever to be closed, the honest order is: keep the map current, and let *demand* choose
+the next entry — which is what the visualiser did here (it found #15 and #16 within an hour of being
+pointed at real scripts).
+
+### 18. JSON pretty-printing: `prettify` and the save path are Python-only
+
+Found while fixing the editor's JSON display, and a file-level divergence rather than a keyword one —
+the same script writes a *different file* under each runtime.
+
+| | JS | Python |
+|--|--|--|
+| `prettify Text` | **no such form** | `json.dumps(item, indent=4)` — see `as_core.py` `v_prettify` |
+| `save` of a dict/list | `JSON.stringify(content)` — **compact** | `json.dumps(content, indent=2)` |
+| `save` of a JSON *string* through a `.json` name | written as given | re-dumped, `indent=2` |
+| `json format X` | `JSON.stringify(val, null, 2)` | present |
+
+So `diffshow.allspeak`'s `save prettify Conf to ...` is Python-only — correct for that program, which
+is a Qt one, but it is language-visible. And the two paths inside Python disagree: `prettify` indents
+by 4, the save path by 2.
+
+**Recommendation: document, don't port** — the same call as #17, for the same reason. The one thing
+worth keeping in step is the *display* side, which is where the editor's fix sits: it formats on open
+with the JS runtime's own `json format`, whose two-space indent matches Python's save path, so a file
+the editor touches looks like its neighbours. It also reformats only a **single-line** file, leaving a
+laid-out file at whatever indent its author chose — "adding without taking away".
+
 ## Resolved
 
 ### 2026-04-29 — `on failure` recovery clause added as alternative to `or`

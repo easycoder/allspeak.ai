@@ -364,17 +364,282 @@ Python that means adding `viz` commands (by hand or by prompt), running the code
 record, and then a **third editor view** — the picture. The JS route is similar. **A crucial aim is
 to hide the plumbing.**
 
+**Revised 2026-09-29, after Graham's note that some projects — RBR is the example — have to run on
+remote hardware.** He does not expect asedit to reach that over SSH, so there must still be a way to
+*record a run and bring it back for display*. That is not a complication: **the trace file is the
+transport, which is what the format exists for** — its own purpose section says a recording is more
+useful as a file than as an object held by the process that made it. Two consequences, and they
+reorder the work:
+
+- **The view must be fed by a *recording*, and a recording can arrive two ways** — recorded here, or
+  opened from a file. The file route is both **smaller and required** for remote runs, so it comes
+  first. The remote flow needs nothing new: the run writes the trace into the project
+  (`tools/asviz-run.py --run --trace=<project>/…`, already supported), and whatever brings the
+  project back — scp, git, a memory stick — brings the recording with it; the editor then opens it.
+- **It needs no new server capability at all.** `/read` fetches the trace and the script, and
+  `viz model <path>` gives the anchors and prose *statically* — both exist today. So the third view
+  can be built and judged **before** `viz record` exists, which also means the remote case works on
+  day one rather than after the in-editor path.
+
+**A second worry removed, tested rather than assumed: the view needs no plugin command to read a
+trace.** AllSpeak can walk the nested document directly — parse it with `json of`, reach
+`traceEvents` with `property \`traceEvents\` of …`, index it with `element N of`, and iterate with
+`while Events has element Index` (verified, including past the end); nested fields read with
+`property \`args\` of …` then `property \`line\` of …`; and `X has entry \`k\`` tells the two event
+shapes apart, so anchors (which have `line`) and transfers (which have `from_line`) can be handled in
+one loop. The one thing that does *not* work from the shared reference is `the count of` — see
+`language-pack-issues.md` #15.
+
+**Drawing from AllSpeak is feasible, and verifiable without a browser — both tested.** The `svg`
+vocabulary turned out thinner than the plugin's opcode list suggests, and the whole of it was
+established by running a real script against a stub DOM in node (a harness that records
+`appendChild`/`setAttribute` calls), which is how the view can be developed and checked at all:
+
+- `create` fills a **parent symbol**, not `body` — so a root needs a host element first
+  (`div Host` + `create Host in body`), then `svg Canvas` + `create Canvas in Host`. Children go in
+  the root: `line Stroke` + `create Stroke in Canvas` ✓.
+- `move <symbol> to <x> <y>` is how geometry is placed (a line's `move` sets `x1`/`y1`), and
+  **`set attribute \`x2\` of Stroke to 30`** — the *browser* domain's attribute set — covers the
+  rest, working on an SVG element like any other ✓. `set the text of <svgtext> to …` is text.
+- So a mark costs three or four statements: `create`, `move`, then attributes.
+
+**And the view cannot be drawn yet: the svg plugin has no `path` element — which is the real
+finding.** Performance settled the plugin question in the other direction, and my own framing was
+overstated: "three or four statements per mark" is a loop *body*, written once. But building the
+first cut showed the thing that actually bites. An AllSpeak element is a **declared symbol**, so a
+script cannot create N elements for N marks; a picture with a variable number of marks therefore
+needs one element per *layer*, drawn from a `d` attribute grown by concatenation. `js/plugins/svg.js`
+declares `circle`, `ellipse`, `group`, `line`, `rect`, `svg` and `svgtext` and **no `path`** — the
+word does not appear in the file at all. So the requirement is one more element type in the
+*existing* plugin, about five small additions mirroring `rect` (a declaration handler, a `Create`
+case, the create-run case, and `getHandler`), which is additive and needs no new plugin. Sketch and
+its stub-DOM harness are in `various/` (gitignored), failing at the declaration until then.
+
+**The view is in the editor** (2026-09-29). `asedit.allspeak` gained a **Graph** pane: a third view
+beside flat and Blocks, with its own button in the top bar (`asedit.json` gained `$GraphBtn` and
+`$GraphArea`), a `GraphMode`, and the plot view appended as a portable section kept byte-for-byte
+from `various/plotview.allspeak`.
+
+**The recording is a file beside the script** — `<script>.viz.json`, written by
+`tools/asviz-run.py --run --trace=<script>.viz.json <script>`. That is what makes the remote case
+work: a run captured on the rig arrives with the project however the project travels, and reviewing a
+script in the editor never executes it. When the file is absent the pane says so and *names it*,
+which is the whole of the plumbing a reader needs.
+
+**What was verified, and what could not be:** `asedit` still compiles to a program — **1489 commands,
+253 symbols**, which is the check that matters because a broken editor analyses clean — all eleven new
+symbols (`ToggleGraph`, `EnterGraph`, `GraphNone`, `DoExitGraph`, `Draw`, `VizCanvas`, `VizHost`,
+`VizTrace`, `GraphBtn`, `GraphMode`, `VizBuilt`) resolve, the analyser reports **0 errors** and no new
+warnings, and the layout JSON is valid with the button and pane in place. The one thing not verified
+is the editor *in a browser* — there is none here — so the look and the click are for Graham.
+
+**And the editor could not compile it — a real error, reproduced and fixed** (2026-09-29). Graham hit
+`I don't understand 'svg' at line 1633` opening the editor. The cause: `edit.html` loads the runtime
+and its plugins from a **fixed list**, and that list had no svg plugin — so `svg VizCanvas`, the
+view's first declaration, had no handler.
+
+**The diagnosis was a hole in my own verification, and this is the part worth remembering.** My
+compile harness loaded *every* plugin in `js/plugins`, so it passed while the editor failed: it was
+verifying a program nobody runs. `tools/asedit-check.js` now **derives the plugin list from
+`edit.html` itself** and compiles `asedit.allspeak` with exactly those, so the two cannot drift. It
+reproduces the failure when the plugin is removed — *"I don't understand 'svg' at line 1633"*, the
+same line — and reports `commands=1489 symbols=253 OK` with it present. It also covers the standing
+gap the repo's notes describe: `asdoc-check.py` reports doc blocks, and a broken editor analyses
+clean, so the command count is the check that matters and now has a tool.
+
+**And the page now prefers the working tree's build** (`deploy/dist/…`) with the deployed copy as a
+fallback, so a change to the runtime or a plugin is visible without deploying — which the view needs
+twice over, since it depends on the new `svg` plugin *and* on the `path` element added to it.
+
+**First real picture** (2026-09-29). With the markers moved onto the parser's own loop (lines 206–213),
+Graham ran `tools/asviz-run.py` and clicked Graph: **41 arrivals, 93 transfers, lines 206–481, 301
+steps**, and the plot matches those numbers exactly. It reads as a parser walking a document — the
+descending staircase *is* the run advancing down the file, and the tall amber verticals are control
+going back up to the loop. The window's own seven lines are a sliver at the top for the honest
+reason that the window calls code 275 lines below it.
+
+**A defect the picture found and the harness could not:** the arrival dot was a constant 9 units on a
+2.1-unit row, so each arrival was a bead four rows deep. It is now sized to the row and clamped
+(3…14). Third time this session that looking at the rendered thing caught something measuring did
+not (the pan bug, the faint strokes, now this) — worth remembering as a method, not an anecdote.
+
+**Two traps worth carrying:** a declaration must precede its **use**, not merely its section, which is
+why the host declares `VizTrace` rather than the view (the harness failed with "I don't understand
+'put'" the other way round); and the analyser rejects `!!` prose *between* labels in a section, so the
+parts of a multi-label block use `!` comments and the prose belongs in its opening.
+
+**And the deployed copy is stale:** `deploy/code/asedit.json` differs from the root one, so
+`./deploy-sync` is needed before the site shows the Graph button. Opening `edit.html` from the working
+tree shows it as it is — and that page cache-busts its own fetches (`?v=` + a timestamp), so no
+hard-reload is needed.
+
+**The view is visible** (2026-09-29). `various/plotview-check.js` now writes a page containing the
+view's own SVG output — not a redrawing of it — so `various/plotview-trace-run.html` and
+`various/plotview-parser.html` can simply be opened. That is the honest route to "seeing it" from a
+session with no browser: the harness serialises what the AllSpeak actually created.
+
+**And looking at it caught three things the harness could not**, which is the argument for the page
+rather than a nicety: the arrival dots were *filled* hairline segments and would have rendered as
+**nothing**; the axis labels had no `text-anchor` or font size, so the y labels would have run into
+the plot; and the serialiser itself tested `innerHTML` for truthiness, so a label legitimately
+reading `0` — the first step tick, every time — came out blank. Every one of those passed the frame
+check and the element counts.
+
+**And looking at it immediately caught something the harness could not.** The arrival dots were
+*filled* hairline segments (`M x y h0.01` with `fill=#e5484d`), which render as **nothing at all** —
+a dot has to be a stroked hairline with a round cap. Every coordinate was inside the frame, every
+count was right, and the picture would have been blank. Worth remembering as the reason the page is
+a step and not a nicety.
+
+**The view is now editor-ready, and one of my own plan steps was wrong** (2026-09-29). I had "the
+fetch" as the next piece; it does not belong in the view at all — the plugin contract puts
+*acquisition* on the host side ("file read, fetch, editor buffer — stays on the host side, because
+that is where the platform differences live"), so the view takes a trace and draws it. What it
+actually needed was to be shaped for embedding, and it now is:
+
+- **Every symbol is prefixed `Viz…`.** Names are the scarce resource in a flat table of declared
+  symbols, so the section has to be able to sit beside asedit's own drawings, variables and elements
+  without colliding.
+- **The host owns the panel and the trace** — `VizHost` and `VizTrace` are declared and filled by
+  whoever embeds it, so nothing is fetched or created behind the host's back.
+- **`Draw:` builds its elements once and replaces the marks on every later call.** Verified by
+  drawing twice: 13 elements either way, where a rebuild would give 26, with the marks landing
+  correctly from each trace (9+10 for `trace-run`, 4+4 for `parser`) and every coordinate inside the
+  frame. That is what makes a redraw a redraw rather than a second picture.
+- **`return`, not `stop`** — inside the editor this is a section of the editor's own program, and
+  stopping would end the editor.
+
+**And a placement rule found by getting it wrong: a label is not a barrier.** The body below `Draw:`
+runs by *falling through*, so a section placed before the host's main flow draws before the host has
+created the panel — which is exactly what happened, and showed up as
+`Cannot read properties of undefined (reading 'appendChild')`. The section must sit after the host's
+`stop`, and that is now said in the sketch rather than left to be rediscovered when it is pasted into
+`asedit`.
+
+**And the first cut of the view now draws, and is fitted** (2026-09-29). The geometry is no longer a
+guessed scale: it is fitted to the trace's own ranges (min/max line, total steps), so a run stays
+inside the frame whatever its size. Verified on three real traces — `trace-run` (9 arrivals, 10
+transfers), `parser` (4 and 4), `trace-fixture` (2 and 0) — with every coordinate inside the 1000×700
+viewBox, and on a synthetic **600-line span** that would have collapsed onto a single line before the
+fix below. Still two path elements in every case.
+
+**The fit needed a fix that is worth remembering, and it is a language behaviour rather than a
+mistake in the code:** AllSpeak's arithmetic is integer-first and **division truncates**
+(`divide 10 by 3` is 3), so a scale factor like 580/626 is **0** — the picture would silently flatten.
+The fix is the documented scaled-integer pattern, multiplying *before* dividing, so the intermediate
+stays large and the result is exact to a unit. It is in `learn/reference/07-arithmetic.md`, which is
+where I should have looked first. Worth knowing because a *fractional* layout looks like the obvious
+way to write a fit, and the failure is a wrong picture rather than an error.
+
+**The axis is in, and the element count is now constant** (2026-09-29). Ticks are a **fixed pool of
+four labels a side** — a label is an element, so it cannot be made per tick any more than a mark can
+be made per arrival — spaced by a third of the span and placed with the same fit the marks use, so a
+label sits exactly on the line it names. Verified on two traces: `trace-run` labels lines 25/31/37/43
+at y 60/234/408/582 and steps 0/8/16/24 at x 60/341/623/904; `parser` labels lines 379/387/395/403
+and steps 0/6/12/18. **The whole picture is 13 elements** — host, canvas, frame, eight labels and two
+mark layers — whatever the number of marks, because only the `d` strings grow.
+
+Two consequences worth keeping. **The pool size is the axis's resolution**, so a 4-tick axis is what
+the design has until someone wants more. And **in the editor the y labels may be redundant**: if the
+plot's rows are kept in register with the editor's text, the editor's own line numbers label the same
+lines, and the pool drops to one side.
+
+**And the static-element model bites in a second way:** the axis's tick positions collided with the
+marks' existing `Y2`, which surfaced as *"Duplicate variable name 'Y2'"*. Not a trap in the notes —
+just what happens when every element and every value is a name in one flat table.
+
+**Documentation fixed 2026-09-29** (Graham: "certainly worth adding"). Three defects, each found by
+using the thing and none of them knowable from the page: the **Python list example** in
+`learn/reference/04-collections.md` showed the JS spelling (`set element 0 of Items to`, which does
+not compile in Python) and the table said the two accessors agree — neither does, so the row and the
+example now show `append` + `item`; the page gained the **stack/queue shape** it never mentioned; and
+`learn/reference/18-json.md` now gives the iteration loop **each runtime actually needs** (Python
+`the count of` + `item`, JS `has element` + `element`) instead of claiming a parsed value "can be
+counted". Both loops were run before being written down. The fr/de/it copies of `04-collections.md`
+still need the same three changes — they are hand-kept, not generated.
+
+**Graham's note on that, and what checking it turned up (2026-09-29):** the collision applies to
+*scratch* variables rather than elements, and he added a **stack** type so a name can be pushed on
+entry and popped on exit and re-used in between. Verified in Python — `stack S` + `push 10 onto S` +
+`pop V from S` gives `popped: 20` ✓. **But it is Python-only, and in JS the same two words mean
+something else entirely**: `stack S` is not a keyword there, while `push {value}` and
+`pop [into] {variable}` are the *argument* and *call* stacks. So the idiom is unavailable to anything
+that has to run in the browser — including this view, which names its scratch values by role instead.
+Recorded as `language-pack-issues.md` #16, with the note that the type is undocumented in
+`04-collections.md`'s "four shapes".
+
+**And the project's own trap about undeclared variables caught me live**: five declarations dropped
+in a rewrite surfaced as "I don't understand 'put'" at the first statement using one, not as "not
+declared" — exactly as the root `AGENTS.md` warns. With `path` added, `various/plotview.allspeak`
+reads a trace, walks it in AllSpeak, and emits two `d` attributes — and the stub-DOM harness
+(`various/plotview-check.js`, which is the development loop for this piece since there is no browser
+here) confirms it against the trace of `tools/trace-run.allspeak`: **9 arrivals and 10 transfers
+drawn as two elements in total**, with the geometry checked by hand (`M72 360` is steps 1 × 12 + 60,
+line 25 × 12 + 60 — the first arrival). What it does not yet have: a real fit to the trace's ranges
+rather than a fixed 12 units per step/line, the axis, and the fetch. Both files live in `various/`
+(gitignored); the plugin change is real and additive.
+
+**Which also settles per-mark colour:** one path carries one colour, so the accumulated heat ramp
+(scheme B) becomes one path *per colour band* — quantised, which is what a heat map reads fine at.
+
+**Which makes the drawing-plugin question one of *concision*, not capability** — which is where
+Graham's opening instinct ("maybe a new plugin for drawing tasks") lands, now with evidence rather
+than a guess. One `draw line from … to … in Canvas` would replace four statements per mark, and a
+picture is hundreds of marks; against that, a plugin is a new artefact to maintain and one more
+vocabulary to learn. Worth deciding *when the first view is drawn*, from how the script reads —
+which is the same "build it cheaply and judge it from the picture" rule the sketches followed.
+
+**A finding that removes a worry: the picture needs no new drawing plugin.** AllSpeak has no canvas
+2D context (there is none anywhere in the JS runtime), but the existing `svg` plugin creates `line`,
+`rect`, `circle` and `svgtext` — which is the whole vocabulary the picture uses for tracks, arrival
+dots, transfer strokes and the script text. And because AllSpeak generates the elements it can cull
+to what is *visible*, so a long run does not create a node per visit despite `limit` defaulting to
+100,000.
+
+**And the third view may be smaller than the sketch.** `asedit` already renders the script — it is a
+CodeMirror editor — so the view may need only the **plot** panel, scrolled in sympathy with the
+editor's own text, which is the two-panes-held-in-register idea Graham described in his first
+message. That is a simplification of `various/make-viz-plot.py`, which draws both bands in one canvas
+because it had no editor to sit inside.
+
 **The shape it takes, given what already exists** (`server.allspeak` already serves `/list`,
 `/read`, `/write`, `/version`, `/restart` in AllSpeak, and asedit already talks to them with
 `rest get`/`rest post`):
 
 1. **`viz record`** — a plugin command that runs a script (from a path *or from the buffer text*)
    with a recorder attached and hands back what the picture needs. The counterpart of the existing
-   `viz model`, and the piece every host below needs. *(Not built yet.)*
+   `viz model`, and the piece every host below needs. *(Not built yet — see the two findings below,
+   which the groundwork turned up and which it depends on.)*
+
+**Groundwork done 2026-09-29, before writing `viz record`:**
+
+- **A plugin can run a nested program, and the host survives it.** Verified directly: a plugin
+  command that constructs and starts another `Program` runs it (`[inner] X = 42`), the host
+  continues correctly, and a nested run that *fails* — compile error or runtime error — is caught
+  and leaves the host unharmed. So in-process recording is viable.
+- **The pattern to copy already exists.** `compileOnly` documents the two hazards in its own
+  docstring and handles both: `Program.__init__` resets the module-global `queue` that belongs to
+  the running host, and a failing compile calls `sys.exit()`, which would take the host down with
+  it. `viz record`'s runner must save/restore the queue and catch `SystemExit` exactly the same way.
+- ~~**A defect, and it is the editor's core case: `viz model ... as <source>` did not analyse the
+  supplied text.**~~ **Fixed 2026-09-29.** `compileOnly(path, lines)` never used `lines` — it
+  compiled the file at `path`. Demonstrated before the fix: supplying a one-line `stop` for a file
+  that has a label gave `model | lines=1 ... labels=1` with `anchor | ... | line=3 | name=Inner` —
+  the *text's* dimensions and the *file's* anchors in one report, a plausible wrong answer rather
+  than an error, which is the worse kind. **The JS plugin never had this**: it tokenises the text it
+  is given and compiles that, so this was a Python-only divergence between the two analysers.
+- **The buffer question, decided 2026-09-29: the runtime compiles lines, not just a path.**
+  `Program(arg, testMode, source=None, name=None)` now takes source with no file behind it — the
+  editor's unsaved buffer is the case it exists for, and text should not have to be written to disk
+  to be compiled, looked at or recorded. The command-line branches (`-v`, `debug `, argv splitting)
+  sit in the else, where they belong. Verified end to end on a buffer that has never been saved: it
+  compiles, **runs** (`counted to 3`) and analyses (`lines=10 | labels=1 | anchors=3`, with the
+  label and both markers at their buffer lines).
 2. **A `/viz` route** in `server.allspeak` — a handful of AllSpeak lines, mirroring `/read`.
-3. **A third view in `asedit.allspeak`** — the canvas, drawing from the fetched data. The drawing
-   code exists in `various/make-viz-plot.py` but is *generated* into a page; it has to become a
-   fetch-and-draw so it can live in the editor.
+3. **A third view in `asedit.allspeak`** — **drawing from a trace file first**, since that is the
+   smaller step and the one the remote case needs. Then `viz record` and the `/viz` route add the
+   "record here" button to the same view. The drawing uses the `svg` plugin, culled to what is
+   visible; the code that proves the layout exists in `various/make-viz-plot.py`.
 
 **Run safety — decided and built (2026-09-29).** Recording *runs* the script, so a runaway would
 hang the editor. The guard is a **time budget on the program's own work** rather than a count of
@@ -477,3 +742,69 @@ Two things already established, so nobody re-derives them:
   attribution obligation; the comment in `en-flag.svg` is a courtesy, not a requirement.
 - The PNG set in `resources/flags/` records no provenance of its own. `en-flag.svg` documents
   its source *inside* the file, which is the habit worth copying.
+
+**JSON display in the editor** (2026-09-29). `OpenFile` now calls a `FormatJson` step for any `.json`
+name (including `.viz.json`), formatting **only a single-line file** — the case Graham named — and
+leaving a laid-out file at its author's indent. It uses the runtime's own `json format`
+(`JSON.stringify(val, null, 2)`), and catches malformed input so a file that will not parse still
+opens. The call sits **before** the tab's saved text is recorded, so opening a file does not mark it
+modified. Verified with five cases against the routine extracted from `asedit`. The guard exists
+because `asedit.json` is four-space: always reformatting would have rewritten the editor's own layout.
+
+**The revert was the poll, and the fix is symmetry** (2026-09-29). Graham saw the JSON format itself
+and then revert to one line after a couple of seconds. Cause: `asedit` has **no Save button** — it
+auto-saves every 500 ms and `PollFile` re-reads the current file every 3 s — and the formatter sat
+only in the *loader*, so the tab held formatted text while the file on disk was still one line. The
+poll compared them, found a difference every pass, and silently reloaded the minified text over the
+tab; three seconds per round, which is why it read as a delay rather than a loop.
+
+**The rule to carry: a transformation applied to data that is read on two paths must be applied on
+both.** The routine now takes its text in `JsonText` and runs in the loader *and* the poll, so the
+comparison is like with like and the tab settles. It also converges rather than oscillates — a
+formatted file is multi-line, so the guard leaves it alone, and formatting twice equals formatting
+once. The file on disk is *not* rewritten by looking at it; it becomes pretty once the user edits it,
+because the auto-save writes what they see.
+
+
+**The Graph pane now names the run it drew** (2026-09-29). A recording is a file beside the script, so
+a *failed* recording leaves the previous one in place, and a stale picture is exactly as convincing as
+a fresh one. The view draws a caption under the plot — `lines 152-493, 328 steps` — which is the only
+thing that can tell the two apart. Both copies of the view carry it (they must stay in step by hand).
+
+**Measured while chasing an unexplained freeze:** the wrapped script compiles in 48 ms (JS) and fails
+cleanly on `viz end` in 13 ms; the Python analyser takes 0.27 s; the host runs and fails fast; the view
+draws the on-disk recording in 1.0 s and a **whole-script** window in 0.98 s (46 marks, 24.7 KB — a
+whole-script window is *not* big, so a scaling hang is ruled out). **The freeze itself is still
+unexplained** — everything reachable headlessly is fast, so the browser console is the next evidence.
+
+**Marker words, worth remembering:** `viz start` … `viz stop`. Not `viz end` — the compiler says
+*"viz: expected `start` or `stop`"*, and `examples/chemical/parser.allspeak` already carries a pair at
+lines 206/213 (that is the recording in `parser.allspeak.viz.json`).
+
+
+**The graph is slow because `element N of <array>` re-parses the array — measured at ~8 ms per access
+on a 2472-event trace** (2026-09-29), and the view makes about four such accesses per event across its
+two passes, so the cost is quadratic in the trace: 493 marks 6.8 s, 740 14.6 s, 1481 54.5 s, 2468 over
+two minutes. Isolated: `element` 8.7 ms/iteration, `property` 0.24 ms, an empty loop 0.18 ms.
+
+**Shipped:** the view yields every hundred marks (`wait 1 millis`, measured free — 6.75 → 6.83 s) so
+the browser is never blocked for the whole pass, the host prints `Drawing the recording - please wait`
+before the wait and clears it after, and the view captions the run it drew so a stale recording is
+visible. A `wait` inside the `gosub`'d draw resumes correctly, verified by the marks still coming out
+right.
+
+**Not yet done, and the real prize:** stop `element N` re-parsing — a runtime change, ~1000× on this
+pane and on any script using lists. Graham's call, since it touches the core.
+
+
+**The editor now predicts a slow recording and learns the rate** (2026-09-29). `VizPredict` (before the
+draw) and `VizRemember` (after) sit in the Graph block: milliseconds per kilobyte, measured from the
+draw that just happened, kept in `.viz-calibration.json` in the project root. Over five seconds and it
+pops up a warning naming the estimate in seconds and suggesting narrower markers. Silent on a first
+run, because there is no measurement yet. Verified verbatim: 58,900 ms / 402,000 bytes → 150 ms/Kb →
+58 s. **Per-machine file, so it wants gitignoring.**
+
+Graham's ruling, worth remembering: the wait is *acceptable* — other machines will be faster, the
+example is extreme, and a visualiser should highlight parts of a run rather than trace whole ones. He
+also made the good point that having to wait makes the next request more considered. So **the slow
+case stays slow**: the message explains it and nothing refuses to draw. The `element N` re-parse stays.

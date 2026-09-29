@@ -85,6 +85,7 @@ const AllSpeak_SVG = {
 				case `circle`:
 				case `ellipse`:
 				case `line`:
+				case `path`:
 				case `rect`:
 				case `svgtext`:
 					if (compiler.isWord(`in`)) {
@@ -190,6 +191,7 @@ const AllSpeak_SVG = {
 						value.x2 = element.getAttribute(`x2`);
 						value.y2 = element.getAttribute(`y2`);
 						break;
+					case `path`:
 					case `rect`:
 					case `svgtext`:
 						value.x = element.getAttribute(`x`);
@@ -292,6 +294,7 @@ const AllSpeak_SVG = {
 						element.setAttribute(`x2`, parseInt(value.x2) + newX);
 						element.setAttribute(`y2`, parseInt(value.y2) + newY);
 						break;
+					case `path`:
 					case `rect`:
 					case `svgtext`:
 						element.setAttribute(`x`, x);
@@ -434,6 +437,18 @@ const AllSpeak_SVG = {
 		}
 	},
 
+	Path: {
+
+		compile: (compiler) => {
+			compiler.compileVariable(`svg`, `path`, false, `dom`);
+			return true;
+		},
+
+		run: (program) => {
+			return program[program.pc].pc + 1;
+		}
+	},
+
 	Rect: {
 
 		compile: (compiler) => {
@@ -544,6 +559,8 @@ const AllSpeak_SVG = {
 			return AllSpeak_SVG.Group;
 		case `line`:
 			return AllSpeak_SVG.Line;
+		case `path`:
+			return AllSpeak_SVG.Path;
 		case `move`:
 			return AllSpeak_SVG.Move;
 		case `on`:

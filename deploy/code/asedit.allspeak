@@ -17,6 +17,7 @@
     div FileRow
     div EditorArea       ! flat-mode pane (CodeMirror-wrapped textarea)
     div BlocksArea       ! Blocks-mode pane (toolbar + split)
+    div VizHost          ! Graph-mode pane: the panel the plot draws in (see the Graph sections)
     textarea ContentEditor
     textarea BlocksCodePane
     textarea BlocksDocPane
@@ -27,6 +28,7 @@
     button OpenBtn
     button FindBtn
     button BlocksBtn
+    button GraphBtn
     button BlocksPrev
     button BlocksNext
     button BlocksVerify
@@ -61,6 +63,8 @@
     variable Content       ! scratch: current editor content
     variable FileContent   ! scratch: content fetched from server
     variable FileList      ! scratch: JSON array from /list
+    variable JsonLines     ! scratch: a JSON file's text split into lines
+    variable JsonText      ! scratch: text on its way to the JSON formatter
     variable N
     variable M
     variable Item          ! scratch: single entry object from list
@@ -75,6 +79,17 @@
 
 !   -- Blocks mode (parser + view + edit) --
     variable BlocksMode    ! 0 = flat, 1 = Blocks pane visible
+    variable GraphMode     ! 0 = not graphed, 1 = Graph pane visible
+    variable VizTrace      ! the trace text the Graph pane draws — the plot view's input
+    variable TraceSize      ! bytes of the recording, which is what predicts the drawing time
+    variable DrawStarted    ! `now` when the drawing began
+    variable DrawMillis     ! how long it took
+    variable VizMillisPerKb ! learned: milliseconds per kilobyte of recording, on this machine
+    variable VizCalib
+    variable VizCalibParsed
+    variable VizPredicted
+    variable VizCalibText
+    variable TracePath     ! the trace file looked for, so "nothing to draw" can name it
     variable CurBlock      ! 0-based index into Sections arrays
     variable BlockDirty    ! 1 if user edited the current block since last splice
     variable SecCount      ! number of parsed sections
@@ -157,7 +172,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 8fffee32
+!! @hash b8bb31fd
 !! @verified b4ba77d2
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -182,6 +197,8 @@
     attach Scroller to `se-scroller`
     attach CloseBtn to `se-closebtn`
     attach BlocksBtn to `se-blocksbtn`
+    attach GraphBtn to `se-graphbtn`
+    attach VizHost to `se-graph-area`
     attach EditorArea to `se-editor-area`
     attach BlocksArea to `se-blocks-area`
     attach BlocksTitle to `se-blocks-title`
@@ -194,7 +211,7 @@
     attach BlocksDocPane to `se-blocks-doc`
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
-!! @hash e1a4268e
+!! @hash 8cb592d8
 !! @verified e1a4268e
 !!!
 !! Some general initialisation
@@ -334,6 +351,7 @@ VersionDone:
     on click PlusBtn go to NewFile
     on click FindBtn go to DoFind
     on click BlocksBtn go to ToggleBlocks
+    on click GraphBtn go to ToggleGraph
     on click BlocksPrev go to PrevBlock
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
@@ -362,8 +380,9 @@ VersionDone:
     end
 
     put 0 into BlocksMode
+    put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash 562a8033
+!! @hash d1c37c34
 !! @verified 562a8033
 !!!
 !! While editor is running it periodically saves changes made by the user
@@ -450,6 +469,17 @@ PollFile:
     index TabPath to ActiveTab
     if TabPath is empty go to PollNext
     rest get FileContent from `/read/` cat TabPath or go PollNext
+    ! Formatted as it is read, exactly as the loader formats it. Without this the poll compares a
+    ! one-line file on disk against the formatted text in the tab, sees a difference on every pass,
+    ! and reloads the file over the formatted text every three seconds — which is what "it formats
+    ! it, then after a couple of seconds reverts to a one-liner" turned out to be. Like has to be
+    ! compared with like for the poll to settle.
+    if TabPath ends with `.json`
+    begin
+        put FileContent into JsonText
+        gosub to FormatJson
+        put JsonText into FileContent
+    end
     codemirror get content of ContentEditor into Content
     index TabSaved to ActiveTab
     if FileContent is not TabSaved
@@ -470,7 +500,7 @@ PollFile:
 PollNext:
     fork to PollFile
     stop
-!! @hash 528a0f6d
+!! @hash 7000417a
 !! @verified 528a0f6d
 !!!
 !! File browser overlay behind the Open button: lists the current directory, navigates into folders and back to the project root, and hands the chosen file to the tab-management section to open.
@@ -616,6 +646,12 @@ OpenFile:
     end
     ! Not open -- load from server and create a new tab
     rest get Content from `/read/` cat TabItem or go BrowserError
+    if TabItem ends with `.json`
+    begin
+        put Content into JsonText
+        gosub to FormatJson
+        put JsonText into Content
+    end
     add 1 to TabCount
     set the elements of TabPath to TabCount
     set the elements of TabName to TabCount
@@ -631,6 +667,25 @@ OpenFile:
     put Content into TabSaved
     put N into ActiveTab
     go to ActivateTab
+
+!   -- A JSON file arrives minified as often as not, and one line of it is unreadable --
+FormatJson:
+    ! Only a file that is *one line* is reformatted. A file already laid out, at whatever indent its
+    ! author chose, is left exactly as it is — the complaint is that one line of JSON is unreadable,
+    ! not that somebody's formatting is wrong, and normalising it would rewrite their file the first
+    ! time they saved. `json split` divides on newline by default, so the test costs two statements
+    ! and needs no new vocabulary.
+    json split JsonText into JsonLines
+    if the json count of JsonLines is greater than 1 return
+    ! The formatted text is what the tab records as its own, so opening a file does not mark it
+    ! modified — and because the poll formats the file it reads in just the same way, the two agree
+    ! and the tab settles rather than reloading itself every three seconds. Malformed JSON is left
+    ! as it is: a file that will not parse is the one you most want to look at, so the error is
+    ! caught rather than reported. The runtime's own formatter does the work — `json format` is
+    ! JSON.stringify with a two-space indent, the same indent the Python runtime writes on save.
+    json format JsonText or go FormatJsonEnd
+FormatJsonEnd:
+    return
 
 !   -- Switch to an existing tab --
 SwitchTab:
@@ -691,7 +746,7 @@ ActivateTab:
     codemirror set content of ContentEditor to TabSaved
     gosub to RebuildTabBar
     stop
-!! @hash 37917138
+!! @hash 80b6d623
 !! @verified 14377e61
 !!!
 !! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
@@ -1505,4 +1560,477 @@ JumpToBlock:
     stop
 !! @hash 56b2a0d3
 !! @verified 426884b9
+!!!
+
+!! Graph mode: a third view — the run drawn, not the script.
+!!
+!! Blocks mode reads the script's *shape*; this reads what a *run* did. Those are different questions asked of the same file, which is why it is a third pane rather than another setting on either existing one: a code review asks what the code is made of, and a run review asks where the flow went.
+!!
+!! **The recording is not made here.** It is a file beside the script — `<script>.viz.json`, which the runtime writes with `--trace=` — so a run captured on remote hardware arrives with the project however the project travels, and reviewing a script never has to execute it. This pane reads that file and draws it, nothing more.
+!!
+!! **The plumbing is one sentence.** Markers decide what is recorded, and a script without them has nothing to show; rather than explain that in the pane, the message names the file it looked for, because that is the one thing a reader needs in order to produce one.
+!!
+!! The drawing itself is a portable section, appended below and kept verbatim from `various/plotview.allspeak`, so the same AllSpeak can be lifted into another host. Its declarations must come *before* their use in this file, which is why `VizTrace` is declared with the editor's own variables rather than with the section.
+ToggleGraph:
+    if GraphMode is 0 go to EnterGraph
+    gosub to DoExitGraph
+    stop
+
+!   Entering shows the pane, reads the recording beside the current script and draws it.
+!   Leaving Blocks mode first is deliberate: the panes are alternatives, not layers.
+EnterGraph:
+    if BlocksMode is 1 gosub to DoExitBlocks
+    put 1 into GraphMode
+    set the content of GraphBtn to `Edit`
+    set style `display` of EditorArea to `none`
+    set style `display` of BlocksArea to `none`
+    set style `display` of VizHost to `flex`
+    index TabPath to ActiveTab
+    put TabPath cat `.viz.json` into TracePath
+    ! Say so before the wait rather than after it. A recording of a big run takes tens of seconds to
+    ! draw, and a pane that sits empty for that long reads as a fault — while a line that says what
+    ! is happening costs nothing and answers the only question the reader has. Cleared once it is up.
+    set the content of StatusSpan to `Drawing the recording - please wait`
+    rest get VizTrace from `/read/` cat TracePath or go GraphNone
+    put the length of VizTrace into TraceSize
+    gosub to VizPredict
+    put now into DrawStarted
+    gosub to Draw
+    subtract DrawStarted from now giving DrawMillis
+    gosub to VizRemember
+    fork to ClearStatus
+    stop
+
+!   What a recording will cost, said before the wait rather than discovered during it. A recording
+!   costs roughly in proportion to its size, so one number learned on this machine predicts the next.
+!   Nothing is said on a first run: there is no measurement yet, and a guess would be worse than
+!   silence. The two constants at the end are the whole of the judgement.
+VizPredict:
+    if TraceSize is 0 return
+    put 0 into VizMillisPerKb
+    rest get VizCalib from `/read/.viz-calibration.json` or go VizPredictJudged
+    put json of VizCalib into VizCalibParsed
+    put property `millis_per_kb` of VizCalibParsed into VizMillisPerKb
+VizPredictJudged:
+    if VizMillisPerKb is 0 return
+    ! Multiply before dividing: the rate is per kilobyte and the recording is counted in bytes.
+    multiply TraceSize by VizMillisPerKb giving VizPredicted
+    divide VizPredicted by 1024 giving VizPredicted
+    if VizPredicted is less than 5000 return
+    divide VizPredicted by 1000 giving VizPredicted
+    alert `This recording is ` cat TraceSize cat ` bytes, and drawing it will take about ` cat VizPredicted cat ` seconds on this machine. Carry on, or narrow the viz start and viz stop markers to the part you want to watch.`
+    return
+
+!   And remember what it actually cost, so the next prediction is a measurement rather than a guess.
+!   Overwritten rather than averaged: a machine's speed is not a thing to smooth, and the last
+!   measurement is the only evidence there is.
+VizRemember:
+    if TraceSize is 0 return
+    if DrawMillis is less than 1 return
+    multiply DrawMillis by 1024 giving VizPredicted
+    divide VizPredicted by TraceSize giving VizMillisPerKb
+    put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
+    rest post VizCalibText to `/write/.viz-calibration.json` or return
+    return
+
+!   Nothing to draw, and the message names the file that was missing rather than what a marker is.
+GraphNone:
+    set the content of StatusSpan to `No recording beside this script: ` cat TracePath
+    fork to ClearStatus
+    stop
+
+!   Leaving puts the flat editor back and relabels the button, so the pane's state is legible from
+!   the button alone.
+DoExitGraph:
+    put 0 into GraphMode
+    set the content of GraphBtn to `Graph`
+    set style `display` of VizHost to `none`
+    set style `display` of EditorArea to `block`
+    return
+!! @hash a803300f
+!!!
+
+!!
+!! plotview.allspeak — the run as a picture, drawn in AllSpeak with the svg plugin.
+!!
+!! The third view's drawing, grown from the front. Plot-only on purpose: the editor already renders
+!! the script beside it, so this draws what the editor cannot — the sequence, the arrivals, and the
+!! flow between them.
+!!
+!! **One path per kind of mark.** An AllSpeak element is a declared symbol, so a script cannot
+!! create N elements for N marks. What it can do is grow one path's `d` attribute by concatenation
+!! and let the browser draw the whole layer from it, so the marks cost string building rather than
+!! DOM nodes. A trace of 9 arrivals and 10 transfers is two elements. Per-mark colour would need one
+!! path per colour band, which is what the heat ramp will use.
+!!
+!! **Geometry is in viewBox units, fitted to the trace's own ranges** — not to pixels, and not to a
+!! guessed scale. That is what keeps the drawing independent of the element's laid-out size (so the
+!! browser scales it to any panel, and the whole script runs against a stub DOM in node), and what
+!! keeps a long run inside the frame instead of off the right-hand edge.
+!!
+!! **The trap this had to dodge:** numbers read out of the trace stay *text*, and text compares
+!! lexically — `9` is not less than `10` — so the range-finding below converts with `add 0 to …`
+!! before it compares anything. Without that the picture is silently wrong, which is the failure
+!! mode the project's own notes warn about.
+!!!
+
+!! The view's own symbols, all prefixed `Viz…`.
+!!
+!! Names are the scarce resource in a flat table of declared symbols — which is not a figure of
+!! speech: an earlier version collided with the host's own `Y2` and the compiler refused it as a
+!! duplicate. Everything the section declares is therefore `Viz…`, so it can sit inside an editor
+!! that has its own drawings, elements and variables.
+!!
+!! `VizHost` (the panel it draws in) and `VizTrace` (the trace, already fetched) are the host's, and
+!! are declared by whoever embeds this. Acquisition stays on the host side, as the plugin contract
+!! says, so this section never fetches anything and never has to execute a script to draw a run.
+    variable VizReady        ! set once the elements exist, so a redraw only redraws
+    variable VizParsed
+    variable VizEvents
+    variable VizEvent
+    variable VizArgs
+    variable VizCategory
+    variable VizIndex
+    variable VizLine
+    variable VizSteps
+    variable VizOffset
+    variable VizMinLine
+    variable VizMaxLine
+    variable VizMaxSteps
+    variable VizSpanLines
+    variable VizDotSize
+    variable VizCaptionText
+    variable VizBreathe
+    variable VizMargin
+    variable VizPlotW
+    variable VizPlotH
+    variable VizArrivals
+    variable VizTransfers
+    variable VizX
+    variable VizY
+    variable VizY2
+    variable VizTickStep
+    variable VizXStep
+    variable VizT1
+    variable VizT2
+    variable VizT3
+    variable VizTY0
+    variable VizTY1
+    variable VizTY2
+    variable VizTY3
+    variable VizTX0
+    variable VizTX1
+    variable VizTX2
+    variable VizTX3
+
+    svg VizCanvas
+    rect VizFrame
+    path VizArrivalDots
+    path VizFlowLines
+    ! Scratch values are named by role rather than pushed on a stack, which would be the neater
+    ! idiom in Python: the view has to run in the JS runtime, where there is no `stack` type and
+    ! `push`/`pop` mean the argument and call stacks instead. See language-pack-issues.md #16.
+    !
+    ! The y labels are a pool, not a set built to fit: an element is a declared symbol, so the view
+    ! cannot make a label per tick any more than it can make a mark per arrival. Four are declared and
+    ! assigned; the count is the axis's resolution, which is all a tick count is.
+    svgtext VizYLabel0
+    svgtext VizYLabel1
+    svgtext VizYLabel2
+    svgtext VizYLabel3
+    svgtext VizXLabel0
+    svgtext VizXLabel1
+    svgtext VizXLabel2
+    svgtext VizXLabel3
+    svgtext VizCaption      ! says which run the picture is of, so a stale one shows
+Draw:
+    put json of VizTrace into VizParsed
+    put property `traceEvents` of VizParsed into VizEvents
+
+    ! ---- built once, on the first draw ----
+    ! The panel is the host's (`VizHost`, declared and created by whoever embeds this) and the trace
+    ! arrives in `VizTrace` already fetched: acquisition stays on the host side, as the plugin
+    ! contract says. Building the elements once is what makes a redraw a redraw — the marks are
+    ! attributes, so a second call replaces them instead of adding a second picture.
+    if VizReady is 1 go to VizBuilt
+
+    ! The drawing's frame, in viewBox units. These belong to the host's panel in the end — they are
+    ! the one place the view still assumes a size — but a constant keeps the maths in whole numbers,
+    ! which this runtime wants anyway: its arithmetic is integer-first and division truncates.
+    put 60 into VizMargin
+    put 880 into VizPlotW
+    put 580 into VizPlotH
+
+    create VizCanvas in VizHost
+    set attribute `viewBox` of VizCanvas to `0 0 1000 700`
+    set attribute `preserveAspectRatio` of VizCanvas to `xMidYMid meet`
+    set attribute `font-size` of VizCanvas to 15
+    set attribute `fill` of VizCanvas to `#8b93a1`
+
+    create VizFrame in VizCanvas
+    set attribute `x` of VizFrame to 60
+    set attribute `y` of VizFrame to 60
+    set attribute `width` of VizFrame to 880
+    set attribute `height` of VizFrame to 580
+    set attribute `fill` of VizFrame to `none`
+    set attribute `stroke` of VizFrame to `#3a4048`
+
+    create VizYLabel0 in VizCanvas
+    create VizYLabel1 in VizCanvas
+    create VizYLabel2 in VizCanvas
+    create VizYLabel3 in VizCanvas
+    set attribute `text-anchor` of VizYLabel0 to `end`
+    set attribute `text-anchor` of VizYLabel1 to `end`
+    set attribute `text-anchor` of VizYLabel2 to `end`
+    set attribute `text-anchor` of VizYLabel3 to `end`
+
+    create VizXLabel0 in VizCanvas
+    create VizXLabel1 in VizCanvas
+    create VizXLabel2 in VizCanvas
+    create VizXLabel3 in VizCanvas
+    set attribute `text-anchor` of VizXLabel0 to `middle`
+    set attribute `text-anchor` of VizXLabel1 to `middle`
+    set attribute `text-anchor` of VizXLabel2 to `middle`
+    set attribute `text-anchor` of VizXLabel3 to `middle`
+
+    ! The caption sits under the plot and names the window this run covered. A recording is a
+    ! file beside the script, so a run that failed to record leaves the *previous* one in place
+    ! and the picture looks exactly as convincing as a fresh one — the line numbers are what
+    ! let a reader tell, and they are only useful if they are on the picture.
+    create VizCaption in VizCanvas
+    set attribute `text-anchor` of VizCaption to `start`
+
+    ! A dot is a *stroked* hairline with a round cap, not a filled one: `M x y h0.01` alone fills to
+    ! nothing at all. Nine units wide and a round cap, so each arrival reads as a dot the size of the
+    ! row it sits on.
+    create VizArrivalDots in VizCanvas
+    set attribute `fill` of VizArrivalDots to `none`
+    set attribute `stroke` of VizArrivalDots to `#e5484d`
+    set attribute `stroke-linecap` of VizArrivalDots to `round`
+    create VizFlowLines in VizCanvas
+    set attribute `stroke` of VizFlowLines to `#e0a44a`
+    set attribute `stroke-width` of VizFlowLines to 2
+    set attribute `fill` of VizFlowLines to `none`
+    put 1 into VizReady
+
+VizBuilt:
+    ! ---- drawn every time ----
+    ! Cleared first, so a redraw of a different run cannot leave a mark from the last one behind.
+    put `` into VizArrivals
+    put `` into VizTransfers
+    ! The dot's size follows the row, so it reads as a mark on a line however many lines the run
+    ! spans. A constant made it a bead four rows deep on a 276-line trace, and would have made it a
+    ! pinprick on a ten-line one. Clamped, because a one-line span has no row height worth using.
+    divide VizPlotH by VizSpanLines giving VizDotSize
+    if VizDotSize is less than 3 put 3 into VizDotSize
+    if VizDotSize is greater than 14 put 14 into VizDotSize
+    set attribute `stroke-width` of VizArrivalDots to VizDotSize
+    set attribute `d` of VizArrivalDots to VizArrivals
+    set attribute `d` of VizFlowLines to VizTransfers
+    set the text of VizYLabel0 to ``
+    set the text of VizYLabel1 to ``
+    set the text of VizYLabel2 to ``
+    set the text of VizYLabel3 to ``
+    set the text of VizXLabel0 to ``
+    set the text of VizXLabel1 to ``
+    set the text of VizXLabel2 to ``
+    set the text of VizXLabel3 to ``
+    set the text of VizCaption to ``
+
+    ! ---- pass one: the frame the picture is drawn in ----
+    put 999999 into VizMinLine
+    put 0 into VizMaxLine
+    put 0 into VizMaxSteps
+    put 0 into VizIndex
+    while VizEvents has element VizIndex
+    begin
+        ! Give the browser a turn every hundred marks. Without this the page's thread is held for the
+        ! whole pass — tens of seconds on a big recording — and the browser offers to stop the script
+        ! instead of painting the frame that is already built.
+        add 1 to VizBreathe
+        if VizBreathe is greater than 100
+        begin
+            put 0 into VizBreathe
+            wait 1 millis
+        end
+        put element VizIndex of VizEvents into VizEvent
+        put property `cat` of VizEvent into VizCategory
+        put property `args` of VizEvent into VizArgs
+        if VizCategory is `window`
+        begin
+            put property `steps` of VizArgs into VizMaxSteps
+            add 0 to VizMaxSteps
+        end
+        if VizCategory is `anchor`
+        begin
+            put property `line` of VizArgs into VizLine
+            add 0 to VizLine
+            if VizLine is less than VizMinLine put VizLine into VizMinLine
+            if VizLine is greater than VizMaxLine put VizLine into VizMaxLine
+            put property `steps` of VizArgs into VizSteps
+            add 0 to VizSteps
+            if VizSteps is greater than VizMaxSteps put VizSteps into VizMaxSteps
+        end
+        if VizCategory is `transfer`
+        begin
+            put property `from_line` of VizArgs into VizLine
+            add 0 to VizLine
+            if VizLine is less than VizMinLine put VizLine into VizMinLine
+            if VizLine is greater than VizMaxLine put VizLine into VizMaxLine
+            put property `to_line` of VizArgs into VizLine
+            add 0 to VizLine
+            if VizLine is less than VizMinLine put VizLine into VizMinLine
+            if VizLine is greater than VizMaxLine put VizLine into VizMaxLine
+        end
+        add 1 to VizIndex
+    end
+
+    if VizMaxSteps is less than 1 put 1 into VizMaxSteps
+    take VizMinLine from VizMaxLine giving VizSpanLines
+    add 1 to VizSpanLines
+
+    ! No scale factors are kept, and that is deliberate. AllSpeak's arithmetic is integer-first and
+    ! division truncates (`divide 10 by 3` is 3), so a fraction here would be lost: a 626-line span
+    ! against a 580-unit pane gives 0, and the picture would collapse onto a single line. Multiplying
+    ! *before* dividing keeps the intermediate large and the result exact to a unit — the documented
+    ! scaled-integer pattern, applied where it matters most.
+
+    ! ---- pass two: the marks, at those scales ----
+    put `` into VizArrivals
+    put `` into VizTransfers
+    put 0 into VizIndex
+    while VizEvents has element VizIndex
+    begin
+        ! Give the browser a turn every hundred marks. Without this the page's thread is held for the
+        ! whole pass — tens of seconds on a big recording — and the browser offers to stop the script
+        ! instead of painting the frame that is already built.
+        add 1 to VizBreathe
+        if VizBreathe is greater than 100
+        begin
+            put 0 into VizBreathe
+            wait 1 millis
+        end
+        put element VizIndex of VizEvents into VizEvent
+        put property `cat` of VizEvent into VizCategory
+        put property `args` of VizEvent into VizArgs
+        if VizCategory is `anchor`
+        begin
+            put property `steps` of VizArgs into VizSteps
+            add 0 to VizSteps
+            multiply VizSteps by VizPlotW giving VizX
+            divide VizX by VizMaxSteps giving VizX
+            add VizMargin to VizX
+            put property `line` of VizArgs into VizLine
+            add 0 to VizLine
+            take VizMinLine from VizLine giving VizOffset
+            multiply VizOffset by VizPlotH giving VizY
+            divide VizY by VizSpanLines giving VizY
+            add VizMargin to VizY
+            put VizArrivals cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizArrivals
+        end
+        if VizCategory is `transfer`
+        begin
+            put property `steps` of VizArgs into VizSteps
+            add 0 to VizSteps
+            multiply VizSteps by VizPlotW giving VizX
+            divide VizX by VizMaxSteps giving VizX
+            add VizMargin to VizX
+            put property `from_line` of VizArgs into VizLine
+            add 0 to VizLine
+            take VizMinLine from VizLine giving VizOffset
+            multiply VizOffset by VizPlotH giving VizY
+            divide VizY by VizSpanLines giving VizY
+            add VizMargin to VizY
+            put property `to_line` of VizArgs into VizLine
+            add 0 to VizLine
+            take VizMinLine from VizLine giving VizOffset
+            multiply VizOffset by VizPlotH giving VizY2
+            divide VizY2 by VizSpanLines giving VizY2
+            add VizMargin to VizY2
+            put VizTransfers cat `M` cat VizX cat ` ` cat VizY cat `L` cat VizX cat ` ` cat VizY2 into VizTransfers
+        end
+        add 1 to VizIndex
+    end
+
+    ! ---- the axis ----
+    ! Four ticks a side, spaced by a third of the span. Placed with the same fit the marks use, so a
+    ! label sits exactly on the line it names.
+    divide VizSpanLines by 3 giving VizTickStep
+    if VizTickStep is less than 1 put 1 into VizTickStep
+    divide VizMaxSteps by 3 giving VizXStep
+    if VizXStep is less than 1 put 1 into VizXStep
+
+    put VizMinLine into VizLine
+    add VizTickStep to VizLine
+    put VizLine into VizT1
+    add VizTickStep to VizLine
+    put VizLine into VizT2
+    add VizTickStep to VizLine
+    put VizLine into VizT3
+
+    take VizMinLine from VizMinLine giving VizTY0
+    multiply VizTY0 by VizPlotH giving VizTY0
+    divide VizTY0 by VizSpanLines giving VizTY0
+    add VizMargin to VizTY0
+
+    put VizMinLine into VizLine
+    add VizTickStep to VizLine
+    take VizMinLine from VizLine giving VizTY1
+    multiply VizTY1 by VizPlotH giving VizTY1
+    divide VizTY1 by VizSpanLines giving VizTY1
+    add VizMargin to VizTY1
+
+    put VizT2 into VizTY2
+    take VizMinLine from VizTY2 giving VizTY2
+    multiply VizTY2 by VizPlotH giving VizTY2
+    divide VizTY2 by VizSpanLines giving VizTY2
+    add VizMargin to VizTY2
+
+    put VizT3 into VizTY3
+    take VizMinLine from VizTY3 giving VizTY3
+    multiply VizTY3 by VizPlotH giving VizTY3
+    divide VizTY3 by VizSpanLines giving VizTY3
+    add VizMargin to VizTY3
+
+    move VizYLabel0 to 52 VizTY0
+    set the text of VizYLabel0 to VizMinLine
+    move VizYLabel1 to 52 VizTY1
+    set the text of VizYLabel1 to VizT1
+    move VizYLabel2 to 52 VizTY2
+    set the text of VizYLabel2 to VizT2
+    move VizYLabel3 to 52 VizTY3
+    set the text of VizYLabel3 to VizT3
+
+    put 0 into VizTX0
+    multiply VizXStep by VizPlotW giving VizTX1
+    divide VizTX1 by VizMaxSteps giving VizTX1
+    add VizMargin to VizTX1
+    multiply VizXStep by 2 giving VizTX2
+    multiply VizTX2 by VizPlotW giving VizTX2
+    divide VizTX2 by VizMaxSteps giving VizTX2
+    add VizMargin to VizTX2
+    multiply VizXStep by 3 giving VizTX3
+    multiply VizTX3 by VizPlotW giving VizTX3
+    divide VizTX3 by VizMaxSteps giving VizTX3
+    add VizMargin to VizTX3
+
+    move VizXLabel0 to 60 664
+    set the text of VizXLabel0 to VizTX0
+    move VizXLabel1 to VizTX1 664
+    set the text of VizXLabel1 to VizXStep
+    move VizXLabel2 to VizTX2 664
+    multiply VizXStep by 2 giving VizT1
+    set the text of VizXLabel2 to VizT1
+    move VizXLabel3 to VizTX3 664
+    multiply VizXStep by 3 giving VizT1
+    set the text of VizXLabel3 to VizT1
+
+    move VizCaption to 60 690
+    put `lines ` cat VizMinLine cat `-` cat VizMaxLine cat `, ` cat VizMaxSteps cat ` steps` into VizCaptionText
+    set the text of VizCaption to VizCaptionText
+
+    set attribute `d` of VizArrivalDots to VizArrivals
+    set attribute `d` of VizFlowLines to VizTransfers
+    return
+!! @hash 5a6a577b
 !!!

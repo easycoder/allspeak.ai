@@ -62,7 +62,32 @@ load Text from `data/2024-25/04.json`
 put json of Text into Rows
 ```
 
-`Rows` is now a dict or a list (depending on the top-level JSON shape) and can be indexed, iterated, or counted with the usual array/dictionary commands.
+`Rows` is now a dict or a list (depending on the top-level JSON shape), and is indexed, iterated and tested with the collection commands — but the loop differs by runtime, because the *count* does:
+
+**Python** — `the count of` gives the length, so a list walks the ordinary way:
+
+```as
+put 0 into Index
+while Index is less than the count of Rows
+begin
+    put item Index of Rows into Row
+    add 1 to Index
+end
+```
+
+**JS** — there is no `the count of` (`count` is a word with nothing behind it), so the guard asks the array itself:
+
+```as
+put 0 into Index
+while Rows has element Index
+begin
+    put element Index of Rows into Row
+    add 1 to Index
+end
+```
+
+The `has element` form is worth preferring even on Python: it needs no separate count and cannot go
+out of step with what it is walking. See `language-pack-issues.md` #15.
 
 If the input isn't valid JSON, `json of` yields an empty value rather than raising — wrap subsequent code in an `if Rows is empty` guard if you can't trust the source.
 

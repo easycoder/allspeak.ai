@@ -66,15 +66,21 @@ To iterate a dictionary, materialise its keys into a list first and walk the lis
 
 For a homogeneously-typed sequence of values:
 
-**Python** — typed `list` declaration:
+**Python** — typed `list` declaration, grown with `append` and read with `item`:
 
 ```as
 list Items
 reset Items
-set element 0 of Items to `first`
-set element 1 of Items to `second`
-put element 0 of Items into First
+append `first` to Items
+append `second` to Items
+put item 0 of Items into First
 ```
+
+Note `item`, not `element`: on the Python side `element N of X` belongs to a variable's *array mode*
+(shape 1 above) and does not apply to a declared `list`. Assigning to a slot that does not exist yet
+is an error rather than a growth — *list assignment index out of range* — which is why a Python list
+is filled with `append`. On JS the same `list` is a JSON array and `set element 4 of X to V` grows it.
+
 
 **JS** — generic `variable` initialised as an array:
 
@@ -85,6 +91,23 @@ set element 0 of Items to `first`
 set element 1 of Items to `second`
 put element 0 of Items into First
 ```
+
+### 5. Stacks and queues — Python only
+
+A last-in-first-out or first-in-first-out sequence, for work that nests or arrives in order. It lets
+one name serve many scratch uses: push on entry, pop on exit, and the name is free in between.
+
+```as
+stack Undo
+push `first` onto Undo
+pop Last from Undo        ! Last is `first`; the stack is empty again
+```
+
+**This is Python only.** There is no `stack` or `queue` declaration in the JS runtime, and — worth
+knowing before reaching for it — `push` and `pop` *do* exist there, meaning something else entirely:
+`push {value}` and `pop [into] {variable}` manipulate the runtime's own argument and call stacks. So
+the Python idiom fails in JS in a way that has nothing to do with what was meant. See
+`language-pack-issues.md` #16.
 
 ## Trap: don't mix the cursor model with `set X to array` / `set X to object`
 
@@ -136,12 +159,12 @@ A common confusion: variable arrays look like lists but aren't. Variable arrays 
 |---------|-----|--------|
 | Variable array | `variable X` + `set the elements of X to N` | same |
 | Dictionary | `variable X` + `set X to object`; `property K of X` | `dictionary X`; `reset X`; `entry K of X` |
-| List | `variable X` + `set X to array`; `element N of X` | `list X`; `reset X`; `element N of X` |
+| List | `variable X` + `set X to array`; `set element N of X to V` grows it; `element N of X` reads | `list X`; `reset X`; `append V to X` grows it; `item N of X` reads — `element` is the *array* form, and assigning to a slot that does not exist is an error |
 | Object property | `set property K of X to V` — same mechanism as dictionary access; variable must be set as object | `set property K of X to V` — a separate metadata layer, independent of any value the variable holds |
 
 Python has more explicit type declarations, a dedicated `entry` keyword for dictionary access, and treats object properties as a layer that coexists with the variable's value. JS stores dictionary and list contents as JSON-shaped data inside a `variable` and uses `property` for key access; there's no distinction in JS between a dictionary entry and an object property. Both implementations support arbitrarily nested structures.
 
-Critically, **the JS column is not a valid fallback when writing Python**, and vice versa. The runtimes only overlap on row 1 (variable arrays). If you're writing a Python script and reach for `variable X; set X to object; set property K of X to V`, you've imported the JS pattern: it may execute without error but the resulting code is untyped, behaves unexpectedly around the metadata-property layer, and won't read back the way the Python `entry` form does. Pick the column for your runtime and stay in it.
+Critically, **the JS column is not a valid fallback when writing Python**, and vice versa. The runtimes overlap on variable arrays and on object properties, and diverge on how a collection is declared and grown — dictionaries and lists differ in both, and stacks exist on one side only. If you're writing a Python script and reach for `variable X; set X to object; set property K of X to V`, you've imported the JS pattern: it may execute without error but the resulting code is untyped, behaves unexpectedly around the metadata-property layer, and won't read back the way the Python `entry` form does. Pick the column for your runtime and stay in it.
 
 ## Related
 

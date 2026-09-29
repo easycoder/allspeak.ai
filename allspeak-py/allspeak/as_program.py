@@ -42,7 +42,7 @@ def flush():
 
 class Program:
 
-	def __init__(self, arg, testMode=False):
+	def __init__(self, arg, testMode=False, source=None, name=None):
 		global queue
 		self.testMode = testMode
 		try:
@@ -51,30 +51,40 @@ class Program:
 			from . import __version__ as allspeak_version
 		if not testMode:
 			print(f'AllSpeak version {allspeak_version}')
-		if len(arg) == 0:
-			print('No script supplied')
-			exit()
-		if arg in ['-v', '--version']:
-			# Version request: the banner above is the whole output. Exit here
-			# rather than return — there is no script to run, and returning
-			# would hand Main() a half-initialised Program whose start() then
-			# dies on the first unset attribute (self.debugging).
-			sys.exit()
-		if arg[0:6] == 'debug ':
-			print('Debug mode requested')
-			parts = arg[6:].split()
-			self.scriptName = resolveScriptPath(parts[0])
-			self.argv = parts[1:]
-			self.debugging = True
-		else:
-			parts = arg.split()
-			self.scriptName = resolveScriptPath(parts[0])
-			self.argv = parts[1:]
+		if source is not None:
+			# Source with no file behind it. The editor's unsaved buffer is the case that
+			# matters: text should not have to be written to disk to be compiled, looked at or
+			# recorded. `arg` may be empty here or hold the buffer's notional name, which is why
+			# this branch comes before the "no script supplied" check — and why the command-line
+			# branches below (`-v`, `debug `) do not apply.
+			self.scriptName = name or arg or '<source>'
+			self.argv = []
 			self.debugging = False
+		else:
+			if len(arg) == 0:
+				print('No script supplied')
+				exit()
+			if arg in ['-v', '--version']:
+				# Version request: the banner above is the whole output. Exit here
+				# rather than return — there is no script to run, and returning
+				# would hand Main() a half-initialised Program whose start() then
+				# dies on the first unset attribute (self.debugging).
+				sys.exit()
+			if arg[0:6] == 'debug ':
+				print('Debug mode requested')
+				parts = arg[6:].split()
+				self.scriptName = resolveScriptPath(parts[0])
+				self.argv = parts[1:]
+				self.debugging = True
+			else:
+				parts = arg.split()
+				self.scriptName = resolveScriptPath(parts[0])
+				self.argv = parts[1:]
+				self.debugging = False
 
-		f = open(self.scriptName, 'r')
-		source = f.read()
-		f.close()
+			f = open(self.scriptName, 'r')
+			source = f.read()
+			f.close()
 		queue = deque()
 		self.domains = []
 		self.domainIndex = {}

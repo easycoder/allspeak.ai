@@ -41,6 +41,14 @@
     "cursor": "pointer",
     "flex-shrink": "0"
   },
+  "$GraphBtn": {
+    "#element": "button",
+    "@id": "se-graphbtn",
+    "#content": "Graph",
+    "padding": "4px 12px",
+    "cursor": "pointer",
+    "flex-shrink": "0"
+  },
   "$FindBtn": {
     "#element": "button",
     "@id": "se-findbtn",
@@ -76,7 +84,7 @@
     "background": "#2d2d2d",
     "padding": "4px",
     "gap": "4px",
-    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$FindBtn"]
+    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$GraphBtn", "$FindBtn"]
   },
   "$ContentEditor": {
     "#element": "textarea",
@@ -213,6 +221,13 @@
     "overflow": "hidden",
     "#": ["$BlocksToc", "$BlocksCodePane", "$BlocksDivider", "$BlocksDocPane"]
   },
+  "$GraphArea": {
+    "#element": "div",
+    "@id": "se-graph-area",
+    "display": "none",
+    "height": "calc(100vh - 40px)",
+    "#": []
+  },
   "$BlocksArea": {
     "#element": "div",
     "@id": "se-blocks-area",
@@ -262,5 +277,5 @@
     "z-index": "100",
     "#": ["$FileListing"]
   },
-  "#": ["$TopBar", "$EditorArea", "$BlocksArea", "$Overlay"]
+  "#": ["$TopBar", "$EditorArea", "$BlocksArea", "$GraphArea", "$Overlay"]
 }

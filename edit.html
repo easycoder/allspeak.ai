@@ -21,18 +21,41 @@
 	document.getElementById('allspeak-script').textContent = ecs;
 
 	const t = Date.now();
-	const scripts = [
-		'https://allspeak.ai/dist/allspeak-min.js?v=' + t,
-		'https://allspeak.ai/dist/plugins/asviz.js?v=' + t,
-		'https://allspeak.ai/dist/plugins/codemirror.js?v=' + t,
-		'https://allspeak.ai/dist/plugins/codemirror/codemirror.js?v=' + t,
-		'https://allspeak.ai/dist/plugins/codemirror-ecs.js?v=' + t,
+
+	// The runtime and its plugins: the working tree's build first, the deployed one as a fallback.
+	//
+	// Both matter. Without the fallback a local editor is broken, and without the local attempt a
+	// change to the runtime or a plugin cannot be seen at all until it is deployed — which is not a
+	// hypothetical: the editor needs the svg plugin to compile its own Graph pane, and while this
+	// list named no svg plugin, asedit failed to compile with "I don't understand 'svg'".
+	const local = 'deploy/dist/';                 // where build-allspeak puts it, as served
+	const deployed = 'https://allspeak.ai/dist/'; // where it lands once deploy-sync has run
+	const bundles = ['allspeak-min.js', 'plugins/asviz.js', 'plugins/svg.js', 
+		'plugins/codemirror.js', 'plugins/codemirror/codemirror.js', 'plugins/codemirror-ecs.js'];
+	for (const name of bundles) {
+		let loaded = false;
+		for (const base of [local, deployed]) {
+			loaded = await new Promise(resolve => {
+				const s = document.createElement('script');
+				s.src = base + name + '?v=' + t;
+				s.onload = () => resolve(true);
+				s.onerror = () => resolve(false);
+				document.head.appendChild(s);
+			});
+			if (loaded) break;
+		}
+		if (!loaded) {
+			console.warn('asedit: could not load ' + name);
+		}
+	}
+
+	const addons = [
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/dialog/dialog.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/search/search.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/search/searchcursor.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/addon/search/jump-to-line.js'
 	];
-	for (const src of scripts) {
+	for (const src of addons) {
 		await new Promise((resolve, reject) => {
 			const s = document.createElement('script');
 			s.src = src;

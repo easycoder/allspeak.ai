@@ -1395,7 +1395,13 @@ def mentionedStrings(command):
 
 
 def compileOnly(path, lines):
-    """Compile a file without running it. Returns (program, problem-or-None).
+    """Compile a script without running it. Returns (program, problem-or-None).
+
+    `lines` is the source to compile; when it is None the file at `path` is read instead. That
+    distinction matters, and used not to: the analyser builds a Program from `lines` so that
+    `as <source>` compiles *what was handed to it*. The editor's unsaved buffer is the case that
+    depends on it, and the old behaviour — compiling the file while reporting the supplied text's
+    dimensions — produced a plausible wrong answer rather than an error, which is the worse kind.
 
     Two hazards to handle. `Program.__init__` resets the module-global `queue`,
     which belongs to whatever is already running, so it is saved and restored. And
@@ -1413,7 +1419,9 @@ def compileOnly(path, lines):
     captured = io.StringIO()
     try:
         with contextlib.redirect_stdout(captured):
-            target = Program(path, testMode=True)
+            target = (Program(path, testMode=True) if lines is None
+                      else Program(path, testMode=True,
+                                   source='\n'.join(lines) + '\n', name=path))
             # No domain needed for the markers: `viz` is core syntax that compiles to a
             # no-op, so the target compiles with or without this plugin loaded.
             target.tokenise(target.script)
