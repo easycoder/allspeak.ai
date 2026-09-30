@@ -550,6 +550,12 @@
         "on drag"
       ]
     },
+    "ON_WHEEL": {
+      "keyword": "on",
+      "patterns": [
+        "on wheel {element}"
+      ]
+    },
     "ON_DROP": {
       "keyword": "on",
       "patterns": [
@@ -1085,6 +1091,9 @@
     "or": "or",
     "path": "path",
     "position": "position",
+    "amount": "amount",
+    "shift": "shift",
+    "control": "control",
     "program": "program",
     "reply": "reply",
     "resize": "resize",
@@ -1242,6 +1251,7 @@
     "tick": "tick",
     "ticks": "ticks",
     "swipe": "swipe",
+    "wheel": "wheel",
     "language": "language",
     "alert": "alert",
     "append": "append",
@@ -1357,6 +1367,7 @@
     "rect": "rect",
     "move": "move",
     "svgtext": "svgtext",
+    "svgimage": "svgimage",
     "gmap": "gmap",
     "marker": "marker",
     "show": "show",

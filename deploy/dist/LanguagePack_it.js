@@ -552,6 +552,12 @@ var AllSpeak_LanguagePack_it = {
         "su trascina"
       ]
     },
+    "ON_WHEEL": {
+      "keyword": "su",
+      "patterns": [
+        "su rotella {element}"
+      ]
+    },
     "ON_DROP": {
       "keyword": "su",
       "patterns": [
@@ -1011,6 +1017,9 @@ var AllSpeak_LanguagePack_it = {
     "or": "o|oppure",
     "path": "percorso",
     "position": "posizione",
+    "amount": "quantità|quantita",
+    "shift": "maiusc",
+    "control": "ctrl",
     "program": "programma",
     "reply": "risposta",
     "resize": "ridimensiona",
@@ -1173,6 +1182,7 @@ var AllSpeak_LanguagePack_it = {
     "tick": "tick",
     "ticks": "ticks",
     "swipe": "scorri",
+    "wheel": "rotella",
     "language": "lingua",
     "alert": "avviso",
     "append": "accoda",
@@ -1287,6 +1297,7 @@ var AllSpeak_LanguagePack_it = {
     "rect": "rettangolo",
     "move": "sposta",
     "svgtext": "svgtesto",
+    "svgimage": "svgimmagine",
     "gmap": "gmap",
     "marker": "marcatore",
     "show": "mostra",

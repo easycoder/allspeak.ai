@@ -544,6 +544,12 @@ var AllSpeak_LanguagePack_de = {
         "bei ziehe"
       ]
     },
+    "ON_WHEEL": {
+      "keyword": "bei",
+      "patterns": [
+        "bei Mausrad {element}"
+      ]
+    },
     "ON_DROP": {
       "keyword": "bei",
       "patterns": [
@@ -1007,6 +1013,9 @@ var AllSpeak_LanguagePack_de = {
     "or": "oder",
     "path": "pfad",
     "position": "position",
+    "amount": "Menge|menge",
+    "shift": "Umschalt|umschalt",
+    "control": "Strg|strg",
     "program": "programm",
     "reply": "antwort",
     "resize": "größenänderung|groessenaenderung",
@@ -1169,6 +1178,7 @@ var AllSpeak_LanguagePack_de = {
     "tick": "tick",
     "ticks": "ticks",
     "swipe": "wische",
+    "wheel": "Mausrad|mausrad",
     "language": "sprache",
     "alert": "alarm",
     "append": "ergänze|ergaenze",
@@ -1282,6 +1292,7 @@ var AllSpeak_LanguagePack_de = {
     "rect": "rect",
     "move": "bewege",
     "svgtext": "svgtext",
+    "svgimage": "svgimage",
     "gmap": "gmap",
     "marker": "marke",
     "show": "zeige",

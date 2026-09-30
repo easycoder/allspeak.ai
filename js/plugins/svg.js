@@ -87,6 +87,7 @@ const AllSpeak_SVG = {
 				case `line`:
 				case `path`:
 				case `rect`:
+				case `svgimage`:
 				case `svgtext`:
 					if (compiler.isWord(`in`)) {
 						if (compiler.nextIsSymbol()) {
@@ -117,7 +118,9 @@ const AllSpeak_SVG = {
 								domain: `svg`,
 								keyword: `create`,
 								lino,
-								type: symbolRecord.keyword === `svgtext` ? `text` : symbolRecord.keyword,
+								type: symbolRecord.keyword === `svgtext` ? `text`
+							: symbolRecord.keyword === `svgimage` ? `image`
+							: symbolRecord.keyword,
 								name: symbolRecord.name,
 								style,
 								text,
@@ -193,6 +196,7 @@ const AllSpeak_SVG = {
 						break;
 					case `path`:
 					case `rect`:
+					case `svgimage`:
 					case `svgtext`:
 						value.x = element.getAttribute(`x`);
 						value.y = element.getAttribute(`y`);
@@ -296,6 +300,7 @@ const AllSpeak_SVG = {
 						break;
 					case `path`:
 					case `rect`:
+					case `svgimage`:
 					case `svgtext`:
 						element.setAttribute(`x`, x);
 						element.setAttribute(`y`, y);
@@ -309,6 +314,7 @@ const AllSpeak_SVG = {
 			case `ellipse`:
 			case `line`:
 			case `rect`:
+			case `svgimage`:
 			case `svgtext`:
 				var px = 0;
 				var py = 0;
@@ -335,6 +341,7 @@ const AllSpeak_SVG = {
 					element.setAttribute(`y2`, py + dy + newY);
 					break;
 				case `rect`:
+				case `svgimage`:
 				case `svgtext`:
 					element.setAttribute(`x`, px + newX);
 					element.setAttribute(`y`, py + newY);
@@ -535,6 +542,18 @@ const AllSpeak_SVG = {
 		}
 	},
 
+	SVGImage: {
+
+		compile: (compiler) => {
+			compiler.compileVariable(`svg`, `svgimage`, false, `dom`);
+			return true;
+		},
+
+		run: (program) => {
+			return program[program.pc].pc + 1;
+		}
+	},
+
 	SVGText: {
 
 		compile: (compiler) => {
@@ -548,6 +567,11 @@ const AllSpeak_SVG = {
 	},
 
 	getHandler: (name) => {
+		// Every other domain builds its handler table from the pack's own keyword list, which is why
+		// `mets` and `crée` work; this one switches on canonical names, so before this line the element
+		// names the packs carry (`chemin`, `rettangolo`, `svgtesto`) resolved to nothing at all — the svg
+		// vocabulary was English-only in practice, in all four languages.
+		name = AllSpeak_Language.reverseWord(name);
 		switch (name) {
 		case `circle`:
 			return AllSpeak_SVG.Circle;
@@ -567,6 +591,8 @@ const AllSpeak_SVG = {
 			return AllSpeak_SVG.On;
 		case `rect`:
 			return AllSpeak_SVG.Rect;
+		case `svgimage`:
+			return AllSpeak_SVG.SVGImage;
 		case `set`:
 			return AllSpeak_SVG.Set;
 		case `svg`:

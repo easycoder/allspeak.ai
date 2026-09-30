@@ -544,6 +544,12 @@ var AllSpeak_LanguagePack_fr = {
         "sur glisse"
       ]
     },
+    "ON_WHEEL": {
+      "keyword": "sur",
+      "patterns": [
+        "sur molette {element}"
+      ]
+    },
     "ON_DROP": {
       "keyword": "sur",
       "patterns": [
@@ -1010,6 +1016,9 @@ var AllSpeak_LanguagePack_fr = {
     "or": "ou",
     "path": "chemin",
     "position": "position",
+    "amount": "quantité|quantite",
+    "shift": "maj",
+    "control": "ctrl",
     "program": "programme",
     "reply": "réponse|reponse",
     "resize": "redimensionne",
@@ -1171,6 +1180,7 @@ var AllSpeak_LanguagePack_fr = {
     "tick": "tick",
     "ticks": "ticks",
     "swipe": "balaye",
+    "wheel": "molette",
     "language": "langage",
     "alert": "alerte",
     "append": "accole",
@@ -1284,6 +1294,7 @@ var AllSpeak_LanguagePack_fr = {
     "rect": "rect",
     "move": "déplace|deplace",
     "svgtext": "svgtext",
+    "svgimage": "svgimage",
     "gmap": "gmap",
     "marker": "marqueur",
     "show": "montre",

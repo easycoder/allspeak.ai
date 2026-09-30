@@ -1387,6 +1387,27 @@ const AllSpeak_Browser = {
 					return compiler.completeHandler();
 				}
 				return false;
+			case `wheel`:
+				// A wheel handler is element-scoped, because its whole use is to take over the
+				// gesture *on a pane*: a zoom that scrolled the page underneath would be unusable.
+				// What it can read is `the wheel amount`, `the wheel position`, `the wheel shift`
+				// and `the wheel control`.
+				if (compiler.nextIsSymbol()) {
+					const symbol = compiler.getSymbolRecord();
+					compiler.next();
+					if (symbol.extra !== `dom`) {
+						return false;
+					}
+					compiler.addCommand({
+						domain: `browser`,
+						keyword: `on`,
+						lino,
+						action,
+						symbol: symbol.name
+					});
+					return compiler.completeHandler();
+				}
+				return false;
 			case `pick`:
 				if (compiler.nextIsSymbol()) {
 					const symbol = compiler.getSymbolRecord();
@@ -1568,6 +1589,35 @@ const AllSpeak_Browser = {
 				}
 				document.addEventListener(`touchstart`, handleTouchStart, false);
 				document.addEventListener(`touchmove`, handleTouchMove, false);
+				break;
+			case `wheel`:
+				// `passive: false` is what makes `preventDefault` legal here: a passive listener's
+				// call to it is ignored by the browser, and then the page scrolls as the user zooms.
+				program.onWheel = command.pc + 2;
+				const wheelRecord = program.getSymbolRecord(command.symbol);
+				wheelRecord.element.forEach(function (element, index) {
+					if (!element) {
+						return;
+					}
+					element.addEventListener(`wheel`, function (event) {
+						// The larger of the two, not `deltaY`. Browsers report a shift-wheel as a
+						// *horizontal* scroll on most platforms, so a modifier gesture that is meant to
+						// zoom would arrive as a vertical delta of 0 and read as no movement at all.
+						document.wheelAmount = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+							? event.deltaX : event.deltaY;
+						document.wheelX = event.clientX;
+						document.wheelY = event.clientY;
+						// Stored as 0 or 1, not as the boolean the event carries, for the same reason
+						// the amount is a number: the reader adds and multiplies it.
+						document.wheelShift = event.shiftKey ? 1 : 0;
+						document.wheelControl = event.ctrlKey ? 1 : 0;
+						// As with `pick`, the record's index says which element of an array the
+						// pointer was over.
+						wheelRecord.index = index;
+						event.preventDefault();
+						program.run(program.onWheel);
+					}, { passive: false });
+				});
 				break;
 			case `pick`:
 				const pickRecord = program.getSymbolRecord(command.symbol);
@@ -3371,6 +3421,32 @@ const AllSpeak_Browser = {
 					};
 				}
 				break;
+			case `wheel`:
+				// Four readings, because the gesture scheme needs them: which way and how far the
+				// wheel moved, where the pointer was when it did — the second is what lets a zoom keep
+				// the point under the cursor still — and the two modifiers, because shift is what tells
+				// a zoom apart from a scroll and control is the other one a browser reports on a wheel.
+				//
+				// `peek` then two steps: one onto the word and one past it. `nextIsWord` cannot be
+				// used twice here, because it advances *before* it answers — a second call would test
+				// the token after the one being read and walk past the value's last word.
+				//
+				// And the test is `matchesWord`, not `reverseWord`: one local form can stand for more
+				// than one canonical word — Italian `posizione` is both `position` and `location` — and
+				// the reverse table keeps only whichever was written last.
+				const what = compiler.peek();
+				const reading = [`amount`, `position`, `shift`, `control`].find(
+					canonical => AllSpeak_Language.matchesWord(what, canonical)
+				);
+				if (reading) {
+					compiler.next();
+					compiler.next();
+					return {
+						domain: `browser`,
+						type: `wheel` + reading[0].toUpperCase() + reading.slice(1)
+					};
+				}
+				break;
 			case `click`:
 				const which = AllSpeak_Language.reverseWord(compiler.nextToken());
 				if ([`left`, `top`].includes(which)) {
@@ -3785,6 +3861,37 @@ const AllSpeak_Browser = {
 					type: `constant`,
 					numeric: true,
 					content: screen[value.attribute]
+				};
+			case `wheelPosition`:
+				return {
+					type: `constant`,
+					numeric: false,
+					content: JSON.stringify({
+						"x": document.wheelX,
+						"y": document.wheelY
+					})
+				};
+			case `wheelAmount`:
+				// Numeric, not text: it is a number, and the arithmetic that steps a zoom should not
+				// have to convert it first. The sign is the direction, and it is whichever axis the
+				// wheel moved furthest on — a shift-wheel arrives as a horizontal delta on most
+				// platforms, and the axis does not need telling apart for a zoom.
+				return {
+					type: `constant`,
+					numeric: true,
+					content: document.wheelAmount
+				};
+			case `wheelShift`:
+			case `wheelControl`:
+				// The modifier state at the moment the wheel turned, each 0 or 1 rather than
+				// true/false so it can be added or multiplied with without a conversion first. Shift
+				// is the one that separates a zoom from a scroll under the agreed gesture scheme;
+				// control is here because the browser reports it on the same event and carrying the
+				// pair costs nothing.
+				return {
+					type: `constant`,
+					numeric: true,
+					content: value.type === `wheelShift` ? document.wheelShift : document.wheelControl
 				};
 			case `pickPosition`:
 				return {

@@ -552,6 +552,12 @@ var AllSpeak_LanguagePack_en = {
         "on drag"
       ]
     },
+    "ON_WHEEL": {
+      "keyword": "on",
+      "patterns": [
+        "on wheel {element}"
+      ]
+    },
     "ON_DROP": {
       "keyword": "on",
       "patterns": [
@@ -1087,6 +1093,9 @@ var AllSpeak_LanguagePack_en = {
     "or": "or",
     "path": "path",
     "position": "position",
+    "amount": "amount",
+    "shift": "shift",
+    "control": "control",
     "program": "program",
     "reply": "reply",
     "resize": "resize",
@@ -1244,6 +1253,7 @@ var AllSpeak_LanguagePack_en = {
     "tick": "tick",
     "ticks": "ticks",
     "swipe": "swipe",
+    "wheel": "wheel",
     "language": "language",
     "alert": "alert",
     "append": "append",
@@ -1359,6 +1369,7 @@ var AllSpeak_LanguagePack_en = {
     "rect": "rect",
     "move": "move",
     "svgtext": "svgtext",
+    "svgimage": "svgimage",
     "gmap": "gmap",
     "marker": "marker",
     "show": "show",

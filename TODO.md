@@ -41,30 +41,122 @@ arrivals and 99 transfers, the fixture is unchanged, and `asedit` compiles at 16
 timer, so `AllSpeak_Run.run` returns with the picture half drawn; the harness reported in that same tick,
 before the rest arrived. Graham's 147 events cross the hundred-mark yield threshold, a nine-event fixture
 never does, and his browser is fine because yielding is what it is for. With the report moved to a settle
-detector, his recording draws **44 arrivals (15+9+8+12) and 99 transfers**, caption
-`lines 206-481, 325 steps` — and the inert `VizArrivalDots` path stays empty in the same run, which is the
-evidence that deleting it is safe.
+detector, his recording draws **44 arrivals (15+9+8+12) and 99 transfers** — and the inert
+`VizArrivalDots` path stays empty in the same run, which is the evidence that deleting it was safe.
+
+**The fold is finished** (2026-09-29): the inert plain marks path, `VizArrivals`, the two `set attribute d`
+lines that wrote it, the dead `if VizBands is 1` / `if VizBands is greater than 1` guards and the duplicated
+string-clearing at the top of pass two are all gone — 1656 commands down to **1635**, 286 symbols to 284.
+Proved rather than assumed: the old view (commit `e4106ff`) and the new one were run against the same trace
+and their serialised SVG diffed — the only difference is the removed `<path id="ec-VizArrivalDots-0">`, with
+every shared element byte-identical. `VizBands` stays as the one statement of the band count, which the
+band-size division uses.
+
+**The legend is done** (2026-09-29): four swatches in the ramp's own colours on the caption's line, each
+beside the counts its band covers, computed per draw from `VizMaxCount / VizBands` — `1-5  6-11  12-17  18+`
+for Graham's recording, and `0-0  1-1  2-2  3+` for a fixture where nothing ran twice, which is the case
+that shows the key describing the mark loop's own boundary rather than decorating it. 1716 commands,
+0 analysis errors, 25 elements where there were 17.
+
+**The wheel event is in** (2026-09-30), because zoom needs it and the language had no wheel event at all.
+`on wheel <Element>` in `js/allspeak/Browser.js`, element-scoped on purpose: its whole use is to take over
+the gesture *on a pane*, and a zoom that scrolled the page underneath would be unusable, so the listener
+is registered `{passive: false}` and calls `preventDefault`. Two values come with it — `the wheel amount`
+(signed, away from the user is positive) and `the wheel position` (x/y, the point a zoom keeps still) —
+which is what the pick/drag pair already does for their gestures. Words added to all four packs (`wheel`:
+`molette`/`rotella`/`Mausrad|mausrad`; `amount`: `quantité|quantite`/`quantità|quantita`/`Menge|menge`, the
+fr/it/de forms **provisional and for native review**, as the `viz` option words were), `./sync-language-packs`
+run, `resources/doc/en/browser.json` updated, and `./build-allspeak` rebuilt so the editor's own page can
+use it. Verified by a new scratch harness, `various/wheel-check.js`: it attaches a pane, registers the event,
+fires a synthetic wheel event and reports what the handler saw — **all four languages** attach, run, read
+amount `-120` and position `300,42`, and call `preventDefault`. `asedit` still compiles at 1716 commands,
+0 errors.
+
+**Two traps found while building it, both worth knowing beyond this event.** `nextIsWord(canonical)`
+advances *before* it answers, so two of them in a row test the token after the one being read and walk past
+the value's last word — the failure reads as `Undefined value: 'the'` on a whole expression, which points at
+the wrong thing entirely. Use `peek()` and check. And a local form can stand for more than one canonical
+word — Italian `posizione` is both `position` and `location` — so `reverseWord` is ambiguous and the form
+test has to be `matchesWord`, which is what `isWord` uses.
+
+**And one thing about handlers in general, met while testing:** the compiler appends an `exit` to every
+program, and `AllSpeak_Run.exit` deletes every binding on the program object — `run` included. So **an event
+handler registered by a script whose flow then ends is dead**: the editor only works because its poll loop
+keeps the program alive. The harness now ends with a `wait` for that reason, and it is worth knowing before
+anyone writes a script that is nothing but handlers.
+
+**The off-screen buffer's element is in: `svgimage`** (2026-09-30). An SVG `<image>` element in
+`js/plugins/svg.js`, wired at every site a declared element type needs — and the count is worth keeping,
+because **a site left out fails silently**: the declaration handler, `create`'s compile list, the keyword →
+tag mapping, the create-time location bookkeeping, `Move`'s compile *and* its two runtime case lists (a
+group's children and a standalone element), and `getHandler`. Two of those were missed on the first pass and
+caught only by the new check.
+
+It is called **`svgimage`, not `image`**, because `image` is already the browser domain's HTML `<img>` and the
+browser domain wins the token — the same reason `svgtext` is not `text`. Verified by
+`various/svg-image-check.js` (scratch): a script creates one in a canvas, moves it to 10,20, sizes it and
+sets a data URL, and the check reports the tag (`image`, not `svgimage`), the position, the size and the
+`href` — which is all an SVG image is drawn from.
+
+**And the plugin was English-only in practice, which this exposed.** Every other domain builds its compile
+table from the pack's own keyword list — that is why `mets` and `crée` work — while `svg.js` switched on
+canonical names, so the element names the packs carry (`chemin`, `rettangolo`, `svgtesto`) resolved to
+nothing at all. One line in its `getHandler` (`reverseWord`) fixes the class; the proof is that the Italian
+declaration moved from failing on `svgimmagine` to compiling. Worth a look by Graham, since the svg
+vocabulary is now localisable by a mechanism the other domains do not use.
+
+**The wheel amount now reads whichever axis the wheel moved furthest on.** Browsers report a shift-wheel as
+a *horizontal* scroll on most platforms, so a `deltaY`-only reading would have made the very gesture Graham
+chose for zoom arrive as no movement at all. The axis does not need telling apart for a zoom, so the value
+takes the larger magnitude and keeps the sign. Both cases are in `various/wheel-check.js`: `-120` for a
+plain wheel, `120` for the same gesture reported on x.
+
+**The modifier reading is in** (2026-09-30), which was the one thing between here and a zoom. `on wheel`
+exposes `the wheel shift` and `the wheel control` beside the amount and the position, each **0 or 1** rather
+than true/false so the reader can add or multiply it without a conversion first; the listener stores
+`event.shiftKey` and `event.ctrlKey` that way. The compile side folds the four readings into one
+`[amount, position, shift, control].find(matchesWord)` and builds the type name from it, so a fifth reading
+is one word in that list; the runtime cases sit together in `getValue`. Words added to all four packs —
+`shift`: `maj`/`maiusc`/`Umschalt|umschalt`, `control`: `ctrl`/`ctrl`/`Strg|strg` — **fr/it/de provisional
+and for native review**, as `wheel`/`amount` are; `./sync-language-packs` run, `resources/doc/en/browser.json`
+gained a `wheel shift` and a `wheel control` value and the missing `on wheel {element} ...` line in `on`'s
+syntax, and `./deploy-sync` was run so the doc ship matches the source (it touched only the two doc files).
+Verified by `various/wheel-check.js`, now three events — plain, shift and control — **in all four
+languages**: the plain wheel reads `-120/0/0`, the shift-wheel `120/1/0`, the control-wheel `-50/0/1`, and
+every reading is the pack's own local word. `asedit` still compiles at 1716 commands, 0 errors.
 
 **Where the work goes next, in order:**
 
-1. **His eyeball on the size of a mark** — 14 units is now the single value, chosen because it is what the
-   first draw has always given him. It is one line, and the alternative (row-proportional with a legible
-   floor) is in the code's own comment for whenever he wants smaller marks on a long run.
-2. **Delete the inert plain `VizArrivalDots` path** from the view. It is dead — the heat is the only scheme,
-   and the last harness run put all 44 marks in the four bands with the plain path empty — and it is the
-   template every cap-related mistake came from. (It also no longer carries a `stroke-width`, since the
-   only line that set one lived in the block this fix deleted; harmless while it is empty, and gone with
-   the path.)
-3. **The legend** — a heat picture without one is a mystery, since the colours mean nothing until a reader
-   can see which counts each band covers.
-4. **The `verify-stale` sign-offs** — three blocks in `asedit.allspeak` want his re-verify in Blocks mode
-   (line 508, pre-existing, plus the two sections touched today). They are his by convention, not the
-   agent's.
-5. **The two copies of `asedit.allspeak`** — hygiene now, not a bug: nothing he runs reads the second one.
-   The options are set out in `DIFF.md`; the recommendation is to have `deploy-sync` refresh `deploy/code/`
-   from the root, so the local published copy cannot be stale *and* so `BUILD.md`'s claim that the `cp` step
-   is enough becomes true. Publishing to the live site is still `./deploy-allspeak`, and nothing short of it
-   updates what allspeak.ai serves.
+1. **The zoom itself, now the modifier reading is in.** `on wheel` can tell a plain wheel from a shift-wheel
+   as of 2026-09-30 (`the wheel shift` and `the wheel control`, each 0 or 1, with `shift`/`control` in the
+   four packs), so the gesture Graham chose (Kdenlive/Audacity: wheel scrolls, shift-wheel zooms, drag pans)
+   is fully expressible. What is left is the viewport: the pane's fixed frame (`viewBox 0 0 1000 700` and the
+   three `Viz…` constants) becomes a viewport, and **the control has to be relative to the fitted scale** —
+   the trap the prototype already learned, where a fixed slider range sits pinned at one end because the fit
+   is 51.6 px/step for one window and 0.7 for another.
+2. **Pan** — expressible today and the cheapest of the four: bind `on pick`/`on drag` to the pane, as the
+   Blocks divider already does.
+3. **The source behind the heat, and the side panel.** The raster approach is Graham's (above), and both of
+   its ingredients now exist or nearly do: `svgimage` is in the svg plugin, and a plugin is what would draw
+   the buffer (the language has no canvas vocabulary). The side panel is a reuse of the Blocks split, which
+   already has a draggable divider and a doc pane.
+4. **Per-marker data** — wants his idea in words. The anchor is the designed extension point, and the trace
+   format deliberately carries no values.
+
+**Smaller items, in any order:**
+
+- The `verify-stale` sign-off on the view's section — his by convention, and until he clicks it the analyser
+  reports one warning.
+- The ramp's bottom end: with a band size of 1 a once-visited line lands in band 1, so a quiet run shows
+  amber for its least-worked lines. One line to change (`take 1 from VizCount` before the division), and it
+  moves every boundary; the legend makes either choice legible.
+- The two copies of `asedit.allspeak` — hygiene, not a bug: nothing he runs reads the second one. The
+  options are in `DIFF.md`; the recommendation is to have `deploy-sync` refresh `deploy/code/` from the root,
+  so the local published copy cannot be stale *and* so `BUILD.md`'s claim that the `cp` step is enough
+  becomes true. Publishing to the live site is still `./deploy-allspeak`.
+- The size of a mark — settled in code at 14 units, one line if he wants it tuned.
+- The provisional fr/it/de words for `wheel`, `amount`, `shift`, `control` and `svgimage`, and the
+  `reverseWord` line in the svg plugin's `getHandler` — all awaiting his eye.
 
 **Working methods that earned their place**, worth keeping: `tools/asedit-check.js` exists because a check
 that loads every plugin verifies a program nobody runs — it caught `I don't understand 'VizBands'` when
@@ -366,6 +458,63 @@ was made without confidence):
   bands — the script on the left, the sequence on the right — sharing y and nothing else, with the
   script toggleable so the plot can have the full width. It is a sketch, so the question is still
   where it was; the difference is that there is now a picture to argue about.
+
+**Asked by Graham, 2026-09-29 — the picture's controls, and the source behind it.** Four requirements,
+audited against the code the same day. The shape is consistent with the decisions above; the work is mostly
+capability that does not exist yet, and one item is blocked by the language.
+
+1. **Zoom, independent X and Y.** Not in the pane: it asserts a fixed frame (`viewBox 0 0 1000 700`,
+   `preserveAspectRatio`, and the `VizMargin`/`VizPlotW`/`VizPlotH` constants) and recomputes the fit per
+   draw, so the two axes already scale independently — but nothing can change them. Prototyped in
+   `various/make-viz-plot.py` (independent view state, sliders relative to the fitted scale, wheel zoom
+   with shift for X alone and alt for Y alone), and its lesson carries: **the axes have to be relative to
+   the fitted scale, not absolute.** **The blocker is gone** — `on wheel` and its two values now exist
+   (above) — but the prototype's axis-selective zoom wants **modifier keys**, and the runtime exposes none
+   anywhere (`shiftKey`/`altKey`/`ctrlKey` appear nowhere in `js/allspeak`). So either the event grows a
+   modifier reading, or axis selection comes from keys or clicks instead of the wheel.
+   **Graham's scheme (2026-09-30), from Kdenlive and Audacity:** wheel alone scrolls up and down,
+   **shift-wheel zooms**, drag does the panning, and there is no wheel-based left-right scroll unless a
+   second or dual modifier is added. It makes sense and it lands as: wheel-alone and drag are expressible
+   today; shift-wheel needs the modifier reading above, and shift is the *right* modifier to take because
+   `ctrl`+wheel is the browser's own page zoom; drag already covers left-right, so the dual-modifier binding
+   would buy a gesture the mouse already has at the cost of a step to learn. The axis-selective zoom the
+   prototype used (shift for X alone, alt for Y alone) is **dropped** by this scheme, which is simpler: a
+   zoom takes both axes, and the user has pan for the rest.
+2. **Pan by mouse drag.** Not in the pane, and **expressible today**: `on pick`/`on drag`/`on drop` with
+   `the pick position` and `the drag position` exist, and `asedit.allspeak` already uses them for the
+   Blocks divider. Prototyped in `various/make-viz-plot.py:511-527`.
+3. **The program behind the heat: one pane, code only.** Nothing in the pane — it draws a frame, marks,
+   flow, axis, caption and key, no source text at all, and `$GraphArea`'s `"#"` is empty. The nearest
+   prototype draws the source *beside* the plot in a left band sharing only y (`various/make-viz-plot.py`,
+   `BAND=0.46`) and it *draws the prose* rather than excluding it. Two consequences worth settling before
+   building: **the text is a bounded pool** — an element is a declared symbol, so there cannot be one
+   `svgtext` per source line; the pool covers the rows in view at legible zoom, which is the cost of "at
+   some zoom levels it can't be read anyway". And **the side panel is already an idiom here**: the Blocks
+   view is a split with a draggable divider and a doc pane (`$BlocksSplit`, `$BlocksCodePane`,
+   `$BlocksDivider`, `$BlocksDocPane`), so the textual detail is a reuse rather than new machinery.
+4. **Program-related data per marker.** **No hook, and deliberately so.**
+   `spec/viz-trace-format.md`'s "What the format deliberately does not carry" excludes prose, static
+   structure and *values* — "nothing here records what was in a variable. That is the debugger's job, and
+   the only honest bridge between the two is that they can agree on anchors." The one per-marker extra
+   today is the marker's own label (`viz start on <label>` → `at=`). So the anchor is the designed
+   extension point, and anything beyond a label is a versioned change to a format that
+   `tools/check-trace.py` enforces on both runtimes — Graham's idea wants words before code.
+
+**Graham's answer to item 3's bounded-pool problem** (2026-09-30): render the *whole* text at normal size
+into an off-screen buffer once, then place it suitably scaled in X and Y behind the heat map — one render,
+and everything after that is SVG. It removes the pool entirely: one element for the whole file instead of a
+declared `svgtext` per visible row, and independent scaling in X and Y is exactly what an `<image>` does.
+What it needs: an **`image` element in the svg plugin** — a fifth element type, the same five small additions
+`path` needed — and a way to rasterise, since the language has no canvas vocabulary: a plugin that draws the
+source into a canvas and hands back a data URL for the element's `href`. Two costs to decide on rather than
+discover: a raster is resolution-fixed, so zooming past the scale it was rendered at goes soft (mitigated by
+rendering well above 1:1, at the price of the buffer — 1400×8000 pixels is about 45 MB), and the text
+becomes a picture, so nothing but an eye can read it. The side panel keeps its own copy of the truth: the
+line under the pointer and its doc block come from the script and the analyser, not from the raster.
+
+The prose half of item 3 is already solved off-trace: doc-block text comes from
+`tools/asdoc-check.py --json` and joins the trace on script path and line numbers, which is where the side
+panel's doc block would come from.
 
 **A data gap that constrains the heat.** The recorder keeps per-line activity as **totals**
 (`line_counts`) and a *sequence* only for anchors (`visits`: pc, steps, timestamp). So activity

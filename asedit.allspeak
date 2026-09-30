@@ -1673,6 +1673,12 @@ DoExitGraph:
 !! browser scales it to any panel, and the whole script runs against a stub DOM in node), and what
 !! keeps a long run inside the frame instead of off the right-hand edge.
 !!
+!! **The key is part of the drawing, not a caption on it.** The colours are the whole of the heat, so a
+!! reader who cannot see which counts each band covers is looking at a picture with no scale — and the
+!! boundaries move with the run, because the band size is derived from the busiest line in it. So the
+!! ranges are computed per draw from the same division that chose the colours, and printed beside
+!! swatches in the ramp's own colours.
+!!
 !! **The trap this had to dodge:** numbers read out of the trace stay *text*, and text compares
 !! lexically — `9` is not less than `10` — so the range-finding below converts with `add 0 to …`
 !! before it compares anything. Without that the picture is silently wrong, which is the failure
@@ -1714,10 +1720,14 @@ DoExitGraph:
     variable VizHeatF
     variable VizHeatG
     variable VizBands
+    variable VizKeyX
+    variable VizKeyTextX
+    variable VizKeyPitch
+    variable VizKeyLo
+    variable VizKeyHi
     variable VizMargin
     variable VizPlotW
     variable VizPlotH
-    variable VizArrivals
     variable VizTransfers
     variable VizX
     variable VizY
@@ -1738,8 +1748,7 @@ DoExitGraph:
 
     svg VizCanvas
     rect VizFrame
-    path VizArrivalDots
-    path VizHeat0           ! the same marks, coloured by how much work the line carried
+    path VizHeat0           ! the marks, coloured by how much work the line carried
     path VizHeat1
     path VizHeat2
     path VizHeat3
@@ -1760,6 +1769,18 @@ DoExitGraph:
     svgtext VizXLabel2
     svgtext VizXLabel3
     svgtext VizCaption      ! says which run the picture is of, so a stale one shows
+    ! The key: a swatch per colour band with the counts it covers beside it. A pool for the same
+    ! reason the axis labels are one, and it carries the only thing the colours cannot say for
+    ! themselves — a heat picture without it is a mystery, since a reader has no way to tell whether
+    ! a shade means two visits or two hundred.
+    rect VizKeyBox0
+    rect VizKeyBox1
+    rect VizKeyBox2
+    rect VizKeyBox3
+    svgtext VizKeyLabel0
+    svgtext VizKeyLabel1
+    svgtext VizKeyLabel2
+    svgtext VizKeyLabel3
 Draw:
     put json of VizTrace into VizParsed
     put property `traceEvents` of VizParsed into VizEvents
@@ -1817,15 +1838,14 @@ Draw:
     create VizCaption in VizCanvas
     set attribute `text-anchor` of VizCaption to `start`
 
-    ! A dot is a *stroked* hairline with a round cap, not a filled one: `M x y h0.01` alone fills to
-    ! nothing at all. Nine units wide and a round cap, so each arrival reads as a dot the size of the
-    ! row it sits on.
-    create VizArrivalDots in VizCanvas
-    set attribute `fill` of VizArrivalDots to `none`
-    set attribute `stroke` of VizArrivalDots to `#e5484d`
-    set attribute `stroke-linecap` of VizArrivalDots to `round`
-    ! The heat ramp's four bands, coolest first. The last is the colour the plain marks path already
-    ! uses, so the busiest lines look the same in both schemes and only the quiet ones change.
+    ! A mark is a *stroked* hairline with a round cap, not a filled one: `M x y h0.01` alone fills to
+    ! nothing at all, and stroked without the cap it is a 0.01-long rectangle — so the cap belongs to
+    ! the mark, not to a scheme. Its width is set with the geometry on every draw, where the span is
+    ! known; see the note at that site.
+    !
+    ! The heat ramp's four bands, coolest first, and the only scheme. The marks were once drawn a
+    ! second time by a plain single-colour path; the fold removed the duplication, and with it the
+    ! template that the mark-size and line-cap mistakes were both copied from.
     create VizHeat0 in VizCanvas
     set attribute `fill` of VizHeat0 to `none`
     set attribute `stroke` of VizHeat0 to `#6b8fa8`
@@ -1847,12 +1867,70 @@ Draw:
     set attribute `stroke` of VizFlowLines to `#e0a44a`
     set attribute `stroke-width` of VizFlowLines to 2
     set attribute `fill` of VizFlowLines to `none`
+
+    ! The key, laid out once — only the ranges it names change with the run. It sits on the caption's
+    ! line, in the right half of the frame so a long caption cannot run into it, and its swatches are
+    ! the ramp's own colours: the two things a reader needs in order to trust the picture, which run
+    ! this is and what the colours mean, end up side by side.
+    divide VizPlotW by 2 giving VizKeyX
+    add VizMargin to VizKeyX
+    divide VizPlotW by 8 giving VizKeyPitch
+
+    create VizKeyBox0 in VizCanvas
+    set attribute `x` of VizKeyBox0 to VizKeyX
+    set attribute `y` of VizKeyBox0 to 679
+    set attribute `width` of VizKeyBox0 to 10
+    set attribute `height` of VizKeyBox0 to 10
+    set attribute `fill` of VizKeyBox0 to `#6b8fa8`
+    create VizKeyLabel0 in VizCanvas
+    set attribute `text-anchor` of VizKeyLabel0 to `start`
+    add 14 to VizKeyX
+    move VizKeyLabel0 to VizKeyX 690
+    add VizKeyPitch to VizKeyX
+    take 14 from VizKeyX
+
+    create VizKeyBox1 in VizCanvas
+    set attribute `x` of VizKeyBox1 to VizKeyX
+    set attribute `y` of VizKeyBox1 to 679
+    set attribute `width` of VizKeyBox1 to 10
+    set attribute `height` of VizKeyBox1 to 10
+    set attribute `fill` of VizKeyBox1 to `#c9a227`
+    create VizKeyLabel1 in VizCanvas
+    set attribute `text-anchor` of VizKeyLabel1 to `start`
+    add 14 to VizKeyX
+    move VizKeyLabel1 to VizKeyX 690
+    add VizKeyPitch to VizKeyX
+    take 14 from VizKeyX
+
+    create VizKeyBox2 in VizCanvas
+    set attribute `x` of VizKeyBox2 to VizKeyX
+    set attribute `y` of VizKeyBox2 to 679
+    set attribute `width` of VizKeyBox2 to 10
+    set attribute `height` of VizKeyBox2 to 10
+    set attribute `fill` of VizKeyBox2 to `#e07b39`
+    create VizKeyLabel2 in VizCanvas
+    set attribute `text-anchor` of VizKeyLabel2 to `start`
+    add 14 to VizKeyX
+    move VizKeyLabel2 to VizKeyX 690
+    add VizKeyPitch to VizKeyX
+    take 14 from VizKeyX
+
+    create VizKeyBox3 in VizCanvas
+    set attribute `x` of VizKeyBox3 to VizKeyX
+    set attribute `y` of VizKeyBox3 to 679
+    set attribute `width` of VizKeyBox3 to 10
+    set attribute `height` of VizKeyBox3 to 10
+    set attribute `fill` of VizKeyBox3 to `#e5484d`
+    create VizKeyLabel3 in VizCanvas
+    set attribute `text-anchor` of VizKeyLabel3 to `start`
+    add 14 to VizKeyX
+    move VizKeyLabel3 to VizKeyX 690
+
     put 1 into VizReady
 
 VizBuilt:
     ! ---- drawn every time ----
     ! Cleared first, so a redraw of a different run cannot leave a mark from the last one behind.
-    put `` into VizArrivals
     put `` into VizHeatD
     put `` into VizHeatE
     put `` into VizHeatF
@@ -1867,7 +1945,6 @@ VizBuilt:
     ! because on a redraw it would silently carry the *previous* draw's number. The size of a mark is
     ! where that cost two rounds to spot — its own note says how — and the rule is worth keeping as
     ! the reason this block has no arithmetic in it.
-    set attribute `d` of VizArrivalDots to VizArrivals
     set attribute `d` of VizHeat0 to VizHeatD
     set attribute `d` of VizHeat1 to VizHeatE
     set attribute `d` of VizHeat2 to VizHeatF
@@ -1882,9 +1959,13 @@ VizBuilt:
     set the text of VizXLabel2 to ``
     set the text of VizXLabel3 to ``
     set the text of VizCaption to ``
+    set the text of VizKeyLabel0 to ``
+    set the text of VizKeyLabel1 to ``
+    set the text of VizKeyLabel2 to ``
+    set the text of VizKeyLabel3 to ``
 
     ! ---- pass one: the frame the picture is drawn in ----
-    put 4 into VizBands       ! the ramp is the only scheme; four bands is enough to see a hot line
+    put 4 into VizBands       ! the count range is split into this many, and the ramp is the only scheme
     put 0 into VizMaxCount
     put 0 into VizBreathe
     put 999999 into VizMinLine
@@ -1915,12 +1996,9 @@ VizBuilt:
         begin
             put property `line` of VizArgs into VizLine
             add 0 to VizLine
-            if VizBands is greater than 1
-            begin
-                put property VizLine of VizLineCounts into VizCount
-                add 0 to VizCount
-                if VizCount is greater than VizMaxCount put VizCount into VizMaxCount
-            end
+            put property VizLine of VizLineCounts into VizCount
+            add 0 to VizCount
+            if VizCount is greater than VizMaxCount put VizCount into VizMaxCount
             if VizLine is less than VizMinLine put VizLine into VizMinLine
             if VizLine is greater than VizMaxLine put VizLine into VizMaxLine
             put property `steps` of VizArgs into VizSteps
@@ -1966,20 +2044,10 @@ VizBuilt:
     ! *before* dividing keeps the intermediate large and the result exact to a unit — the documented
     ! scaled-integer pattern, applied where it matters most.
 
-    put 1 into VizBandSize
-    if VizBands is greater than 1
-    begin
-        divide VizMaxCount by VizBands giving VizBandSize
-        if VizBandSize is less than 1 put 1 into VizBandSize
-    end
+    divide VizMaxCount by VizBands giving VizBandSize
+    if VizBandSize is less than 1 put 1 into VizBandSize
 
     ! ---- pass two: the marks, at those scales ----
-    put `` into VizArrivals
-    put `` into VizHeatD
-    put `` into VizHeatE
-    put `` into VizHeatF
-    put `` into VizHeatG
-    put `` into VizTransfers
     put 0 into VizIndex
     while VizEvents has element VizIndex
     begin
@@ -2008,18 +2076,14 @@ VizBuilt:
             multiply VizOffset by VizPlotH giving VizY
             divide VizY by VizSpanLines giving VizY
             add VizMargin to VizY
-            if VizBands is 1 put VizArrivals cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizArrivals
-            if VizBands is greater than 1
-            begin
-                put property VizLine of VizLineCounts into VizCount
-                add 0 to VizCount
-                divide VizCount by VizBandSize giving VizBand
-                if VizBand is greater than 3 put 3 into VizBand
-                if VizBand is 0 put VizHeatD cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatD
-                if VizBand is 1 put VizHeatE cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatE
-                if VizBand is 2 put VizHeatF cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatF
-                if VizBand is 3 put VizHeatG cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatG
-            end
+            put property VizLine of VizLineCounts into VizCount
+            add 0 to VizCount
+            divide VizCount by VizBandSize giving VizBand
+            if VizBand is greater than 3 put 3 into VizBand
+            if VizBand is 0 put VizHeatD cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatD
+            if VizBand is 1 put VizHeatE cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatE
+            if VizBand is 2 put VizHeatF cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatF
+            if VizBand is 3 put VizHeatG cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatG
         end
         if VizCategory is `transfer`
         begin
@@ -2122,7 +2186,30 @@ VizBuilt:
     put `lines ` cat VizMinLine cat `-` cat VizMaxLine cat `, ` cat VizMaxSteps cat ` steps` into VizCaptionText
     set the text of VizCaption to VizCaptionText
 
-    set attribute `d` of VizArrivalDots to VizArrivals
+    ! ---- the key's ranges ----
+    ! Computed, never fixed: the band size is `VizMaxCount / VizBands`, the same division that chose
+    ! each mark's colour, so a quieter or shorter run moves every boundary. Bands 0-2 name both ends;
+    ! the last takes everything above it, which is what the clamp in the mark loop does. The coolest
+    ! band's lower end reads 1 rather than 0 because a mark exists only for a line that ran — 0 is in
+    ! its range and is never drawn — and it keeps 0 only in the one case where that is the whole band.
+    put 0 into VizKeyLo
+    if VizBandSize is greater than 1 put 1 into VizKeyLo
+    take 1 from VizBandSize giving VizKeyHi
+    set the text of VizKeyLabel0 to VizKeyLo cat `-` cat VizKeyHi
+
+    put VizBandSize into VizKeyLo
+    multiply VizBandSize by 2 giving VizKeyHi
+    take 1 from VizKeyHi giving VizKeyHi
+    set the text of VizKeyLabel1 to VizKeyLo cat `-` cat VizKeyHi
+
+    multiply VizBandSize by 2 giving VizKeyLo
+    multiply VizBandSize by 3 giving VizKeyHi
+    take 1 from VizKeyHi giving VizKeyHi
+    set the text of VizKeyLabel2 to VizKeyLo cat `-` cat VizKeyHi
+
+    multiply VizBandSize by 3 giving VizKeyLo
+    set the text of VizKeyLabel3 to VizKeyLo cat `+`
+
     set attribute `d` of VizHeat0 to VizHeatD
     set attribute `d` of VizHeat1 to VizHeatE
     set attribute `d` of VizHeat2 to VizHeatF
@@ -2137,6 +2224,6 @@ VizBuilt:
     set attribute `stroke-linecap` of VizHeat3 to `round`
     set attribute `d` of VizFlowLines to VizTransfers
     return
-!! @hash ec4bd506
+!! @hash 4ff4041b
 !! @verified ec4bd506
 !!!
