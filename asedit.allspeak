@@ -58,6 +58,12 @@
     variable TabPath       ! array: full file path per tab (relative to project root)
     variable TabName       ! array: display name (basename) per tab
     variable TabSaved      ! array: last content saved to server per tab
+    ! Where the flat editor was standing, per tab: the caret's line and the viewport's scroll offset.
+    ! Two values and not one, because they are independent — scrolling does not move the insertion
+    ! point, and coming back must not carry the view to the caret. A video editor teaches you to
+    ! expect that; a text editor usually does not, and the jump is what catches you out.
+    variable TabCursor     ! array: the caret's line, per tab
+    variable TabView       ! array: the viewport's scroll offset, per tab
     variable TabCount
     variable ActiveTab
     variable Content       ! scratch: current editor content
@@ -173,8 +179,8 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash fe485f69
-!! @verified fe485f69
+!! @hash f9a59734
+!! @verified f9a59734
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -635,16 +641,34 @@ CloseBrowser:
 !!!
 !! This section is tab management; creating a new tab, opening a file, selecting a tab and closing a tab.
 !! Activating a tab leaves Blocks mode first. A tab is a different file, and Blocks mode belongs to the file you were reading — so switching tabs, and opening a file, both land in the flat editor rather than refusing to move until you leave the mode by hand.
-!   -- New empty tab --
-NewFile:
-    put TabCount into N
+!! **A tab remembers where the flat editor was standing** — the caret's line and the viewport's scroll offset — and puts both back on return, whether the reader left by the tab bar, the Blocks button or the Graph one. Two values rather than one because they are independent: scrolling must not move the insertion point, and coming back must not carry the view to the caret, which is the jump a video editor teaches you to distrust. `codemirror` carries a command for each half and each half only — `cursor to line` does not scroll and `view to` does not move the caret — and the scroll one refreshes the editor on the way, which a CodeMirror hidden by a mode switch needs.
+!   Make room for one more tab: the count up by one and every per-tab array grown to match. **In one
+!   place, and that is the point of it.** There are two ways to open a tab — the + button and the file
+!   browser — and each used to grow the arrays itself, so an array added for one of them is a tab that
+!   fails in the other. That is not hypothetical: the caret and view records added for the tab
+!   restoration above went into `NewFile` only, and opening a *file* then died with "Array index 1 is
+!   out of range for 'TabCursor'" the moment a second tab existed with no slot to hold it.
+!   `CloseTab` shifts the value-carrying arrays back down when a tab goes — the element ones are rebuilt
+!   from the count instead — so it is the other place that has to know this list, and there are only two.
+!
+!   The new slots start empty, which is what the readers want: `TabRestore` asks whether a value is
+!   *numeric* rather than whether the slot holds anything, and a fresh tab has nowhere to restore to.
+TabGrow:
     add 1 to TabCount
     set the elements of TabPath to TabCount
     set the elements of TabName to TabCount
     set the elements of TabSaved to TabCount
+    set the elements of TabCursor to TabCount
+    set the elements of TabView to TabCount
     set the elements of TabBtn to TabCount
     set the elements of TabLabel to TabCount
     set the elements of TabClose to TabCount
+    return
+
+!   -- New empty tab --
+NewFile:
+    put TabCount into N
+    gosub to TabGrow
     index TabPath to N
     put `` into TabPath
     index TabName to N
@@ -676,13 +700,7 @@ OpenFile:
         gosub to FormatJson
         put JsonText into Content
     end
-    add 1 to TabCount
-    set the elements of TabPath to TabCount
-    set the elements of TabName to TabCount
-    set the elements of TabSaved to TabCount
-    set the elements of TabBtn to TabCount
-    set the elements of TabLabel to TabCount
-    set the elements of TabClose to TabCount
+    gosub to TabGrow
     index TabPath to N
     put TabItem into TabPath
     index TabName to N
@@ -742,6 +760,18 @@ CloseTab:
         index TabSaved to N
         put FileContent into TabSaved
         add 1 to N
+        index TabCursor to N
+        put TabCursor into Tmp
+        subtract 1 from N
+        index TabCursor to N
+        put Tmp into TabCursor
+        add 1 to N
+        index TabView to N
+        put TabView into Tmp
+        subtract 1 from N
+        index TabView to N
+        put Tmp into TabView
+        add 1 to N
         add 1 to N
     end
     subtract 1 from TabCount
@@ -763,14 +793,40 @@ CloseTab:
     end
     go to ActivateTab
 
+!   Where the flat editor is standing, remembered per tab and put back on return. The caret and the
+!   view are kept apart on purpose: `codemirror cursor to line` does not scroll and
+!   `codemirror view to` does not move the caret, so a revisit restores both without one dragging
+!   the other. Restoring the caret *and then* the view is the order that matters — the view is the
+!   one that has to end up exact, and setting the caret cannot disturb it.
+TabRemember:
+    if TabCount is 0 return
+    index TabCursor to ActiveTab
+    codemirror get cursor of ContentEditor into TabCursor
+    index TabView to ActiveTab
+    codemirror view of ContentEditor into TabView
+    return
+
+TabRestore:
+    if TabCount is 0 return
+    ! `is numeric` and not `is not empty`: a tab that has never been left has an untouched slot, and
+    ! zero is a perfectly good caret line and scroll offset — so the test has to be about the kind of
+    ! value, not about whether there is one.
+    index TabCursor to ActiveTab
+    if TabCursor is numeric codemirror cursor to line TabCursor in ContentEditor
+    index TabView to ActiveTab
+    if TabView is numeric codemirror view to TabView in ContentEditor
+    return
+
 ActivateTab:
     gosub to DoExitPanes
+    gosub to TabRemember
     index TabSaved to ActiveTab
     codemirror set content of ContentEditor to TabSaved
+    gosub to TabRestore
     gosub to RebuildTabBar
     stop
-!! @hash 341a2ef8
-!! @verified 341a2ef8
+!! @hash a64446ec
+!! @verified a64446ec
 !!!
 !! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
 RebuildTabBar:
@@ -1216,6 +1272,12 @@ DoExitBlocks:
         take 1 from Tmp
         codemirror scroll to line Tmp in ContentEditor
     end
+    ! Remembered here rather than on the way *in*, because leaving is what moves the editor: the
+    ! scroll above is deliberate and puts the block's start at the top, and that is where the reader
+    ! then is. Every way out of Blocks passes through this subroutine — the button, a tab switch, and
+    ! the way into Graph — so one save here covers all of them, and the pair of values is consistent
+    ! whichever way the reader came back.
+    gosub to TabRemember
     return
 
 NextBlock:
@@ -1272,8 +1334,8 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash efef02fe
-!! @verified efef02fe
+!! @hash 4464102e
+!! @verified 4464102e
 !!!
 !! Blocks save.
 !! FlushBlock pushes the current pane edits back into the
@@ -1602,6 +1664,14 @@ JumpToBlock:
 ToggleGraph:
     if GraphMode is 0 go to EnterGraph
     gosub to DoExitGraph
+    ! Back to the flat editor exactly where it was left — the caret *and* the view, which is what the
+    ! pane remembering its own state now means for this side too. It is the same pair a tab switch
+    ! restores, through the same two subroutines, so there is one answer to "where was I" rather than
+    ! one per way of leaving.
+    !
+    ! This is the only path out of Graph mode that restores: the other is a tab change, which is a
+    ! different file and starts wherever its own record says.
+    gosub to TabRestore
     stop
 
 !   Entering shows the pane, reads the recording beside the current script and draws it.
@@ -1613,6 +1683,9 @@ EnterGraph:
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `none`
     set style `display` of VizHost to `flex`
+    ! Where the flat editor was standing, so leaving puts it back there. Read before the editor is
+    ! hidden: a hidden editor still answers, but reading it while it is up is the honest order.
+    gosub to TabRemember
     index TabPath to ActiveTab
     put TabPath cat `.viz.json` into TracePath
     ! Say so before the wait rather than after it. A recording of a big run takes tens of seconds to
@@ -1626,10 +1699,10 @@ EnterGraph:
     ! worth reporting: a source that will not read leaves the picture plain, which is legible.
     put `` into VizSource
     rest get VizSource from `/read/` cat TabPath or put `` into VizSource
-    ! Opening a run is the one moment the view is showing a different picture, so it is where the
-    ! window is fitted to it. Every other draw is a redraw caused by a gesture, and re-fitting there
-    ! would undo the gesture that asked for it.
-    gosub to VizReset
+    ! The view decides for itself whether this is a new run — see the note at that comparison in the
+    ! drawing section. It was the host's call until the pane learned to come back: re-fitting here
+    ! meant every visit to the Graph pane threw the zoom and the pan away, which is the opposite of
+    ! what a return visit is for.
     gosub to VizPredict
     put now into DrawStarted
     gosub to Draw
@@ -1700,8 +1773,8 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash 4c70cf56
-!! @verified 4c70cf56
+!! @hash c21eb940
+!! @verified c21eb940
 !!!
 !! plotview.allspeak — the run as a picture, drawn in AllSpeak with the svg plugin.
 !!
@@ -1719,9 +1792,9 @@ DoExitPanes:
 !!
 !! **The window is held as two ranges in the trace's own units, never as a scale factor.** A factor would have to be relative to a fit that changes with the recording, and an absolute one ends up pinned at one end — the prototype's own lesson, where the same control read 51.6 px a step for one window and 0.7 for another. Multiplying before dividing keeps that arithmetic exact, as it does for the marks.
 !!
-!! **The window doubles as the reset.** Both gestures clamp at the edges of the run, so zooming out returns to the whole picture and panning stops at its ends; there is no reset button to find. Opening a run calls `VizReset`, which is the only other way the window is re-fitted.
+!! **The window doubles as the reset.** Both gestures clamp at the edges of the run, so zooming out returns to the whole picture and panning stops at its ends; there is no reset button to find. The window is fitted once per *recording* and kept across visits, so the pane comes back as it was left; opening a different run is what re-fits it, and `VizReset` is there for a host that wants to force one.
 !!
-!! **The gestures are four entry points, and the host wires them up.** `VizGrab` on pick, `VizPan` on drag, `VizWheel` on wheel and `VizReset` on opening a run. They live here rather than in the host because the window is the view's own state, and a host that wants the picture to move has only to call them.
+!! **The gestures are four entry points, and the host wires them up.** `VizGrab` on pick, `VizPan` on drag, `VizWheel` on wheel and `VizReset` for a host that wants the window fitted afresh. They live here rather than in the host because the window is the view's own state, and a host that wants the picture to move has only to call them.
 !!
 !! **The source is drawn behind the heat, once, and shown through a window.** An element is a declared symbol, so there cannot be one `svgtext` per source line — but one `<image>` carries the whole run, and its `href` is an SVG *document* the view builds itself out of `json split` and `replace`. That is why it is a document rather than a canvas raster: the language can already build one, so nothing new had to be invented to reach a canvas it has no words for, and it stays vector, so the text does not go soft past the scale it was rendered at.
 !!
@@ -1786,7 +1859,31 @@ DoExitPanes:
     variable VizPlotH
     variable VizPlotRight
     variable VizPlotBottom
-    variable VizTransfers
+    ! The flow, one path per kind of movement, because the colour *is* the kind. `branch` — the
+    ! compiler's own `if`/`while`/`wait` jumps — is deliberately not among them: scaffolding is not a
+    ! program jump, and the trace keeps it a separate kind precisely so a reader can be spared it.
+    ! The prototype drew it in grey behind a "compiler jumps" toggle; wanted here, that is a fourth
+    ! path and a button.
+    variable VizFlowCallD
+    variable VizFlowJumpD
+    variable VizFlowReturnD
+    ! The arrow head's three corners, computed per transfer — the head is what tells a reader which
+    ! end of a vertical segment is the destination, which at low zoom is otherwise a coin toss.
+    variable VizHeadL
+    variable VizHeadR
+    variable VizHeadY
+    ! One faint rule across the frame for every line the run touched, so that a mark or a transfer's
+    ! end can be placed on a line at low zoom, where the text is a texture and a mark is a dot.
+    variable VizRulesD
+    ! The lines the recording *names* — an arrival, or an end of a transfer — as a padded string, and
+    ! one line of it at a time for the membership test. See `VizRuleAdd`: the language has no set.
+    variable VizRuledLines
+    variable VizRuledLine
+    variable VizRuleLine
+    variable VizRuleEnd
+    variable VizRuleY
+    variable VizKind           ! the transfer's kind, while choosing its path
+    variable VizSegment        ! one transfer's path data, segment and head together
     variable VizX
     variable VizY
     variable VizY2
@@ -1816,6 +1913,14 @@ DoExitPanes:
     variable VizSourceLine
     variable VizSourceIndex
     variable VizSourceAt
+    ! The recording this window was fitted to. The *same* recording is the same run, and a visit back
+    ! to the pane should find the zoom and the pan where they were left; a different one means the
+    ! window means nothing, and is fitted afresh. This is what replaced the host calling `VizReset` on
+    ! every entry — which was the same thing as throwing the view away each time, and is not what a
+    ! return visit is for.
+    variable VizLastTrace
+    variable VizLastSource    ! and the script the picture was drawn from, for the same reason
+    variable VizNewRun        ! 1 when this draw's recording is not the last one drawn
     variable VizGlyphBody         ! the picture's rows, escaped and encoded once per run
     variable VizGlyphWidth        ! the document's natural size, in the units the text is drawn at
     variable VizGlyphHeight
@@ -1865,11 +1970,14 @@ DoExitPanes:
     ! picture itself. See the note where they are created for why it takes two elements to do it.
     svg VizPane
     svgimage VizGlyphs
+    path VizRules         ! a faint rule across the frame for every line the run touched
     path VizHeat0           ! the marks, coloured by how much work the line carried
     path VizHeat1
     path VizHeat2
     path VizHeat3
-    path VizFlowLines
+    path VizFlowCall      ! the flow, one path per kind of movement: the colour is the kind
+    path VizFlowJump
+    path VizFlowReturn
     ! Scratch values are named by role rather than pushed on a stack, which would be the neater
     ! idiom in Python: the view has to run in the JS runtime, where there is no `stack` type and
     ! `push`/`pop` mean the argument and call stacks instead. See language-pack-issues.md #16.
@@ -1968,6 +2076,15 @@ Draw:
     set attribute `x` of VizGlyphs to 0
     set attribute `y` of VizGlyphs to 0
 
+    ! A rule per line the run touched, faint and across the whole frame. It is drawn *over* the source
+    ! so a line can be picked out of the texture, and *under* everything else so it never competes
+    ! with a mark: at low zoom a mark is a dot in mid-space, and the rule is what says which line the
+    ! dot belongs to. Kept faint deliberately — it is a grid, not a reading.
+    create VizRules in VizCanvas
+    set attribute `stroke` of VizRules to `#eee`
+    set attribute `stroke-width` of VizRules to 1
+    set attribute `fill` of VizRules to `none`
+
     create VizYLabel0 in VizCanvas
     create VizYLabel1 in VizCanvas
     create VizYLabel2 in VizCanvas
@@ -2018,10 +2135,22 @@ Draw:
     set attribute `stroke` of VizHeat3 to `#e5484d`
     set attribute `stroke-linecap` of VizHeat3 to `round`
 
-    create VizFlowLines in VizCanvas
-    set attribute `stroke` of VizFlowLines to `#e0a44a`
-    set attribute `stroke-width` of VizFlowLines to 2
-    set attribute `fill` of VizFlowLines to `none`
+    ! The flow, a path per kind, in the prototype's own colours. A transfer says where control went,
+    ! and *how* it went is the interesting part: a `gosub` and a `return` are the same gesture drawn
+    ! the same way until the colour tells them apart. `branch` is not drawn at all — see the note on
+    ! the declarations for why the scaffolding is left out rather than greyed.
+    create VizFlowCall in VizCanvas
+    set attribute `stroke` of VizFlowCall to `#e0a44a`
+    set attribute `stroke-width` of VizFlowCall to 2
+    set attribute `fill` of VizFlowCall to `none`
+    create VizFlowJump in VizCanvas
+    set attribute `stroke` of VizFlowJump to `#43c6a8`
+    set attribute `stroke-width` of VizFlowJump to 2
+    set attribute `fill` of VizFlowJump to `none`
+    create VizFlowReturn in VizCanvas
+    set attribute `stroke` of VizFlowReturn to `#c07ad0`
+    set attribute `stroke-width` of VizFlowReturn to 2
+    set attribute `fill` of VizFlowReturn to `none`
 
     ! The key, laid out once — only the ranges it names change with the run. It sits on the caption's
     ! line, in the right half of the frame so a long caption cannot run into it, and its swatches are
@@ -2107,7 +2236,13 @@ VizBuilt:
     put `` into VizHeatE
     put `` into VizHeatF
     put `` into VizHeatG
-    put `` into VizTransfers
+    put `` into VizFlowCallD
+    put `` into VizFlowJumpD
+    put `` into VizFlowReturnD
+    put `` into VizRulesD
+    ! A leading and trailing space, so that every entry added is padded on both sides and ` 15 ` can
+    ! never match inside ` 115 `.
+    put ` ` into VizRuledLines
 
     ! ---- pass one: the frame the picture is drawn in ----
     put 4 into VizBands       ! the count range is split into this many, and the ramp is the only scheme
@@ -2149,6 +2284,7 @@ VizBuilt:
             put property `steps` of VizArgs into VizSteps
             add 0 to VizSteps
             if VizSteps is greater than VizMaxSteps put VizSteps into VizMaxSteps
+            gosub to VizRuleAdd
         end
         if VizCategory is `transfer`
         begin
@@ -2156,10 +2292,12 @@ VizBuilt:
             add 0 to VizLine
             if VizLine is less than VizMinLine put VizLine into VizMinLine
             if VizLine is greater than VizMaxLine put VizLine into VizMaxLine
+            gosub to VizRuleAdd
             put property `to_line` of VizArgs into VizLine
             add 0 to VizLine
             if VizLine is less than VizMinLine put VizLine into VizMinLine
             if VizLine is greater than VizMaxLine put VizLine into VizMaxLine
+            gosub to VizRuleAdd
         end
         add 1 to VizIndex
     end
@@ -2184,21 +2322,42 @@ VizBuilt:
     put 14 into VizDotSize
 
     ! ---- the window on the run ----
-    ! Fitted to the whole recording the first time it is drawn and left alone after that, because a
-    ! redraw is what a gesture causes: re-fitting here would undo the gesture that asked for it. The
-    ! host calls `VizReset` when it opens a run, which is the only moment the pane is showing a new
-    ! one — and so leaving and re-entering the pane is also the way back to the whole picture.
+    ! Fitted to the whole recording the first time that recording is drawn and left alone after that:
+    ! a redraw is what a gesture causes, and re-fitting there would undo the gesture that asked for
+    ! it. The recording is the key rather than the visit, because leaving the pane and coming back to
+    ! the *same* run should find the window exactly as it was — coming back is how a reader works, and
+    ! a visit that resets is a visit that has to be redone.
+    !
+    ! The comparison is over the whole recording, and it is the honest one: a recording is a file
+    ! beside the script, so editing the script leaves it alone and the window still means what it
+    ! meant, while re-running the script writes a new one and the window is fitted again.
+    put 0 into VizNewRun
+    if VizTrace is not VizLastTrace put 1 into VizNewRun
+    put VizTrace into VizLastTrace
+    if VizNewRun is 1 gosub to VizReset
     if VizViewFit is 1 go to VizWindow
     put 0 into VizViewX0
     put VizMaxSteps into VizViewXW
     put VizMinLine into VizViewY0
     put VizSpanLines into VizViewYH
     put 1 into VizViewFit
-    ! The source is measured here rather than in the built-once block, because it depends on the run:
-    ! the width every row is scaled against is the longest line the run touched.
-    gosub to VizSourceMeasure
 VizWindow:
     gosub to VizClamp
+
+    ! ---- the source behind the heat ----
+    ! Built when either of its two inputs has changed, and not otherwise. A new script is new text to
+    ! draw; a new recording is a new range of lines to draw it for. Both are compared as whole strings,
+    ! which is what they are — and it is the same reasoning as the window's, on the other input: the
+    ! thing that decides is the *content*, not the visit. Drawing on every draw would be the redraw
+    ! Graham asked to be rid of, and drawing only on a new recording would leave an edited script
+    ! showing its old text.
+    if VizNewRun is 1 go to VizPictureFresh
+    if VizSource is not VizLastSource go to VizPictureFresh
+    go to VizPictureDone
+VizPictureFresh:
+    gosub to VizSourceMeasure
+    put VizSource into VizLastSource
+VizPictureDone:
 
     ! No scale factors are kept, and that is deliberate. AllSpeak's arithmetic is integer-first and
     ! division truncates (`divide 10 by 3` is 3), so a fraction here would be lost: a 626-line span
@@ -2294,7 +2453,30 @@ VizWindow:
             put 0 into VizOutside
             if VizX is less than VizMargin put 1 into VizOutside
             if VizX is greater than VizPlotRight put 1 into VizOutside
-            if VizOutside is 0 put VizTransfers cat `M` cat VizX cat ` ` cat VizY cat `L` cat VizX cat ` ` cat VizY2 into VizTransfers
+            if VizOutside is 0
+            begin
+                ! The head is a chevron drawn in the path data, not a marker element — the plugin has
+                ! none, and a stroked chevron needs no fill, so it joins the segment's own stroke.
+                !
+                ! It goes at the *destination* end, `to_line`, with its wings behind the tip rather
+                ! than in front of it — and which side is behind depends on which way the segment
+                ! runs, so the wings are placed nine units back from the tip in the direction it came
+                ! from. No head is drawn when both ends are the same line: a head with no direction
+                ! would be claiming one.
+                put property `kind` of VizArgs into VizKind
+                take 5 from VizX giving VizHeadL
+                add 5 to VizX giving VizHeadR
+                if VizY2 is greater than VizY take 9 from VizY2 giving VizHeadY
+                if VizY2 is less than VizY add 9 to VizY2 giving VizHeadY
+                put `M` cat VizX cat ` ` cat VizY cat `L` cat VizX cat ` ` cat VizY2 into VizSegment
+                if VizY2 is not VizY put VizSegment cat `M` cat VizHeadL cat ` ` cat VizHeadY cat `L` cat VizX cat ` ` cat VizY2 cat `L` cat VizHeadR cat ` ` cat VizHeadY into VizSegment
+                ! One path per kind, because the colour is the kind. `branch` — the compiler's own
+                ! jumps — is left off rather than drawn faintly: scaffolding is not a program jump,
+                ! and drawing it would put the `if` and `while` machinery into the flow.
+                if VizKind is `call` put VizFlowCallD cat VizSegment into VizFlowCallD
+                if VizKind is `jump` put VizFlowJumpD cat VizSegment into VizFlowJumpD
+                if VizKind is `return` put VizFlowReturnD cat VizSegment into VizFlowReturnD
+            end
         end
         add 1 to VizIndex
     end
@@ -2409,6 +2591,39 @@ VizWindow:
     multiply VizBandSize by 3 giving VizKeyLo
     set the text of VizKeyLabel3 to VizKeyLo cat `+`
 
+    ! ---- the rules ----
+    ! A hairline across the frame at every line the run touched, taken from the counts the window
+    ! carries rather than from the arrivals — so a line visited forty times gets one rule and not
+    ! forty. Lines the run never reached get none, which is what makes this a picture of the
+    ! recording rather than of the file.
+    !
+    ! It exists for the zoomed-out view, where a mark is a dot in mid-space and the text behind it is
+    ! a texture: the rule is what says which line the dot belongs to, and it spares a reader the
+    ! choice between zooming in to find out and hovering to ask the sidebar.
+    put `` into VizRulesD
+    put VizMinLine into VizRuleLine
+    add VizSpanLines to VizMinLine giving VizRuleEnd
+    while VizRuleLine is less than VizRuleEnd
+    begin
+        put ` ` cat VizRuleLine cat ` ` into VizRuledLine
+        if VizRuledLines includes VizRuledLine
+        begin
+            take VizViewY0 from VizRuleLine giving VizRuleY
+            multiply VizRuleY by VizPlotH giving VizRuleY
+            divide VizRuleY by VizViewYH giving VizRuleY
+            add VizMargin to VizRuleY
+            ! Only the rules in view. The loop runs over the whole run and the window is a slice of it,
+            ! so a line outside the window maps to a y outside the frame — and a rule drawn there
+            ! would be a line across the axis or the caption. The test is the marks' own test, and
+            ! inclusive for the same reason: a line on the very edge is on the edge, not outside it.
+            put 0 into VizOutside
+            if VizRuleY is less than VizMargin put 1 into VizOutside
+            if VizRuleY is greater than VizPlotBottom put 1 into VizOutside
+            if VizOutside is 0 put VizRulesD cat `M` cat VizMargin cat ` ` cat VizRuleY cat `h` cat VizPlotW into VizRulesD
+        end
+        add 1 to VizRuleLine
+    end
+
     ! ---- the source's picture ----
     ! Rebuilt from the window on every draw. The document holds the lines the window shows and
     ! nothing else, so it is exactly as tall as the frame and cannot spill past it — which is what
@@ -2429,7 +2644,10 @@ VizWindow:
     set attribute `stroke-linecap` of VizHeat1 to `round`
     set attribute `stroke-linecap` of VizHeat2 to `round`
     set attribute `stroke-linecap` of VizHeat3 to `round`
-    set attribute `d` of VizFlowLines to VizTransfers
+    set attribute `d` of VizFlowCall to VizFlowCallD
+    set attribute `d` of VizFlowJump to VizFlowJumpD
+    set attribute `d` of VizFlowReturn to VizFlowReturnD
+    set attribute `d` of VizRules to VizRulesD
     put 0 into VizDrawing
     return
 
@@ -2647,10 +2865,28 @@ VizClamp:
     return
 
 VizReset:
-    ! The host calls this when it opens a run; see the note at the fit in `Draw`. It is the whole of
-    ! the interface for starting again, and it means that simply leaving the pane and coming back is
-    ! the way to see the whole picture.
+    ! Fit the window to the run again on the next draw. The view calls this itself when the recording
+    ! changes — see the comparison at the fit in `Draw`, which is where "a different run" is decided —
+    ! and it stays an entry point because a host may have its own reason to start again. It is no
+    ! longer what a visit does: leaving the pane and coming back keeps the window, which is what the
+    ! reader wants and what a reset on entry destroyed.
     put 0 into VizViewFit
+    return
+
+VizRuleAdd:
+    ! Note a line the recording names, once. The rules are drawn for *these* lines and not for every
+    ! line the run executed, which is what the window's counts carry: on a recording that walks a
+    ! chain of labels the counts cover more than twice as many lines as carry anything, and a grid
+    ! that dense stops being a guide. A line qualifies if an arrival landed on it or a transfer began
+    ! or ended on it — which is exactly the set of lines the picture has something to say about.
+    !
+    ! The set is a padded string and the test is `includes`, because the language has one of those and
+    ! no set type. The dedupe is not an optimisation: a rule is a line drawn right across the frame,
+    ! so a line visited two hundred times would contribute two hundred identical rules to the same
+    ! path attribute — invisible, and a waste that grows with the recording.
+    put ` ` cat VizLine cat ` ` into VizRuledLine
+    if VizRuledLines includes VizRuledLine return
+    put VizRuledLines cat VizRuledLine into VizRuledLines
     return
 
 VizSourceMeasure:
@@ -2762,6 +2998,6 @@ VizPlaceX:
     divide VizTickPos by VizViewXW giving VizTickPos
     add VizMargin to VizTickPos
     return
-!! @hash 1b31cd8f
-!! @verified 1b31cd8f
+!! @hash fefa5a95
+!! @verified fefa5a95
 !!!

@@ -143,6 +143,78 @@ const AllSpeak_CodeMirror = {
 					}
 				}
 				return false;
+			// The scroll offset of the viewport, read and written. Separate from the caret on purpose:
+			// scrolling must not move the insertion point, and coming back to a file must not move the
+			// view. The editor keeps both per tab so that neither disturbs the other — which is the
+			// behaviour a video editor teaches you to expect and a text editor usually does not.
+			case `view`:
+				if (compiler.nextIsWord(`of`)) {
+					if (compiler.nextIsSymbol()) {
+						const editor = compiler.getSymbolRecord();
+						if (compiler.nextIsWord(`into`)) {
+							if (compiler.nextIsSymbol()) {
+								const target = compiler.getSymbolRecord();
+								compiler.next();
+								compiler.addCommand({
+									domain: `codemirror`,
+									keyword: `codemirror`,
+									lino,
+									action: `getView`,
+									editor: editor.name,
+									target: target.name
+								});
+								return true;
+							}
+						}
+					}
+				}
+				// `isWord` and not `nextIsWord`: the failed test above left the index *on* the action
+				// word, and `getNextValue` reads the token after the one the index is on — so advancing
+				// here would step over the value and read `in` as it. That is the same trap the `get`
+				// chain carries a warning about, and it cost a compile to find.
+				if (compiler.isWord(`to`)) {
+					const offset = compiler.getNextValue();
+					// Value compilation consumes the expression, so `in` sits at the current index and is
+					// checked without advancing.
+					if (compiler.isWord(`in`)) {
+						if (compiler.nextIsSymbol()) {
+							const editor = compiler.getSymbolRecord();
+							compiler.next();
+							compiler.addCommand({
+								domain: `codemirror`,
+								keyword: `codemirror`,
+								lino,
+								action: `setView`,
+								editor: editor.name,
+								offset
+							});
+							return true;
+						}
+					}
+				}
+				return false;
+			case `cursor`:
+				if (compiler.nextIsWord(`to`)) {
+					if (compiler.nextIsWord(`line`)) {
+						const line = compiler.getNextValue();
+						if (compiler.isWord(`in`)) {
+							if (compiler.nextIsSymbol()) {
+								const editor = compiler.getSymbolRecord();
+								compiler.next();
+								compiler.addCommand({
+									domain: `codemirror`,
+									keyword: `codemirror`,
+									lino,
+									action: `setCursor`,
+									editor: editor.name,
+									line
+								});
+								return true;
+							}
+						}
+					}
+				}
+				return false;
 			case `scroll`:
 				if (compiler.nextIsWord(`to`)) {
 					if (compiler.nextIsWord(`line`)) {
@@ -252,6 +324,31 @@ const AllSpeak_CodeMirror = {
 				editor.editor.refresh();
 				const lineTop = editor.editor.charCoords({ line: scrollLine, ch: 0 }, `local`).top;
 				editor.editor.scrollTo(null, Math.max(lineTop - 20, 0));
+				break;
+			case `getView`:
+				editor = program.getSymbolRecord(command.editor);
+				const viewTarget = program.getSymbolRecord(command.target);
+				viewTarget.value[viewTarget.index] = {
+					type: `constant`,
+					numeric: true,
+					content: editor.editor.getScrollInfo().top
+				};
+				viewTarget.used = true;
+				break;
+			case `setView`:
+				editor = program.getSymbolRecord(command.editor);
+				const viewOffset = program.getValue(command.offset);
+				// Refresh first, for the same reason `scrollToLine` does: an editor hidden since its
+				// last measure would otherwise scroll within a stale layout.
+				editor.editor.refresh();
+				editor.editor.scrollTo(null, viewOffset);
+				break;
+			case `setCursor`:
+				editor = program.getSymbolRecord(command.editor);
+				// `setCursor` deliberately does not scroll: the caret and the view are independent, so
+				// putting the caret back must not drag the view to it. That is the whole distinction
+				// between this and `scrollToLine`.
+				editor.editor.setCursor({ line: program.getValue(command.line), ch: 0 });
 				break;
 			}
 			return command.pc + 1;

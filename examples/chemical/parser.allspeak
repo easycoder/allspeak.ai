@@ -17,7 +17,8 @@
 !   so they are exact. A formula containing an element outside the table still
 !   reports its counts, with the missing weight named.
 
-    script Parser!! Constants: the digit characters, and the size at which a group expansion is refused.
+    script Parser
+!! Constants: the digit characters, and the size at which a group expansion is refused.
 !!
 !! Element symbols are an uppercase letter followed by lowercase letters, and both halves of that are conditions in the language, so no alphabet needs listing here. Digits have no equivalent test — `is numeric` asks whether a value *is* a number, and a single-character string never is — so the ten digits are listed and membership is asked with `includes`.
 !!

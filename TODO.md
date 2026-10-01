@@ -263,12 +263,38 @@ the editor, before the next changes what it looks like.
    than chosen, and `VizClamp` will not go below it. Applied *before* the clamp to the run, so a recording
    shorter than that many lines has no vertical zoom at all — which is right (there is nothing to zoom into)
    and is now the reason the harness reports those phases as "nothing to move" rather than as failures.
-3. **Arrow heads, and a colour per kind.** Not started. The trace carries `kind` of `call`/`jump`/`return`/
-   `branch`, so it is one path per kind instead of the one `VizFlowLines`, and the head is a chevron drawn
-   in the path data itself — the plugin has no marker element, and a stroked chevron needs no fill.
-4. **A faint rule per recorded line.** Not started. One extra path, one `M … h PlotW` per line that has a
-   count, built from `VizLineCounts` over the run's own lines. It is what makes a transfer's end readable at
-   low zoom, which is the state the pane is in most of the time.
+3. **Arrow heads, and a colour per kind — LANDED** (2026-10-01). One path per kind instead of one
+   `VizFlowLines`, in the prototype's own colours: `call` `#e0a44a`, `jump` `#43c6a8`, `return` `#c07ad0`.
+   The head is a chevron in the path data — the plugin has no marker element and a stroked chevron needs no
+   fill — placed at the destination end with its wings behind the tip, which side depending on which way
+   the segment runs; a transfer whose ends are the same line gets no head, since a head with no direction
+   would be claiming one. **`branch` is now not drawn at all**, and that is a visible change: the trace has
+   recorded the compiler's `if`/`while`/`wait` jumps as `branch` since draft 2, the settle note says they
+   are "drawn only when asked for", and the view had been drawing all four kinds alike — so about a fifth
+   of the flow on `trace-run.allspeak` was machinery. The prototype's default agrees (they sit behind a
+   "compiler jumps" checkbox), and a fourth path plus a button is what it would take to offer them.
+4. **A faint rule per recorded line — LANDED** (2026-10-01, then corrected the same day). One hairline
+   across the frame at every line the run *names* — an arrival, or either end of a transfer — so a line
+   visited forty times gets one rule and not forty, and a line the run merely passed through gets none.
+   Only the rules *in view* are drawn, since the loop covers the run and the window is a slice of it.
+   **Two faults, and both were found by a check rather than by reading.** The first version drew rules for
+   *every line the run executed* — taken from the window's per-line counts — which on `trace-wide.allspeak`
+   is 148 lines where only 62 carry anything; the other 86 are the `add` and `go to` between one label and
+   the next, and a rule on each is a grid over lines with nothing on them. **Graham saw it before any check
+   did**: "too many of them... is it possible some belong to the internal gotos from if, wait etc?" They were
+   not the gotos — those are already out of the flow — but the instinct was exact, and the counts were the
+   wrong source. And the first version also drew the off-window rules, which map outside the frame and cross
+   the axis: *that* one the "every coordinate is inside the frame" check caught, on twenty of twenty-eight
+   phases. The harness now checks the converse too — **the rules are exactly the lines the recording names,
+   and nothing else** — which is the statement whose absence let the wrong version pass 20 of 20.
+   The set is a padded string with an `includes` test, because the language has one of those and no set type;
+   the padding is what stops ` 15 ` matching inside ` 115 `. Its colour is `#eee`, on Graham's eye: the pane
+   sits on the editor's white, and `#2b3138` was a near-black grid there.
+   **What is missing, and it needs a word from Graham before it is drawn:** the flow colours mean something
+   and nothing says what. The key names the four heat bands and has no room on the caption's line for three
+   more entries, though the space between the caption and the key (about 280 units) would take them. What
+   wants settling first is the *vocabulary* — the trace says `call`/`jump`/`return`, and a reader's words
+   are probably `gosub`/`go`/`return`.
 
 **The mode invariant, and the bug that wasn't one (2026-10-01).** Graham reached a state by the one path that
 shows it — Graph, then Blocks — where both the Graph and the Blocks buttons read `Edit`, and in the same state
@@ -284,8 +310,64 @@ part that is not enforceable and is why the comment sits at both entry points. T
 rather than a check: the two harnesses drive the drawing, not the editor's UI state, and nothing headless can
 see a button's label.
 
-**Where the work goes next, in order** — points 3 and 4 above first, because they are what makes the
-panel readable while the text model is being judged, then:
+**A mode comes back as it was left (2026-10-01).** Graham's requirement: *"The first visit needs to set things up,
+but subsequent visits should avoid any form of reset. So the current line number remains the same in Edit mode,
+and the zoom/pan setting in Graph mode."* And for the open question — what to do when the user changes one thing
+and returns to the other view — his call: *"just restoring it as it was previously is the best"*.
+
+The window was being fitted on **every visit**, because the host called `VizReset` on the way in. The view now
+decides for itself, and the thing it decides from is **the recording**: the same recording is the same run, so the
+window is kept, and a different one re-fits. The comparison is over the whole string, and that is the honest
+key — a recording is a file beside the script, so editing the script leaves the recording alone and the window
+still means what it meant, while re-running writes a new one.
+
+**The two inputs are different, and that is the whole of the design.** The picture answers to the *script* and
+the window to the *recording*: a redraw touches only the window it was given; an edited script rebuilds the
+picture and leaves the window exactly alone; a new recording re-fits. **And the near-miss is worth keeping**:
+moving the fit out of the per-visit path took `VizSourceMeasure` with it, which would have left an edited script
+showing its old text — silent, plausible, and caught only by the check written for it.
+
+**The flat editor's line** is read when the pane opens and put back on the way out. **The one thing to revisit is
+how it goes back:** `codemirror scroll to line` is the only command that calls `refresh`, and the plugin's own
+note says a hidden CodeMirror needs one — so the line comes back near the *top* of the pane rather than at the
+height it was. A plain `codemirror refresh` command would re-measure without moving; it is a small addition to
+the plugin, and it is the difference between "the line is right" and "the view is right".
+
+**A tab keeps the caret *and* the view (2026-10-01).** Graham, from Kdenlive: scrolling must not move the
+insertion point, and the view must not be dragged to the caret on return — the jump that catches him out there.
+Two faults, which are the two halves of it: **a tab switch reset both** (`ActivateTab` sets the content, and
+`setValue` resets the caret and the view), and **leaving the Graph pane scrolled the view back onto the caret** —
+the same jump, in the same shape.
+
+**The fix is a pair, kept apart.** Each tab remembers the caret's line *and* the viewport's scroll offset, and both
+go back on return — through the same two subroutines for a tab switch, the Blocks button and the Graph pane, so
+there is one answer to "where was I" rather than one per way of leaving. Three commands were added to the
+`codemirror` plugin, which is the editor's own plumbing (the domain is undocumented and no user writes it):
+`view of` / `view to` for the scroll offset, and `cursor to line` for the caret — and that last one deliberately
+does **not** scroll, which is what stops the pair disturbing each other. **The column is not remembered**, only the
+line, because that is all `get cursor` returns.
+
+**Two traps, both paid for.** `getNextValue` reads the token *after* the one the index is on, and `nextIsWord`
+advances before it answers — so `nextIsWord('to')` followed by `getNextValue()` steps over the value. It surfaced
+as a runtime error about a value called `in`, which points at nothing. The plugin's own `get` chain carries a
+warning about exactly this, now in its second paying. And `deploy/code/asedit.allspeak` went stale again the moment
+the root copy moved — which is the two-copies item below, and this is its third reminder.
+
+**Not verifiable headlessly**, and it is the same class as the mode-invariant bug: which caret, which scroll, which
+pane is editor UI state, and no check can see it. **And that prediction came true within the hour**: opening a
+second tab from the *file browser* died with *"Array index 1 is out of range for 'TabCursor'"*, because the two new
+per-tab arrays were grown in `NewFile` (the + button) and not in `OpenFile` (the browser). Fixed by the same move
+as `DoExitPanes` — **one `TabGrow` subroutine makes room for a tab**, and both callers use it, so a seventh
+per-tab array is one line in one place. `CloseTab` is the only other site that knows the list, and it shifts the
+value arrays back down; the element arrays are rebuilt from the count.
+
+**That is the third paying for one shape** — a list kept in step in more than one place: `svgimage`'s seven sites
+(two missed), the mode panes' one entry point that did not exit the others, and now the tab arrays' two ways to
+open a tab. The fix has been the same each time: make one place responsible. It is worth watching for, because the
+*failure* is not the same each time — two were silent and this one was loud — while the cause always is.
+
+**Where the work goes next, in order** — the flow's key first (it is the one thing the colours need to be
+readable, and it waits on Graham's words for the three kinds), then:
 
 5. **The side panel, and the hover rule.** The settled note above: at low zoom show the current marker and
    any doc prose, not the line's command, which is meaningless at that size. The panel is a reuse of the
