@@ -3,11 +3,11 @@
 #
 # Each starter zip bundles the language-specific bootstrap files
 # (CLAUDE.md, AGENTS.md, server.allspeak, edit.html) with the shared editor
-# (asedit.allspeak, asedit.json) and the doc-block analyser (asdoc-check.py),
+# (asedit.allspeak, asedit-graph.allspeak, asedit.json) and the doc-block analyser
 # all at the zip root.
 #
 # Run after editing anything under starter/ or after changing
-# asedit.allspeak / asedit.json / tools/asdoc-check.py. Languages are
+# asedit.allspeak / asedit-graph.allspeak / asedit.json / tools/asdoc-check.py. Languages are
 # auto-discovered from starter/*/ subdirectories.
 
 set -eu
@@ -53,11 +53,11 @@ for dir in starter/*/; do
             cp -p "$dir$extra" "$work/"
         fi
     done
-    cp -p asedit.allspeak asedit.json tools/asdoc-check.py "$work/"
+    cp -p asedit.allspeak asedit-graph.allspeak asedit.json tools/asdoc-check.py "$work/"
 
     out="$PWD/deploy/allspeak-$lang.zip"
     rm -f "$out"
-    zip_files="CLAUDE.md server.allspeak edit.html asedit.json asedit.allspeak asdoc-check.py"
+    zip_files="CLAUDE.md server.allspeak edit.html asedit.json asedit.allspeak asedit-graph.allspeak asdoc-check.py"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$work/$extra" ]; then
             zip_files="$zip_files $extra"

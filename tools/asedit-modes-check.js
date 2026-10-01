@@ -88,6 +88,18 @@ global.removeEventListener = noop;
 global.setTimeout = setTimeout;
 global.clearTimeout = clearTimeout;
 global.alert = m => process.stderr.write(`alert: ${m}\n`);
+// The page's two dialogs, which the editor does reach: a tab with content and no path asks for a name
+// on the next auto-save, and the update check asks before it reloads. Answering them the way a browser
+// would — and saying what was asked — keeps the editor's own paths runnable here instead of throwing
+// out of a timer, and makes the answer visible in the log rather than in the failure.
+global.prompt = text => {
+	process.stdout.write(`  [prompt] ${text}\n`);
+	return ``;
+};
+global.confirm = text => {
+	process.stdout.write(`  [confirm] ${text}\n`);
+	return false;
+};
 global.document = {
 	getElementById: id => byId[id] || null,
 	querySelector: () => null,
@@ -124,13 +136,29 @@ global.CodeMirror = { fromTextArea: () => fakeEditor, version: `stub` };
 // `rest get /read/<path>` is how the editor loads a file, and a path that will not answer sends it down
 // an error path instead — so the stub serves the real files under the repo and says "not found" for
 // anything else, which is the honest thing for a check to do.
+//
+// A path with no `/read/` in it is a *static* fetch, which is how the editor loads its own companion
+// module (`asedit-graph.allspeak`), and the dev server serves those by name from the same directory —
+// so the stub strips the cache-busting query and looks the file up. Without this the module load takes
+// its `or go` failure path, the Graph pane never appears, and the checks about the pane would pass on
+// an editor that had quietly gone back to flat mode.
 global.fetch = (url, opts) => {
 
 	const body = (() => {
+		const read = rel => {
+			try { return fs.readFileSync(path.join(root, decodeURIComponent(rel)), `utf8`); }
+			catch (err) { return null; }
+		};
 		const m = /\/read\/(.*)$/.exec(url);
-		if (!m) return ``;
-		try { return fs.readFileSync(path.join(root, decodeURIComponent(m[1])), `utf8`); }
-		catch (err) { return null; }
+		if (m) return read(m[1]);
+		// A static fetch is a plain path, with or without a directory part, plus the
+		// cache-busting query the editor appends.
+		const stat = /([^/?#]+)(?:\?[^#]*)?$/.exec(url.split(`/read/`).pop());
+		if (stat) {
+			const found = read(stat[1]);
+			if (found !== null) return found;
+		}
+		return ``;
 	})();
 	if (body === null || (opts && opts.method === `POST`)) {
 		return Promise.resolve({ ok: opts && opts.method === `POST`, status: 200, statusText: `OK`, text: () => Promise.resolve(``) });
@@ -354,6 +382,36 @@ check(shown.length === 1 && shown[0] === `graph`, `Graph mode shows one pane, th
 check(text.graph === `Edit` && text.blocks === `Blocks`, `and only its own button offers the way out (${text.blocks} | ${text.graph} | ${text.find})`);
 check(panes().blocks === `none`, `with the Blocks pane gone rather than lying under it`);
 
+// ---- the pane is a module, loaded on demand -------------------------------------------------
+//
+// The drawing lives in `asedit-graph.allspeak`, fetched and compiled on this first click and messaged
+// from then on. Each of these can fail on its own, which is why they are separate: the module loads (a
+// static fetch of a file beside the page), it takes the pane over (an `attach` by id, in a program
+// that never declared that element), and the dict arrives — its own `VizShown`, and the run's own
+// fields, which the editor can set in its variables and the module can only get from the message.
+//
+// **The status line is deliberately not what is checked here.** It is the page's one status line and it
+// has two writers: the pane says "no recording beside this script" and the analysis says its piece, and
+// which lands last is timing. What is checked is the boundary — the values that could only have crossed.
+const viz = () => AllSpeak.scripts[`ASEditorGraph`];
+const vizRecord = name => (viz() && viz().getSymbolRecord(name)) || null;
+const vizValue = name => {
+	const record = vizRecord(name);
+	const v = record && record.value && record.value[record.index];
+	return v ? v.content : undefined;
+};
+const loaded = await waitFor(() => valueOf(`VizLoaded`) === 1 && !!viz());
+check(loaded, `the Graph pane loads as a module on the first click (VizLoaded=${valueOf(`VizLoaded`)}, program=${!!viz()})`);
+// The message is *asynchronous*: `send` queues the delivery and the recipient resumes on a turn of its
+// own, so this waits for the pane to have taken it rather than reading straight afterwards.
+const took = await waitFor(() => vizValue(`VizShown`) === 1);
+check(took, `and the editor's message got there (its own VizShown=${vizValue(`VizShown`)})`);
+const attached = vizRecord(`VizHost`) && vizRecord(`VizHost`).element[vizRecord(`VizHost`).index];
+check(attached === byId[`se-graph-area`],
+	`and it attached the pane by id, in a program that never declared the element (${attached ? attached.tagName : `nothing`})`);
+check(String(vizValue(`TracePath`)).endsWith(`.viz.json`),
+	`and the run's fields came with the message (the path it was told to report: ${JSON.stringify(vizValue(`TracePath`))})`);
+
 // The caret and the view, remembered on the way in and put back on the way out — as a pair, and with
 // the caret written before the view so that neither can drag the other.
 //
@@ -375,6 +433,11 @@ check(editorCalls.indexOf(putBack) < editorCalls.indexOf(scrolled),
 	`the caret first, so that the view is the one that ends up exact`);
 shown = up(panes());
 check(shown.length === 1 && shown[0] === `editor`, `and the flat editor is the one pane up (${shown.join(`,`) || `none`})`);
+// And the module was told, which is the whole reason leaving is a message at all. It is also the check
+// that catches the race the guard in `SendRunToViz` exists for: entering and leaving again before the
+// recording fetch comes back must not leave the pane believing it is on screen.
+check(await waitFor(() => vizValue(`VizShown`) === 0),
+	`and the pane is told it is off screen, and not told otherwise by a late reply (VizShown=${vizValue(`VizShown`)})`);
 
 console.log(failures.length === 0
 	? `\nasedit-modes-check: all checks passed`
