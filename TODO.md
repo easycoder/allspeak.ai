@@ -1,7 +1,48 @@
 # AllSpeak — Language Enhancement TODO
 
 Items identified during real project work. Each should be implemented in both JS and Python.
+## For evaluating this tool — 2026-10-01, end of session
+
+**A candid state, since the next question is whether any of this earns its keep.** Everything below is
+measured or demonstrated, not argued.
+
+**What works, demonstrated.** The pane draws the *whole file* and windows over it with the wheel (both ways),
+shift/control-wheel zooming the lines and the steps independently, a drag panning, the clamp holding at both
+ends. Two keys, a caption naming the recording's range, a status line naming the window and the zoom, and
+marks/rules/heat saying which lines ran. The extent change is proved numerically: the window's fit reads
+`0 0 7100 4680` for the 260-line fixture and `0 0 7128 4698` for the same file a line longer.
+
+**What a draw costs, which is the number that decides it.** From Graham's own console timestamps, on a **24 KB
+recording**: 279 ms, 131 ms, 118 ms, 125 ms — call it **120-280 ms per draw**, agreeing with the module's
+learned 4 ms/KB plus a fixed part. It scales with the recording, so a megabyte is seconds per gesture. The
+gestures are no longer *lost* (that was the `VizRequest` fix) but each one waits for a draw. **Measure the curve
+on a real recording before optimising anything** — this is the single input most likely to decide whether the
+pane is worth its weight, and his rule is not to optimise before the functionality is finished.
+
+**What is weak, and it is the tooling rather than the pane.** Four faults were found this session; the two I
+diagnosed by *reading* the runtime were both **wrong**, and the two found by a **log** and by the **harness**
+were both right. `plotview-check.js` has never run an event-handler path (`on wheel … begin … end`), which is
+where both wheel faults lived, and its scroll check asked whether a scroll *moved* the picture but never **which
+way** — which is exactly how a missing sign slipped through. **A phase that fires `program.onWheel` with a
+signed `document.wheelAmount` is the highest-value check in the repo.**
+
+**Loose ends in order:** (1) that handler phase; (2) the three stale expectations in `plotview-check.js` (the
+window *kept* across a script edit, and an expected fit computed from the original source), plus one
+row-against-axis check I have not confirmed is stale; (3) four `verify-stale` sign-offs in the module; (4) the
+clamp's 32-row floor for files shorter than 32 lines. **The pane is JS-only** — the Python runtime has no
+visualiser, and nothing here changes that.
+
 ## Where things stand
+
+**Horizontal scrolling is in, and the script is anchored to the left edge** (2026-10-01, this session). The pane had no way of moving along the run's *time* axis but a drag; it has one now — **both modifiers with the wheel scroll the steps**, taking the combination that used to be the two zooms at once. That pair was an accident of `VizWheel`'s arithmetic (shift set one flag, control the other, and `VizZoom` applied whatever it was given) rather than a gesture anybody chose, so it is the pair that pays: `VizWheel` now normalizes it — clears both zoom flags, points `VizScrollAcross` across — before the existing test sorts the notch into a scroll or a zoom, so each of those still reads one flag and no second dispatch was added. `VizScroll` gained the axis as a variable rather than a second copy: the step is a quarter of the window on *that* axis, and the sign rule and the clamp are unchanged. Graham's call between two options: drop the both-axes zoom rather than move it to Alt+wheel.
+
+**And the source no longer slides sideways, which is the half with consequences.** Its horizontal offset in the document was derived from the step window — `VizWindowX = (glyphWidth − windowW) × VizViewX0 / VizMaxSteps` — so panning along the run, and the centring inside every horizontal zoom, dragged the source with it and took the indentation and the first word out of view. The window's `x` is now always zero. **The price is stated in the module rather than left to be discovered:** a line wider than the frame is cut off at the right, and the frame shows about a hundred and ten columns at the legible floor (873 units ÷ 8 a column), so most source lines fit and a few do not. The sidebar is where a long line should be read in full, and that is now the reason for the sidebar work rather than a nice-to-have.
+
+**Verified by three instruments, and the split between them matters.** `various/plotview-check.js` gained two phases (a shift+control notch across and back), an axis check that it moves the *steps* and not the lines, a check that it moves the window **on** — read from the status line's `steps a-b`, because the `viewBox` answers to the lines alone, which is the mistake that once hid every horizontal notch — and a check that the source's window is `x=0` in all 36 phases. Its fixture's longest line is now 164 columns, deliberately wider than the frame can show, because a narrower document cannot tell an anchored source from a sliding one. **Run against the previous view the same harness fails all of these and passes all of them against this one**, and with the new phases stripped out the two views' reports differ in **one thing only**: the pane's window `x`, which was `19, 77, 102, 102, 102, 154, 177` in the old view and `0` everywhere now. Every other line of the report — marks, rules, labels, bounds, the source document, the check results — is identical. `node tools/asedit-check.js asedit-graph.allspeak` → 987 commands / 204 symbols / 0 errors; `asedit-modes-check.js` all checks pass; `./build-starters` rebuilt the four packs.
+
+**The one thing no check here can settle: whether the browser delivers a wheel with both modifiers set.** The runtime half is proved — `the wheel shift` and `the wheel control` are both readable and `various/wheel-check.js` already fires all three modifier cases in four languages — and the axis being collapsed into one signed amount is *fine* for a scroll, which needs only the sign. But there is no browser in this workspace (playwright is a devDependency and `node_modules` is absent), so whether Chrome/Firefox hand a Ctrl+Shift+wheel event to the pane at all, rather than claiming it for page zoom, is a one-minute test in Graham's browser. If it does not arrive, Shift+wheel alone is the conventional fallback and would mean moving the vertical zoom.
+
+**Three `verify-stale` sign-offs**, all of them the sections this change touched or revealed: the gestures block and the draw block (both refreshed hashes that had been stale *since the module extraction* — `--write` refreshed them, and their `@verified` marks now say so), and the view's own section. Refreshing a stale `@hash` is what `--write` does; the `@verified` warning is the honest signal and is Graham's.
 
 **The Graph pane is a companion module** (2026-10-01). `asedit.allspeak` is 1,804 lines instead of 3,141 and the drawing lives in `asedit-graph.allspeak`: fetched with `rest get`, compiled and run on the first click on **Graph** (`run <source> as VizModule` — the JS dialect compiles the *text*, not a path), and messaged from then on. The module declares `VizHost` and `StatusSpan` and attaches both **by id** from `asedit.json`, registers its own gestures (pan/zoom never cross a message — a round trip per drag event is the thing the modularisation guidance rules out), and owns the calibration file, the estimate and the status line. One dict crosses, when a run is opened: the recording's text, the script's text, the three localised flow words, and the path the recording was expected at. The editor names no `svg` vocabulary any more (verified: 0 hits, 29 in the module), and the page still loads the plugin because the pane is compiled when fetched. **`various/plotview.allspeak` is deleted** — the harness cuts the view out of the module at its doc-block header instead, so the "two copies of the view" trap is closed for good. Verified: both files compile (1,355 + 966 commands), `asedit-modes-check` passes with four new boundary checks, `plotview-check`'s report is byte-identical to the pre-extraction view's, hashes refreshed, packs rebuilt with the module inside them. **Not shipped:** `deploy/code/` waits for the next `./deploy-allspeak` (the `cp` list and `server.allspeak`'s update list both name the module now).
 
@@ -622,11 +663,13 @@ what was item 3, all landed 2026-09-30.
   margin. Decoding the URL and checking the document is well formed, and that its rows sit on the axis, is as
   far as a headless check reaches. **The clipping is no longer on this list** — the picture is the frame, so
   a browser that draws it at all cannot draw it outside the panel.
-- **A horizontal notch rebuilds the picture even when the lines in view have not changed.** The document is
-  the rows in view, so the cost is the window's height rather than the file's, but at the fit a control-wheel
-  notch rebuilds the largest document there is for no change in its content. A guard — rebuild only when
-  `VizViewY0`/`VizViewYH` have moved — removes it, and is not there because the standing call is to leave
-  optimisation until the functionality is finished.
+- **A horizontal notch rebuilds the `href` for nothing, and the reason recorded here was wrong.** This said the
+  document is "the rows in view", which the extent change ended: `VizSourceMeasure` builds the whole file, once,
+  when the source changes, and a horizontal notch changes neither the source nor the rows. What it still rebuilds
+  is the data-URL *string* — `VizSourcePicture` re-`cat`s the whole encoded body on every draw — and the `href`
+  and the `viewBox` are the only DOM writes that share a draw with a step-window change. A guard — reassign the
+  `href` only when the source or `VizViewY0`/`VizViewYH` moved — removes it, and is not there because the standing
+  call is to leave optimisation until the functionality is finished.
 - **Tabs.** A tab in the source is one character in the document, and SVG's whitespace rules turn it into a
   single space, so a tab-indented file would lose its column alignment. `.allspeak` files are space-indented
   so nothing in the tool shows it; `as_condition.py`, which is what the redacted picture is of, is not.

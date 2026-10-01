@@ -2,7 +2,7 @@
 !!
 !! The pane draws a run: a recording sitting beside a script, read as a sequence, as an arrival count per line, and as the flow between the marks. That is half of the editor by size, and none of it is needed until somebody looks at a run — so it is a module, fetched, compiled and run on the first click on **Graph**, and messaged from then on. The `svg` vocabulary is here rather than in the editor, and this is where the plugin is needed: the pane is compiled when it is fetched, which is why the page loads the plugin whether or not a run is ever opened.
 !!
-!! **What it owns.** Everything inside the pane, and the pane itself. The drawing and its state, the four gestures (wheel scrolls, shift-wheel zooms the lines, control-wheel the steps, drag pans), the source drawn behind the heat, the key, the caption, the estimate shown before a long draw and the calibration file that estimate is learned from, and the status line for as long as it has something to say on it.
+!! **What it owns.** Everything inside the pane, and the pane itself. The drawing and its state, the five gestures (the wheel scrolls the lines, shift-wheel zooms the lines, control-wheel the steps, both together scroll the steps, a drag pans), the source drawn behind the heat, the key, the caption, the estimate shown before a long draw and the calibration file that estimate is learned from, and the status line for as long as it has something to say on it.
 !!
 !! **What crosses the boundary, and what does not.** One dict in: the run's text, the script's text, the three localised flow words, and the path the recording was expected at — the last only so that "no recording beside this script" can name the file it looked for. Nothing else crosses. The gestures do not: pan and zoom are registered here, on the pane, because a message per drag event would put a round trip inside every pointer move. Nor does the pane's visibility, which is the editor's mode system to run — the editor says whether this pane is on screen, and the module's own `VizShown` is what its handlers consult, because that is the one thing it cannot see for itself.
 !!
@@ -73,7 +73,7 @@
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 57987619
+!! @hash 5fac70dd
 !! @verified 57987619
 !!!
 !! The boundary: one message in, and the module parks until the next one.
@@ -111,7 +111,7 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 
-!! @hash 1d924ebf
+!! @hash 62a9fa44
 !! @verified 1d924ebf
 !!!
 !! The module's one message: take the run, or stand down.
@@ -186,7 +186,7 @@ VizRemember:
 !! DOM nodes. A trace of 9 arrivals and 10 transfers is two elements. Per-mark colour would need one
 !! path per colour band, which is what the heat ramp will use.
 !!
-!! **Geometry is in viewBox units, and the run is shown through a window.** Nothing is measured in pixels: the frame is fixed at 1000x740 and the browser fits it to whatever panel it is given, which is what lets the whole script run against a stub DOM in node. What the window decides is *which part of the run* fills that frame. It starts fitted to the whole recording, so the first picture is the one this pane has always drawn; then wheel-alone scrolls it, shift-wheel zooms it, and a drag pans it. Graham's scheme, from Kdenlive and Audacity.
+!! **Geometry is in viewBox units, and the run is shown through a window.** Nothing is measured in pixels: the frame is fixed at 1000x740 and the browser fits it to whatever panel it is given, which is what lets the whole script run against a stub DOM in node. What the window decides is *which part of the run* fills that frame. It starts fitted to the whole recording, so the first picture is the one this pane has always drawn; then the wheel scrolls it, shift and control zoom it on their own axes, the two together scroll it across, and a drag pans it. Graham's scheme, from Kdenlive and Audacity, with control added for the second axis.
 !!
 !! **The window is held as two ranges in the trace's own units, never as a scale factor.** A factor would have to be relative to a fit that changes with the recording, and an absolute one ends up pinned at one end — the prototype's own lesson, where the same control read 51.6 px a step for one window and 0.7 for another. Multiplying before dividing keeps that arithmetic exact, as it does for the marks.
 !!
@@ -197,6 +197,8 @@ VizRemember:
 !! **The source is drawn behind the heat, once, and shown through a window.** An element is a declared symbol, so there cannot be one `svgtext` per source line — but one `<image>` carries the whole run, and its `href` is an SVG *document* the view builds itself out of `json split` and `replace`. That is why it is a document rather than a canvas raster: the language can already build one, so nothing new had to be invented to reach a canvas it has no words for, and it stays vector, so the text does not go soft past the scale it was rendered at.
 !!
 !! **The picture never changes; the window over it does.** `VizPane` is a nested `<svg>` the size of the frame, and its `viewBox` is the whole of the zoom and the pan — one attribute per draw, and the picture itself is drawn once when the run is opened. That is what keeps the text the shape it was written in: a window whose aspect followed the zoom instead is what stretched the letters as you zoomed in. The pane's size being the frame is also the clipping, which is the one thing a picture cannot do for itself — an `<image>` either scales its content to its own box or is clipped by the outer viewport.
+!!
+!! **The source is anchored to the left edge of the pane, and it is the `viewBox`'s `x` that says so.** The window's `y` moves over the document as the lines move and its height is the vertical zoom, but its `x` is always zero: what the recording does cannot drag the source sideways. The left-hand end of a line is the part that says what the line is — the indentation and the first word — so losing sight of it is losing the reading, and the window's `x` used to be derived from the horizontal window, which is exactly what took it away whenever the run was panned along. The price is the tail of a line wider than the frame, which is not reachable on screen at all now: the frame shows about a hundred and ten columns at the legible floor, so most lines fit and a few do not.
 !!
 !! **The zoom stops where the text is drawn at its own size.** A source line is eighteen units tall, so a window of fewer than `VizGlyphRows` rows would only blow the text up, and there is nothing more to see. Applied before the clamp to the run, so a recording shorter than that many lines simply has no vertical zoom — the whole run is already legible and there is nothing to zoom into.
 !!
@@ -332,14 +334,17 @@ VizRemember:
     variable VizGlyphHeight
     variable VizGlyphRows         ! a window may not go below this: past it the text is at its own size
     variable VizGlyphMax
-    variable VizWindowX
     variable VizWindowY
     variable VizWindowW
     variable VizWindowH
-    ! Which axes a zoom notch applies to. Shift is the lines, control is the steps, and both together
-    ! are both — the modifiers decide, so one handler serves all three cases.
+    ! Which axes a zoom notch applies to. Shift is the lines and control is the steps — the modifiers
+    ! decide, so one handler serves both.
     variable VizZoomAcross
     variable VizZoomDown
+    ! And the pair they do not: both modifiers together *scroll* the steps, which until now had no way
+    ! of being moved but a drag. It is not a third kind of zoom but a second axis for the scroll, so
+    ! the flag sits with the scroll and `VizWheel` is where the pair is turned into it.
+    variable VizScrollAcross
     ! The gestures' own scratch. `VizGrabFromX/Y` is where the window stood when the drag began, so
     ! a pan is measured from the grab rather than accumulated step by step — an accumulated one
     ! drifts, because the runtime's division truncates and every step loses its remainder.
@@ -1138,12 +1143,11 @@ VizWindow:
         add 1 to VizRuleLine
     end
 
-    ! ---- the source's picture ----
-    ! Rebuilt from the window on every draw. The document holds the lines the window shows and
-    ! nothing else, so it is exactly as tall as the frame and cannot spill past it — which is what
-    ! the rectangle alone could not do while the whole run was in one document and the element had to
-    ! be taller than the frame to keep the rows in step. It is also the cheaper picture: what is
-    ! rebuilt is the rows in view, not the whole file.
+    ! ---- the window on the source's picture ----
+    ! The document itself is built once, in `VizSourceMeasure`, and only when the source changes: it
+    ! holds *every* line of the file, so the rows line up with the axis and a line the run never
+    ! reached still has its row. What is rebuilt on a redraw is the window alone — the pane's `viewBox`
+    ! and the `href` naming the document.
     gosub to VizSourcePicture
 
     set attribute `d` of VizHeat0 to VizHeatD
@@ -1173,21 +1177,29 @@ VizWindow:
     return
 
 !   ---- the gestures ----
-!   The host registers two events and calls in here: `VizGrab` on pick, `VizPan` on drag, and
+!   The host registers three events and calls in here: `VizGrab` on pick, `VizPan` on drag, and
 !   `VizWheel` on wheel. They live with the view rather than with the host because they are the
 !   view's own state; a host that wants the picture to move has only to wire them up. There are
 !   four entry points in all — those three and `VizReset` — and that is the whole of the interface.
 !
-!   Graham's scheme, from Kdenlive and Audacity: the wheel scrolls, shift-wheel zooms, drag pans.
-!   The modifier therefore decides and the direction does not, which is why the wheel handler asks
-!   for `the wheel shift` rather than reading the sign of the amount.
+!   Graham's scheme, from Kdenlive and Audacity: the wheel scrolls, shift-wheel zooms, drag pans —
+!   with control added for the second axis and both modifiers together to scroll along it. The
+!   modifier therefore decides and the direction does not, which is why the wheel handler asks for
+!   `the wheel shift` rather than reading the sign of the amount.
 VizWheel:
-    ! Which axis a notch applies to is the modifiers' business, not the wheel's. Shift zooms the
-    ! lines, control zooms the steps, both together do both — and with neither, the wheel scrolls
-    ! down the run, which is what it does in every other application. Control is the horizontal
-    ! modifier here against the usual pull of the browser's own page zoom, which this takes over:
-    ! the listener is registered on the pane and calls `preventDefault`, so the page never sees it,
-    ! and the pane is where the gesture is being aimed.
+    ! Which gesture a notch is, is the modifiers' business, not the wheel's. Shift zooms the lines,
+    ! control zooms the steps, and with neither the wheel scrolls down the run, which is what it does
+    ! in every other application. Control is the horizontal modifier here against the usual pull of
+    ! the browser's own page zoom, which this takes over: the listener is registered on the pane and
+    ! calls `preventDefault`, so the page never sees it, and the pane is where the gesture is being
+    ! aimed.
+    !
+    ! **Both modifiers together scroll the steps, and that is a normalization rather than a fourth
+    ! gesture.** Two zooms at once is what the arithmetic used to give — shift set one flag, control
+    ! the other, and the zoom applied both — which is nobody's idea of a gesture and was never asked
+    ! for. The pair is taken out here instead, before the zoom can see it: both flags are cleared and
+    ! the scroll is pointed across, so the one test below still sorts a notch into a scroll or a zoom,
+    ! and each of those still reads one flag.
     !
     ! **The gesture is never what waits.** This used to return at once when a draw was running, so a
     ! slow draw swallowed every notch meanwhile — the reader had to repeat themselves, and at a deep
@@ -1198,8 +1210,15 @@ VizWheel:
     if VizWheelAmount is 0 return
     put 0 into VizZoomAcross
     put 0 into VizZoomDown
+    put 0 into VizScrollAcross
     if the wheel shift is 1 put 1 into VizZoomDown
     if the wheel control is 1 put 1 into VizZoomAcross
+    if VizZoomAcross is 1 and VizZoomDown is 1
+    begin
+        put 0 into VizZoomAcross
+        put 0 into VizZoomDown
+        put 1 into VizScrollAcross
+    end
     put VizZoomAcross into VizMove
     add VizZoomDown to VizMove
     if VizMove is 0 gosub to VizScroll
@@ -1271,9 +1290,12 @@ VizPixelScale:
     return
 
 VizScroll:
-    ! The wheel alone scrolls the run, in whichever direction it was rolled: a quarter of the window
-    ! rather than a number of lines, so it feels the same at every zoom — a fixed step is a nudge on a
-    ! long run and a leap on a short one, which is the prototype's lesson in its smallest form.
+    ! The wheel alone scrolls the run, and both modifiers scroll it *across*: either way the step is
+    ! a quarter of the window on the axis being scrolled rather than a number of lines or steps, so
+    ! it feels the same at every zoom — a fixed step is a nudge on a long run and a leap on a short
+    ! one, which is the prototype's lesson in its smallest form. The two axes are one subroutine
+    ! because the axis is the only thing that differs between them, and `VizScrollAcross` — set by
+    ! `VizWheel` — is what says which.
     !
     ! **The sign is the whole of the direction, and it went missing.** This read the amount but never
     ! asked whether it was positive, so every notch walked the same way down the file — Graham's "the
@@ -1281,9 +1303,11 @@ VizScroll:
     ! scroll did not.
     gosub to VizNote
     divide VizViewYH by 4 giving VizMove
+    if VizScrollAcross is 1 divide VizViewXW by 4 giving VizMove
     if VizMove is less than 1 put 1 into VizMove
     if VizWheelAmount is less than 0 take VizMove from 0 giving VizMove
-    add VizMove to VizViewY0
+    if VizScrollAcross is 1 add VizMove to VizViewX0
+    if VizScrollAcross is not 1 add VizMove to VizViewY0
     gosub to VizClamp
     gosub to VizRedraw
     return
@@ -1518,24 +1542,20 @@ VizSourcePicture:
     ! followed the zoom instead is what stretched the letters — and its height is one row per line in
     ! view, so a row lands on the line the axis names.
     !
-    ! The window's width is therefore *derived*: the panel is so many rows tall wide, and a wider
-    ! window is not available. A line longer than the window shows goes off the right-hand edge, which
-    ! is the point — the picture is a backdrop, and the detail is had by zooming or by asking the
-    ! sidebar. Panning moves the window along the source far enough to reach the right-hand end of it,
-    ! which is what makes a long line reachable without losing the recording it belongs to.
+    ! **Its width is derived and its `x` is always zero, so the source stays anchored to the left edge
+    ! of the pane.** The panel is so many rows tall wide and a wider window is not available, so a line
+    ! longer than the window shows goes off the right-hand edge — and there it stays, because the
+    ! left-hand end of a line is the part that says what the line is. That offset used to be derived
+    ! from the horizontal window, so panning along the run dragged the source sideways and took the
+    ! indentation and the first word out of view with it. The tail of a line wider than the frame is
+    ! what that costs, and the frame is not narrow: it shows about a hundred and ten columns at the
+    ! legible floor, which is more than most lines and less than a few.
     take VizMinLine from VizViewY0 giving VizWindowY
     multiply VizWindowY by 18 giving VizWindowY
     multiply VizViewYH by 18 giving VizWindowH
     multiply VizWindowH by VizPlotW giving VizWindowW
     divide VizWindowW by VizPlotH giving VizWindowW
-    put 0 into VizWindowX
-    if VizGlyphWidth is greater than VizWindowW
-    begin
-        take VizWindowW from VizGlyphWidth giving VizWindowX
-        multiply VizWindowX by VizViewX0 giving VizWindowX
-        divide VizWindowX by VizMaxSteps giving VizWindowX
-    end
-    set attribute `viewBox` of VizPane to VizWindowX cat ` ` cat VizWindowY cat ` ` cat VizWindowW cat ` ` cat VizWindowH
+    set attribute `viewBox` of VizPane to `0 ` cat VizWindowY cat ` ` cat VizWindowW cat ` ` cat VizWindowH
     set attribute `href` of VizGlyphs to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="` cat VizGlyphWidth cat `" height="` cat VizGlyphHeight cat `">` cat VizGlyphBody cat `</svg>`
     return
 
@@ -1554,6 +1574,6 @@ VizPlaceX:
     divide VizTickPos by VizViewXW giving VizTickPos
     add VizMargin to VizTickPos
     return
-!! @hash 89e939ce
+!! @hash 804d2fec
 !! @verified 89e939ce
 !!!
