@@ -39,10 +39,7 @@ Benachbarte Werte ohne `cat` dazwischen werden nicht implizit verbunden. AllSpea
 ```as
 setze Count zu 7
 lege `Du hast ` cat Count cat ` Nachrichten.` in Status
-lege `Protokolliert um `
-    cat der zeitstempel
-    cat ` — Namensfeld: `
-    cat der inhalt von Name in Log
+lege `Protokolliert um ` cat der zeitstempel cat ` — Namensfeld: ` cat der inhalt von Name in Log
 ```
 
 Zahlen werden sofort in ihre Textform umgewandelt. `Status` ist jetzt `` `Du hast 7 Nachrichten.` ``.
@@ -111,7 +108,7 @@ Konstante Fragmente in Backticks, variable Einschübe mit `cat` dazwischen, in e
 lege `Benutzer ` cat UserName cat ` (id ` cat UserId cat `) angemeldet um ` cat Time in LogLine
 ```
 
-Für lange Vorlagen brich an den `cat`-Grenzen in neue Zeilen um — und wo eine Verbindung mehrere `cat` hat, bekommt jedes seine eigene Zeile, was die [Stilkonvention](../reference/house-style.md) ist:
+Ein Aufbau, der bequem auf eine Zeile passt, sollte dort bleiben. Wenn er lang genug ist, um umzubrechen — wie eine Vorlage aus sechs Fragmenten —, brich ihn an den `cat`-Grenzen, ein Fragment pro Zeile, was die [Stilkonvention](../reference/house-style.md) ist:
 
 ```as
 lege `Benutzer `

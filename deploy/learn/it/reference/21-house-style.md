@@ -51,11 +51,19 @@ Nient'altro condivide una riga con `inizio`: le condizioni di `se` e di `mentre`
 
 ## Spezzare un'istruzione lunga
 
-Un'istruzione può essere spezzata su una parola di giunzione — `cat`, `e`, `o`, `con` — con la riga di continuazione indentata di un livello in più rispetto all'istruzione. La coda dell'istruzione (`in X`, `dando Y`, `a Z`) chiude l'ultima riga.
+Una giunzione che sta comodamente su una riga resta su una riga. Questa sezione parla delle **lunghe** — quelle che vanno a capo in un riquadro dell'editor stretto, in un diff o in una vista di revisione, dove la coda di una riga avvolta si legge come un'istruzione a sé e la giunzione va cercata.
 
-### Un `cat` per riga
+Quando un'istruzione va davvero spezzata, la si spezza **prima** della parola di giunzione — `cat`, `e`, `o`, `con` — con la riga di continuazione indentata di un livello in più rispetto all'istruzione. La coda dell'istruzione (`in X`, `dando Y`, `a Z`) chiude l'ultima riga.
 
-Quando una stringa si costruisce da più frammenti, ogni `cat` inizia una riga:
+### Lascia in pace quella corta
+
+```as
+metti `Hai ` cat Count cat ` messaggi.` in Status
+```
+
+### Un `cat` per riga, quando va spezzata
+
+Sei frammenti fanno una riga lunga, quindi ogni `cat` ne inizia una:
 
 ```as
 metti `Utente `
@@ -67,22 +75,25 @@ metti `Utente `
     in LogLine
 ```
 
-È l'unico punto in cui l'a capo ripaga due volte. I frammenti si leggono uno alla volta, e i due errori che `cat` attira — un `cat` mancante, o un `cat` in testa — si controllano leggendo lungo il bordo sinistro invece che lungo una riga di cento caratteri. Un `cat` per riga quando ce ne sono diversi ; quando ce n'è uno solo, l'istruzione sta su una riga e nulla di tutto questo si applica.
+Questo mette anche l'errore che `cat` attira — una giunzione mancante, o un `cat` in testa — al bordo sinistro della pagina, dove basta uno sguardo, invece che nel mezzo di una riga avvolta.
 
-### `e` e `o`
+### `e` e `o`, la stessa regola
 
-Lo stesso taglio, prima della parola di giunzione, con l'azione che resta sull'ultima condizione:
-
-```as
-se Name è vuoto
-    o Email è vuoto vai a Reject
-```
+Abbastanza corta da starci, quindi resta:
 
 ```as
-vaisub Render con Panel
-    e Title
-    e Rows
+se Name è vuoto o Email è vuoto vai a Reject
 ```
+
+Abbastanza lunga da andare a capo, quindi si spezza prima di ogni parola di giunzione, con l'azione che resta sull'ultima condizione:
+
+```as
+se BookingDate è vuoto
+    o BookingTime è vuoto
+    o GuestCount è minore di 1 vai a RejectBooking
+```
+
+Una lista di argomenti si spezza allo stesso modo e alla stessa condizione — `vaisub Render con Panel` / `e Title` / `e Rows` sta su una riga e ci resta ; una chiamata con una dozzina di argomenti no, e si spezza prima di ogni `e`.
 
 ### L'indentazione è per chi legge, non per il compilatore
 

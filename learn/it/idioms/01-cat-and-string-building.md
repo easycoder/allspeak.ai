@@ -39,10 +39,7 @@ I valori adiacenti senza `cat` tra loro non vengono uniti implicitamente. AllSpe
 ```as
 imposta Count a 7
 metti `Hai ` cat Count cat ` messaggi.` in Status
-metti `Registrato alle `
-    cat il timestamp
-    cat ` — Campo nome: `
-    cat il contenuto di Name in Log
+metti `Registrato alle ` cat il timestamp cat ` — Campo nome: ` cat il contenuto di Name in Log
 ```
 
 I numeri vengono convertiti nella loro forma testuale al momento. `Status` ora è `` `Hai 7 messaggi.` ``.
@@ -111,7 +108,7 @@ Frammenti costanti dentro i backtick, inserimenti di variabili con `cat` in mezz
 metti `Utente ` cat UserName cat ` (id ` cat UserId cat `) ha effettuato l'accesso alle ` cat Time in LogLine
 ```
 
-Per i template lunghi, vai a capo in corrispondenza dei `cat` — e dove una giunzione ha più `cat`, dà a ciascuno la sua riga, che è la [convenzione di stile](../reference/house-style.md):
+Una costruzione che sta comodamente su una riga deve restarci. Quando è abbastanza lunga da andare a capo — come un template di sei frammenti — spezzala ai confini dei `cat`, un frammento per riga, che è la [convenzione di stile](../reference/house-style.md):
 
 ```as
 metti `Utente `

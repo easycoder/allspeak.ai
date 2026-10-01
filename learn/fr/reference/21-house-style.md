@@ -51,11 +51,19 @@ Rien d'autre ne partage une ligne avec `début` : les conditions de `si` et de `
 
 ## Couper une instruction longue
 
-Une instruction peut être coupée sur un mot de jonction — `cat`, `et`, `ou`, `avec` — la ligne de continuation étant indentée d'un niveau de plus que l'instruction. La queue de l'instruction (`dans X`, `donnant Y`, `à Z`) termine la dernière ligne.
+Une jonction qui tient confortablement sur une ligne y reste. Cette section parle des **longues** — celles qui débordent dans un volet d'éditeur étroit, dans un diff ou dans une vue de relecture, là où la queue repliée d'une ligne se lit comme une instruction à part et où il faut partir à la chasse à la jonction.
 
-### Un `cat` par ligne
+Quand une instruction doit vraiment être coupée, elle l'est **avant** le mot de jonction — `cat`, `et`, `ou`, `avec` — la ligne de continuation étant indentée d'un niveau de plus que l'instruction. La queue de l'instruction (`dans X`, `donnant Y`, `à Z`) termine la dernière ligne.
 
-Quand une chaîne se construit à partir de plusieurs fragments, chaque `cat` commence une ligne :
+### Laisse tranquille ce qui est court
+
+```as
+mets `Vous avez ` cat Count cat ` messages.` dans Status
+```
+
+### Un `cat` par ligne, quand il faut couper
+
+Six fragments font une longue ligne, donc chaque `cat` en commence une :
 
 ```as
 mets `Utilisateur `
@@ -67,22 +75,25 @@ mets `Utilisateur `
     dans LogLine
 ```
 
-C'est le seul endroit où le saut de ligne paie deux fois. Les fragments se lisent un par un, et les deux erreurs que `cat` attire — un `cat` manquant, ou un `cat` en tête — se vérifient en lisant le long du bord gauche plutôt que le long d'une ligne de cent caractères. Un `cat` par ligne quand il y en a plusieurs ; quand il n'y en a qu'un, l'instruction tient sur une ligne et rien de tout cela ne s'applique.
+Cela place aussi l'erreur que `cat` attire — une jonction manquante, ou un `cat` en tête — au bord gauche de la page, là où un coup d'œil la trouve, plutôt qu'au milieu d'une ligne repliée.
 
-### `et` et `ou`
+### `et` et `ou`, la même règle
 
-La même coupure, avant le mot de jonction, l'action restant sur la dernière condition :
-
-```as
-si Name est vide
-    ou Email est vide va à Reject
-```
+Assez court pour tenir, donc ça reste :
 
 ```as
-vasous Render avec Panel
-    et Title
-    et Rows
+si Name est vide ou Email est vide va à Reject
 ```
+
+Assez long pour déborder, donc ça se coupe avant chaque mot de jonction, l'action restant sur la dernière condition :
+
+```as
+si BookingDate est vide
+    ou BookingTime est vide
+    ou GuestCount est inférieur à 1 va à RejectBooking
+```
+
+Une liste d'arguments se coupe de la même façon et à la même condition — `vasous Render avec Panel` / `et Title` / `et Rows` tient sur une ligne et y reste ; un appel à une douzaine d'arguments ne tient pas, et se coupe avant chaque `et`.
 
 ### L'indentation est pour le lecteur, pas pour le compilateur
 

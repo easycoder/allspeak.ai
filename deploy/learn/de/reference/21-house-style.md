@@ -51,11 +51,19 @@ Nichts anderes teilt sich eine Zeile mit `beginn`: die Bedingungen von `wenn` un
 
 ## Eine lange Anweisung brechen
 
-Eine Anweisung darf an einem Verbindungswort gebrochen werden — `cat`, `und`, `oder`, `mit` — wobei die Fortsetzungszeile eine Ebene tiefer eingerückt wird als die Anweisung. Der eigene Schwanz der Anweisung (`in X`, `ergibt Y`, `zu Z`) beendet die letzte Zeile.
+Eine Verbindung, die bequem auf eine Zeile passt, bleibt auf einer Zeile. Dieser Abschnitt handelt von den **langen** — denen, die in einem schmalen Editorbereich, in einem Diff oder in einer Prüfansicht umbrechen, wo der umbrochene Rest einer Zeile wie eine eigene Anweisung aussieht und man die Verbindung suchen muss.
 
-### Ein `cat` pro Zeile
+Muss eine Anweisung wirklich gebrochen werden, wird sie **vor** dem Verbindungswort gebrochen — `cat`, `und`, `oder`, `mit` — wobei die Fortsetzungszeile eine Ebene tiefer eingerückt wird als die Anweisung. Der eigene Schwanz der Anweisung (`in X`, `ergibt Y`, `zu Z`) beendet die letzte Zeile.
 
-Wenn eine Zeichenkette aus mehreren Fragmenten gebaut wird, beginnt jedes `cat` eine Zeile:
+### Kurzes in Ruhe lassen
+
+```as
+lege `Du hast ` cat Count cat ` Nachrichten.` in Status
+```
+
+### Ein `cat` pro Zeile, wo gebrochen werden muss
+
+Sechs Fragmente ergeben eine lange Zeile, also beginnt jedes `cat` eine:
 
 ```as
 lege `Benutzer `
@@ -67,22 +75,25 @@ lege `Benutzer `
     in LogLine
 ```
 
-Das ist die eine Stelle, an der der Zeilenumbruch sich doppelt bezahlt macht. Die Fragmente sind einzeln lesbar, und die beiden Fehler, die `cat` anzieht — ein fehlendes `cat` oder ein führendes — werden geprüft, indem man den linken Rand entlangliest statt eine hundert Zeichen lange Zeile. Ein `cat` pro Zeile, wo es mehrere gibt; wo es nur eines gibt, passt die Anweisung auf eine Zeile und nichts davon trifft zu.
+Das bringt außerdem den Fehler, den `cat` anzieht — eine fehlende Verbindung oder ein führendes `cat` — an den linken Rand der Seite, wo ein Blick ihn findet, statt mitten in einer umbrochenen Zeile.
 
-### `und` und `oder`
+### `und` und `oder`, dieselbe Regel
 
-Derselbe Bruch, vor dem Verbindungswort, wobei die Aktion an der letzten Bedingung bleibt:
-
-```as
-wenn Name ist leer
-    oder Email ist leer gehe zu Reject
-```
+Kurz genug, um zu passen, also bleibt es:
 
 ```as
-gosub Render mit Panel
-    und Title
-    und Rows
+wenn Name ist leer oder Email ist leer gehe zu Reject
 ```
+
+Lang genug, um umzubrechen, also wird vor jedem Verbindungswort gebrochen, wobei die Aktion an der letzten Bedingung bleibt:
+
+```as
+wenn BookingDate ist leer
+    oder BookingTime ist leer
+    oder GuestCount ist kleiner als 1 gehe zu RejectBooking
+```
+
+Eine Argumentliste bricht auf dieselbe Weise und unter derselben Bedingung — `gosub Render mit Panel` / `und Title` / `und Rows` passt auf eine Zeile und bleibt dort; ein Aufruf mit einem Dutzend Argumenten passt nicht und bricht vor jedem `und`.
 
 ### Die Einrückung ist für den Leser, nicht für den Compiler
 

@@ -39,10 +39,7 @@ Adjacent values without `cat` between them are not implicitly joined. AllSpeak h
 ```as
 set Count to 7
 put `You have ` cat Count cat ` messages.` into Status
-put `Logged at `
-    cat the timestamp
-    cat ` — Name field: `
-    cat the content of Name into Log
+put `Logged at ` cat the timestamp cat ` — Name field: ` cat the content of Name into Log
 ```
 
 Numbers are converted to their textual form on the spot. `Status` is now `` `You have 7 messages.` ``.
@@ -111,7 +108,7 @@ Constant fragments inside backticks, variable inserts with `cat` between, in one
 put `User ` cat UserName cat ` (id ` cat UserId cat `) logged in at ` cat Time into LogLine
 ```
 
-For long templates, break across lines at `cat` boundaries — and where a join has several `cat`s, give each its own line, which is the [house style](../reference/house-style.md):
+A build that fits comfortably on one line should stay on one line. When it is long enough to wrap — as a six-fragment template is — break it at the `cat` boundaries, one fragment per line, which is the [house style](../reference/house-style.md):
 
 ```as
 put `User `

@@ -39,10 +39,7 @@ Des valeurs adjacentes sans `cat` entre elles ne sont pas jointes implicitement.
 ```as
 définis Count à 7
 mets `Vous avez ` cat Count cat ` messages.` dans Status
-mets `Journalisé à `
-    cat l horodatage
-    cat ` — champ Nom : `
-    cat le contenu de Name dans Log
+mets `Journalisé à ` cat l horodatage cat ` — champ Nom : ` cat le contenu de Name dans Log
 ```
 
 Les nombres sont convertis en leur forme textuelle sur-le-champ. `Status` vaut maintenant `` `Vous avez 7 messages.` ``.
@@ -111,7 +108,7 @@ Des fragments constants entre apostrophes inversées, des insertions de variable
 mets `Utilisateur ` cat UserName cat ` (id ` cat UserId cat `) s'est connecté à ` cat Time dans LogLine
 ```
 
-Pour les longs gabarits, coupe les lignes aux frontières de `cat` — et quand une jonction comporte plusieurs `cat`, donne à chacun sa ligne, ce qui est la [convention de style](../reference/house-style.md) :
+Une construction qui tient confortablement sur une ligne doit y rester. Quand elle est assez longue pour déborder — comme un gabarit de six fragments — coupe-la aux frontières de `cat`, un fragment par ligne, ce qui est la [convention de style](../reference/house-style.md) :
 
 ```as
 mets `Utilisateur `

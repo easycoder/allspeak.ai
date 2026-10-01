@@ -51,11 +51,19 @@ Nothing else shares a line with `begin`. `if <condition> begin`, `while <conditi
 
 ## Splitting a long statement
 
-A statement may be broken at a joining word — `cat`, `and`, `or`, `with` — with the continuation indented one level deeper than the statement. The statement's own tail (`into X`, `giving Y`, `to Z`) ends the last line.
+A join that fits comfortably on one line stays on one line. This section is about the **long** ones — the builds that wrap in a narrow editor pane, in a diff, or in a review view, where the wrapped tail of a line reads like a statement of its own and the join has to be hunted for.
 
-### One `cat` per line
+Where a statement does have to be broken, it is broken **before** the joining word — `cat`, `and`, `or`, `with` — with the continuation indented one level deeper than the statement. The statement's own tail (`into X`, `giving Y`, `to Z`) ends the last line.
 
-Where a string is built from several fragments, each `cat` starts a line:
+### Leave a short one alone
+
+```as
+put `You have ` cat Count cat ` messages.` into Status
+```
+
+### One `cat` per line, where it has to be broken
+
+Six fragments make a long line, so each `cat` starts one:
 
 ```as
 put `User `
@@ -67,22 +75,25 @@ put `User `
     into LogLine
 ```
 
-This is the one place where the line break earns its keep twice over. The fragments are readable one at a time, and the two mistakes `cat` invites — a missing `cat`, or a leading one — are checked by reading down the left edge rather than along a hundred-character line. One `cat` per line where there are several; where there is only the one, the statement fits on a line and none of this applies.
+This also puts the mistake `cat` invites — a missing join, or a leading `cat` — at the left edge of the page, where a glance finds it, rather than somewhere inside a wrapped line.
 
-### `and` and `or`
+### `and` and `or`, the same rule
 
-The same break, before the joining word, with the action left on the last condition:
-
-```as
-if Name is empty
-    or Email is empty go to Reject
-```
+Short enough to fit, so it stays:
 
 ```as
-gosub Render with Panel
-    and Title
-    and Rows
+if Name is empty or Email is empty go to Reject
 ```
+
+Long enough to wrap, so it breaks before each joining word, with the action left on the last condition:
+
+```as
+if BookingDate is empty
+    or BookingTime is empty
+    or GuestCount is less than 1 go to RejectBooking
+```
+
+An argument list breaks the same way, and on the same condition — `gosub Render with Panel` / `and Title` / `and Rows` is a line that fits and stays one; a call with a dozen arguments is not, and breaks before each `and`.
 
 ### The indent is for the reader, not the compiler
 
