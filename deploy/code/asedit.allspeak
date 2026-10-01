@@ -651,8 +651,12 @@ CloseBrowser:
 !   `CloseTab` shifts the value-carrying arrays back down when a tab goes — the element ones are rebuilt
 !   from the count instead — so it is the other place that has to know this list, and there are only two.
 !
-!   The new slots start empty, which is what the readers want: `TabRestore` asks whether a value is
-!   *numeric* rather than whether the slot holds anything, and a fresh tab has nowhere to restore to.
+!   **The new slot is cleared, not assumed empty.** Growing an array does not shorten it, so a slot
+!   vacated when a tab was closed keeps whatever it held — and the two records below are only ever
+!   *read*, so a stale caret and scroll would be put back on a tab that has never been anywhere. The
+!   other arrays are written by their callers straight afterwards, which is why they never showed it.
+!   Empty is also what `TabRestore` wants: it asks whether a value is *numeric*, so a cleared slot is
+!   a tab with nowhere to restore to, which is the honest answer for one that has never been left.
 TabGrow:
     add 1 to TabCount
     set the elements of TabPath to TabCount
@@ -663,6 +667,15 @@ TabGrow:
     set the elements of TabBtn to TabCount
     set the elements of TabLabel to TabCount
     set the elements of TabClose to TabCount
+    ! `TabCount - 1`, because an index is counted from zero and the count is not: the slot just made is
+    ! the last one, not the next one. (`Tmp` rather than `N`, which the callers are holding the new
+    ! tab's index in.)
+    put TabCount into Tmp
+    subtract 1 from Tmp
+    index TabCursor to Tmp
+    put `` into TabCursor
+    index TabView to Tmp
+    put `` into TabView
     return
 
 !   -- New empty tab --
@@ -825,8 +838,8 @@ ActivateTab:
     gosub to TabRestore
     gosub to RebuildTabBar
     stop
-!! @hash a64446ec
-!! @verified a64446ec
+!! @hash e6bbb6c8
+!! @verified e6bbb6c8
 !!!
 !! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
 RebuildTabBar:

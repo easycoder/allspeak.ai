@@ -366,6 +366,29 @@ value arrays back down; the element arrays are rebuilt from the count.
 open a tab. The fix has been the same each time: make one place responsible. It is worth watching for, because the
 *failure* is not the same each time — two were silent and this one was loud — while the cause always is.
 
+**The editor has a harness (2026-10-01).** `tools/asedit-modes-check.js` — 18 checks, all passing. It stubs the
+DOM and CodeMirror, runs `asedit.allspeak` the way the page does, clicks the mode buttons and opens and closes
+tabs, and reads the editor's own variables and elements. It asks *is the state consistent*, not *does it look
+right* — the gap both of the afternoon's UI faults fell into, which a click found slowly and this finds in a
+second.
+
+**And it paid for itself on the first run**, by finding a real bug in the change that prompted it: `TabGrow` grew
+the per-tab arrays but did **not clear the new slot**, so a tab opened after another was closed inherited the
+closed tab's caret and scroll — a stale restore, on a tab that had never been anywhere. The two arrays that
+matter are read-only, which is why the two already there never showed it. Fixing that cost two off-by-ones of
+its own (the new slot is `TabCount - 1`: an index counts from zero, the count does not).
+
+**What it does not cover, and this is the part to remember:** the renderer is stubbed. Webson's build is
+asynchronous all the way down and stalls headlessly somewhere unreached, so the ids come straight from
+`asedit.json` and **a fault in the UI's markup is invisible here**. Modes, buttons, panes, tab records and the
+caret/view pair are what it covers.
+
+**It ships nothing.** The starter pack is seven files — `CLAUDE.md`, `AGENTS.md`, `server.allspeak`, `edit.html`,
+`asedit.json`, `asedit.allspeak`, `asdoc-check.py` — and nothing in `tools/` or `various/` is among them. The
+`codemirror` commands it drives are runtime plumbing from `dist/plugins/`, also not in the pack. What a user
+carries is the editor, and **`asedit.allspeak` is now 136 KB**, the largest file in the pack, up from 82 KB a
+week ago — worth watching as the panes grow.
+
 **Where the work goes next, in order** — the flow's key first (it is the one thing the colours need to be
 readable, and it waits on Graham's words for the three kinds), then:
 
