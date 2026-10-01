@@ -43,6 +43,9 @@
     variable Lang
     variable StrOpen
     variable StrFind
+    variable StrFlowCall
+    variable StrFlowJump
+    variable StrFlowReturn
     variable StrClose
     variable StrSaved
     variable StrSaveFailed
@@ -179,7 +182,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash f9a59734
+!! @hash c85fdbd8
 !! @verified f9a59734
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -260,6 +263,9 @@ SetStrings:
         put `/ (radice progetto)` into StrRoot
         put `L'editor è stato aggiornato. Riavviare?` into StrUpdated
         put `Riavvia il server manualmente.` into StrRestart
+        put `vaisub` into StrFlowCall
+        put `vai` into StrFlowJump
+        put `ritorna` into StrFlowReturn
     end
     else if Lang is `fr`
     begin
@@ -277,6 +283,9 @@ SetStrings:
         put `/ (racine du projet)` into StrRoot
         put `L'éditeur a été mis à jour. Redémarrer ?` into StrUpdated
         put `Veuillez redémarrer le serveur manuellement.` into StrRestart
+        put `vasous` into StrFlowCall
+        put `va` into StrFlowJump
+        put `retourne` into StrFlowReturn
     end
     else if Lang is `de`
     begin
@@ -294,6 +303,9 @@ SetStrings:
         put `/ (Projektstamm)` into StrRoot
         put `Der Editor wurde aktualisiert. Neu starten?` into StrUpdated
         put `Bitte den Server manuell neu starten.` into StrRestart
+        put `gosub` into StrFlowCall
+        put `gehe` into StrFlowJump
+        put `retourniere` into StrFlowReturn
     end
     else
     begin
@@ -311,11 +323,14 @@ SetStrings:
         put `/ (project root)` into StrRoot
         put `asedit has been updated. Restart to apply changes?` into StrUpdated
         put `Please restart the server manually.` into StrRestart
+        put `gosub` into StrFlowCall
+        put `go` into StrFlowJump
+        put `return` into StrFlowReturn
     end
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash 5633e443
+!! @hash 3ec54b89
 !! @verified 5633e443
 !!!
 !! The editor checks on startup and periodically for updates to itself.
@@ -1801,7 +1816,7 @@ DoExitPanes:
 !! DOM nodes. A trace of 9 arrivals and 10 transfers is two elements. Per-mark colour would need one
 !! path per colour band, which is what the heat ramp will use.
 !!
-!! **Geometry is in viewBox units, and the run is shown through a window.** Nothing is measured in pixels: the frame is fixed at 1000x700 and the browser fits it to whatever panel it is given, which is what lets the whole script run against a stub DOM in node. What the window decides is *which part of the run* fills that frame. It starts fitted to the whole recording, so the first picture is the one this pane has always drawn; then wheel-alone scrolls it, shift-wheel zooms it, and a drag pans it. Graham's scheme, from Kdenlive and Audacity.
+!! **Geometry is in viewBox units, and the run is shown through a window.** Nothing is measured in pixels: the frame is fixed at 1000x740 and the browser fits it to whatever panel it is given, which is what lets the whole script run against a stub DOM in node. What the window decides is *which part of the run* fills that frame. It starts fitted to the whole recording, so the first picture is the one this pane has always drawn; then wheel-alone scrolls it, shift-wheel zooms it, and a drag pans it. Graham's scheme, from Kdenlive and Audacity.
 !!
 !! **The window is held as two ranges in the trace's own units, never as a scale factor.** A factor would have to be relative to a fit that changes with the recording, and an absolute one ends up pinned at one end — the prototype's own lesson, where the same control read 51.6 px a step for one window and 0.7 for another. Multiplying before dividing keeps that arithmetic exact, as it does for the marks.
 !!
@@ -1867,6 +1882,9 @@ DoExitPanes:
     variable VizKeyPitch
     variable VizKeyLo
     variable VizKeyHi
+    variable VizColourCall
+    variable VizColourJump
+    variable VizColourReturn
     variable VizMargin
     variable VizPlotW
     variable VizPlotH
@@ -1917,6 +1935,11 @@ DoExitPanes:
     variable VizViewYH
     variable VizViewTemp
     variable VizViewFit
+    variable VizFitXW
+    variable VizFitYH
+    variable VizStatusText
+    variable VizStatusEnd
+    variable VizStatusZoom
     variable VizDrawing
     ! The source behind the heat. It is a *picture* rather than text — one `<image>` for the whole
     ! run — because an element is a declared symbol, so there cannot be one `svgtext` per line; the
@@ -2019,6 +2042,22 @@ DoExitPanes:
     svgtext VizKeyLabel1
     svgtext VizKeyLabel2
     svgtext VizKeyLabel3
+    ! The flow key: the same idea one row down, for the three colours the *lines* are drawn in, which
+    ! the heat key cannot speak for. A dash rather than a swatch, because a transfer is drawn as a line
+    ! and the shape should say so; the word beside it is the language's own keyword for that kind of
+    ! transfer (see `SetStrings`), so a reader meets the word they would write rather than a name
+    ! invented for the picture. `branch` has no entry because it is not drawn.
+    rect VizFlowKeyMark0
+    rect VizFlowKeyMark1
+    rect VizFlowKeyMark2
+    svgtext VizFlowKeyLabel0
+    svgtext VizFlowKeyLabel1
+    svgtext VizFlowKeyLabel2
+    ! The status line, along the bottom: what the window is showing — the two zooms as percentages of
+    ! the fitted picture, and the span in the trace's own units. It exists to be *quoted*, which is why
+    ! it carries the numbers raw rather than saying them in words: a reader copying a line into a bug
+    ! report needs it to be exact, and the picture needs it to be short.
+    svgtext VizStatus
 Draw:
     ! A draw gives the browser a turn every hundred marks, so it can still be *running* when the next
     ! gesture arrives — and two draws interleaved would each resume at the other's position. This flag
@@ -2038,6 +2077,11 @@ Draw:
     ! The drawing's frame, in viewBox units. These belong to the host's panel in the end — they are
     ! the one place the view still assumes a size — but a constant keeps the maths in whole numbers,
     ! which this runtime wants anyway: its arithmetic is integer-first and division truncates.
+    !
+    ! **The plot is 60..660 and the band below it carries the axes and both keys.** The canvas is 740
+    ! tall but the plot still ends at 660, so widening it moved nothing: the step-axis labels stayed at
+    ! 664, the heat key at 679, the caption at 690, and the forty new units are floor for the flow key
+    ! alone. A frame that grows its plot instead would move all four, for no gain.
     put 60 into VizMargin
     put 880 into VizPlotW
     put 580 into VizPlotH
@@ -2052,7 +2096,7 @@ Draw:
     divide VizPlotH by 18 giving VizGlyphRows
 
     create VizCanvas in VizHost
-    set attribute `viewBox` of VizCanvas to `0 0 1000 700`
+    set attribute `viewBox` of VizCanvas to `0 0 1000 740`
     set attribute `preserveAspectRatio` of VizCanvas to `xMidYMid meet`
     set attribute `font-size` of VizCanvas to 15
     set attribute `fill` of VizCanvas to `#8b93a1`
@@ -2120,6 +2164,8 @@ Draw:
     ! file beside the script, so a run that failed to record leaves the *previous* one in place
     ! and the picture looks exactly as convincing as a fresh one — the line numbers are what
     ! let a reader tell, and they are only useful if they are on the picture.
+    create VizStatus in VizCanvas
+    set attribute `text-anchor` of VizStatus to `start`
     create VizCaption in VizCanvas
     set attribute `text-anchor` of VizCaption to `start`
 
@@ -2152,16 +2198,21 @@ Draw:
     ! and *how* it went is the interesting part: a `gosub` and a `return` are the same gesture drawn
     ! the same way until the colour tells them apart. `branch` is not drawn at all — see the note on
     ! the declarations for why the scaffolding is left out rather than greyed.
+    ! One place for each, because the key draws them too: a legend that named a colour other than the
+    ! one on the wires would be worse than no legend, and two copies is how that happens.
+    put `#e0a44a` into VizColourCall
+    put `#43c6a8` into VizColourJump
+    put `#c07ad0` into VizColourReturn
     create VizFlowCall in VizCanvas
-    set attribute `stroke` of VizFlowCall to `#e0a44a`
+    set attribute `stroke` of VizFlowCall to VizColourCall
     set attribute `stroke-width` of VizFlowCall to 2
     set attribute `fill` of VizFlowCall to `none`
     create VizFlowJump in VizCanvas
-    set attribute `stroke` of VizFlowJump to `#43c6a8`
+    set attribute `stroke` of VizFlowJump to VizColourJump
     set attribute `stroke-width` of VizFlowJump to 2
     set attribute `fill` of VizFlowJump to `none`
     create VizFlowReturn in VizCanvas
-    set attribute `stroke` of VizFlowReturn to `#c07ad0`
+    set attribute `stroke` of VizFlowReturn to VizColourReturn
     set attribute `stroke-width` of VizFlowReturn to 2
     set attribute `fill` of VizFlowReturn to `none`
 
@@ -2222,6 +2273,52 @@ Draw:
     set attribute `text-anchor` of VizKeyLabel3 to `start`
     add 14 to VizKeyX
     move VizKeyLabel3 to VizKeyX 690
+
+    ! The flow key, on its own row: the heat key says *how many* times a line ran, this one *how*
+    ! control reached it, and two questions that different want two rows rather than seven entries
+    ! crammed into one. It is laid out from the same left edge as the heat key, and the reset is the
+    ! whole of why the two rows line up.
+    divide VizPlotW by 2 giving VizKeyX
+    add VizMargin to VizKeyX
+    create VizFlowKeyMark0 in VizCanvas
+    set attribute `x` of VizFlowKeyMark0 to VizKeyX
+    set attribute `y` of VizFlowKeyMark0 to 700
+    set attribute `width` of VizFlowKeyMark0 to 12
+    set attribute `height` of VizFlowKeyMark0 to 2
+    set attribute `fill` of VizFlowKeyMark0 to VizColourCall
+    create VizFlowKeyLabel0 in VizCanvas
+    set attribute `text-anchor` of VizFlowKeyLabel0 to `start`
+    add 18 to VizKeyX
+    move VizFlowKeyLabel0 to VizKeyX 711
+    set the text of VizFlowKeyLabel0 to StrFlowCall
+    add VizKeyPitch to VizKeyX
+    take 18 from VizKeyX
+    create VizFlowKeyMark1 in VizCanvas
+    set attribute `x` of VizFlowKeyMark1 to VizKeyX
+    set attribute `y` of VizFlowKeyMark1 to 700
+    set attribute `width` of VizFlowKeyMark1 to 12
+    set attribute `height` of VizFlowKeyMark1 to 2
+    set attribute `fill` of VizFlowKeyMark1 to VizColourJump
+    create VizFlowKeyLabel1 in VizCanvas
+    set attribute `text-anchor` of VizFlowKeyLabel1 to `start`
+    add 18 to VizKeyX
+    move VizFlowKeyLabel1 to VizKeyX 711
+    set the text of VizFlowKeyLabel1 to StrFlowJump
+    add VizKeyPitch to VizKeyX
+    take 18 from VizKeyX
+    create VizFlowKeyMark2 in VizCanvas
+    set attribute `x` of VizFlowKeyMark2 to VizKeyX
+    set attribute `y` of VizFlowKeyMark2 to 700
+    set attribute `width` of VizFlowKeyMark2 to 12
+    set attribute `height` of VizFlowKeyMark2 to 2
+    set attribute `fill` of VizFlowKeyMark2 to VizColourReturn
+    create VizFlowKeyLabel2 in VizCanvas
+    set attribute `text-anchor` of VizFlowKeyLabel2 to `start`
+    add 18 to VizKeyX
+    move VizFlowKeyLabel2 to VizKeyX 711
+    set the text of VizFlowKeyLabel2 to StrFlowReturn
+    add VizKeyPitch to VizKeyX
+    take 18 from VizKeyX
 
     put 1 into VizReady
 
@@ -2353,6 +2450,12 @@ VizBuilt:
     put VizMaxSteps into VizViewXW
     put VizMinLine into VizViewY0
     put VizSpanLines into VizViewYH
+    ! The fit is kept, because it is what the status line measures the zoom *against*: the two window
+    ! sizes on their own say what is in view but not how far in it is, and "how far in" is the part a
+    ! reader can recognise. It is the only thing here that a second copy is right for — recomputing it
+    ! would mean asking `VizClamp` what it allowed, which is not a question it answers.
+    put VizMaxSteps into VizFitXW
+    put VizSpanLines into VizFitYH
     put 1 into VizViewFit
 VizWindow:
     gosub to VizClamp
@@ -2493,6 +2596,28 @@ VizPictureDone:
         end
         add 1 to VizIndex
     end
+
+    ! ---- the status line ----
+    ! Percentages rather than the window sizes alone, because that is the reading a person recognises,
+    ! and the window as well, because a percentage names a size but not a position — two windows of the
+    ! same size over different parts of the run are the same number and different pictures. Multiplying
+    ! before dividing keeps the intermediate large: the runtime truncates every division, and a ratio
+    ! computed the other way rounds a 125% zoom to 1.
+    multiply 100 by VizFitXW giving VizStatusZoom
+    divide VizStatusZoom by VizViewXW giving VizStatusZoom
+    put `zoom x ` cat VizStatusZoom cat `% y ` into VizStatusText
+    multiply 100 by VizFitYH giving VizStatusZoom
+    divide VizStatusZoom by VizViewYH giving VizStatusZoom
+    put VizStatusText cat VizStatusZoom cat `%   ` into VizStatusText
+    put VizViewX0 into VizStatusEnd
+    add VizViewXW to VizStatusEnd
+    take 1 from VizStatusEnd
+    put VizStatusText cat `steps ` cat VizViewX0 cat `-` cat VizStatusEnd cat `, lines ` into VizStatusText
+    put VizViewY0 into VizStatusEnd
+    add VizViewYH to VizStatusEnd
+    take 1 from VizStatusEnd
+    set the text of VizStatus to VizStatusText cat VizViewY0 cat `-` cat VizStatusEnd
+    move VizStatus to 60 730
 
     ! ---- the axis ----
     ! Four ticks a side, spaced by a third of the *window* rather than of the whole run, and placed
@@ -3011,6 +3136,6 @@ VizPlaceX:
     divide VizTickPos by VizViewXW giving VizTickPos
     add VizMargin to VizTickPos
     return
-!! @hash fefa5a95
+!! @hash fc7d06af
 !! @verified fefa5a95
 !!!

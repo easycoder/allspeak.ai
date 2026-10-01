@@ -21,6 +21,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const root = path.resolve(__dirname, `..`);
+// Which editor to run. An older revision can be pointed at to put a number on how much the editor's
+// compile time — its load time — has moved since, which is the one thing worth watching as it grows.
+const target = process.argv[2] || `asedit.allspeak`;
 
 const noop = () => {};
 
@@ -71,7 +74,7 @@ uiElement.innerHTML = fs.readFileSync(path.join(root, `asedit.json`), `utf8`);
 
 const scriptElement = mk(`pre`);
 scriptElement.setAttribute(`id`, `allspeak-script`);
-scriptElement.innerText = fs.readFileSync(path.join(root, `asedit.allspeak`), `utf8`);
+scriptElement.innerText = fs.readFileSync(path.resolve(root, target), `utf8`);
 
 const bodyElement = mk(`body`);
 const headElement = mk(`head`);
@@ -205,6 +208,11 @@ const seed = (items, parent) => {
 AllSpeak_Webson.render = async (parent, name, script) => {
 	seed(typeof script === `string` ? JSON.parse(script) : script, parent);
 };
+
+// The runtime measures its own compile against this, and a host is expected to set it — leaving it out
+// is what made the compile line read `NaN ms`, which is the one number this file exists to keep an eye
+// on: the editor is compiled on every page load, so its compile time is the editor's load time.
+AllSpeak.timestamp = Date.now();
 
 // ---- run the editor -----------------------------------------------------------------------
 const failures = [];

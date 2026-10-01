@@ -383,14 +383,100 @@ asynchronous all the way down and stalls headlessly somewhere unreached, so the 
 `asedit.json` and **a fault in the UI's markup is invisible here**. Modes, buttons, panes, tab records and the
 caret/view pair are what it covers.
 
+**The editor's load time is the number to watch, and it is creeping.** The editor is compiled on every page
+load, so its compile time *is* its load time — and the runtime prints it (`N ms: Compiled ASEditor: L lines (T
+tokens) in N ms`), which is where to read it: **his own browser console, on his own machine**, not mine. Measured
+here, in node, on 2026-10-01: **~1.0 s for 3017 lines / 9045 tokens** (`node tools/asedit-modes-check.js` prints
+the same line for the editor it runs).
+
+The growth, by line count, since the file has an editor pane worth counting:
+
+| date | commit | lines |
+|--|--|--|
+| 2026-09-27 | 283be86 | 1508 |
+| 2026-09-29 | 43bf410 | 2036 |
+| 2026-09-29 | e4106ff | 2142 |
+| 2026-09-30 | 7f44651 | 2229 |
+| 2026-10-01 | 32a2124 | 2767 |
+| 2026-10-01 | 0eef19f | 3003 |
+| 2026-10-01 | 11a631d | 3016 |
+
+**Doubled in four days**, and the panes are what did it. Compile cost looks linear in the script, so the next
+doubling is ~2 s. `tools/asedit-modes-check.js <path>` will compile any revision and print the line, which is how
+to put a number on it when it next moves — `asedit-check.js` does not, because it compiles without running and
+never reaches the runtime's timing.
+
+**If it wants addressing, the shape is deferred loads** — the editor split so a pane's section is compiled when
+that pane is first opened. The viz plugin's contract already carries a `sections` idea, so the seam exists. Not
+before the functionality is finished, and not without his say-so.
+
 **It ships nothing.** The starter pack is seven files — `CLAUDE.md`, `AGENTS.md`, `server.allspeak`, `edit.html`,
 `asedit.json`, `asedit.allspeak`, `asdoc-check.py` — and nothing in `tools/` or `various/` is among them. The
 `codemirror` commands it drives are runtime plumbing from `dist/plugins/`, also not in the pack. What a user
 carries is the editor, and **`asedit.allspeak` is now 136 KB**, the largest file in the pack, up from 82 KB a
 week ago — worth watching as the panes grow.
 
-**Where the work goes next, in order** — the flow's key first (it is the one thing the colours need to be
-readable, and it waits on Graham's words for the three kinds), then:
+**The flow key: the words are looked up, not asked for.** The three transfer kinds are named in the language
+packs already — the language's own keyword for each, which is what a reader of that language knows:
+
+| trace | internal | en | fr | it | de |
+|--|--|--|--|--|--|
+| `call` | `GOSUB` | `gosub` | `vasous` | `vaisub` | `gosub` |
+| `jump` | `GOTO` | `go` | `va` | `vai` | `gehe` |
+| `return` | `RETURN` | `return` | `retourne` | `ritorna` | `retourniere` |
+
+That is Graham's own guess (`gosub`/`go`/`return`) confirmed by the packs, and it means the key needs no new
+vocabulary and no per-language review — the words go into `SetStrings` beside `StrFind`, three lines per language.
+(The project rule is explicit: don't ask him for an equivalent keyword, look it up in the pack.)
+
+**The seat is settled and built: the frame grew, and the two keys share the floor.** The canvas is 1000x740
+(Graham's choice, 2026-10-01) but the plot still ends at 660, so the step-axis labels stayed at 664, the heat key
+at 679, the caption at 690 — **widening moved nothing already drawn**, and the forty new units are floor for the
+flow key's row alone (marks at 700, words at 711, a dash per colour because a transfer is drawn as a line).
+The three colours are now `VizColourCall/Jump/Return`, used by the wires *and* the key, since two copies is how a
+legend starts naming a colour the wires do not use.
+
+**One declaration rule learned the hard way, and it will come up again.** The compiler is single-pass, so a
+variable read by the view section must be **declared before `SetStrings` uses it**, at the top with the other
+`Str` names — and the section cannot declare it as well, because a repeated `variable` is a compile error
+(`ASEDITCHECK-FAIL: Duplicate variable name`). So the mirror is not self-contained: `various/plotview-check.js`
+prepends the three declarations when it loads the section, the same standing-in the DOM stub does. The first
+attempt put the declarations in the section and broke the *editor*; the second put them in both and broke the
+*mirror*; both are worth remembering.
+
+**And a stale fixture bound cost half an hour.** `plotview-check.js` asserted every coordinate was inside a
+1000x700 frame; the flow key's row sits at 700-711. Rather than one red check, it **aborted the run** and reported
+`DOM: 0 element(s)` with the phase labels missing — which read as "the drawing is broken" and was not. When that
+harness reports nothing at all, suspect its own bounds first.
+
+**Load time, measured (2026-10-01):** ~1.04 s in node for 3102 lines / 9361 tokens. Up 35 ms for the flow key,
+1508 lines on 27 September. **Read it in his browser console** — the runtime prints it on every page load — and
+`node tools/asedit-modes-check.js <path>` prints it for any revision. Deferred loads if it needs addressing.
+
+**The status line is in (2026-10-01, Graham's ask).** `VizStatus`, along the bottom at (60, 730), left-aligned,
+written in the same uninterrupted final run as the axis labels so it cannot flicker. Format:
+`zoom x 100% y 100%   steps 0-162, lines 15-211` — the two zooms as percentages of the *fitted* picture, then
+the window in the trace's own units. **Both halves earn their place:** the percentage is the reading a person
+recognises, the span is what makes a report reproducible, because a size is not a position. He asked for the
+zoom; the span was added because the line's stated purpose is describing an issue. It is his to trim.
+
+The fit is kept in `VizFitXW`/`VizFitYH` — the one place a second copy of a computed thing is right, since the
+alternative is asking `VizClamp` what it allowed, which it does not answer. The percentages multiply before
+dividing because the runtime truncates (`100 × fit / window`, never `100 × (fit / window)`, which would report a
+125% zoom as 1).
+
+**Not yet asserted anywhere.** `various/plotview-check.js` prints the status text every phase, and that is how
+the numbers were checked by eye: 100% at the fit, 124/155/194% on the steps, 124…615% on the lines, 100% again
+after `VizReset`, and the two axes moving independently. **A check that the fit reads 100%/100% and that a wheel
+notch moves it is the obvious next addition** — the harness can read the text and the gestures already exist, so
+it is a few lines against the newest thing on the picture.
+
+**What the harnesses still cannot see:** the drawing. `asedit-modes-check.js` stubs the renderer, so the flow
+key's *appearance* — a dash at the right size, a word that does not run into its neighbour, in four languages — is
+Graham's eye alone. A check that the key's three labels exist and read the right word per language is the obvious
+next thing to add to it, since the elements and the strings are both there for the asking.
+
+**Where the work goes next, in order** — the flow's key (the words and the seat above), then:
 
 5. **The side panel, and the hover rule.** The settled note above: at low zoom show the current marker and
    any doc prose, not the line's command, which is meaningless at that size. The panel is a reuse of the
