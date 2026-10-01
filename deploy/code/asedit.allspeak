@@ -179,7 +179,7 @@
     variable NL
     variable J
 !! @hash c90d5637
-!! @verified f9a59734
+!! @verified c90d5637
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -327,7 +327,7 @@ SetStrings:
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
 !! @hash 3ec54b89
-!! @verified 5633e443
+!! @verified 3ec54b89
 !!!
 !! The editor checks on startup and periodically for updates to itself.
 !! (explain)
@@ -408,7 +408,7 @@ VersionDone:
     put 0 into GraphMode
     put 0 into BlockDirty
 !! @hash 4be08809
-!! @verified d758eb44
+!! @verified 4be08809
 !!!
 !! While editor is running it periodically saves changes made by the user
 !! and updates the display to show updates made externally.
@@ -1801,4 +1801,5 @@ DoExitPanes:
     if GraphMode is 1 gosub to DoExitGraph
     return
 !! @hash c10d97ea
+!! @verified c10d97ea
 !!!

@@ -7,6 +7,119 @@ Items identified during real project work. Each should be implemented in both JS
 
 **Two things that cost time and are worth keeping** (2026-10-01). **`or` on a `rest get` stops the thread** — a failure clause that only sets a default ends the entry, which is how the pane came to be sent nothing at all: the entry read the recording with `or put '' into TraceText` and never reached the send. The fix is to default first and point the clause at the send (`or go VizSendTheRun`). **And `on failure` compiles identically to `or` in the JS `rest` domain** — the clause is followed by a `stop` — so `learn/reference/10-errors-and-recovery.md`'s "…then resumes at the next statement" is wrong for `rest`; either the doc or the domain wants aligning. Second: a **late `open` after leaving the pane**, because both fetches hand control back to the event loop and a click can land in between — `SendRunToViz` now checks `GraphMode` first, and the harness has a check for exactly that race.
 
+**Two stray doc-block tails in the module, found by Graham in Blocks mode** (2026-10-01). He saw **8 blocks**
+where there should be seven, the first empty and the last showing nothing when clicked. Both were structure left
+behind by the extraction, not faults in Blocks mode: the `script ASEditorGraph` line (and the `!` comment above
+it) sat *after* the header block's `!!!`, so the file's own block was empty and the title lived in no block at
+all; and the file ended with `!! @verified fefa5a95` and a `!!!` with no code between them and no `@hash` — a
+block whose code was moved out and whose tail stayed. **The editor's own file keeps its `script` line inside its
+header block**, which is the shape to copy. Fixed: 8 sections → 7, 0 errors, module unchanged at 975 commands.
+The first block now has a `@hash` and wants a `@verified`; lines 76 and 114 carry two pre-existing `verify-stale`
+sign-offs from the extraction.
+
+**The vertical axis is the recording's span, and a reader may reasonably expect the file's** (2026-10-01).
+Graham, viewing `examples/chemical/parser.allspeak` (626 lines): the axis reads **206-482 at 100%**, and he
+asked whether it means something else. It does not — `VizMinLine`/`VizMaxLine` are computed from the *trace's
+events*, so the axis names the lines the **run executed**, by their real numbers, and the fit shows the whole
+*recording*. So 206-482 says the run never entered the rest of the file, and the caption says the same range,
+which is why the pane is consistent with itself. **What is missing is any sign that the file is longer.** The
+choice is his and is recorded as unanswered: draw the whole file with unrun lines blank (axis 1-626, taller
+picture, space spent on code the run never touched) or leave it as the run's span.
+
+**The wheel: a second fault, not yet found, and the logs are out** (2026-10-01). The `VizRequest` fix went in
+and the wheel still blocks after a single event. **Three suspects died by reading, and all three are worth
+keeping:** a lost `wait` continuation (`Wait.run` captures `command.pc + 1` in its closure, so a suspended
+program survives a handler running in between); a handler's `return` popping a suspended draw's `programStack`
+frame (`completeHandler` ends an action with a compiler-inserted **`stop`**, not a `return`); and `stop` ending
+the program (`Stop.run` returns 0, ending that run and leaving nothing set). **Four `log` lines are now in the
+module and Graham has been asked to quote them** — `viz: draw start` / `viz: draw end` / `viz: wheel reaches the
+handler` / `viz: request deferred, a draw is running`. That set distinguishes the gesture never arriving from
+the draw dying mid-flight, which is the fork the four readings could not settle. **Remove them once the fault is
+named.**
+
+**The wheel was never broken — the window was at the end of the recording** (2026-10-01, Graham's logs).
+Four `log` lines settled it in one paste: **every `draw start` had a `draw end`**, gestures reached the handler
+throughout, and from a certain point the handler ran while `VizRequest` was never reached — meaning `VizMoved`
+was 0 and the window was not changing. That is the **clamp holding at line 482, the end of the recording**, while
+he asked for 555+ of a **626-line file**. So the `VizRequest` fix was working, the gesture was applied, and the
+only fault was that the pane had nothing there to show. **The lesson, and it is the third time it has paid:** a
+log in the code answered in one round what three readings of the runtime could not. The logs are removed again.
+
+**The picture is now the whole file (Graham's call).** `VizMinLine`/`VizMaxLine` became the *file's* extent
+(1..`VizSourceCount`) instead of the recording's, so the picture draws every line, the axis is 1..N, the window
+can travel the whole file, and a stretch with no marks reads as a stretch that did not run. The **caption keeps
+the recording's range** (`VizRunMinLine`/`VizRunMaxLine`), so the difference between "the run touched 206-482"
+and "the file is 626 lines" is visible by comparing the two — which is exactly what he wanted it to show. A new
+picture re-fits the window (`VizPictureFresh` calls `VizReset`), because editing the script moves the extent.
+
+**The scroll had no direction, and the harness had no check for one** (2026-10-01, Graham). `VizScroll`
+divided the window by four and **added** it, reading the wheel's amount but never its sign — so every notch
+went the same way down the file, which is "the page scrolls up whichever way I roll". The zoom always tested
+its sign; the scroll did not. Fixed with one line (`if VizWheelAmount is less than 0 take VizMove from 0 giving
+VizMove`). **The harness could not have caught it:** its scroll check asks whether a scroll *moved* the picture,
+never *which way*. A direction check is now the first thing to add there.
+
+**The extent change is proved, and the remaining harness failures are its stale expectations.** Repairing the
+fixture (`SetBriefSource` had been collapsing a 260-line source to **one line**, breaking the fixture's own
+rule that it must be long enough to name every line the recording references — a one-line file with a
+twenty-line trace has no rows for marks to sit on) turned the failures from noise into numbers:
+
+| after | window fitted to |
+|--|--|
+| the 260-line script | `0 0 7100 4680` — 260 × 18 |
+| the edited script | `0 0 7128 4698` — 261 × 18 |
+
+So the picture is the whole file, the extent tracks the line count, and an edit re-fits (`VizPictureFresh`'s
+`VizReset`). **Three failures remain and all three are the harness's old model**: it expects the window to be
+*kept* across a script edit (the old behaviour, deliberately not the new one) and computes its "a fit would be"
+from the original source while the phase runs against the edited one. Rewriting those expectations, plus a
+check that a row sits on the line the axis names *inside the window*, is the next work.
+
+**Unverified, and the harness disagrees: read this before trusting it.** `plotview-check.js` reports **four
+failures** and they look like its *fixture*: `SetBriefSource` replaces a **260-line** source with a **1-line**
+one while the trace still names lines 25-44, so the phase asks about a one-line file holding a twenty-line
+recording, and a file shorter than the window's 32-row floor also trips a **pre-existing** clamp edge case
+(reported window `0 -54 109 72`). The file-shaped phases pass, including the row-against-axis check. **Fix the
+fixture first** (edit a file-shaped source — one line longer — rather than collapsing it) and then the clamp's
+floor for files under 32 lines. If the extent change proves wrong, the revert is small: take `VizMinLine`/
+`VizMaxLine` from the trace scan again and drop the two lines in `VizSourceMeasure`.
+
+**The harness gap that let both through, and it is the real lesson.** Neither harness fires an *event handler*:
+`plotview-check.js` and `asedit-modes-check.js` both call the *label* (`entry('VizWheel')`,
+`program.symbols['ToggleGraph'].pc`), so the `on wheel … begin … end` path — the one the browser actually uses,
+with its compiler-inserted `stop` and its interaction with a suspended program — **has never been run by any
+check.** A harness phase that does `program.run(program.onWheel)` twice, with `document.wheelAmount` set, is the
+first thing to add once the fault is known.
+
+**The check that would have caught it is not the one I used.** Counting `@hash` lines against `@verified` lines
+over a whole file comes out *balanced* when one block has an orphaned tail and another has a block with no
+verify at all — which is exactly the pair here. **`asdoc-check` should warn on a block that holds `@hash`/
+`@verified` but no code**, which is a one-line addition and would name the real fault. Not done yet.
+
+**The wheel fix: the gesture must never be what waits** (2026-10-01). Graham: at 575% Y zoom he could not
+scroll past about line 420, and the wheel was *ignored after a few moves* — recovering for a single movement
+after a pause. **One cause, and it was the guard, not the browser.** `VizWheel` and `VizPan` both returned at
+once when `VizDrawing` was set, so every gesture arriving during a draw was *discarded* — and a draw on a big
+recording takes a good while, so the input was being thrown away for as long as it ran. The diagnosis that felt
+right first (an event *losing* a suspended draw) is wrong, and it is worth knowing why: **`wait` captures its
+own pc** (`setTimeout(() => program.run(command.pc + 1))`), so a suspended draw resumes on its own timer after a
+handler has run, and the flag always clears. Nothing was lost; the gesture was refused.
+
+**The fix: `VizRequest` is the single way a draw is asked for.** Running already? Set `VizPending` and return;
+`Draw` serves it on the way out, once. So a burst of notches costs one more draw, which reads the window as it
+stands *then*. Safe because only one draw is ever in flight (the shared scratch the passes build in), because a
+suspended draw resumes, and because the buffer is the variables. `VizDrawRun` no longer times a request it did
+not wait for. **Compiles (module 975 commands, 202 symbols), picture byte-identical, both harnesses green — but
+not behaviourally asserted:** no check fires a gesture while `VizDrawing` is set, which is the only state this
+is about. The check wants a host-side label in the harness's prologue (set `VizDrawing`, fire `VizWheel`, assert
+the window moved and `VizPending` is set). **That is the first thing to add.**
+
+**And the section-cut trap bit again, in the same way as `StrFlow*`:** `VizPending` is declared at the *top* of
+the module because `VizDrawRun` uses it before any view declaration would — the compiler is single-pass — and
+the harness cuts the view out of the module at its header, so the cut carries no top declarations. The harness's
+prelude names `VizPending` alongside `StrFlowCall/Jump/Return` for that reason. **Anything the view reads that
+is declared at the module's top has to be added there.**
+
 **A pre-existing wart, not fixed:** opening the editor **on itself** puts `problem | script= | Script 'ASEditor' is already running.` on the status line, because the analysis compiles the buffer and the runtime's `Script` compile refuses a second program with the same `script` name. It is what the status line says when reviewing the editor in itself, which is how Graham works.
 
 **The house style is written down, in four languages** (2026-10-01). `learn/reference/21-house-style.md` is new — `begin` and `end` on their own lines (the one exception being `else begin`, and `then begin` where `then` opens a block), and how a long statement is split: **a join that fits comfortably on one line stays on one line**, and the advice is for the builds that would wrap in a narrow editor pane or a diff. Where one is broken, it is broken before the joining word (`cat`, `and`, `or`, `with`), continuation one indent deeper, one fragment per line. Graham's rule, and a recommendation rather than a rule the compiler enforces — his correction after the first draft made it the other way round. Every example on the page was compiled with its own language pack — 28 blocks across EN/FR/IT/DE, plus the 8 examples on the `cat` idiom page — and `tools/learn-link-check.py` is clean. `reference/02-symbols-and-layout.md` now leads with the house form and points at the page, `09-control-flow.md` points at it too, and `idioms/01-cat-and-string-building.md` leaves its short build on one line and shows the six-fragment one split. **Translations carry it as item `20.` in their own contents lists** because their reference list has no `20-graphics`; the file is `21-house-style.md` everywhere. `./deploy-sync` has run, so `deploy/learn/` is in step.
