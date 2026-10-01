@@ -196,9 +196,13 @@ VizRemember:
 !!
 !! **The source is drawn behind the heat, once, and shown through a window.** An element is a declared symbol, so there cannot be one `svgtext` per source line — but one `<image>` carries the whole run, and its `href` is an SVG *document* the view builds itself out of `json split` and `replace`. That is why it is a document rather than a canvas raster: the language can already build one, so nothing new had to be invented to reach a canvas it has no words for, and it stays vector, so the text does not go soft past the scale it was rendered at.
 !!
+!! **And a doc block is not drawn in it.** Every line of the file keeps its row, and a line belonging to a doc block — the `!!` prose, the `@hash`/`@verified` pair, the `!!!` terminator — is drawn as an empty row. The picture is of the *program*, and on a file written to this convention the prose is longer than the code by a wide margin and buries the flow; a bare `!` comment is a note to the line beside it rather than a block, so it stays. Blanked rather than skipped, because the rows are what the axis, the rules and the marks line up with: the pane's numbering still matches the editor's, and that is what makes the two views comparable at all.
+!!
 !! **The picture never changes; the window over it does.** `VizPane` is a nested `<svg>` the size of the frame, and its `viewBox` is the whole of the zoom and the pan — one attribute per draw, and the picture itself is drawn once when the run is opened. That is what keeps the text the shape it was written in: a window whose aspect followed the zoom instead is what stretched the letters as you zoomed in. The pane's size being the frame is also the clipping, which is the one thing a picture cannot do for itself — an `<image>` either scales its content to its own box or is clipped by the outer viewport.
 !!
 !! **The source is anchored to the left edge of the pane, and it is the `viewBox`'s `x` that says so.** The window's `y` moves over the document as the lines move and its height is the vertical zoom, but its `x` is always zero: what the recording does cannot drag the source sideways. The left-hand end of a line is the part that says what the line is — the indentation and the first word — so losing sight of it is losing the reading, and the window's `x` used to be derived from the horizontal window, which is exactly what took it away whenever the run was panned along. The price is the tail of a line wider than the frame, which is not reachable on screen at all now: the frame shows about a hundred and ten columns at the legible floor, so most lines fit and a few do not.
+!!
+!! **A rule is a leader, and the flow is drawn only where it is complete.** Each rule runs from one em past the last character of the line it names to the right-hand edge of the frame, so it points at its line instead of crossing it — the indentation and the first word are the part the eye reads first, and they are the part a rule drawn from the frame's left edge used to run straight through. And a transfer is drawn only when *both* of its ends are in the window, so every line in the picture begins and ends on a rule. A transfer reaching outside used to be kept and clamped to the frame's border, which put an end on a border rather than on a line; both changes come from the same look at the picture.
 !!
 !! **The zoom stops where the text is drawn at its own size.** A source line is eighteen units tall, so a window of fewer than `VizGlyphRows` rows would only blow the text up, and there is nothing more to see. Applied before the clamp to the run, so a recording shorter than that many lines simply has no vertical zoom — the whole run is already legible and there is nothing to zoom into.
 !!
@@ -229,7 +233,6 @@ VizRemember:
     variable VizIndex
     variable VizLine
     variable VizSteps
-    variable VizOffset
     variable VizMinLine        ! the picture's first line: 1, because the picture is the whole file
     variable VizMaxLine        ! and its last: the file's own line count
     variable VizRunMinLine     ! the lines the *recording* covers, which the caption names
@@ -262,6 +265,7 @@ VizRemember:
     variable VizPlotH
     variable VizPlotRight
     variable VizPlotBottom
+    variable VizRowHalf      ! half of VizPlotH: the half row between a line's own y and its row's top
     ! The flow, one path per kind of movement, because the colour *is* the kind. `branch` — the
     ! compiler's own `if`/`while`/`wait` jumps — is deliberately not among them: scaffolding is not a
     ! program jump, and the trace keeps it a separate kind precisely so a reader can be spared it.
@@ -285,6 +289,8 @@ VizRemember:
     variable VizRuleLine
     variable VizRuleEnd
     variable VizRuleY
+    variable VizRuleX         ! where the rule begins: one em past the end of the line it names
+    variable VizRuleWidth
     variable VizKind           ! the transfer's kind, while choosing its path
     variable VizSegment        ! one transfer's path data, segment and head together
     variable VizX
@@ -332,6 +338,7 @@ VizRemember:
     variable VizGlyphBody         ! the picture's rows, escaped and encoded once per run
     variable VizGlyphWidth        ! the document's natural size, in the units the text is drawn at
     variable VizGlyphHeight
+    variable VizGlyphEm           ! the em of the text, which is the gap a rule clears before it begins
     variable VizGlyphRows         ! a window may not go below this: past it the text is at its own size
     variable VizGlyphMax
     variable VizWindowY
@@ -466,6 +473,10 @@ Draw:
     add VizPlotW to VizPlotRight
     put VizMargin into VizPlotBottom
     add VizPlotH to VizPlotBottom
+    ! Half the frame's height, which is half a row of text once `VizPlaceY` divides by the window: the
+    ! glyphs of a row are centred in it, so a line's own y is that much below the top of its row. Kept as
+    ! a value rather than done in the mapping so the division stays a division by the window alone.
+    divide VizPlotH by 2 giving VizRowHalf
     ! The rows a window may not go below. The text is drawn at eighteen units a line, so a window of
     ! this many rows is one where a source line is already as tall as it is drawn — there is no more
     ! detail to be had past it, and zooming further only blows the picture up. Derived rather than
@@ -848,6 +859,22 @@ VizPictureDone:
 VizWindow:
     gosub to VizClamp
 
+    ! ---- the window on the run, in the pane's own units ----
+    ! Computed here, at the top of the draw, because two things need it and only one of them is the
+    ! pane: the pane's `viewBox` is this, and so is the factor that turns a line's length in characters
+    ! into a place in the frame — which is what the left end of every rule is made of. It used to be
+    ! computed inside `VizSourcePicture`, which is the last thing a draw does, so a rule reading it
+    ! would have been reading the draw before: the trap this file has already paid for twice, in the
+    ! size of a mark and in a value measured before the pass that measures it.
+    !
+    ! The window's `y` is in the *document's* own units so that a row of text lands on the line the axis
+    ! names, and its width is what the frame's aspect allows at that row height — there is no wider one.
+    take VizMinLine from VizViewY0 giving VizWindowY
+    multiply VizWindowY by 18 giving VizWindowY
+    multiply VizViewYH by 18 giving VizWindowH
+    multiply VizWindowH by VizPlotW giving VizWindowW
+    divide VizWindowW by VizPlotH giving VizWindowW
+
     ! ---- the source behind the heat ----
     ! Built when either of its two inputs has changed, and not otherwise. A new script is new text to
     ! draw; a new recording is a new range of lines to draw it for. Both are compared as whole strings,
@@ -891,10 +918,11 @@ VizWindow:
             add VizMargin to VizX
             put property `line` of VizArgs into VizLine
             add 0 to VizLine
-            take VizViewY0 from VizLine giving VizOffset
-            multiply VizOffset by VizPlotH giving VizY
-            divide VizY by VizViewYH giving VizY
-            add VizMargin to VizY
+            ! The line's own y, which is the middle of the row of text it names — `VizPlaceY` is the one
+            ! place that mapping lives, because this, the rules and the axis labels have to agree.
+            put VizLine into VizTickValue
+            gosub to VizPlaceY
+            put VizTickPos into VizY
             ! A mark outside the window is left out rather than drawn and clipped. There is no clip
             ! rectangle to draw into — the plugin has no element for one — and a mark outside the
             ! frame paints over the axis and the key, so leaving it out is the honest version. The
@@ -927,29 +955,30 @@ VizWindow:
             add VizMargin to VizX
             put property `from_line` of VizArgs into VizLine
             add 0 to VizLine
-            take VizViewY0 from VizLine giving VizOffset
-            multiply VizOffset by VizPlotH giving VizY
-            divide VizY by VizViewYH giving VizY
-            add VizMargin to VizY
+            put VizLine into VizTickValue
+            gosub to VizPlaceY
+            put VizTickPos into VizY
             put property `to_line` of VizArgs into VizLine
             add 0 to VizLine
-            take VizViewY0 from VizLine giving VizOffset
-            multiply VizOffset by VizPlotH giving VizY2
-            divide VizY2 by VizViewYH giving VizY2
-            add VizMargin to VizY2
+            put VizLine into VizTickValue
+            gosub to VizPlaceY
+            put VizTickPos into VizY2
             ! One x decides a transfer, because a transfer is a vertical segment: its two ends differ
-            ! only in their line, so if the x is outside the window the whole segment is. A segment
-            ! whose ends straddle the window is kept — but its ends are *clamped to the frame* rather
-            ! than left where they fall, because a line drawn from above the plot to below it would
-            ! run across the axis and the caption. Clamping is what a clip rectangle would do here,
-            ! and there is no clip rectangle to use.
-            if VizY is less than VizMargin put VizMargin into VizY
-            if VizY is greater than VizPlotBottom put VizPlotBottom into VizY
-            if VizY2 is less than VizMargin put VizMargin into VizY2
-            if VizY2 is greater than VizPlotBottom put VizPlotBottom into VizY2
+            ! only in their line, so if the x is outside the window the whole segment is.
+            !
+            ! **And both its ends have to be in the window, or it is not drawn at all.** A segment whose
+            ! ends straddle the window used to be kept and clamped to the frame, so that a transfer from
+            ! off-screen still showed as a line arriving — but a clamped end lands on the frame's border
+            ! and not on a rule, and a line that begins on nothing reads as a fault rather than as a fact.
+            ! Left out instead, exactly as a mark outside the window is left out, so that every line that
+            ! *is* drawn begins and ends on a horizontal line.
             put 0 into VizOutside
             if VizX is less than VizMargin put 1 into VizOutside
             if VizX is greater than VizPlotRight put 1 into VizOutside
+            if VizY is less than VizMargin put 1 into VizOutside
+            if VizY is greater than VizPlotBottom put 1 into VizOutside
+            if VizY2 is less than VizMargin put 1 into VizOutside
+            if VizY2 is greater than VizPlotBottom put 1 into VizOutside
             if VizOutside is 0
             begin
                 ! The head is a chevron drawn in the path data, not a marker element — the plugin has
@@ -1111,14 +1140,15 @@ VizWindow:
     set the text of VizKeyLabel3 to VizKeyLo cat `+`
 
     ! ---- the rules ----
-    ! A hairline across the frame at every line the run touched, taken from the counts the window
-    ! carries rather than from the arrivals — so a line visited forty times gets one rule and not
-    ! forty. Lines the run never reached get none, which is what makes this a picture of the
-    ! recording rather than of the file.
+    ! A hairline at every line the recording *names* — an arrival, or either end of a transfer — and at
+    ! no other line. The set is built as the recording is read, and not from the window's per-line
+    ! counts, which cover every line the run executed: on a recording that walks a chain of labels the
+    ! counts carry more than twice as many lines as anything happened on, and a rule for each of those
+    ! was a grid drawn over lines with nothing on them. Graham's "too many of them, and too dark".
     !
-    ! It exists for the zoomed-out view, where a mark is a dot in mid-space and the text behind it is
-    ! a texture: the rule is what says which line the dot belongs to, and it spares a reader the
-    ! choice between zooming in to find out and hovering to ask the sidebar.
+    ! It exists for the zoomed-out view, where a mark is a dot in mid-space and the text behind it is a
+    ! texture: the rule is what says which line the dot belongs to, and it spares a reader the choice
+    ! between zooming in to find out and hovering to ask the sidebar.
     put `` into VizRulesD
     put VizMinLine into VizRuleLine
     add VizSpanLines to VizMinLine giving VizRuleEnd
@@ -1127,10 +1157,11 @@ VizWindow:
         put ` ` cat VizRuleLine cat ` ` into VizRuledLine
         if VizRuledLines includes VizRuledLine
         begin
-            take VizViewY0 from VizRuleLine giving VizRuleY
-            multiply VizRuleY by VizPlotH giving VizRuleY
-            divide VizRuleY by VizViewYH giving VizRuleY
-            add VizMargin to VizRuleY
+            ! The line's own y, by the same `VizPlaceY` the marks and the labels use — so a rule runs
+            ! through the middle of the text it names rather than above it.
+            put VizRuleLine into VizTickValue
+            gosub to VizPlaceY
+            put VizTickPos into VizRuleY
             ! Only the rules in view. The loop runs over the whole run and the window is a slice of it,
             ! so a line outside the window maps to a y outside the frame — and a rule drawn there
             ! would be a line across the axis or the caption. The test is the marks' own test, and
@@ -1138,7 +1169,41 @@ VizWindow:
             put 0 into VizOutside
             if VizRuleY is less than VizMargin put 1 into VizOutside
             if VizRuleY is greater than VizPlotBottom put 1 into VizOutside
-            if VizOutside is 0 put VizRulesD cat `M` cat VizMargin cat ` ` cat VizRuleY cat `h` cat VizPlotW into VizRulesD
+            ! **The rule is a leader, not a line through the code.** It begins one em past the last
+            ! character of the line it names and runs to the right-hand edge of the frame, so it points
+            ! at its line rather than crossing it. What it spares is the indentation and the first word —
+            ! the part that says what the line is, and the part the eye reads first.
+            !
+            ! The line's length is a count of *characters*, so it becomes a width by the same 8 units a
+            ! column that the picture is measured in, and then by the factor the picture is drawn at: the
+            ! pane holds `VizWindowW` of the document's units across `VizPlotW` of the frame. One em is
+            ! the text's own font size — `VizGlyphEm`, not a number here, because the gap cleared has to
+            ! be the size of the letters cleared or it is not a gap.
+            !
+            ! A row the picture does not draw has no characters to clear — a doc block is blank, see
+            ! `VizSourceMeasure` — so its rule begins at the left edge and is the longest kind there is.
+            ! The test is that one's, for the same reason: the left end is measured from what is drawn,
+            ! not from what the file says.
+            put `` into VizSourceLine
+            take 1 from VizRuleLine giving VizSourceAt
+            if VizSourceAt is less than VizSourceCount put element VizSourceAt of VizSourceLines into VizSourceLine
+            if VizSourceLine starts with `!!` put `` into VizSourceLine
+            multiply the length of VizSourceLine by 8 giving VizRuleX
+            add VizGlyphEm to VizRuleX
+            multiply VizRuleX by VizPlotW giving VizRuleX
+            divide VizRuleX by VizWindowW giving VizRuleX
+            add VizMargin to VizRuleX
+            ! **And when the line's own text reaches the frame's edge, the leader has nowhere to be.**
+            ! The text is cut off there at that zoom — the price of the anchoring, above — so a rule
+            ! beginning off the frame would leave its mark with no line to sit on, which is the one thing
+            ! a rule is for. Those lines keep the rule they had, from the frame's left edge: they are the
+            ! one case where crossing the text costs nothing, because what is crossed is already gone.
+            if VizRuleX is greater than VizPlotRight put VizMargin into VizRuleX
+            if VizRuleX is less than VizMargin put VizMargin into VizRuleX
+            ! To the frame's right-hand edge, which is as far as the drawing goes.
+            take VizRuleX from VizPlotRight giving VizRuleWidth
+            if VizRuleWidth is less than 1 put 1 into VizRuleWidth
+            if VizOutside is 0 put VizRulesD cat `M` cat VizRuleX cat ` ` cat VizRuleY cat `h` cat VizRuleWidth into VizRulesD
         end
         add 1 to VizRuleLine
     end
@@ -1471,6 +1536,11 @@ VizSourceMeasure:
     ! view.
     json split VizSource giving VizSourceLines
     put the json count of VizSourceLines into VizSourceCount
+    ! The em of the text, in the document's own units — the size the rows are written at, and therefore
+    ! the width of the letters a rule has to clear before it begins. Kept as a value rather than written
+    ! into the `<text>` element below as a number, because the rules' arithmetic is a second reader of
+    ! it: two spellings of one measurement is how a gap drifts.
+    put 13 into VizGlyphEm
     ! **The picture is the whole file, and the recording is a window over it.** Drawing only the lines
     ! the run touched made the pane a picture of the run with no way to see it in context, and it left
     ! the window unable to travel past the last line that happened to execute — a scroll that stops
@@ -1502,7 +1572,7 @@ VizSourceMeasure:
     ! out, so a whole file is one element and no per-line coordinate is computed at all. `y="-4"` puts
     ! the first baseline four units down a row, so the last row's descenders sit inside the document
     ! rather than on its very edge.
-    put `<text x="0" y="-4" xml:space="preserve" font-family="monospace" font-size="13" fill="#5b6472">` into VizGlyphBody
+    put `<text x="0" y="-4" xml:space="preserve" font-family="monospace" font-size="` cat VizGlyphEm cat `" fill="#5b6472">` into VizGlyphBody
     put VizMinLine into VizSourceIndex
     while VizSourceIndex is not greater than VizMaxLine
     begin
@@ -1512,6 +1582,18 @@ VizSourceMeasure:
         begin
             put element VizSourceAt of VizSourceLines into VizSourceLine
         end
+        ! **A doc block is drawn as an empty row.** The picture is of the *program*, and a doc block is
+        ! the part of the file that is not the program: on a file written to this convention the prose
+        ! is longer than the code by a wide margin, and it buries the flow. Everything the convention
+        ! adds to a file is under `!!` — the prose, the `@hash`/`@verified` pair and the `!!!` terminator
+        ! — so one test covers the lot. A bare `!` comment is left alone: it is a note to the line beside
+        ! it rather than a block, and the reader of the picture is reading the code.
+        !
+        ! **Blanked rather than skipped, and that is the whole of the care taken here.** Every row is
+        ! drawn, and the rows are what the axis, the rules and the marks line up with — so a blanked line
+        ! keeps its number and the pane's numbering still matches the editor's. Skipping it would
+        ! renumber the file from its first doc block onwards, which is the one thing this must not do.
+        if VizSourceLine starts with `!!` put `` into VizSourceLine
         ! A line the run names but the file does not have is left as an empty row rather than skipped:
         ! the rows are what lines up with the axis, so a missing one has to keep its place.
         !
@@ -1537,33 +1619,42 @@ VizSourceMeasure:
 
 VizSourcePicture:
     ! ---- the window on the picture ----
-    ! A viewBox in the document's own units, and the whole of the zoom and the pan. Its aspect is the
-    ! frame's, which is what gives the text the proportions it was written at — a window whose shape
-    ! followed the zoom instead is what stretched the letters — and its height is one row per line in
-    ! view, so a row lands on the line the axis names.
+    ! The pane's `viewBox`, which is the whole of the zoom and the pan. The three values are the draw's
+    ! own, computed at its top — see `VizWindow` for why they are not worked out here, where they are
+    ! wanted. In the document's units its aspect is the frame's, which is what gives the text the
+    ! proportions it was written at (a window whose shape followed the zoom is what stretched the
+    ! letters), and its height is one row per line in view, so a row lands on the line the axis names.
     !
-    ! **Its width is derived and its `x` is always zero, so the source stays anchored to the left edge
-    ! of the pane.** The panel is so many rows tall wide and a wider window is not available, so a line
+    ! **Its `x` is always zero, so the source stays anchored to the left edge of the pane.** A line
     ! longer than the window shows goes off the right-hand edge — and there it stays, because the
     ! left-hand end of a line is the part that says what the line is. That offset used to be derived
     ! from the horizontal window, so panning along the run dragged the source sideways and took the
     ! indentation and the first word out of view with it. The tail of a line wider than the frame is
     ! what that costs, and the frame is not narrow: it shows about a hundred and ten columns at the
     ! legible floor, which is more than most lines and less than a few.
-    take VizMinLine from VizViewY0 giving VizWindowY
-    multiply VizWindowY by 18 giving VizWindowY
-    multiply VizViewYH by 18 giving VizWindowH
-    multiply VizWindowH by VizPlotW giving VizWindowW
-    divide VizWindowW by VizPlotH giving VizWindowW
     set attribute `viewBox` of VizPane to `0 ` cat VizWindowY cat ` ` cat VizWindowW cat ` ` cat VizWindowH
     set attribute `href` of VizGlyphs to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="` cat VizGlyphWidth cat `" height="` cat VizGlyphHeight cat `">` cat VizGlyphBody cat `</svg>`
     return
 
 VizPlaceY:
-    ! Where a tick's line number lands in the frame, by the same mapping the marks use — so a label
-    ! sits on the line it names at any zoom.
+    ! Where a line number lands in the frame. **This is the one place that mapping lives**, because the
+    ! marks, the rules and the axis labels all have to agree about it — and they did not: the mapping
+    ! was written out at each site, and every one of them put a line at the *top* of the row of text it
+    ! names.
+    !
+    ! **A row is eighteen document units tall and its glyphs are centred in it, so the line's own y is
+    ! half a row lower.** With the mapping at the row's top, every rule and every dot sat just under the
+    ! text of the line *above* the one it belonged to — which reads as a vertical misalignment and makes
+    ! a rule that begins one em past its line's code look like it begins in the middle of the line above.
+    ! Graham found it by eye and measurement confirmed it: of seventeen rules in a screenshot, every one
+    ! sat between a fifth and a half of a row above its own glyphs.
+    !
+    ! The half row is added *before* the division, which is half of `VizPlotH` and exactly half a row
+    ! once the divisor is applied — the same scaled-integer pattern the marks use, and no fraction to
+    ! lose.
     take VizViewY0 from VizTickValue giving VizTickPos
     multiply VizTickPos by VizPlotH giving VizTickPos
+    add VizRowHalf to VizTickPos
     divide VizTickPos by VizViewYH giving VizTickPos
     add VizMargin to VizTickPos
     return
@@ -1574,6 +1665,6 @@ VizPlaceX:
     divide VizTickPos by VizViewXW giving VizTickPos
     add VizMargin to VizTickPos
     return
-!! @hash 804d2fec
+!! @hash 9b1bcb5f
 !! @verified 89e939ce
 !!!
