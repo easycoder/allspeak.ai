@@ -25,7 +25,7 @@ tant que N est inférieur à 5 début
 fin
 ```
 
-Un bloc `début … fin` est une seule instruction pour l'analyseur ; le corps à l'intérieur est séquentiel. Voir [symboles et mise en page](symbols-and-layout.md) pour le style alternatif où `début` se trouve sur sa propre ligne avec une indentation assortie.
+Un bloc `début … fin` est une seule instruction pour l'analyseur ; le corps à l'intérieur est séquentiel. Les conventions de style mettent `début` sur une ligne à lui, à l'indentation de l'instruction qui le possède — voir [conventions de style](house-style.md).
 
 ## `si` / `sinon`
 

@@ -25,7 +25,7 @@ mentre N è minore di 5 inizio
 fine
 ```
 
-Un blocco `inizio … fine` è una sola istruzione per il parser; il corpo al suo interno è sequenziale. Vedi [simboli e layout](symbols-and-layout.md) per lo stile alternativo in cui `inizio` sta su una riga sua con indentazione abbinata.
+Un blocco `inizio … fine` è una sola istruzione per il parser; il corpo al suo interno è sequenziale. Le convenzioni di stile mettono `inizio` su una riga sua, all'indentazione dell'istruzione a cui appartiene — vedi [convenzioni di stile](house-style.md).
 
 ## `se` / `altrimenti`
 

@@ -3,13 +3,24 @@
 Items identified during real project work. Each should be implemented in both JS and Python.
 ## Where things stand
 
+**The house style is written down, in four languages** (2026-10-01). `learn/reference/21-house-style.md` is new — `begin` and `end` on their own lines (the one exception being `else begin`, and `then begin` where `then` opens a block), and how a long statement is split: before the joining word (`cat`, `and`, `or`, `with`), continuation indented one level deeper, and **one `cat` per line** where a string is built from several fragments. Graham's rule, and a recommendation rather than a rule the compiler enforces. Every example on the page was compiled with its own language pack — 24 blocks across EN/FR/IT/DE, plus the 8 examples the `cat` idiom page now carries — and `tools/learn-link-check.py` is clean. `reference/02-symbols-and-layout.md` now leads with the house form and points at the page, `09-control-flow.md` points at it too, and `idioms/01-cat-and-string-building.md` shows the one-per-line form (`cat` makes the missing-join mistake visible down the left edge). **Translations carry it as item `20.` in their own contents lists** because their reference list has no `20-graphics`; the file is `21-house-style.md` everywhere. `./deploy-sync` has run, so `deploy/learn/` is in step.
+
+**And `then` turns out to belong to `run` alone** — the finding behind that exception. `then` is a word in all four packs, but the only grammar that uses it is `run {script} with {imports} then {handler}`; `if … then` and `while … then` are rejected by both runtimes with *I don't understand 'then'*, although both compilers call the `if` body "the 'then' code" in their comments — which is probably where the impression that `if … then` exists came from. **`nowait` and `then` are JS-only on `run`:** the Python `k_run` implements neither, while the packs advertise both (`run {script} with {imports} dann {handler}`, `Sansattente`, `ohnewarten`). A gap to close in the Python runtime, not a documentation problem.
+
+**The editor's guards, simplified** (2026-10-01). Ten `if`s became one where two guards said the same thing: `VizRemember`'s `TraceSize`/`DrawMillis` pair (Graham's), `VizPan`'s `VizDrawing`/`VizGrabbed` pair, and `PollFile`'s two mode guards, whose two comments folded into one statement of the rule. A fourth case was the same family under a different operator: the axis placed each of eight tick labels as `if <past the margin>` / `begin` / `if <inside the plot> set its text` / `end`, which is `and`, not `or` — each collapse drops a `begin`/`end`, and they are **the first places in asedit that split a condition onto a continuation line**, at Graham's suggestion. Net −17 lines. `asedit` compiles at 2008 commands, 359 symbols, 0 errors, and `various/plotview-check.js` reports a **byte-identical picture** before and after, on two recordings. Three sections want a re-verify (`PollFile`, the Graph-mode section holding `VizRemember`, and the view holding the axis and `VizPan`). Same-shape pairs left alone in `resources/ecs/*`, `tools/asdoc-check*.allspeak`, `chat/chat-main.allspeak`, `codex/en/code/step18.allspeak` and `resources/scripts/solitaire.allspeak`.
+
+**A harness finding worth keeping:** `various/plotview-check.js`'s two *escaping* checks look for source lines 30–31 of its own fixture, so they **fail on any trace whose line span excludes them** — they fail on `examples/chemical/parser.allspeak.viz.json` (span 205–480) and pass on a window that covers them. Trace-dependent, not code: the same two fail identically before and after the change above, which is how they were caught. The fix is for those checks to assert on lines inside the trace's own span.
+
 **The visualiser is in the editor and working.** `asedit.allspeak` has a **Graph** pane: a third view fed by a
 run recording, drawn in AllSpeak with the `svg` plugin. It gained the **heat** (the marks coloured by how
 much work each line carried, four bands, now the only scheme), a **caption** naming the run it drew,
 **yielding** every hundred marks so a long draw cannot freeze the browser, and a **prediction** of how long
 a draw will take — learned from the previous one and kept in `.viz-calibration.json` (gitignored,
 per-machine). It also gained the **JSON prettify** on open (one-line files only) and the `Marks`/`Heat`
-toggle was **folded away** on Graham's call, so there are two buttons for two panes.
+toggle was **folded away** on Graham's call, so there are two buttons for two panes. Since 2026-09-30 it also
+shows a **window on the run** rather than the whole of it — wheel alone scrolls, shift-wheel zooms the
+lines, control-wheel the steps, and a drag pans — and draws **the source itself behind the heat**, so a mark
+says what ran rather than only that something did.
 
 **Corrected this session — the "stale copy" diagnosis did not fit Graham's page.** He runs the editor at
 `http://localhost:8080/edit.html`, served from the **repo root** by the `allspeak server` started there, and
@@ -125,28 +136,194 @@ Verified by `various/wheel-check.js`, now three events — plain, shift and cont
 languages**: the plain wheel reads `-120/0/0`, the shift-wheel `120/1/0`, the control-wheel `-50/0/1`, and
 every reading is the pack's own local word. `asedit` still compiles at 1716 commands, 0 errors.
 
-**Where the work goes next, in order:**
+**The viewport is in, and with it the zoom and the pan** (2026-09-30) — which was item 1 of "where the work
+goes next", and item 2 as well. `Draw` now shows a **window** on the run rather than the whole of it: two
+ranges in the trace's own units (steps across, lines down), fitted to the whole recording when a run is
+opened, and moved by three gestures — **wheel alone scrolls, shift-wheel zooms, drag pans**, Graham's scheme
+from Kdenlive and Audacity. The three are the view's own entry points (`VizGrab`, `VizPan`, `VizWheel`), with
+`VizReset` for the host to call on entry; the editor registers `on pick VizHost`, `on wheel VizHost` and
+branches its existing document-level `on drag` on `GraphMode`, which is possible because the two views never
+share the screen.
 
-1. **The zoom itself, now the modifier reading is in.** `on wheel` can tell a plain wheel from a shift-wheel
-   as of 2026-09-30 (`the wheel shift` and `the wheel control`, each 0 or 1, with `shift`/`control` in the
-   four packs), so the gesture Graham chose (Kdenlive/Audacity: wheel scrolls, shift-wheel zooms, drag pans)
-   is fully expressible. What is left is the viewport: the pane's fixed frame (`viewBox 0 0 1000 700` and the
-   three `Viz…` constants) becomes a viewport, and **the control has to be relative to the fitted scale** —
-   the trap the prototype already learned, where a fixed slider range sits pinned at one end because the fit
-   is 51.6 px/step for one window and 0.7 for another.
-2. **Pan** — expressible today and the cheapest of the four: bind `on pick`/`on drag` to the pane, as the
-   Blocks divider already does.
-3. **The source behind the heat, and the side panel.** The raster approach is Graham's (above), and both of
-   its ingredients now exist or nearly do: `svgimage` is in the svg plugin, and a plugin is what would draw
-   the buffer (the language has no canvas vocabulary). The side panel is a reuse of the Blocks split, which
-   already has a draggable divider and a doc pane.
-4. **Per-marker data** — wants his idea in words. The anchor is the designed extension point, and the trace
+Four things about it are worth keeping. **A window, not a scale factor** — a factor has to be relative to a
+fit that changes with the recording, and an absolute one sits pinned at one end, which is the prototype's own
+lesson. **The steps are exact inverses**: in shrinks the window by a fifth, out grows it by a quarter, and
+4/5 × 5/4 is 1, so the harness can demand that two notches in and two out land back on the fitted picture
+byte for byte — and it does, on both fixtures. **The clamp is the reset**: zooming out and panning both stop
+at the edges of the run, so there is no reset button to find. And **the marks are left out rather than
+clipped** when they fall outside the window, because the plugin has no clip element and a mark outside the
+frame paints over the axis — while a *transfer* whose ends straddle the window is kept and its ends clamped
+to the frame, which is what a clip would have done.
+
+Verified the way the project verifies a drawing: `various/plotview-check.js` now drives the four gestures
+through the view's own entry points with the DOM values a browser would set, and reports the picture at each
+step. On a 25-step fixture and a 284-step one, all five checks pass — every phase's marks inside the frame,
+the zoom round-trip exact, every scroll and every drag moving the picture, and `VizReset` restoring the fit.
+And the fitted picture is **byte-identical to the pre-viewport view** on both, proved by running the section
+from `git show HEAD:asedit.allspeak` through the same harness (`PLOTVIEW=…`) and diffing. `asedit` compiles
+at 1907 commands, 330 symbols, 0 errors.
+
+**Two harness faults were found on the way, both worth keeping.** The settle detector counted *quiet ticks*
+alone, and a draw blanks the picture before it draws it — so a big recording was declared finished while it
+was still blank, which is what made the old view look like it drew nothing on the 284-step fixture. It now
+requires having seen the picture change at least once. And the first observation was itself counted as a
+change, which put the same mistake back one line later.
+
+**The source is behind the heat** (2026-09-30) — the "program behind the heat" half of Graham's four
+requirements, and the raster he asked for, with one substitution he agreed to. Where he proposed a
+**canvas raster** (a plugin draws the source into a canvas and hands back a PNG data URL), the picture is
+instead an **SVG document the view builds itself**: one `<image>` (the `svgimage` element) whose `href` is
+`data:image/svg+xml,…`, assembled from `json split` (which splits on newlines by default and yields a JSON
+array `element N of` can read) and `replace` (a global literal replace). So no canvas is reached, no new
+vocabulary is invented, and the text stays vector — it cannot go soft past the scale it was rendered at,
+and there is no 16,384-pixel ceiling to split around. The rows are `<tspan dy="18">` under one `<text>`, so
+the offset accumulates and the whole file is one element with no per-line coordinate to compute.
+
+**The picture is the window, and that is also the clipping** (2026-09-30, revised the same day on
+Graham's report that text was showing above and below the panel). It is stretched to the frame with
+`preserveAspectRatio: none`, x and y independently, which is what puts each row on the line the axis names
+— and the *document holds only the lines the window shows*, so the picture is exactly the frame and cannot
+spill onto the axis or the caption. An `<image>` lays its content out inside its own box and paints nothing
+outside it, so the rectangle being the frame is a structural guarantee rather than a mask; the alternative,
+a document per run with the element made taller than the frame to keep the rows in step, is what let the
+text past the edges. The cost of the revision is that the document is rebuilt on every draw rather than
+once per run — the rows in view, not the whole file, so at the fit it is the biggest it gets and at a zoom
+it is small; a control-wheel notch that leaves the rows alone still rebuilds them, which is a known and
+unfixed cost. The lines' `<`, `>` and `&` are escaped first (ampersand first, or it would escape its own
+escapes), then `%` and `#` are percent-encoded for the URL. Host side: `VizSource` is read from the active
+tab beside the recording, and a source that will not read leaves the pane plain rather than failing the
+draw.
+
+**The zoom is per axis** (2026-09-30, Graham's second correction): **shift-wheel zooms the lines**,
+**control-wheel the steps**, both together both, and the wheel with neither modifier still scrolls down the
+run. His first scheme had shift-wheel zooming both, and he called that a mistake — the steps are *when* and
+the lines are *where*, and how far apart two arrivals are in time says nothing about how far apart the lines
+they land on are. `VizWheel` therefore reads the two modifiers and marks the axes; `VizZoom` touches only
+the marked ones, and an unmarked axis keeps its size and so is moved by nothing in the centring. Control is
+taken over from the browser's own page zoom, which the pane's listener already `preventDefault`s.
+
+Verified by `various/plotview-check.js`, which now hands the view a source of its own — fifty lines with a
+blank row every seventh, one with `<`, `>` and `&`, one with `#`, `%` and `"`, and one 68 characters long —
+and checks the things that matter rather than the things that are easy. Fifteen statements, all passing on
+both fixtures: **every row sits on the line the axis names it**, with the document *saying which line it
+starts at* so the grid is placed against the axis rather than merely sized like it (80 comparisons, worst
+0.9 units out); **each axis moves only itself** (the check that would catch both wired to one modifier, and
+which nothing else in the file would notice); the picture's rectangle is the frame in every phase; the
+document's row count follows the window (20, 16, 13, 11); the round trip lands exactly on the fit once per
+axis; the tags balance (`svg 1/1, text 1/1, tspan 20/20`); and the two awkward lines survive the URL byte
+for byte. The marks and labels are **still unchanged** from before any of this landed, on both fixtures.
+`asedit` compiles at 1985 commands, 346 symbols, 0 errors.
+
+**One sign error was caught by arithmetic rather than by the harness, and it is worth knowing why.** The
+picture's top was written `take VizMinLine from VizViewY0` — which is `ViewY0 - MinLine`, the negation of
+what the mapping needs, and it put the text *below* where it belonged, moving the wrong way as the window
+moved. The harness's checks at the time all passed: nothing outside the frame, a rectangle that changed,
+rows that balanced. **A wrong value that is still a plausible value is what a check has to be written to
+catch**, and the one that catches it is the one that compares the picture against an independent witness —
+the axis. It is in the harness now. The same fault reappeared a moment later in the harness itself, where
+`take`-style destructuring took a `[name, state]` pair for the state; that one was caught in seconds
+because a value that is there but is the wrong shape fails loudly.
+
+**Graham's four points, and where they stand** (2026-10-01). He raised them after looking at the pane, and
+said of them that "much of the above is guesswork and will have to be resolved by trial and error" — which is
+the tracking instruction, and it is being answered by landing one point at a time so he can look at it, in
+the editor, before the next changes what it looks like.
+
+1. **One drawing, zoomed and panned — LANDED.** The source was being redrawn at every gesture, so a zoom
+   changed the *document's* proportions while its line lengths stayed put, and at high zoom the letters were
+   pulled tall. It is now drawn once when the run is opened, at the size the text is really written at, and
+   shown through `VizPane` — a nested `<svg>` the size of the frame whose `viewBox` is the whole of the zoom
+   and the pan, one attribute per draw. The pane is also the clipping, which is what a picture cannot do for
+   itself. **The consequence to look at, and it is a real one:** the window's width is what the frame's
+   aspect allows at that row height, so at the fitted view — hundreds of rows in a 580-unit frame — the
+   source is a *narrow column* down the left of the panel rather than a full-width texture, which is the
+   opposite of what he expected ("longer lines will fall outside the right side"). If he would rather have
+   the full-width shape at low zoom and the natural proportions only once the text is legible, that is
+   `VizWindowW` set to `VizGlyphWidth` — **one line**, and it is not taken because what he asked for is what
+   is built. **He has since looked and answered: "you're right, I had a faulty mental image... it's almost
+   exactly right"**, so the coupling stands and the narrow column at the fit is accepted.
+   **And one fault, found by him and fixed:** at the legible floor a further shift-wheel notch slid the
+   window up a few lines, with a redraw flash. The cause was order: `VizZoom` centred the window on the
+   size it had *computed*, and `VizClamp` then refused half of it, so the origin kept the centring's share
+   of a change that never happened. The size is now clamped before the origin is moved to follow it — and
+   because a refused notch now leaves the window identical, `VizRedraw` skips the draw entirely, which is
+   the flash gone as well as the drift. `VizNote`/`VizRedraw` are the general form: a gesture that changes
+   nothing does nothing, for the pan and the scroll as well as the zoom.
+   **And he asked the follow-up question that found the rest of it — "does the graphics system clear then
+   redraw, or redraw and switch buffers?"** The answer was: clear, then redraw, in the live DOM, with no
+   buffer — and the clear was *paintable*, because the passes yield to the browser every hundred marks. So
+   the flash had two causes and the second was structural. Every draw now builds all of its output in
+   variables and writes nothing to the DOM until the end, in a run of statements with no yield in it: **the
+   buffer is the variables and the swap is the last block.** The evidence is positional and easy to re-check
+   — no `set attribute` or `set the text` appears anywhere in `VizBuilt` before the final block, so nothing
+   the browser could paint is ever half-built. A redraw therefore leaves the previous picture up until the
+   next one is complete, which is what a double buffer would do, and the blanking block at the top of the
+   draw is gone (its accumulator resets stay, because those strings are grown by `cat`).
+2. **The zoom stops at the text's own size — LANDED.** `VizGlyphRows` is `PlotH / 18` rows, derived rather
+   than chosen, and `VizClamp` will not go below it. Applied *before* the clamp to the run, so a recording
+   shorter than that many lines has no vertical zoom at all — which is right (there is nothing to zoom into)
+   and is now the reason the harness reports those phases as "nothing to move" rather than as failures.
+3. **Arrow heads, and a colour per kind.** Not started. The trace carries `kind` of `call`/`jump`/`return`/
+   `branch`, so it is one path per kind instead of the one `VizFlowLines`, and the head is a chevron drawn
+   in the path data itself — the plugin has no marker element, and a stroked chevron needs no fill.
+4. **A faint rule per recorded line.** Not started. One extra path, one `M … h PlotW` per line that has a
+   count, built from `VizLineCounts` over the run's own lines. It is what makes a transfer's end readable at
+   low zoom, which is the state the pane is in most of the time.
+
+**The mode invariant, and the bug that wasn't one (2026-10-01).** Graham reached a state by the one path that
+shows it — Graph, then Blocks — where both the Graph and the Blocks buttons read `Edit`, and in the same state
+the graph was left lying under the Blocks pane. Both faces are one omission: `EnterBlocks` never turned the
+Graph pane off. `EnterGraph` had always turned Blocks off, and `ActivateTab` turned both off, so the *other*
+direction was fine and had been since the Graph pane was added — `EnterBlocks` was written before it existed
+and nothing pointed at the assumption it was making.
+
+**Fixed by closing the class rather than the instance.** `DoExitPanes` is now the single statement of "which
+other modes there are", and the three entry points call it — `EnterBlocks`, `EnterGraph`, `ActivateTab`. A
+fourth pane means changing that one subroutine; the entrance still has to remember to *call* it, which is the
+part that is not enforceable and is why the comment sits at both entry points. The verification is a click
+rather than a check: the two harnesses drive the drawing, not the editor's UI state, and nothing headless can
+see a button's label.
+
+**Where the work goes next, in order** — points 3 and 4 above first, because they are what makes the
+panel readable while the text model is being judged, then:
+
+5. **The side panel, and the hover rule.** The settled note above: at low zoom show the current marker and
+   any doc prose, not the line's command, which is meaningless at that size. The panel is a reuse of the
+   Blocks split — draggable divider and doc pane — so the work is the rule rather than the furniture, and
+   the rule needs the pointer→line mapping (a pixel → a viewBox y → a line). That is the letterboxed
+   arithmetic the *zoom* deliberately avoided; `VizPixelScale` already computes the scale, so what is
+   missing is the centring offset and the inversion.
+6. **Per-marker data** — wants his idea in words. The anchor is the designed extension point, and the trace
    format deliberately carries no values.
+
+**Done, for the record:** the modifier reading (`the wheel shift` / `the wheel control`), then the viewport
+with its zoom and pan, then the source behind the heat — items 1 and 2 of this list, and the first half of
+what was item 3, all landed 2026-09-30.
 
 **Smaller items, in any order:**
 
-- The `verify-stale` sign-off on the view's section — his by convention, and until he clicks it the analyser
-  reports one warning.
+- **Four `verify-stale` sign-offs** — his by convention: the editor's declarations, its handler block, the
+  Graph host's section, and the view's own. Until he clears them the analyser reports four warnings.
+- **The source picture wants a browser, and this is the one thing a check cannot say.** Three things are
+  unverifiable here and none of them is subtle if wrong: that a browser renders an `<image>` whose `href` is
+  an SVG data URL at all (plain `href`, SVG 2 — every current browser takes it, and `xlink:href` is the
+  fallback if one does not); that `xml:space="preserve"` keeps the indentation; and that the monospace
+  advance is close enough to the 8 units a column is assumed to be, where a mismatch only widens the right
+  margin. Decoding the URL and checking the document is well formed, and that its rows sit on the axis, is as
+  far as a headless check reaches. **The clipping is no longer on this list** — the picture is the frame, so
+  a browser that draws it at all cannot draw it outside the panel.
+- **A horizontal notch rebuilds the picture even when the lines in view have not changed.** The document is
+  the rows in view, so the cost is the window's height rather than the file's, but at the fit a control-wheel
+  notch rebuilds the largest document there is for no change in its content. A guard — rebuild only when
+  `VizViewY0`/`VizViewYH` have moved — removes it, and is not there because the standing call is to leave
+  optimisation until the functionality is finished.
+- **Tabs.** A tab in the source is one character in the document, and SVG's whitespace rules turn it into a
+  single space, so a tab-indented file would lose its column alignment. `.allspeak` files are space-indented
+  so nothing in the tool shows it; `as_condition.py`, which is what the redacted picture is of, is not.
+- **The cost of a live pan** — the drag redraws on every drag event, so the picture follows the pointer at a
+  few frames a second on a big recording. Graham's call (2026-09-30): leave it until the functionality is
+  finished. The fix, if it reads badly then, is to translate the five path attributes with an SVG
+  `transform` during the drag and redraw once on release.
 - The ramp's bottom end: with a band size of 1 a once-visited line lands in band 1, so a quiet run shows
   amber for its least-worked lines. One line to change (`take 1 from VizCount` before the division), and it
   moves every boundary; the legend makes either choice legible.
@@ -154,7 +331,8 @@ every reading is the pack's own local word. `asedit` still compiles at 1716 comm
   options are in `DIFF.md`; the recommendation is to have `deploy-sync` refresh `deploy/code/` from the root,
   so the local published copy cannot be stale *and* so `BUILD.md`'s claim that the `cp` step is enough
   becomes true. Publishing to the live site is still `./deploy-allspeak`.
-- The size of a mark — settled in code at 14 units, one line if he wants it tuned.
+- The size of a mark — settled in code at 14 units, one line if he wants it tuned. It does not shrink as the
+  window narrows, which is deliberate: a mark has to stay legible to be a mark.
 - The provisional fr/it/de words for `wheel`, `amount`, `shift`, `control` and `svgimage`, and the
   `reverseWord` line in the svg plugin's `getHandler` — all awaiting his eye.
 

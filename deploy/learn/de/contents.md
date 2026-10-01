@@ -30,6 +30,7 @@ Siehe [README.md](../README.md) für die Nutzung dieses Kurses und das Hinzufüg
 17. [Entwicklungsbefehle](reference/17-dev-environment.md) — `system`, `download`, `browse` der Python-Laufzeit für Shell, Abruf und Tab-Start.
 18. [JSON](reference/18-json.md) — `save` kodiert dict/Liste automatisch ; `ergänze … zur json-Datei` ; `json von` für das Parsen ; der Elternverzeichnis-Vorbehalt.
 19. [Testen](reference/19-testing.md) — `check`-Prüfungen, `test … ende test`-Fälle, Fehlerklauseln, der `--test`-Laufmodus und Exit-Codes.
+20. [Stilkonventionen](reference/21-house-style.md) — wohin `beginn` und `ende` gehören, und wie eine lange Anweisung gebrochen wird.
 
 ## Idiome
 

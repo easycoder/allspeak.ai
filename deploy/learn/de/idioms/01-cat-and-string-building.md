@@ -39,8 +39,10 @@ Benachbarte Werte ohne `cat` dazwischen werden nicht implizit verbunden. AllSpea
 ```as
 setze Count zu 7
 lege `Du hast ` cat Count cat ` Nachrichten.` in Status
-lege `Protokolliert um ` cat der zeitstempel
-    cat ` — Namensfeld: ` cat der inhalt von Name in Log
+lege `Protokolliert um `
+    cat der zeitstempel
+    cat ` — Namensfeld: `
+    cat der inhalt von Name in Log
 ```
 
 Zahlen werden sofort in ihre Textform umgewandelt. `Status` ist jetzt `` `Du hast 7 Nachrichten.` ``.
@@ -109,19 +111,23 @@ Konstante Fragmente in Backticks, variable Einschübe mit `cat` dazwischen, in e
 lege `Benutzer ` cat UserName cat ` (id ` cat UserId cat `) angemeldet um ` cat Time in LogLine
 ```
 
-Für lange Vorlagen brich an den `cat`-Grenzen in neue Zeilen um:
+Für lange Vorlagen brich an den `cat`-Grenzen in neue Zeilen um — und wo eine Verbindung mehrere `cat` hat, bekommt jedes seine eigene Zeile, was die [Stilkonvention](../reference/house-style.md) ist:
 
 ```as
-lege `Benutzer ` cat UserName
-    cat ` (id ` cat UserId
-    cat `) angemeldet um ` cat Time
+lege `Benutzer `
+    cat UserName
+    cat ` (id `
+    cat UserId
+    cat `) angemeldet um `
+    cat Time
     in LogLine
 ```
 
-Das `cat` am Anfang einer Fortsetzungszeile ist ein normales Token — AllSpeak kümmert sich nicht um Zeilenumbrüche innerhalb einer Anweisung, nur um Leerraum zwischen Token.
+Das `cat` am Anfang einer Fortsetzungszeile ist ein normales Token — AllSpeak kümmert sich nicht um Zeilenumbrüche innerhalb einer Anweisung, nur um Leerraum zwischen Token. Ein Fragment pro Zeile bringt außerdem das, was mit `cat` schiefgeht — ein fehlendes `cat` oder ein führendes — an den linken Rand der Seite, wo ein Blick es findet.
 
 ## Siehe auch
 
 - [Symbole und Layout](../reference/symbols-and-layout.md) — Backtick-Syntax und die Mehrzeilen-Regel.
+- [Stilkonventionen](../reference/house-style.md) — ein `cat` pro Zeile, und wohin `beginn` und `ende` gehören.
 - [Zeichenketten und Text](../reference/strings-and-text.md) — Zeichenketten-Operationen (`ersetze`, länge von, position von).
 - [Variablen und Arrays](../reference/variables-and-arrays.md) — was interpoliert wird.

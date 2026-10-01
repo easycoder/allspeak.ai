@@ -108,7 +108,7 @@ Main:
     ferma
 ```
 
-Se preferisci che `inizio` e `fine` abbiano indentazioni abbinate — una preferenza comune presa in prestito da altri linguaggi — metti `inizio` su una riga sua:
+Le convenzioni di stile danno a `inizio` una riga sua, all'indentazione dell'istruzione che possiede il blocco — vedi [convenzioni di stile](house-style.md) per le ragioni e per l'unica eccezione (`altrimenti inizio`) :
 
 ```as
 Main:
@@ -121,7 +121,7 @@ Main:
     ferma
 ```
 
-Entrambe le forme compilano. Scegline una e usala in modo coerente in tutto lo script.
+Entrambe le forme compilano. Scegline una e usala in modo coerente in tutto lo script — le convenzioni di stile sono la seconda.
 
 Il compilatore tollera gli spazi bianchi, ma un layout coerente è essenziale per la revisione. I blocchi disallineati sono un forte segnale di errore strutturale — soprattutto nel codice generato dall'IA.
 

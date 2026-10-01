@@ -39,8 +39,10 @@ Adjacent values without `cat` between them are not implicitly joined. AllSpeak h
 ```as
 set Count to 7
 put `You have ` cat Count cat ` messages.` into Status
-put `Logged at ` cat the timestamp
-    cat ` — Name field: ` cat the content of Name into Log
+put `Logged at `
+    cat the timestamp
+    cat ` — Name field: `
+    cat the content of Name into Log
 ```
 
 Numbers are converted to their textual form on the spot. `Status` is now `` `You have 7 messages.` ``.
@@ -109,19 +111,23 @@ Constant fragments inside backticks, variable inserts with `cat` between, in one
 put `User ` cat UserName cat ` (id ` cat UserId cat `) logged in at ` cat Time into LogLine
 ```
 
-For long templates, break across lines at `cat` boundaries:
+For long templates, break across lines at `cat` boundaries — and where a join has several `cat`s, give each its own line, which is the [house style](../reference/house-style.md):
 
 ```as
-put `User ` cat UserName
-    cat ` (id ` cat UserId
-    cat `) logged in at ` cat Time
+put `User `
+    cat UserName
+    cat ` (id `
+    cat UserId
+    cat `) logged in at `
+    cat Time
     into LogLine
 ```
 
-The `cat` at the start of a continuation line is a normal token — AllSpeak doesn't care about line breaks inside a statement, only about whitespace between tokens.
+The `cat` at the start of a continuation line is a normal token — AllSpeak doesn't care about line breaks inside a statement, only about whitespace between tokens. One fragment per line also puts what goes wrong with `cat` — a missing `cat`, or a leading one — at the left edge of the page, where a glance finds it.
 
 ## Related
 
 - [symbols-and-layout](../reference/symbols-and-layout.md) — backtick syntax and the multi-line rule.
+- [house style](../reference/house-style.md) — one `cat` per line, and where `begin` and `end` go.
 - [strings-and-text](../reference/strings-and-text.md) — string operations (`replace`, length-of, position-of).
 - [variables-and-arrays](../reference/variables-and-arrays.md) — what's being interpolated.

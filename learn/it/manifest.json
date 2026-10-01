@@ -97,6 +97,11 @@
       "title": "Test"
     },
     {
+      "slug": "house-style",
+      "path": "reference/21-house-style.md",
+      "title": "Convenzioni di stile"
+    },
+    {
       "slug": "cat-and-string-building",
       "path": "idioms/01-cat-and-string-building.md",
       "title": "cat e costruzione di stringhe"

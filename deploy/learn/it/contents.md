@@ -30,6 +30,7 @@ Vedi [README.md](../README.md) per come consultare questo corso e come aggiunger
 17. [Comandi dell'ambiente di sviluppo](reference/17-dev-environment.md) — `system`, `download`, `browse` del runtime Python per shell, recupero e apertura di schede.
 18. [JSON](reference/18-json.md) — `save` codifica automaticamente dict/liste ; `accoda … al file json` ; `json di` per l'analisi ; la riserva della cartella padre.
 19. [Test](reference/19-testing.md) — asserzioni `check`, casi `test … fine test`, clausole di fallimento, la modalità di esecuzione `--test` e i codici di uscita.
+20. [Convenzioni di stile](reference/21-house-style.md) — dove mettere `inizio` e `fine`, e come spezzare un'istruzione lunga su più righe.
 
 ## Idiomi
 

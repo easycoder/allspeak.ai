@@ -25,7 +25,7 @@ solange N ist kleiner als 5 beginn
 ende
 ```
 
-Ein `beginn … ende`-Block ist für den Parser eine Anweisung; der Rumpf darin ist sequenziell. Siehe [Symbole und Layout](symbols-and-layout.md) für den alternativen Stil, bei dem `beginn` auf einer eigenen Zeile mit passender Einrückung steht.
+Ein `beginn … ende`-Block ist für den Parser eine Anweisung; der Rumpf darin ist sequenziell. Die Stilkonventionen setzen `beginn` auf eine eigene Zeile, auf der Einrückung der Anweisung, zu der es gehört — siehe [Stilkonventionen](house-style.md).
 
 ## `wenn` / `sonst`
 

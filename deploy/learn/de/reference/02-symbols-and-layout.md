@@ -108,7 +108,7 @@ Main:
     stoppe
 ```
 
-Wenn du bevorzugst, dass `beginn` und `ende` übereinstimmende Einrückungen haben — eine verbreitete Vorliebe, die aus anderen Sprachen übernommen wurde —, setze `beginn` auf eine eigene Zeile:
+Die Stilkonventionen geben `beginn` eine eigene Zeile, auf der Einrückung der Anweisung, der der Block gehört — siehe [Stilkonventionen](house-style.md) für die Gründe und für die einzige Ausnahme (`sonst beginn`):
 
 ```as
 Main:
@@ -121,7 +121,7 @@ Main:
     stoppe
 ```
 
-Beide Formen kompilieren. Wähle eine und verwende sie durchgängig in einem Skript.
+Beide Formen kompilieren. Wähle eine und verwende sie durchgängig in einem Skript — die Stilkonventionen sind die zweite.
 
 Der Compiler ist tolerant gegenüber Leerraum, aber konsistentes Layout ist für die Prüfbarkeit unerlässlich. Fehlausgerichtete Blöcke sind ein starkes Signal für strukturelle Fehler — insbesondere bei KI-generiertem Code.
 

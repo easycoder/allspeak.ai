@@ -39,8 +39,10 @@ Des valeurs adjacentes sans `cat` entre elles ne sont pas jointes implicitement.
 ```as
 définis Count à 7
 mets `Vous avez ` cat Count cat ` messages.` dans Status
-mets `Journalisé à ` cat l horodatage
-    cat ` — champ Nom : ` cat le contenu de Name dans Log
+mets `Journalisé à `
+    cat l horodatage
+    cat ` — champ Nom : `
+    cat le contenu de Name dans Log
 ```
 
 Les nombres sont convertis en leur forme textuelle sur-le-champ. `Status` vaut maintenant `` `Vous avez 7 messages.` ``.
@@ -109,19 +111,23 @@ Des fragments constants entre apostrophes inversées, des insertions de variable
 mets `Utilisateur ` cat UserName cat ` (id ` cat UserId cat `) s'est connecté à ` cat Time dans LogLine
 ```
 
-Pour les longs gabarits, coupe les lignes aux frontières de `cat` :
+Pour les longs gabarits, coupe les lignes aux frontières de `cat` — et quand une jonction comporte plusieurs `cat`, donne à chacun sa ligne, ce qui est la [convention de style](../reference/house-style.md) :
 
 ```as
-mets `Utilisateur ` cat UserName
-    cat ` (id ` cat UserId
-    cat `) s'est connecté à ` cat Time
+mets `Utilisateur `
+    cat UserName
+    cat ` (id `
+    cat UserId
+    cat `) s'est connecté à `
+    cat Time
     dans LogLine
 ```
 
-Le `cat` en début de ligne de continuation est un jeton normal — AllSpeak ne se soucie pas des sauts de ligne dans une instruction, seulement des espaces entre les jetons.
+Le `cat` en début de ligne de continuation est un jeton normal — AllSpeak ne se soucie pas des sauts de ligne dans une instruction, seulement des espaces entre les jetons. Un fragment par ligne place aussi ce qui rate avec `cat` — un `cat` manquant, ou un `cat` en tête — au bord gauche de la page, là où un coup d'œil le trouve.
 
 ## À voir aussi
 
 - [symbols-and-layout](../reference/symbols-and-layout.md) — la syntaxe des apostrophes inversées et la règle multi-lignes.
+- [conventions de style](../reference/house-style.md) — un `cat` par ligne, et où placer `début` et `fin`.
 - [strings-and-text](../reference/strings-and-text.md) — les opérations sur les chaînes (`remplace`, longueur de, position de).
 - [variables-and-arrays](../reference/variables-and-arrays.md) — ce qui est interpolé.

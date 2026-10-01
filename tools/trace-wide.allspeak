@@ -1,0 +1,211 @@
+!   trace-wide.allspeak — a third instrumented script, for a recording that spans many lines.
+!
+!   `trace-run.allspeak` spans twenty lines and `trace-fixture.allspeak` three, which is enough to
+!   say the recorder works and not enough to exercise a zoom: the Graph pane will not zoom in past
+!   the point where a source line is already as tall as the text is drawn, so a short run has no
+!   vertical zoom in it at all. This one walks a chain of labels across the whole file, skipping
+!   every fifth jump and calling out to a helper on every seventh step, so the recording carries
+!   calls and returns as well as anchors.
+!
+!       python3 tools/asviz-run.py --run --trace=/tmp/trace-wide.json tools/trace-wide.allspeak
+
+    variable N
+Main:
+    put 0 into N
+    viz start
+    go to Step01
+
+Step01:
+    add 1 to N
+    go to Step02
+
+Step02:
+    add 1 to N
+    go to Step03
+
+Step03:
+    add 1 to N
+    go to Step04
+
+Step04:
+    add 1 to N
+    go to Step05
+
+Step05:
+    add 1 to N
+    go to Step07
+
+Step07:
+    add 1 to N
+    gosub to Helper
+    go to Step08
+
+Step08:
+    add 1 to N
+    go to Step09
+
+Step09:
+    add 1 to N
+    go to Step10
+
+Step10:
+    add 1 to N
+    go to Step12
+
+Step12:
+    add 1 to N
+    go to Step13
+
+Step13:
+    add 1 to N
+    go to Step14
+
+Step14:
+    add 1 to N
+    gosub to Helper
+    go to Step15
+
+Step15:
+    add 1 to N
+    go to Step17
+
+Step17:
+    add 1 to N
+    go to Step18
+
+Step18:
+    add 1 to N
+    go to Step19
+
+Step19:
+    add 1 to N
+    go to Step20
+
+Step20:
+    add 1 to N
+    go to Step22
+
+Step22:
+    add 1 to N
+    go to Step23
+
+Step23:
+    add 1 to N
+    go to Step24
+
+Step24:
+    add 1 to N
+    go to Step25
+
+Step25:
+    add 1 to N
+    go to Step27
+
+Step27:
+    add 1 to N
+    go to Step28
+
+Step28:
+    add 1 to N
+    gosub to Helper
+    go to Step29
+
+Step29:
+    add 1 to N
+    go to Step30
+
+Step30:
+    add 1 to N
+    go to Step32
+
+Step32:
+    add 1 to N
+    go to Step33
+
+Step33:
+    add 1 to N
+    go to Step34
+
+Step34:
+    add 1 to N
+    go to Step35
+
+Step35:
+    add 1 to N
+    gosub to Helper
+    go to Step37
+
+Step37:
+    add 1 to N
+    go to Step38
+
+Step38:
+    add 1 to N
+    go to Step39
+
+Step39:
+    add 1 to N
+    go to Step40
+
+Step40:
+    add 1 to N
+    go to Step42
+
+Step42:
+    add 1 to N
+    gosub to Helper
+    go to Step43
+
+Step43:
+    add 1 to N
+    go to Step44
+
+Step44:
+    add 1 to N
+    go to Step45
+
+Step45:
+    add 1 to N
+    go to Step47
+
+Step47:
+    add 1 to N
+    go to Step48
+
+Step48:
+    add 1 to N
+    go to Step49
+
+Step49:
+    add 1 to N
+    gosub to Helper
+    go to Step50
+
+Step50:
+    add 1 to N
+    go to Step52
+
+Step52:
+    add 1 to N
+    go to Step53
+
+Step53:
+    add 1 to N
+    go to Step54
+
+Step54:
+    add 1 to N
+    go to Step55
+
+Step55:
+    add 1 to N
+    go to Done
+
+Done:
+    viz stop
+    print N
+    stop
+
+Helper:
+    add 1 to N
+    return

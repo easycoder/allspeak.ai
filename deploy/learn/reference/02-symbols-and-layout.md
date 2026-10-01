@@ -108,7 +108,7 @@ Main:
     stop
 ```
 
-If you prefer `begin` and `end` to have matching indents — a common preference borrowed from other languages — put `begin` on its own line:
+The house style gives `begin` a line of its own, at the indent of the statement that owns the block — see [house style](house-style.md) for the reasons, and for the one exception (`else begin`):
 
 ```as
 Main:
@@ -121,7 +121,7 @@ Main:
     stop
 ```
 
-Either form compiles. Pick one and use it consistently throughout a script.
+Either form compiles. Pick one and use it consistently throughout a script — the house style is the second.
 
 The compiler is tolerant of whitespace, but consistent layout is essential for reviewability. Misaligned blocks are a strong signal of structural error — particularly in AI-generated code.
 

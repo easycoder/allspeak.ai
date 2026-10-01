@@ -25,7 +25,7 @@ while N is less than 5 begin
 end
 ```
 
-A `begin … end` block is one statement to the parser; the body inside it is sequential. See [symbols-and-layout](symbols-and-layout.md) for the alternative style where `begin` sits on its own line with matching indentation.
+A `begin … end` block is one statement to the parser; the body inside it is sequential. The house style puts `begin` on a line of its own, at the indent of the statement it belongs to — see [house style](house-style.md).
 
 ## `if` / `else`
 

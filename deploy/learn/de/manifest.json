@@ -97,6 +97,11 @@
       "title": "Testen"
     },
     {
+      "slug": "house-style",
+      "path": "reference/21-house-style.md",
+      "title": "Stilkonventionen"
+    },
+    {
       "slug": "cat-and-string-building",
       "path": "idioms/01-cat-and-string-building.md",
       "title": "cat und Zeichenkettenaufbau"

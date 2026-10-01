@@ -108,7 +108,7 @@ Main:
     arrête
 ```
 
-Si tu préfères que `début` et `fin` aient des indentations assorties — une préférence courante empruntée à d'autres langages — mets `début` sur sa propre ligne :
+Les conventions de style donnent à `début` une ligne à lui, à l'indentation de l'instruction qui possède le bloc — voir [conventions de style](house-style.md) pour les raisons et pour la seule exception (`sinon début`) :
 
 ```as
 Main:
@@ -121,7 +121,7 @@ Main:
     arrête
 ```
 
-Les deux formes compilent. Choisis-en une et applique-la de façon cohérente dans tout le script.
+Les deux formes compilent. Choisis-en une et applique-la de façon cohérente dans tout le script — les conventions de style, c'est la seconde.
 
 Le compilateur tolère les espaces, mais une mise en page cohérente est essentielle pour la relecture. Des blocs désalignés sont un signal fort d'erreur structurelle — en particulier dans le code généré par IA.
 

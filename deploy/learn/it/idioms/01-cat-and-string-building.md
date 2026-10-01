@@ -39,8 +39,10 @@ I valori adiacenti senza `cat` tra loro non vengono uniti implicitamente. AllSpe
 ```as
 imposta Count a 7
 metti `Hai ` cat Count cat ` messaggi.` in Status
-metti `Registrato alle ` cat il timestamp
-    cat ` — Campo nome: ` cat il contenuto di Name in Log
+metti `Registrato alle `
+    cat il timestamp
+    cat ` — Campo nome: `
+    cat il contenuto di Name in Log
 ```
 
 I numeri vengono convertiti nella loro forma testuale al momento. `Status` ora è `` `Hai 7 messaggi.` ``.
@@ -109,19 +111,23 @@ Frammenti costanti dentro i backtick, inserimenti di variabili con `cat` in mezz
 metti `Utente ` cat UserName cat ` (id ` cat UserId cat `) ha effettuato l'accesso alle ` cat Time in LogLine
 ```
 
-Per i template lunghi, vai a capo in corrispondenza dei `cat`:
+Per i template lunghi, vai a capo in corrispondenza dei `cat` — e dove una giunzione ha più `cat`, dà a ciascuno la sua riga, che è la [convenzione di stile](../reference/house-style.md):
 
 ```as
-metti `Utente ` cat UserName
-    cat ` (id ` cat UserId
-    cat `) ha effettuato l'accesso alle ` cat Time
+metti `Utente `
+    cat UserName
+    cat ` (id `
+    cat UserId
+    cat `) ha effettuato l'accesso alle `
+    cat Time
     in LogLine
 ```
 
-Il `cat` all'inizio di una riga di continuazione è un token normale — ad AllSpeak non importano gli a capo dentro un'istruzione, solo gli spazi tra i token.
+Il `cat` all'inizio di una riga di continuazione è un token normale — ad AllSpeak non importano gli a capo dentro un'istruzione, solo gli spazi tra i token. Un frammento per riga mette anche ciò che sbaglia con `cat` — un `cat` mancante, o un `cat` in testa — al bordo sinistro della pagina, dove basta uno sguardo.
 
 ## Correlati
 
 - [simboli e layout](../reference/symbols-and-layout.md) — la sintassi dei backtick e la regola delle righe multiple.
+- [convenzioni di stile](../reference/house-style.md) — un `cat` per riga, e dove mettere `inizio` e `fine`.
 - [stringhe e testo](../reference/strings-and-text.md) — le operazioni sulle stringhe (`sostituisci`, lunghezza di, posizione di).
 - [variabili e array](../reference/variables-and-arrays.md) — che cosa viene interpolato.
