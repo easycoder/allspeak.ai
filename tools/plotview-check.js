@@ -1366,6 +1366,47 @@ if (!marks.length) {
 	}
 }
 
+// **Two dots on one row, told apart by their number.** Along a row every dot names the same line and so
+// the same doc block, which is exactly what cannot distinguish them; what differs is *which arrival* each
+// one is, and that is the count the dot's own colour is drawn from. So the check takes a row carrying more
+// than one mark, presses its first and its last, and asks that the numbers differ, rise along the row, and
+// agree about how many times the line ran. A pane that reported the line and nothing else — which is what
+// it did until the status bar was asked for — passes every other check in this file.
+const rowWithTwo = (() => {
+	const byY = new Map();
+	for (const [x, y] of allMarks()) {
+		if (!byY.has(y)) byY.set(y, []);
+		byY.get(y).push(x);
+	}
+	const rows = [...byY.entries()].filter(([, xs]) => xs.length > 1)
+		.map(([y, xs]) => ({ y, xs: xs.sort((a, b) => a - b) }));
+	return rows.length ? rows[0] : null;
+})();
+if (!rowWithTwo) {
+	console.log(`  ..: no row here carries two marks, so there is nothing on a row to tell apart`);
+} else {
+	const visitOf = x => {
+		pressAt(x, rowWithTwo.y);
+		return {
+			x,
+			line: Number(viewVar(`VizHit`)),
+			visit: Number(viewVar(`VizHitVisit`)),
+			total: Number(viewVar(`VizHitTotal`)),
+		};
+	};
+	const first = visitOf(rowWithTwo.xs[0]);
+	const last = visitOf(rowWithTwo.xs[rowWithTwo.xs.length - 1]);
+	const told = first.line === last.line && first.line > 0
+		&& first.visit >= 1 && last.visit > first.visit && first.total === last.total && first.total >= last.visit;
+	console.log(told
+		? `  OK: two dots on one row are told apart by their visit number `
+			+ `(line ${first.line}: x=${first.x} is visit ${first.visit}, x=${last.x} is visit ${last.visit}, `
+			+ `both of ${first.total})`
+		: `  FAIL: the dots on row y=${rowWithTwo.y} reported line ${first.line}/${last.line}, `
+			+ `visits ${first.visit}/${last.visit}, totals ${first.total}/${last.total} — they should share `
+			+ `a line and a total, and rise along the row`);
+}
+
 // What it asked the DOM for, and what the layers actually contain.
 console.log(`\nDOM: ${created.length} element(s)`);
 for (const [parent, child] of created) console.log(`  ${parent} <- ${child}`);

@@ -51,7 +51,7 @@ const mk = tag => {
 		removeChild() {}, replaceChild() {},
 		setAttribute(k, v) {
 			this.attributes[k] = String(v);
-			if (k === `id`) { this.id = String(v); byId[this.id] = this; }
+			if (k === `id`) this.id = String(v);
 		},
 		getAttribute(k) { return this.attributes[k]; },
 		removeAttribute(k) { delete this.attributes[k]; },
@@ -61,6 +61,13 @@ const mk = tag => {
 		setSelectionRange: noop, scrollIntoView: noop,
 		querySelector: () => null, querySelectorAll: () => [],
 		getElementsByTagName: () => [],
+		// **The id registers however it is set.** The runtime's `create` gives a new element its id by
+		// *assignment* (`element.id = ec-…`), where the svg plugin uses `setAttribute` — and this stub used
+		// to register only the second, so every element the editor or a module *created* was invisible to
+		// `byId` while every element the JSON renderer made was not. A browser answers for both, and a
+		// check that looks an element up by id is a check on what a reader would see.
+		get id() { return this.attributes.id || ``; },
+		set id(v) { this.attributes.id = String(v); byId[String(v)] = this; },
 		// A box a check can set, so an element's size is its own rather than every element being the whole
 		// window: the splitter arithmetic reads the widths either side of it, and a stub that gave them all
 		// the same one could not tell a sidebar from the area it sits in.
@@ -458,6 +465,12 @@ const sideValue = name => {
 	const v = record && record.value && record.value[record.index];
 	return v ? v.content : undefined;
 };
+// A panel element's text, found by the name the module gave it: the elements it builds are its own, so
+// they are looked up the way the view's are in `plotview-check` — by prefix, since the plugin numbers them.
+const sideElText = prefix => {
+	const el = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(prefix));
+	return el ? el.innerHTML : undefined;
+};
 const sideLoaded = await waitFor(() => valueOf(`SideLoaded`) === 1 && !!side());
 check(sideLoaded, `the sidebar loads as a second module beside the pane (SideLoaded=${valueOf(`SideLoaded`)}, program=${!!side()})`);
 // Its own handler, by the same rule the editor's is checked against: a handler runs only if its line was
@@ -562,18 +575,24 @@ const modelled = await waitFor(() => Number(valueOf(`SecCount`)) === 2);
 check(modelled, `entering the pane builds the section model for the file being reviewed (SecCount=${valueOf(`SecCount`)})`);
 // **The report is delivered as the dict the pane actually sends, and that is the point of it.** A dict in
 // this language is a *JSON string* in a variable, so `send VizMark to parent` puts
-// `{"kind":"mark","line":N}` into `message` — not a number. The first version of this check put a bare
-// number there, which is kinder than reality in exactly the way that cost an afternoon: the handler was
-// written to convert its message rather than to read its property, the check agreed with it, and the
-// editor threw in the browser on the first real click. Anything a `send` can carry, this must carry too.
-const report = line => `{"kind":"mark","line":${line}}`;
-program.message = report(12);
+// `{"kind":"mark","line":N,"visit":V,"total":T}` into `message` — not a number. The first version of this
+// check put a bare number there, which is kinder than reality in exactly the way that cost an afternoon:
+// the handler was written to convert its message rather than to read its property, the check agreed with
+// it, and the editor threw in the browser on the first real click. Anything a `send` can carry, this must
+// carry too — which is why the visit figures are here as well, the moment the pane began sending them.
+const report = (line, visit, total) =>
+	`{"kind":"mark","line":${line},"visit":${visit},"total":${total}}`;
+program.message = report(12, 3, 7);
 run(`SideMarkLine`);
 const relayed = await waitFor(() => Number(sideValue(`SideLine`)) === 12);
 check(relayed, `a line the pane reports is looked up here and shown in the sidebar (line=${sideValue(`SideLine`)}, found=${sideValue(`SideFound`)})`);
 check(sideValue(`SideFound`) === 1 && sideValue(`SideTitle`) === `2. The second block, and this one holds line twelve.`,
 	`and the block it names is the one holding that line, numbered as Blocks numbers it (${JSON.stringify(sideValue(`SideTitle`))})`);
-program.message = report(5);
+// **The mark's own figures reach the panel's status bar**, which is the one thing that can tell two dots
+// on a row apart — they share a line and so a block, and differ only in which arrival they are.
+check(String(sideElText(`ec-SideStatus`)).includes(`3 of 7`),
+	`and the mark's visit number lands in the panel's status bar (${JSON.stringify(sideElText(`ec-SideStatus`))})`);
+program.message = report(5, 1, 4);
 run(`SideMarkLine`);
 const firstBlock = await waitFor(() => Number(sideValue(`SideLine`)) === 5);
 check(firstBlock && sideValue(`SideFound`) === 1 && sideValue(`SideTitle`) === `1. The first block, and this line is its title.`,
@@ -581,11 +600,15 @@ check(firstBlock && sideValue(`SideFound`) === 1 && sideValue(`SideTitle`) === `
 // A line in *no* block is an answer rather than a failure: the code before the first doc block, and
 // between two of them, is outside the convention by design, and saying so beats showing the last block
 // somebody looked at.
-program.message = report(20);
+program.message = report(20, 2, 2);
 run(`SideMarkLine`);
 const outside = await waitFor(() => Number(sideValue(`SideLine`)) === 20);
 check(outside && sideValue(`SideFound`) === 0,
 	`and a line in no block says so rather than leaving the last one up (found=${sideValue(`SideFound`)})`);
+// **And the status bar still says its piece**, which is the point of it being about the mark rather than
+// about the block: a line with no doc block still had its second visit.
+check(String(sideElText(`ec-SideStatus`)).includes(`2 of 2`),
+	`with the mark's own figures still in the status bar, because they are about the mark (${JSON.stringify(sideElText(`ec-SideStatus`))})`);
 
 // The caret and the view, remembered on the way in and put back on the way out — as a pair, and with
 // the caret written before the view so that neither can drag the other.

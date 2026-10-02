@@ -104,6 +104,8 @@
     variable SideLoaded     ! 1 once it is running
     variable SideIn         ! the dict the pane reported, as it arrived
     variable SideSel        ! the line the pane last reported, which is what the sidebar is about
+    variable SideVisit      ! which arrival on that line the clicked dot was
+    variable SideTotal      ! how many arrivals that line had in the whole recording
     variable SideMsg        ! the dict sent to the sidebar: which kind of news, and what it is
     variable SideFound      ! 1 if a doc block holds that line
     variable SideTitle      ! the block's first prose line, for the sidebar's heading
@@ -194,8 +196,8 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash f60e0a6d
-!! @verified f60e0a6d
+!! @hash b3977d8a
+!! @verified b3977d8a
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -1950,6 +1952,11 @@ SideMarkLine:
     ! block. The one honest spelling is the property, because the property is what the pane set.
     put the message into SideIn
     put property `line` of SideIn into SideSel
+    ! The mark's own figures, which are the pane's to count and this file's only to pass on. They are read
+    ! here rather than in `SendBlockToSide` because they belong to the *click* and not to the block: a line
+    ! in no doc block still has a visit number, and the status bar shows it either way.
+    put property `visit` of SideIn into SideVisit
+    put property `total` of SideIn into SideTotal
     gosub to SideFindBlock
     gosub to SendBlockToSide
     stop
@@ -1993,10 +2000,12 @@ SendBlockToSide:
         log `sidebar: not loaded, so the block for line ` cat SideSel cat ` has nowhere to go`
         return
     end
-    log `sidebar: line ` cat SideSel cat ` found=` cat SideFound cat ` title=` cat SideTitle
+    log `sidebar: line ` cat SideSel cat ` visit ` cat SideVisit cat ` of ` cat SideTotal cat ` found=` cat SideFound cat ` title=` cat SideTitle
     put `{}` into SideMsg
     set property `kind` of SideMsg to `block`
     set property `line` of SideMsg to SideSel
+    set property `visit` of SideMsg to SideVisit
+    set property `total` of SideMsg to SideTotal
     set property `found` of SideMsg to SideFound
     set property `title` of SideMsg to SideTitle
     set property `prose` of SideMsg to SideProse
@@ -2021,6 +2030,6 @@ TellSideClosed:
     set property `open` of SideMsg to 0
     send SideMsg to SideModule
     return
-!! @hash b93cb6df
-!! @verified b93cb6df
+!! @hash c33ecd04
+!! @verified c33ecd04
 !!!

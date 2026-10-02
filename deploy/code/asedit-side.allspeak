@@ -23,6 +23,7 @@
     span SideHead           ! what the body is showing, as a line
     div SideProse           ! and the prose itself, in the reader's serif
     div SideHint            ! what stands in for both before a mark is clicked
+    div SideStatus          ! the strip along the foot: what the last clicked mark was
     variable SideBuilt      ! 1 once the elements exist, because a message can arrive twice
 !   -- the tabs --
     variable SideTabName    ! array: the label on each tab
@@ -35,6 +36,9 @@
     variable SideKind       ! `run` or `block`
     variable SidePath       ! the script or its recording, named for the reader
     variable SideLine       ! the line the clicked mark named
+    variable SideVisit      ! which arrival on that line the clicked mark was
+    variable SideTotal      ! how many arrivals that line had in the whole recording
+    variable SideStatusText ! scratch: the status line, assembled before it is put up
     variable SideFound      ! 1 if a doc block holds that line
     variable SideTitle      ! the block's heading, numbered as Blocks mode numbers it
     variable SideProseText  ! its prose
@@ -44,8 +48,8 @@
     on message go to SideMessage
     release parent
     stop
-!! @hash 2eeca3e5
-!! @verified 2eeca3e5
+!! @hash f7e2634f
+!! @verified f7e2634f
 !!!
 !! Building the panel, once, and the tabs as the one pool of elements they are.
 !!
@@ -82,6 +86,15 @@ SideBuild:
     create SideHint in SideBody
     set the style of SideHint to `color:#8a8a80;font-size:12px;font-style:italic;margin:14px 16px`
 
+    ! **The status bar, along the foot of the panel.** It is the one place a reader can be told something
+    ! about the *mark* rather than about the block the mark's line belongs to — and along a single row of
+    ! dots the block is the same for every one of them, so the block is exactly what cannot tell them
+    ! apart. Created after the body so it sits below it, and given a top border rather than a second
+    ! background: the panel is one surface, and a reader should see the bar as the panel's own foot, not as
+    ! a third thing wedged into it.
+    create SideStatus in SideHost
+    set the style of SideStatus to `border-top:1px solid #ddd;padding:6px 16px;font-size:12px;color:#666;flex-shrink:0;min-height:18px`
+
     ! The names first, then the strip built from them, so the strip and this list cannot disagree
     ! about how many tabs there are.
     put 1 into SideTabCount
@@ -105,8 +118,8 @@ SideBuild:
     end
     gosub to SideTabsDraw
     return
-!! @hash abc5520c
-!! @verified abc5520c
+!! @hash 8ee3c368
+!! @verified 8ee3c368
 !!!
 !! The tab strip's one piece of state, which is which tab is up.
 !!
@@ -138,6 +151,9 @@ SideTabClick:
 !!
 !! The hint is what the panel says whenever there is nothing to show, and it is the only thing in this module that tells a reader what the panel is for.
 SideRender:
+    ! The status bar first, and unconditionally: it is about the mark, not about the block, so it says its
+    ! piece whether or not the line turned out to be in one.
+    gosub to SideStatusDraw
     if SideKind is not `block` go to SideRenderHint
     if SideFound is 0 go to SideRenderOutside
     set the content of SideHead to SideTitle
@@ -156,8 +172,30 @@ SideRenderHint:
     set the content of SideProse to ``
     set the content of SideHint to `Click a mark in the picture to see the doc block its line belongs to.`
     return
-!! @hash edb50fbd
-!! @verified edb50fbd
+!! @hash b04946e6
+!! @verified b04946e6
+!!!
+!! The status bar: the one thing that tells two dots on a row apart.
+!!
+!! **It exists because the block cannot do this job.** Every dot along a row names the same line and so the same doc block; what differs is *which arrival* the dot is, and that is the count the dot's own colour is already drawn from — so the bar and the ramp are two readings of one number, and a reader who can see that a dot is redder than its neighbour can now read by how much.
+!!
+!! It is about the *mark* and not about the block, which is why it is drawn regardless of whether a block was found: a line in no doc block still had its third visit, and saying so is more use than an empty bar. The line's total goes in the same breath — "visit 3" alone cannot be told from "visit 3 of 3" — and both come from the pane, which is the only one that can count them.
+!!
+!! The wording is the pane's own status line's: the subject first, then a group of figures, in plain words rather than symbols, because what a reader copies out of a status bar should still read as a sentence.
+SideStatusDraw:
+    if SideVisit is less than 1
+    begin
+        set the content of SideStatus to ``
+        return
+    end
+    put `line ` cat SideLine cat `   visit ` cat SideVisit into SideStatusText
+    ! The total can be missing — a report from a pane that did not count — and a bar reading "visit 3 of 0"
+    ! would be worse than one that says less.
+    if SideTotal is greater than 0 put SideStatusText cat ` of ` cat SideTotal into SideStatusText
+    set the content of SideStatus to SideStatusText
+    return
+!! @hash a41ba8ee
+!! @verified a41ba8ee
 !!!
 !! The boundary: one message in, and the module parks until the next one.
 !!
@@ -172,19 +210,24 @@ SideMessage:
     if property `open` of SideRun is 0 go to SideClosed
     put property `path` of SideRun into SidePath
     ! A new run clears whatever the last click left up, because the block it showed belonged to another
-    ! script — the picture has been replaced, and so has everything the sidebar was saying about it.
+    ! script — the picture has been replaced, and so has everything the sidebar was saying about it. The
+    ! mark's figures go with it: they counted a line in a run that is no longer on screen.
+    put 0 into SideVisit
+    put 0 into SideTotal
     gosub to SideRender
     stop
 
 SideBlockArrived:
     put property `line` of SideRun into SideLine
+    put property `visit` of SideRun into SideVisit
+    put property `total` of SideRun into SideTotal
     put property `found` of SideRun into SideFound
     put property `title` of SideRun into SideTitle
     put property `prose` of SideRun into SideProseText
     ! Said here as well as in the editor, so that the two halves of the relay can be told apart when only
     ! one of them is working: this line means the panel was reached, and its absence means the message
     ! never crossed. It names its own subject so a copied line still makes sense on its own.
-    log `sidebar: showing line ` cat SideLine cat ` found=` cat SideFound cat ` title=` cat SideTitle
+    log `sidebar: showing line ` cat SideLine cat ` visit ` cat SideVisit cat ` of ` cat SideTotal cat ` found=` cat SideFound cat ` title=` cat SideTitle
     gosub to SideRender
     stop
 
@@ -193,6 +236,6 @@ SideBlockArrived:
 !   reader returning to the same run expects.
 SideClosed:
     stop
-!! @hash 461c0cd1
-!! @verified 461c0cd1
+!! @hash 1d560b77
+!! @verified 1d560b77
 !!!

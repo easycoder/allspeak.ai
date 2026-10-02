@@ -237,7 +237,9 @@
     "box-sizing": "border-box",
     "background": "#f8f8f5",
     "color": "#222",
-    "overflow": "hidden"
+    "overflow": "hidden",
+    "display": "flex",
+    "flex-direction": "column"
   },
   "$GraphGrip": {
     "#element": "div",

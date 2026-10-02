@@ -4,7 +4,7 @@
 !!
 !! What it owns. Everything inside the pane, and the pane itself. The drawing and its state, the four gestures (the wheel scrolls the lines, shift-wheel zooms the lines, control-wheel the steps, a drag pans), the label names down the right-hand edge, the source drawn behind the heat, the key, the caption, the estimate shown before a long draw and the calibration file that estimate is learned from, and the status line for as long as it has something to say on it.
 !!
-!! What crosses the boundary, and what does not. One dict in: the run's text, the script's text, the three localised flow words, and the path the recording was expected at — the last only so that "no recording beside this script" can name the file it looked for. The gestures do not cross: pan and zoom are registered here, on the pane, because a message per drag event would put a round trip inside every pointer move. Nor does the pane's visibility, which is the editor's mode system to run — the editor says whether this pane is on screen, and the module's own `VizShown` is what its handlers consult, because that is the one thing it cannot see for itself. **One small dict goes the other way**, and only on a press: which line the mark under the pointer names. What a line *means* is the editor's model and the sidebar's to show, so the pane reports the line and decides nothing about it.
+!! What crosses the boundary, and what does not. One dict in: the run's text, the script's text, the three localised flow words, and the path the recording was expected at — the last only so that "no recording beside this script" can name the file it looked for. The gestures do not cross: pan and zoom are registered here, on the pane, because a message per drag event would put a round trip inside every pointer move. Nor does the pane's visibility, which is the editor's mode system to run — the editor says whether this pane is on screen, and the module's own `VizShown` is what its handlers consult, because that is the one thing it cannot see for itself. **One small dict goes the other way**, and only on a press: which line the mark under the pointer names, and — because a row of dots otherwise says the same thing however far along it a reader points — **which arrival that dot is on its line, and how many that line had**. The count is the one the dot's own colour is drawn from, so a reader comparing a pale dot with a red one in the same row is reading the number the report gives them. What a line *means* is the editor's model and the sidebar's to show, so the pane reports and decides nothing about it.
 !!
 !! Acquisition stays with the editor. The recording and the script are fetched there, because the editor is the one that knows which tab is open; this module fetches only what is its own, the calibration file, and never executes anything in order to draw a run.
 !   -- the module, and the pane it owns --
@@ -355,6 +355,12 @@ VizRemember:
     variable VizHitDy
     variable VizHitNear
     variable VizHitTmp
+    ! What the report says about the mark itself: how many arrivals this dot is on its line, and how many
+    ! that line had in the whole recording. `VizHitSeen` is the table the walk fills as it goes.
+    variable VizHitSeen
+    variable VizHitVisit
+    variable VizHitTotal
+    variable VizHitCount
     variable VizMark
     variable VizPixelsW
     variable VizPixelsH
@@ -472,8 +478,8 @@ Draw:
     put 1 into VizDrawing
     put json of VizTrace into VizParsed
     put property `traceEvents` of VizParsed into VizEvents
-!! @hash d9880210
-!! @verified d9880210
+!! @hash b9bb6a47
+!! @verified b9bb6a47
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
 !!
@@ -1683,6 +1689,14 @@ VizMarkAt:
     divide VizDotSize by 2 giving VizHitReach
     add 4 to VizHitReach
     put 0 into VizHitI
+    ! **The running count of arrivals on each line, counted here as the walk goes.** This is the number the
+    ! dot's colour is drawn from — the draw counts the same thing in the same order over the same events —
+    ! and it is the one thing that tells two dots on a row apart, since the line and the doc block they name
+    ! are identical. Counting it here rather than reading the draw's own table keeps the two halves of a
+    ! report (this arrival's number, and the line's total) from the same pass, so they can never disagree.
+    put json of `{}` into VizHitSeen
+    put 0 into VizHitVisit
+    put 0 into VizHitTotal
     while VizEvents has element VizHitI
     begin
         put element VizHitI of VizEvents into VizEvent
@@ -1696,6 +1710,14 @@ VizMarkAt:
             put VizTickPos into VizHitX
             put property `line` of VizArgs into VizLine
             add 0 to VizLine
+            ! This arrival's number on its line, which is the count *including* it: the first dot on a row
+            ! is visit 1. The guard mirrors the draw's, for the same reason — an absent property reads as
+            ! nothing at all rather than as zero, and one arithmetic step away from that is a number that
+            ! is not a count.
+            put property VizLine of VizHitSeen into VizHitCount
+            if VizHitCount is not greater than 0 put 0 into VizHitCount
+            add 1 to VizHitCount
+            set property VizLine of VizHitSeen to VizHitCount
             put VizLine into VizTickValue
             gosub to VizPlaceY
             put VizTickPos into VizHitY
@@ -1721,6 +1743,7 @@ VizMarkAt:
                         begin
                             put VizHitNear into VizHitDist
                             put VizLine into VizHit
+                            put VizHitCount into VizHitVisit
                         end
                     end
                 end
@@ -1742,9 +1765,14 @@ VizSelect:
     ! picture would otherwise clear the panel on its way past.
     gosub to VizMarkAt
     if VizHit is 0 return
+    ! The line's own total, read out of the table the walk filled: a reader told "visit 3" has no way to
+    ! know whether that is all of them or the third of forty, and the answer is already in hand.
+    put property VizHit of VizHitSeen into VizHitTotal
     put `{}` into VizMark
     set property `kind` of VizMark to `mark`
     set property `line` of VizMark to VizHit
+    set property `visit` of VizMark to VizHitVisit
+    set property `total` of VizMark to VizHitTotal
     send VizMark to parent
     return
 
@@ -1969,8 +1997,8 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 057331bc
-!! @verified 057331bc
+!! @hash 14f5b57b
+!! @verified 14f5b57b
 !!!
 !! And a doc block is not drawn in it.
 !!
