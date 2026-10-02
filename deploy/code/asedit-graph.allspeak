@@ -2,11 +2,11 @@
 !!
 !! The pane draws a run: a recording sitting beside a script, read as a sequence, as an arrival count per line, and as the flow between the marks. That is half of the editor by size, and none of it is needed until somebody looks at a run — so it is a module, fetched, compiled and run on the first click on **Graph**, and messaged from then on. The `svg` vocabulary is here rather than in the editor, and this is where the plugin is needed: the pane is compiled when it is fetched, which is why the page loads the plugin whether or not a run is ever opened.
 !!
-!! **What it owns.** Everything inside the pane, and the pane itself. The drawing and its state, the four gestures (the wheel scrolls the lines, shift-wheel zooms the lines, control-wheel the steps, a drag pans), the label names down the right-hand edge, the source drawn behind the heat, the key, the caption, the estimate shown before a long draw and the calibration file that estimate is learned from, and the status line for as long as it has something to say on it.
+!! What it owns. Everything inside the pane, and the pane itself. The drawing and its state, the four gestures (the wheel scrolls the lines, shift-wheel zooms the lines, control-wheel the steps, a drag pans), the label names down the right-hand edge, the source drawn behind the heat, the key, the caption, the estimate shown before a long draw and the calibration file that estimate is learned from, and the status line for as long as it has something to say on it.
 !!
-!! **What crosses the boundary, and what does not.** One dict in: the run's text, the script's text, the three localised flow words, and the path the recording was expected at — the last only so that "no recording beside this script" can name the file it looked for. Nothing else crosses. The gestures do not: pan and zoom are registered here, on the pane, because a message per drag event would put a round trip inside every pointer move. Nor does the pane's visibility, which is the editor's mode system to run — the editor says whether this pane is on screen, and the module's own `VizShown` is what its handlers consult, because that is the one thing it cannot see for itself.
+!! What crosses the boundary, and what does not. One dict in: the run's text, the script's text, the three localised flow words, and the path the recording was expected at — the last only so that "no recording beside this script" can name the file it looked for. Nothing else crosses. The gestures do not: pan and zoom are registered here, on the pane, because a message per drag event would put a round trip inside every pointer move. Nor does the pane's visibility, which is the editor's mode system to run — the editor says whether this pane is on screen, and the module's own `VizShown` is what its handlers consult, because that is the one thing it cannot see for itself.
 !!
-!! **Acquisition stays with the editor.** The recording and the script are fetched there, because the editor is the one that knows which tab is open; this module fetches only what is its own, the calibration file, and never executes anything in order to draw a run.
+!! Acquisition stays with the editor. The recording and the script are fetched there, because the editor is the one that knows which tab is open; this module fetches only what is its own, the calibration file, and never executes anything in order to draw a run.
 !   -- the module, and the pane it owns --
 
     script ASEditorGraph
@@ -42,8 +42,12 @@
 !   -- the boundary's own state --
     variable VizRun            ! the dict the editor sent, as it arrived
     variable VizShown          ! 1 while the editor has this pane on screen
-!! @hash 2e04588d
-!! @verified 2e04588d
+    ! What a drag is holding. Declared with the gestures rather than with the rest of the view's state
+    ! because the handlers below are the first thing in the file to read it, and a variable has to be
+    ! declared before the code that uses it.
+    variable VizSlide          ! 0 the picture, 1 the lines bar, 2 the steps bar
+!! @hash a04b40d6
+!! @verified a04b40d6
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
 !!
@@ -66,15 +70,15 @@
     end
     on drag
     begin
-        if VizShown is 1 gosub to VizPan
+        if VizShown is 1 gosub to VizDrag
     end
     on drop
     begin
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 5fac70dd
-!! @verified 57987619
+!! @hash 694e24d1
+!! @verified 694e24d1
 !!!
 !! The boundary: one message in, and the module parks until the next one.
 !!
@@ -111,7 +115,7 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 
-!! @hash 62a9fa44
+!! @hash 1d924ebf
 !! @verified 1d924ebf
 !!!
 !! The module's one message: take the run, or stand down.
@@ -135,9 +139,6 @@ VizOpen:
     put 1 into VizShown
     gosub to VizDrawRun
     stop
-!! @hash 6043ee4c
-!! @verified 6043ee4c
-!!!
 !   Nothing to draw, and the message names the file that was missing rather than what a marker is.
 !   A `return` rather than a `stop`: the entry called it with `gosub`, and the pane is left on screen
 !   with the status line saying why it is empty.
@@ -175,56 +176,20 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-
-!   Nothing to draw, and the message names the file that was missing rather than what a marker is.!! plotview.allspeak — the run as a picture, drawn in AllSpeak with the svg plugin.!! The third view's drawing, grown from the front. Plot-only on purpose: the editor already renders
-!! the script beside it, so this draws what the editor cannot — the sequence, the arrivals, and the
-!! flow between them.
+!! @hash 3d8ece61
+!! @verified 3d8ece61
+!!!
+!! The view itself: everything from here down is the drawing.
 !!
-!! **One path per kind of mark.** An AllSpeak element is a declared symbol, so a script cannot
-!! create N elements for N marks. What it can do is grow one path's `d` attribute by concatenation
-!! and let the browser draw the whole layer from it, so the marks cost string building rather than
-!! DOM nodes. A trace of 9 arrivals and 10 transfers is two elements. Per-mark colour would need one
-!! path per colour band, which is what the heat ramp will use.
+!! The third view's drawing, grown from the front. Plot-only on purpose: the editor already renders the script beside it, so this draws what the editor cannot — the sequence, the arrivals, and the flow between them.
 !!
-!! **Geometry is in viewBox units, and the run is shown through a window.** Nothing is measured in pixels: the frame is fixed at 1000x740 and the browser fits it to whatever panel it is given, which is what lets the whole script run against a stub DOM in node. What the window decides is *which part of the run* fills that frame. It starts fitted to the whole recording, so the first picture is the one this pane has always drawn; then the wheel scrolls it, shift and control zoom it on their own axes, the two together scroll it across, and a drag pans it. Graham's scheme, from Kdenlive and Audacity, with control added for the second axis.
-!!
-!! **The window is held as two ranges in the trace's own units, never as a scale factor.** A factor would have to be relative to a fit that changes with the recording, and an absolute one ends up pinned at one end — the prototype's own lesson, where the same control read 51.6 px a step for one window and 0.7 for another. Multiplying before dividing keeps that arithmetic exact, as it does for the marks.
-!!
-!! **The window doubles as the reset.** Both gestures clamp at the edges of the run, so zooming out returns to the whole picture and panning stops at its ends; there is no reset button to find. The window is fitted once per *recording* and kept across visits, so the pane comes back as it was left; opening a different run is what re-fits it, and `VizReset` is there for a host that wants to force one.
-!!
-!! **The gestures are four entry points, and this module registers them.** `VizGrab` on pick, `VizPan` on drag, `VizWheel` on wheel and `VizReset` when a run is opened afresh. They live here rather than with the editor because the window is the view's own state and the events arrive many times a second — the handlers are registered at the top of this file, on the pane, and never travel as messages.
-!!
-!! **The source is drawn behind the heat, once, and shown through a window.** An element is a declared symbol, so there cannot be one `svgtext` per source line — but one `<image>` carries the whole run, and its `href` is an SVG *document* the view builds itself out of `json split` and `replace`. That is why it is a document rather than a canvas raster: the language can already build one, so nothing new had to be invented to reach a canvas it has no words for, and it stays vector, so the text does not go soft past the scale it was rendered at.
-!!
-!! **And a doc block is not drawn in it.** Every line of the file keeps its row, and a line belonging to a doc block — the `!!` prose, the `@hash`/`@verified` pair, the `!!!` terminator — is drawn as an empty row. The picture is of the *program*, and on a file written to this convention the prose is longer than the code by a wide margin and buries the flow; a bare `!` comment is a note to the line beside it rather than a block, so it stays. Blanked rather than skipped, because the rows are what the axis, the rules and the marks line up with: the pane's numbering still matches the editor's, and that is what makes the two views comparable at all.
-!!
-!! **The picture never changes; the window over it does.** `VizPane` is a nested `<svg>` the size of the frame, and its `viewBox` is the whole of the zoom and the pan — one attribute per draw, and the picture itself is drawn once when the run is opened. That is what keeps the text the shape it was written in: a window whose aspect followed the zoom instead is what stretched the letters as you zoomed in. The pane's size being the frame is also the clipping, which is the one thing a picture cannot do for itself — an `<image>` either scales its content to its own box or is clipped by the outer viewport.
-!!
-!! **The source is anchored to the left edge of the pane, and it is the `viewBox`'s `x` that says so.** The window's `y` moves over the document as the lines move and its height is the vertical zoom, but its `x` is always zero: what the recording does cannot drag the source sideways. The left-hand end of a line is the part that says what the line is — the indentation and the first word — so losing sight of it is losing the reading, and the window's `x` used to be derived from the horizontal window, which is exactly what took it away whenever the run was panned along. The price is the tail of a line wider than the frame, which is not reachable on screen at all now: the frame shows about a hundred and ten columns at the legible floor, so most lines fit and a few do not.
-!!
-!! **A rule is a leader, and the flow is drawn in full and masked.** Each rule runs from one em past the last character of the line it names to the right-hand edge of the frame, so it points at its line instead of crossing it — the indentation and the first word are the part the eye reads first, and they are the part a rule drawn from the frame's left edge used to run straight through. And a transfer is drawn at its true ends whenever it *crosses* the window, the part outside the frame being cut off by the plot — a nested `<svg>` the size of the frame, the same mechanism the source picture is shown through. **Two earlier answers to this were wrong in the same way:** clamping each end to the frame put an end on a border rather than on a line, which reads as a fault; leaving the whole segment out then lost the fact itself, because a line leaving the frame is the only way a picture of a *sliced* run can say that control came from somewhere off-screen.
-!!
-!! **Every label is named at the right-hand edge, and the rules make room for it.** A label is a line at the left margin ending in a colon — the pane is given the script as text and nothing else, and the recording carries no label names, so `VizLabelCheck` is where a label is recognised — and its name, without the colon, is drawn level with its own line in a strong indigo the picture uses nowhere else. The rule for such a line stops one em short of the name, so the two read as a signpost beside the line rather than as one long line with a word on the end. It began as a diagnostic, at Graham's suggestion, to test whether the drawing and the text agreed about where a line is; it settled that, then caught a fault no check could see, and he kept it because a column of names down the edge is a way to navigate a long file — so it stays, and it stays honest about its origin.
-!!
-!! **The zoom stops where the text is drawn at its own size.** A source line is eighteen units tall, so a window of fewer than `VizGlyphRows` rows would only blow the text up, and there is nothing more to see. Applied before the clamp to the run, so a recording shorter than that many lines simply has no vertical zoom — the whole run is already legible and there is nothing to zoom into.
-!!
-!! **The key is part of the drawing, not a caption on it.** The colours are the whole of the heat, so a
-!! reader who cannot see which counts each band covers is looking at a picture with no scale — and the
-!! boundaries move with the run, because the band size is derived from the busiest line in it. So the
-!! ranges are computed per draw from the same division that chose the colours, and printed beside
-!! swatches in the ramp's own colours.
-!!
-!! **The trap this had to dodge:** numbers read out of the trace stay *text*, and text compares
-!! lexically — `9` is not less than `10` — so the range-finding below converts with `add 0 to …`
-!! before it compares anything. Without that the picture is silently wrong, which is the failure
-!! mode the project's own notes warn about.
+!! **What it draws.** The script as a picture with the run's arrivals marked on it, the flow drawn between them, a window over the whole that the gestures move, and the instruments that say what the window is showing. It is a *section* rather than a program — the editor gives it a panel and a recording and calls `VizOpen` — and everything it needs is declared below.
+! ---- the view, below here, is what a host runs ----
+!! @hash a34baa58
+!! @verified a34baa58
+!!!
 !! The view's own symbols, all prefixed `Viz…`.
-!!
-!! Names are the scarce resource in a flat table of declared symbols — which is not a figure of
-!! speech: an earlier version collided with the host's own `Y2` and the compiler refused it as a
-!! duplicate. Everything the section declares is therefore `Viz…`, so it can sit inside an editor
-!! that has its own drawings, elements and variables.
-!!
+!! Names are the scarce resource in a flat table of declared symbols — which is not a figure of speech: an earlier version collided with the host's own `Y2` and the compiler refused it as a duplicate. Everything the section declares is therefore `Viz…`, so it can sit inside an editor that has its own drawings, elements and variables.
 !! The panel is this module's own — `VizHost`, attached by id to the editor's page — and the run arrives in `VizTrace` with the script beside it, fetched by the editor and handed over as a dict. The view fetches nothing but its own calibration file, and never executes anything in order to draw a run.
     variable VizReady        ! set once the elements exist, so a redraw only redraws
     variable VizParsed
@@ -237,28 +202,22 @@ VizRemember:
     variable VizSteps
     variable VizMinLine        ! the picture's first line: 1, because the picture is the whole file
     variable VizMaxLine        ! and its last: the file's own line count
-    variable VizRunMinLine     ! the lines the *recording* covers, which the caption names
-    variable VizRunMaxLine
     variable VizMaxSteps
     variable VizSpanLines
     variable VizDotSize
-    variable VizCaptionText
     variable VizBreathe
-    variable VizLineCounts  ! per-line command counts, from the window
-    variable VizMaxCount
-    variable VizBandSize
     variable VizCount
+    variable VizSeen        ! how many times each line has been reached so far, in this draw
+    variable VizRunCounts   ! how often each line is reached in the whole recording
+    variable VizMaxCount    ! the busiest line's total, which the ramp is scaled against
     variable VizBand
     variable VizHeatD
     variable VizHeatE
     variable VizHeatF
     variable VizHeatG
-    variable VizBands
     variable VizKeyX
     variable VizKeyTextX
     variable VizKeyPitch
-    variable VizKeyLo
-    variable VizKeyHi
     variable VizColourCall
     variable VizColourJump
     variable VizColourReturn
@@ -386,10 +345,32 @@ VizRemember:
     variable VizPixelsW
     variable VizPixelsH
     variable VizPixelsK
+    variable VizPaneH
     variable VizWheelAmount
     variable VizZoomXW
     variable VizZoomYH
     variable VizMove
+    ! ---- the scrollbars ----
+    ! A bar is a window drawn as a proportion, so the arithmetic that turns one into the other is the
+    ! same for both axes and is written once, in `VizBarFit`, reading these five.
+    variable VizBarLen
+    variable VizBarExtent
+    variable VizBarSpan
+    variable VizBarStart
+    variable VizBarOrigin
+    variable VizSlideSize
+    variable VizSlideTravel
+    variable VizSlidePos
+    variable VizSlideRoom
+    ! Where each handle was drawn, kept because the pointer arrives between draws: the hit test has to
+    ! agree with what is on screen, and the drawn box is the only thing that does.
+    variable VizHandleVPos
+    variable VizHandleVSize
+    variable VizHandleHPos
+    variable VizHandleHSize
+    variable VizPtrX
+    variable VizPtrY
+    variable VizPtrA
     ! The window as it was before the gesture now running, so `VizRedraw` can tell whether anything
     ! changed. See `VizNote` for why it is kept rather than re-derived.
     variable VizMoved
@@ -432,24 +413,16 @@ VizRemember:
     svgtext VizXLabel1
     svgtext VizXLabel2
     svgtext VizXLabel3
-    svgtext VizCaption      ! says which run the picture is of, so a stale one shows
-    ! The key: a swatch per colour band with the counts it covers beside it. A pool for the same
-    ! reason the axis labels are one, and it carries the only thing the colours cannot say for
-    ! themselves — a heat picture without it is a mystery, since a reader has no way to tell whether
-    ! a shade means two visits or two hundred.
-    rect VizKeyBox0
-    rect VizKeyBox1
-    rect VizKeyBox2
-    rect VizKeyBox3
-    svgtext VizKeyLabel0
-    svgtext VizKeyLabel1
-    svgtext VizKeyLabel2
-    svgtext VizKeyLabel3
-    ! The flow key: the same idea one row down, for the three colours the *lines* are drawn in, which
-    ! the heat key cannot speak for. A dash rather than a swatch, because a transfer is drawn as a line
-    ! and the shape should say so; the word beside it is the language's own keyword for that kind of
-    ! transfer (see `SetStrings`), so a reader meets the word they would write rather than a name
-    ! invented for the picture. `branch` has no entry because it is not drawn.
+    ! **The flow key: the three colours the *lines* are drawn in.** A dash rather than a swatch,
+    ! because a transfer is drawn as a line and the shape should say so; the word beside it is the
+    ! language's own keyword for that kind of transfer (see `SetStrings`), so a reader meets the word
+    ! they would write rather than a name invented for the picture. `branch` has no entry because it
+    ! is not drawn.
+    !
+    ! It shares its row with the status line, on the left. The heat key that used to sit above it is
+    ! gone — see the ramp in the mark loop for why no range of counts can name those colours — and
+    ! the caption that used to sit opposite is gone too: it printed the run's line range and its step
+    ! count, both of which the status line already carries, so the row it occupied is now the status's.
     rect VizFlowKeyMark0
     rect VizFlowKeyMark1
     rect VizFlowKeyMark2
@@ -461,6 +434,20 @@ VizRemember:
     ! it carries the numbers raw rather than saying them in words: a reader copying a line into a bug
     ! report needs it to be exact, and the picture needs it to be short.
     svgtext VizStatus
+    ! **The scrollbars, and why the picture needs them.** Past a hundred per cent a reader can see
+    ! *where* they are — the axis says which lines are on screen — but not *how much* of the run is on
+    ! screen, and those are different questions. A scrollbar answers the second one at a glance and in
+    ! the vocabulary everybody already has: the handle's length is the visible proportion, its position
+    ! is the window's place in the run, and at the fit it fills the bar and cannot be moved because
+    ! there is nowhere to move it to. Two of them, because there really are two axes here — the lines
+    ! down the right margin, the steps along the foot.
+    !
+    ! They live in the margins, outside the plot, with the axis and the keys: they are instruments, and
+    ! a flow line crossing an instrument is a flow line crossing the thing you read the picture with.
+    rect VizBarV
+    rect VizHandleV
+    rect VizBarH
+    rect VizHandleH
 Draw:
     ! **A draw is a long job, so it takes a ticket rather than a lock.** It says it is running here
     ! and clears that at its end; anything that wants a draw in the meantime asks `VizRequest`, which
@@ -471,7 +458,13 @@ Draw:
     put 1 into VizDrawing
     put json of VizTrace into VizParsed
     put property `traceEvents` of VizParsed into VizEvents
-
+!! @hash e77c1d8d
+!! @verified e77c1d8d
+!!!
+!! Geometry is in viewBox units, and the run is shown through a window.
+!!
+!! Nothing is measured in pixels: the frame is fixed at 1000x740 and the browser fits it to whatever panel it is given, which is what lets the whole script run against a stub DOM in node. What the window decides is *which part of the run* fills that frame. It starts fitted to the whole recording, so the first picture is the one this pane has always drawn; then the wheel scrolls it, shift and control zoom it on their own axes, the two together scroll it across, and a drag pans it. Graham's scheme, from Kdenlive and Audacity, with control added for the second axis.
+!! The picture never changes; the window over it does. `VizPane` is a nested `<svg>` the size of the frame, and its `viewBox` is the whole of the zoom and the pan — one attribute per draw, and the picture itself is drawn once when the run is opened. That is what keeps the text the shape it was written in: a window whose aspect followed the zoom instead is what stretched the letters as you zoomed in. The pane's size being the frame is also the clipping, which is the one thing a picture cannot do for itself — an `<image>` either scales its content to its own box or is clipped by the outer viewport.
     ! ---- built once, on the first draw ----
     ! The panel is the module's own (`VizHost`, attached by id to the editor's page) and the run
     ! arrives in `VizTrace`, fetched by the editor and handed over as a dict. Building the elements
@@ -483,10 +476,12 @@ Draw:
     ! the one place the view still assumes a size — but a constant keeps the maths in whole numbers,
     ! which this runtime wants anyway: its arithmetic is integer-first and division truncates.
     !
-    ! **The plot is 60..660 and the band below it carries the axes and both keys.** The canvas is 740
-    ! tall but the plot still ends at 660, so widening it moved nothing: the step-axis labels stayed at
-    ! 664, the heat key at 679, the caption at 690, and the forty new units are floor for the flow key
-    ! alone. A frame that grows its plot instead would move all four, for no gain.
+    ! **The plot is the margin band on every side, and the band below it carries the instruments.**
+    ! The canvas is 1000 by 740 and the plot is 880 by 580 inside a 60-unit margin. The foot holds the
+    ! steps scrollbar, then the step labels, then one row carrying the status line on the left and the
+    ! flow key on the right; the right-hand margin holds the y labels and the lines scrollbar. That
+    ! leaves the canvas taller than its contents, which is deliberate for now: a sidebar is coming that
+    ! will change the panel's shape, and the height is better chosen then, with the width it will have.
     put 60 into VizMargin
     put 880 into VizPlotW
     put 580 into VizPlotH
@@ -542,21 +537,6 @@ Draw:
     set attribute `x` of VizGlyphs to 0
     set attribute `y` of VizGlyphs to 0
 
-    ! **The diagnostic: the name of every label at the right-hand end of its own line.** A second
-    ! picture, built per draw, holding nothing but the label lines of the script — each copied verbatim
-    ! and right-aligned at the frame's right-hand edge, in a font size the source's own size scaled to
-    ! the frame. It is *temporary*, and it exists to settle one question that reading the code cannot:
-    ! whether the picture's text and the drawing agree about where a line is.
-    !
-    ! The reason it works is that both copies are the *same string* in the *same font* at the *same
-    ! size*, drawn through two independent mappings — the source's own document (inside the pane, whose
-    ! `viewBox` is the window) and the canvas's units (this image, one unit to one canvas unit). If the
-    ! two mappings agree, each name sits on its own source line; if they are half a row apart, the eye
-    ! sees the name floating above or below the text it copies. Graham's idea, and the right instrument:
-    ! a comparison of identical things rather than a judgement of small offsets.
-    !
-    ! It is one `<image>` rather than a pool of text elements because the number of labels in view is
-    ! the file's business, not the pane's: at the widest zoom every label in the script is on screen.
     ! **The plot, and it is the mask.** A nested `<svg>` over the frame — 60,60 to 940,640 in canvas units,
     ! its `viewBox` the same, so one unit inside is one unit outside and *no* coordinate below has to
     ! change — whose whole purpose is to clip. Everything that belongs to the plot is created *in* it: the
@@ -578,16 +558,32 @@ Draw:
     set attribute `height` of VizPlot to VizPlotH
     set attribute `viewBox` of VizPlot to VizMargin cat ` ` cat VizMargin cat ` ` cat VizPlotW cat ` ` cat VizPlotH
 
-    ! The label names, created *after* the plot so they sit above the marks and the flow — they are the
-    ! reading aid, and nothing should be drawn over them. They are outside the plot's clipping for the
-    ! same reason: they are drawn inside the frame by construction, so there is nothing to clip.
+    ! **The diagnostic: the name of every label at the right-hand end of its own line.** A second
+    ! picture, built per draw, holding nothing but the label lines of the script — each copied verbatim
+    ! and right-aligned at the frame's right-hand edge, in a font size the source's own size scaled to
+    ! the frame. It is *temporary*, and it exists to settle one question that reading the code cannot:
+    ! whether the picture's text and the drawing agree about where a line is.
+    !
+    ! The reason it works is that both copies are the *same string* in the *same font* at the *same
+    ! size*, drawn through two independent mappings — the source's own document (inside the pane, whose
+    ! `viewBox` is the window) and the canvas's units (this image, one unit to one canvas unit). If the
+    ! two mappings agree, each name sits on its own source line; if they are half a row apart, the eye
+    ! sees the name floating above or below the text it copies. Graham's idea, and the right instrument:
+    ! a comparison of identical things rather than a judgement of small offsets.
+    !
+    ! It is one `<image>` rather than a pool of text elements because the number of labels in view is
+    ! the file's business, not the pane's: at the widest zoom every label in the script is on screen.
+    !
+    ! **Created after the plot, so it sits above the marks and the flow** — it is the reading aid, and
+    ! nothing should be drawn over it. It is also outside the plot's clipping, for the same reason the
+    ! instruments are: it is drawn inside the frame by construction, so there is nothing to clip, and
+    ! keeping it out means no zoom can ever cut a name out of it.
     create VizLabelText in VizCanvas
     set attribute `preserveAspectRatio` of VizLabelText to `none`
     set attribute `x` of VizLabelText to 0
     set attribute `y` of VizLabelText to 0
     set attribute `width` of VizLabelText to 1000
     set attribute `height` of VizLabelText to 740
-
 
     ! A rule per line the run touched, faint and across the whole frame. It is drawn *over* the source
     ! so a line can be picked out of the texture, and *under* everything else so it never competes
@@ -622,8 +618,42 @@ Draw:
     ! let a reader tell, and they are only useful if they are on the picture.
     create VizStatus in VizCanvas
     set attribute `text-anchor` of VizStatus to `start`
-    create VizCaption in VizCanvas
-    set attribute `text-anchor` of VizCaption to `start`
+
+    ! ---- the scrollbars ----
+    ! Created last, so they are drawn over everything: nothing overlaps them, and last is the safe
+    ! default. Both of the *troughs* are fixed — a bar is always the whole of its axis — so their
+    ! geometry is set once here and only the handles move. The handles are pills rather than rectangles
+    ! because a scrollbar handle reads as a pill; `rx` of half the thickness is what makes one.
+    !
+    ! The colours are the canvas's own greys: the trough a shade darker than the panel, the handle
+    ! lighter again, so the pair reads as a groove with something in it rather than as two rectangles.
+    ! The cursors are the whole of what makes a bar *feel* like a bar — `ns-resize` down the side and
+    ! `ew-resize` along the foot — and they are the reason the style clause is here rather than plain
+    ! attributes.
+    create VizBarV in VizCanvas
+    set attribute `x` of VizBarV to 944
+    set attribute `y` of VizBarV to VizMargin
+    set attribute `width` of VizBarV to 10
+    set attribute `height` of VizBarV to VizPlotH
+    set attribute `rx` of VizBarV to 5
+    set attribute `fill` of VizBarV to `#7a8290`
+    create VizHandleV in VizCanvas style `cursor:ns-resize`
+    set attribute `x` of VizHandleV to 944
+    set attribute `width` of VizHandleV to 10
+    set attribute `rx` of VizHandleV to 5
+    set attribute `fill` of VizHandleV to `#c9ced8`
+    create VizBarH in VizCanvas
+    set attribute `x` of VizBarH to VizMargin
+    set attribute `y` of VizBarH to 646
+    set attribute `width` of VizBarH to VizPlotW
+    set attribute `height` of VizBarH to 10
+    set attribute `rx` of VizBarH to 5
+    set attribute `fill` of VizBarH to `#7a8290`
+    create VizHandleH in VizCanvas style `cursor:ew-resize`
+    set attribute `y` of VizHandleH to 646
+    set attribute `height` of VizHandleH to 10
+    set attribute `rx` of VizHandleH to 5
+    set attribute `fill` of VizHandleH to `#c9ced8`
 
     ! A mark is a *stroked* hairline with a round cap, not a filled one: `M x y h0.01` alone fills to
     ! nothing at all, and stroked without the cap it is a 0.01-long rectangle — so the cap belongs to
@@ -633,17 +663,22 @@ Draw:
     ! The heat ramp's four bands, coolest first, and the only scheme. The marks were once drawn a
     ! second time by a plain single-colour path; the fold removed the duplication, and with it the
     ! template that the mark-size and line-cap mistakes were both copied from.
+    ! **The ramp, and it is a spectrum between blue and red.** It used to run blue, yellow, orange,
+    ! red, which is not a progression a reader can read as one — the eye has no way to say whether
+    ! yellow is between blue and red or off to the side of them. These four are on the line the eye
+    ! does interpolate: blue, violet, magenta, red. The *coldest* is what every mark starts as, which
+    ! is what makes a picture of a run show the program warming up; see the shading in the mark loop.
     create VizHeat0 in VizPlot
     set attribute `fill` of VizHeat0 to `none`
-    set attribute `stroke` of VizHeat0 to `#6b8fa8`
+    set attribute `stroke` of VizHeat0 to `#3b7dd8`
     set attribute `stroke-linecap` of VizHeat0 to `round`
     create VizHeat1 in VizPlot
     set attribute `fill` of VizHeat1 to `none`
-    set attribute `stroke` of VizHeat1 to `#c9a227`
+    set attribute `stroke` of VizHeat1 to `#8f5fd8`
     set attribute `stroke-linecap` of VizHeat1 to `round`
     create VizHeat2 in VizPlot
     set attribute `fill` of VizHeat2 to `none`
-    set attribute `stroke` of VizHeat2 to `#e07b39`
+    set attribute `stroke` of VizHeat2 to `#d2467f`
     set attribute `stroke-linecap` of VizHeat2 to `round`
     create VizHeat3 in VizPlot
     set attribute `fill` of VizHeat3 to `none`
@@ -674,66 +709,15 @@ Draw:
 
     ! The key, laid out once — only the ranges it names change with the run. It sits on the caption's
     ! line, in the right half of the frame so a long caption cannot run into it, and its swatches are
-    ! the ramp's own colours: the two things a reader needs in order to trust the picture, which run
-    ! this is and what the colours mean, end up side by side.
+    ! the ramp's own colours, in the right-hand half of the foot: which run this is and what the
+    ! colours mean, side by side.
     divide VizPlotW by 2 giving VizKeyX
     add VizMargin to VizKeyX
     divide VizPlotW by 8 giving VizKeyPitch
 
-    create VizKeyBox0 in VizCanvas
-    set attribute `x` of VizKeyBox0 to VizKeyX
-    set attribute `y` of VizKeyBox0 to 679
-    set attribute `width` of VizKeyBox0 to 10
-    set attribute `height` of VizKeyBox0 to 10
-    set attribute `fill` of VizKeyBox0 to `#6b8fa8`
-    create VizKeyLabel0 in VizCanvas
-    set attribute `text-anchor` of VizKeyLabel0 to `start`
-    add 14 to VizKeyX
-    move VizKeyLabel0 to VizKeyX 690
-    add VizKeyPitch to VizKeyX
-    take 14 from VizKeyX
-
-    create VizKeyBox1 in VizCanvas
-    set attribute `x` of VizKeyBox1 to VizKeyX
-    set attribute `y` of VizKeyBox1 to 679
-    set attribute `width` of VizKeyBox1 to 10
-    set attribute `height` of VizKeyBox1 to 10
-    set attribute `fill` of VizKeyBox1 to `#c9a227`
-    create VizKeyLabel1 in VizCanvas
-    set attribute `text-anchor` of VizKeyLabel1 to `start`
-    add 14 to VizKeyX
-    move VizKeyLabel1 to VizKeyX 690
-    add VizKeyPitch to VizKeyX
-    take 14 from VizKeyX
-
-    create VizKeyBox2 in VizCanvas
-    set attribute `x` of VizKeyBox2 to VizKeyX
-    set attribute `y` of VizKeyBox2 to 679
-    set attribute `width` of VizKeyBox2 to 10
-    set attribute `height` of VizKeyBox2 to 10
-    set attribute `fill` of VizKeyBox2 to `#e07b39`
-    create VizKeyLabel2 in VizCanvas
-    set attribute `text-anchor` of VizKeyLabel2 to `start`
-    add 14 to VizKeyX
-    move VizKeyLabel2 to VizKeyX 690
-    add VizKeyPitch to VizKeyX
-    take 14 from VizKeyX
-
-    create VizKeyBox3 in VizCanvas
-    set attribute `x` of VizKeyBox3 to VizKeyX
-    set attribute `y` of VizKeyBox3 to 679
-    set attribute `width` of VizKeyBox3 to 10
-    set attribute `height` of VizKeyBox3 to 10
-    set attribute `fill` of VizKeyBox3 to `#e5484d`
-    create VizKeyLabel3 in VizCanvas
-    set attribute `text-anchor` of VizKeyLabel3 to `start`
-    add 14 to VizKeyX
-    move VizKeyLabel3 to VizKeyX 690
-
-    ! The flow key, on its own row: the heat key says *how many* times a line ran, this one *how*
-    ! control reached it, and two questions that different want two rows rather than seven entries
-    ! crammed into one. It is laid out from the same left edge as the heat key, and the reset is the
-    ! whole of why the two rows line up.
+    ! **The flow key, which is now the whole key.** It says *how* control reached a line, which the
+    ! marks' colours cannot say at all. The heat key that shared this row is gone with the counts it
+    ! named: the ramp means "how hot, by when", and no range of visit counts can stand for that.
     divide VizPlotW by 2 giving VizKeyX
     add VizMargin to VizKeyX
     create VizFlowKeyMark0 in VizCanvas
@@ -779,6 +763,12 @@ Draw:
     put 1 into VizReady
 
 VizBuilt:
+!! @hash 130f6e2d
+!! @verified 130f6e2d
+!!!
+!! What a draw does, in order.
+!!
+!! Pass one measures the run — the lines it touched, the steps it took, the busiest of them — and everything below is drawn from those measurements: the rules from pass one's set of named lines, the marks and the transfers from the same walk at the scales it settled. Nothing below re-reads the recording to decide anything pass one could have decided, which is what keeps a redraw cheap and the picture self-consistent.
     ! ---- drawn every time ----
     ! **The drawing is swapped, not cleared and redrawn.** Everything a draw produces is built in the
     ! variables below — the four mark strings, the flow string, every label's text and the picture's
@@ -809,14 +799,17 @@ VizBuilt:
     ! A leading and trailing space, so that every entry added is padded on both sides and ` 15 ` can
     ! never match inside ` 115 `.
     put ` ` into VizRuledLines
-
+!! @hash 466d9a4e
+!! @verified 466d9a4e
+!!!
+!! The frame the picture is drawn in is the run's own extent, not the file's.
+!!
+!! The rules cover exactly the lines the recording names — an arrival, or either end of a transfer — and the axis is scaled to the steps it took, so a picture of a run that touched nine lines shows nine.
     ! ---- pass one: the frame the picture is drawn in ----
-    put 4 into VizBands       ! the count range is split into this many, and the ramp is the only scheme
-    put 0 into VizMaxCount
     put 0 into VizBreathe
-    put 999999 into VizRunMinLine
-    put 0 into VizRunMaxLine
     put 0 into VizMaxSteps
+    put 0 into VizMaxCount
+    put json of `{}` into VizRunCounts
     put 0 into VizIndex
     while VizEvents has element VizIndex
     begin
@@ -835,41 +828,44 @@ VizBuilt:
         if VizCategory is `window`
         begin
             put property `steps` of VizArgs into VizMaxSteps
-            put property `line_counts` of VizArgs into VizLineCounts
             add 0 to VizMaxSteps
         end
         if VizCategory is `anchor`
         begin
             put property `line` of VizArgs into VizLine
             add 0 to VizLine
-            put property VizLine of VizLineCounts into VizCount
-            add 0 to VizCount
-            if VizCount is greater than VizMaxCount put VizCount into VizMaxCount
-            if VizLine is less than VizRunMinLine put VizLine into VizRunMinLine
-            if VizLine is greater than VizRunMaxLine put VizLine into VizRunMaxLine
             put property `steps` of VizArgs into VizSteps
             add 0 to VizSteps
             if VizSteps is greater than VizMaxSteps put VizSteps into VizMaxSteps
+            ! How often this line is reached in the whole recording, kept for the ramp: the busiest
+            ! line is what the bands are scaled against, so it has to be known before any mark is
+            ! coloured. See the mark loop.
+            put property VizLine of VizRunCounts into VizCount
+            if VizCount is not greater than 0 put 0 into VizCount
+            add 1 to VizCount
+            set property VizLine of VizRunCounts to VizCount
+            if VizCount is greater than VizMaxCount put VizCount into VizMaxCount
             gosub to VizRuleAdd
         end
         if VizCategory is `transfer`
         begin
             put property `from_line` of VizArgs into VizLine
             add 0 to VizLine
-            if VizLine is less than VizRunMinLine put VizLine into VizRunMinLine
-            if VizLine is greater than VizRunMaxLine put VizLine into VizRunMaxLine
             gosub to VizRuleAdd
             put property `to_line` of VizArgs into VizLine
             add 0 to VizLine
-            if VizLine is less than VizRunMinLine put VizLine into VizRunMinLine
-            if VizLine is greater than VizRunMaxLine put VizLine into VizRunMaxLine
             gosub to VizRuleAdd
         end
         add 1 to VizIndex
     end
 
     if VizMaxSteps is less than 1 put 1 into VizMaxSteps
-
+!! @hash 92278436
+!! @verified 92278436
+!!!
+!! A mark has to stay legible at the pane's scale, or it is not a mark.
+!!
+!! Its size is the one number here that is a judgement rather than a measurement, and it has a history — see the note at the assignment for the clamp that made every redraw draw a different size.
     ! ---- the size of a mark ----
     ! One size for every mark, and it is set *here* because this is the first point at which the span
     ! is known. It used to live in the per-draw block at the top of this pass, which is before pass
@@ -884,7 +880,15 @@ VizBuilt:
     ! to stay legible at the pane's scale to be a mark at all. When this view takes the host panel's
     ! size rather than asserting a 1000x700 frame, this is the number that should come from it.
     put 14 into VizDotSize
-
+!! @hash 74df2991
+!! @verified 74df2991
+!!!
+!! The window is held as two ranges in the trace's own units, never as a scale factor.
+!!
+!! A factor would have to be relative to a fit that changes with the recording, and an absolute one ends up pinned at one end — the prototype's own lesson, where the same control read 51.6 px a step for one window and 0.7 for another. Multiplying before dividing keeps that arithmetic exact, as it does for the marks.
+!! The window doubles as the reset. Both gestures clamp at the edges of the run, so zooming out returns to the whole picture and panning stops at its ends; there is no reset button to find. The window is fitted once per *recording* and kept across visits, so the pane comes back as it was left; opening a different run is what re-fits it, and `VizReset` is there for a host that wants to force one.
+!!
+!! The zoom stops where the text is drawn at its own size. A source line is eighteen units tall, so a window of fewer than `VizGlyphRows` rows would only blow the text up, and there is nothing more to see. Applied before the clamp to the run, so a recording shorter than that many lines simply has no vertical zoom — the whole run is already legible and there is nothing to zoom into.
     ! ---- the window on the run ----
     ! Fitted to the whole run the first time that recording is drawn and left alone after that:
     ! a redraw is what a gesture causes, and re-fitting there would undo the gesture that asked for
@@ -941,8 +945,13 @@ VizWindow:
     multiply VizWindowY by 18 giving VizWindowY
     multiply VizViewYH by 18 giving VizWindowH
     multiply VizWindowH by VizPlotW giving VizWindowW
-    divide VizWindowW by VizPlotH giving VizWindowW
-
+    divide VizWindowW by VizPlotH
+!! @hash 6291b136
+!! @verified 6291b136
+!!!
+!! The source is drawn behind the heat, once, and shown through a window.
+!!
+!! An element is a declared symbol, so there cannot be one `svgtext` per source line — but one `<image>` carries the whole run, and its `href` is an SVG *document* the view builds itself out of `json split` and `replace`. That is why it is a document rather than a canvas raster: the language can already build one, so nothing new had to be invented to reach a canvas it has no words for, and it stays vector, so the text does not go soft past the scale it was rendered at.
     ! ---- the source behind the heat ----
     ! Built when either of its two inputs has changed, and not otherwise. A new script is new text to
     ! draw; a new recording is a new range of lines to draw it for. Both are compared as whole strings,
@@ -956,11 +965,18 @@ VizWindow:
     ! against a 580-unit pane gives 0, and the picture would collapse onto a single line. Multiplying
     ! *before* dividing keeps the intermediate large and the result exact to a unit — the documented
     ! scaled-integer pattern, applied where it matters most.
-
-    divide VizMaxCount by VizBands giving VizBandSize
-    if VizBandSize is less than 1 put 1 into VizBandSize
-
+!! @hash d71d28a1
+!! @verified d71d28a1
+!!!
+!! One path per kind of mark.
+!!
+!! An AllSpeak element is a declared symbol, so a script cannot create N elements for N marks. What it can do is grow one path's `d` attribute by concatenation and let the browser draw the whole layer from it, so the marks cost string building rather than DOM nodes. A trace of 9 arrivals and 10 transfers is two elements. Per-mark colour would need one path per colour band, which is what the heat ramp will use.
+!! And the heat is relative, not absolute. Each mark's colour is its line's *running* count against the busiest line in the recording, so every line starts cold and the top of the ramp means the hottest line in *this* run. The editor used to send per-line counts for this and the view no longer reads them: they arrive keyed to a neighbouring line, so a mark's colour was its neighbour's heat. See the note in TODO.md.
     ! ---- pass two: the marks, at those scales ----
+    ! How many times each line has been reached *in this draw*, which is what the ramp is drawn from.
+    ! It is thrown away and started again on every draw because a redraw is a recount: the window may
+    ! have moved, but the run has not, so the counts have to come out the same.
+    put json of `{}` into VizSeen
     put 0 into VizIndex
     while VizEvents has element VizIndex
     begin
@@ -981,8 +997,8 @@ VizWindow:
             put property `steps` of VizArgs into VizSteps
             add 0 to VizSteps
             take VizViewX0 from VizSteps giving VizX
-            multiply VizX by VizPlotW giving VizX
-            divide VizX by VizViewXW giving VizX
+            multiply VizX by VizPlotW
+            divide VizX by VizViewXW
             add VizMargin to VizX
             put property `line` of VizArgs into VizLine
             add 0 to VizLine
@@ -996,6 +1012,38 @@ VizWindow:
             ! frame paints over the axis and the key, so leaving it out is the honest version. The
             ! tests are strict, which by itself lets a mark *on* an edge through: 940 is the right
             ! edge, and `940 is greater than 940` is false, so a mark on the last step is kept.
+            ! **How hot the line had become *by this mark*, in the run's own scale.** The count is
+            ! the view's own and it is a *running* one: how many times this line has been reached so
+            ! far. The band is that count against the *busiest line in the recording*, so the ramp is
+            ! **relative, not absolute** — every line starts cold, and the hottest line in the run is
+            ! what the top of the range means. That is what makes the picture work as a first
+            ! impression: a run whose busiest line is reached six times and one reached six thousand
+            ! both use the whole ramp, and neither is a flat colour.
+            !
+            ! Two earlier versions of this were wrong, and both are worth remembering. The first
+            ! shaded by the *clock* — `band x steps / maxSteps` — which reaches the top colour only at
+            ! the very last step of a run, where no mark sits, so a picture drawn that way shows blue,
+            ! violet and magenta and never red; Graham read the missing red off a screenshot before I
+            ! did. The second counted in a fixed ladder — one visit, two to three, four to seven,
+            ! eight or more — which is *absolute*: on a busy run every mark is at the top of the ramp
+            ! and the picture is a flat wash.
+            !
+            ! Counting here rather than reading the editor's `line_counts` also removes the one input
+            ! that could disagree with the marks: those counts arrive keyed to a different line from
+            ! the anchors that place the marks, by one or two, so a mark's colour was its
+            ! *neighbour's* heat. See the note in TODO.md.
+            !
+            ! `multiply` before `divide` because the runtime truncates every division and a
+            ! proportion computed the other way rounds to nothing on a big run.
+            put property VizLine of VizSeen into VizBand
+            if VizBand is not greater than 0 put 0 into VizBand
+            add 1 to VizBand
+            set property VizLine of VizSeen to VizBand
+            multiply VizBand by 3 giving VizCount
+            divide VizCount by VizMaxCount
+            if VizCount is greater than 3 put 3 into VizCount
+            put VizCount into VizBand
+
             put 0 into VizOutside
             if VizX is less than VizMargin put 1 into VizOutside
             if VizX is greater than VizPlotRight put 1 into VizOutside
@@ -1003,10 +1051,6 @@ VizWindow:
             if VizY is greater than VizPlotBottom put 1 into VizOutside
             if VizOutside is 0
             begin
-                put property VizLine of VizLineCounts into VizCount
-                add 0 to VizCount
-                divide VizCount by VizBandSize giving VizBand
-                if VizBand is greater than 3 put 3 into VizBand
                 if VizBand is 0 put VizHeatD cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatD
                 if VizBand is 1 put VizHeatE cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatE
                 if VizBand is 2 put VizHeatF cat `M` cat VizX cat ` ` cat VizY cat `h0.01` into VizHeatF
@@ -1018,8 +1062,8 @@ VizWindow:
             put property `steps` of VizArgs into VizSteps
             add 0 to VizSteps
             take VizViewX0 from VizSteps giving VizX
-            multiply VizX by VizPlotW giving VizX
-            divide VizX by VizViewXW giving VizX
+            multiply VizX by VizPlotW
+            divide VizX by VizViewXW
             add VizMargin to VizX
             put property `from_line` of VizArgs into VizLine
             add 0 to VizLine
@@ -1075,7 +1119,12 @@ VizWindow:
         end
         add 1 to VizIndex
     end
-
+!! @hash 52ac5048
+!! @verified 52ac5048
+!!!
+!! The status line exists to be quoted.
+!!
+!! It carries the numbers raw rather than in words, because a reader copying a line into a bug report needs it exact and the picture needs it short.
     ! ---- the status line ----
     ! Percentages rather than the window sizes alone, because that is the reading a person recognises,
     ! and the window as well, because a percentage names a size but not a position — two windows of the
@@ -1083,10 +1132,10 @@ VizWindow:
     ! before dividing keeps the intermediate large: the runtime truncates every division, and a ratio
     ! computed the other way rounds a 125% zoom to 1.
     multiply 100 by VizFitXW giving VizStatusZoom
-    divide VizStatusZoom by VizViewXW giving VizStatusZoom
+    divide VizStatusZoom by VizViewXW
     put `zoom x ` cat VizStatusZoom cat `% y ` into VizStatusText
     multiply 100 by VizFitYH giving VizStatusZoom
-    divide VizStatusZoom by VizViewYH giving VizStatusZoom
+    divide VizStatusZoom by VizViewYH
     put VizStatusText cat VizStatusZoom cat `%   ` into VizStatusText
     put VizViewX0 into VizStatusEnd
     add VizViewXW to VizStatusEnd
@@ -1096,8 +1145,17 @@ VizWindow:
     add VizViewYH to VizStatusEnd
     take 1 from VizStatusEnd
     set the text of VizStatus to VizStatusText cat VizViewY0 cat `-` cat VizStatusEnd
-    move VizStatus to 60 730
-
+    ! On the flow key's own row, at the left. It used to sit a row below, and the caption — which
+    ! printed the run's line range and step count, both of which are already in this line — sat
+    ! opposite the keys. Graham's reading: the caption repeats what is visible elsewhere, so the
+    ! status takes its row and the foot of the canvas loses one line.
+    move VizStatus to 60 711
+!! @hash 52b8170a
+!! @verified 52b8170a
+!!!
+!! The axis is the picture's yardstick, and it is the same grid as the text.
+!!
+!! Its labels are placed with the mapping the marks use, so a label sits on the line it names at any zoom; a tick whose line falls outside the window is left blank rather than dragged to the edge, because the pool is four labels and a label that lies about where it sits is worse than an absent one.
     ! ---- the axis ----
     ! Four ticks a side, spaced by a third of the *window* rather than of the whole run, and placed
     ! with the same mapping the marks use, so a label sits on the line it names at any zoom. A tick
@@ -1144,9 +1202,12 @@ VizWindow:
     if VizTickPos is not less than VizMargin
         and VizTickPos is not greater than VizPlotBottom set the text of VizYLabel3 to VizTickValue
 
+    ! **The step-axis labels sit one row lower than they did**, at 670 rather than 664: the steps
+    ! scrollbar runs along the foot of the frame and the labels' ascenders would otherwise touch it.
+    ! 670 still leaves the caption below them at 690 and the heat key beside it at 679 alone.
     put VizViewX0 into VizTickValue
     gosub to VizPlaceX
-    move VizXLabel0 to VizTickPos 664
+    move VizXLabel0 to VizTickPos 670
     ! Cleared here rather than at the top of the draw, so that the blank and the value land in the
     ! same uninterrupted run: a label set to nothing and left there is a label that flickers.
     set the text of VizXLabel0 to ``
@@ -1155,7 +1216,7 @@ VizWindow:
 
     add VizXStep to VizTickValue
     gosub to VizPlaceX
-    move VizXLabel1 to VizTickPos 664
+    move VizXLabel1 to VizTickPos 670
     ! Cleared here rather than at the top of the draw, so that the blank and the value land in the
     ! same uninterrupted run: a label set to nothing and left there is a label that flickers.
     set the text of VizXLabel1 to ``
@@ -1164,7 +1225,7 @@ VizWindow:
 
     add VizXStep to VizTickValue
     gosub to VizPlaceX
-    move VizXLabel2 to VizTickPos 664
+    move VizXLabel2 to VizTickPos 670
     ! Cleared here rather than at the top of the draw, so that the blank and the value land in the
     ! same uninterrupted run: a label set to nothing and left there is a label that flickers.
     set the text of VizXLabel2 to ``
@@ -1173,41 +1234,18 @@ VizWindow:
 
     add VizXStep to VizTickValue
     gosub to VizPlaceX
-    move VizXLabel3 to VizTickPos 664
+    move VizXLabel3 to VizTickPos 670
     ! Cleared here rather than at the top of the draw, so that the blank and the value land in the
     ! same uninterrupted run: a label set to nothing and left there is a label that flickers.
     set the text of VizXLabel3 to ``
     if VizTickPos is not less than VizMargin
         and VizTickPos is not greater than VizPlotRight set the text of VizXLabel3 to VizTickValue
-
-    move VizCaption to 60 690
-    put `lines ` cat VizRunMinLine cat `-` cat VizRunMaxLine cat `, ` cat VizMaxSteps cat ` steps` into VizCaptionText
-    set the text of VizCaption to VizCaptionText
-
-    ! ---- the key's ranges ----
-    ! Computed, never fixed: the band size is `VizMaxCount / VizBands`, the same division that chose
-    ! each mark's colour, so a quieter or shorter run moves every boundary. Bands 0-2 name both ends;
-    ! the last takes everything above it, which is what the clamp in the mark loop does. The coolest
-    ! band's lower end reads 1 rather than 0 because a mark exists only for a line that ran — 0 is in
-    ! its range and is never drawn — and it keeps 0 only in the one case where that is the whole band.
-    put 0 into VizKeyLo
-    if VizBandSize is greater than 1 put 1 into VizKeyLo
-    take 1 from VizBandSize giving VizKeyHi
-    set the text of VizKeyLabel0 to VizKeyLo cat `-` cat VizKeyHi
-
-    put VizBandSize into VizKeyLo
-    multiply VizBandSize by 2 giving VizKeyHi
-    take 1 from VizKeyHi giving VizKeyHi
-    set the text of VizKeyLabel1 to VizKeyLo cat `-` cat VizKeyHi
-
-    multiply VizBandSize by 2 giving VizKeyLo
-    multiply VizBandSize by 3 giving VizKeyHi
-    take 1 from VizKeyHi giving VizKeyHi
-    set the text of VizKeyLabel2 to VizKeyLo cat `-` cat VizKeyHi
-
-    multiply VizBandSize by 3 giving VizKeyLo
-    set the text of VizKeyLabel3 to VizKeyLo cat `+`
-
+!! @hash fafcd75b
+!! @verified fafcd75b
+!!!
+!! A rule is a leader, and the flow is drawn in full and masked.
+!!
+!! Each rule runs from one em past the last character of the line it names to the right-hand edge of the frame, so it points at its line instead of crossing it — the indentation and the first word are the part the eye reads first, and they are the part a rule drawn from the frame's left edge used to run straight through. And a transfer is drawn at its true ends whenever it *crosses* the window, the part outside the frame being cut off by the plot — a nested `<svg>` the size of the frame, the same mechanism the source picture is shown through. **Two earlier answers to this were wrong in the same way:** clamping each end to the frame put an end on a border rather than on a line, which reads as a fault; leaving the whole segment out then lost the fact itself, because a line leaving the frame is the only way a picture of a *sliced* run can say that control came from somewhere off-screen.
     ! ---- the rules ----
     ! A hairline at every line the recording *names* — an arrival, or either end of a transfer — and at
     ! no other line. The set is built as the recording is read, and not from the window's per-line
@@ -1259,8 +1297,8 @@ VizWindow:
             if VizSourceLine starts with `!!` put `` into VizSourceLine
             multiply the length of VizSourceLine by 8 giving VizRuleX
             add VizGlyphEm to VizRuleX
-            multiply VizRuleX by VizPlotW giving VizRuleX
-            divide VizRuleX by VizWindowW giving VizRuleX
+            multiply VizRuleX by VizPlotW
+            divide VizRuleX by VizWindowW
             add VizMargin to VizRuleX
             ! **And when the line's own text reaches the frame's edge, the leader has nowhere to be.**
             ! The text is cut off there at that zoom — the price of the anchoring, above — so a rule
@@ -1279,8 +1317,8 @@ VizWindow:
             begin
                 multiply VizLabelLen by 8 giving VizLabelSpace
                 add VizGlyphEm to VizLabelSpace
-                multiply VizLabelSpace by VizPlotW giving VizLabelSpace
-                divide VizLabelSpace by VizWindowW giving VizLabelSpace
+                multiply VizLabelSpace by VizPlotW
+                divide VizLabelSpace by VizWindowW
                 take VizLabelSpace from VizPlotRight giving VizLabelSpace
                 take VizRuleX from VizLabelSpace giving VizRuleWidth
             end
@@ -1289,7 +1327,12 @@ VizWindow:
         end
         add 1 to VizRuleLine
     end
-
+!! @hash 2b7d71cf
+!! @verified 2b7d71cf
+!!!
+!! The source is anchored to the left edge of the pane, and it is the `viewBox`'s `x` that says so.
+!!
+!! The window's `y` moves over the document as the lines move and its height is the vertical zoom, but its `x` is always zero: what the recording does cannot drag the source sideways. The left-hand end of a line is the part that says what the line is — the indentation and the first word — so losing sight of it is losing the reading, and the window's `x` used to be derived from the horizontal window, which is exactly what took it away whenever the run was panned along. The price is the tail of a line wider than the frame, which is not reachable on screen at all now: the frame shows about a hundred and ten columns at the legible floor, so most lines fit and a few do not.
     ! ---- the window on the source's picture ----
     ! The document itself is built once, in `VizSourceMeasure`, and only when the source changes: it
     ! holds *every* line of the file, so the rows line up with the axis and a line the run never
@@ -1298,6 +1341,8 @@ VizWindow:
     gosub to VizSourcePicture
     ! And the labels, which are rebuilt on every draw because they follow the window.
     gosub to VizLabelNames
+    ! And the scrollbars, which are the same window read a second way.
+    gosub to VizBars
 
     set attribute `d` of VizHeat0 to VizHeatD
     set attribute `d` of VizHeat1 to VizHeatE
@@ -1324,7 +1369,12 @@ VizWindow:
         gosub to Draw
     end
     return
-
+!! @hash ca7a095f
+!! @verified ca7a095f
+!!!
+!! The gestures are four entry points, and this module registers them.
+!!
+!! `VizGrab` on pick, `VizPan` on drag, `VizWheel` on wheel and `VizReset` when a run is opened afresh. They live here rather than with the editor because the window is the view's own state and the events arrive many times a second — the handlers are registered at the top of this file, on the pane, and never travel as messages.
 !   ---- the gestures ----
 !   The host registers three events and calls in here: `VizGrab` on pick, `VizPan` on drag, and
 !   `VizWheel` on wheel. They live with the view rather than with the host because they are the
@@ -1378,15 +1428,22 @@ VizWheel:
     return
 
 VizGrab:
-    ! Where the window stands when the drag begins. Kept rather than accumulated: a pan measured
-    ! step by step from the last event drifts, because the runtime's division truncates and every
-    ! step throws its remainder away. Measured from the grab instead, the picture is where the
-    ! pointer says it is, however many events there have been.
+    ! Where the window stands when the drag begins, and **which control the drag is holding**: the
+    ! picture itself (0), the lines bar (1) or the steps bar (2). It is decided here because the move
+    ! cannot tell where the press was, and once only because a drag that changed its mind half way
+    ! would be two gestures in one.
+    !
+    ! The window is kept rather than accumulated: a pan measured step by step from the last event
+    ! drifts, because the runtime's division truncates and every step throws its remainder away.
+    ! Measured from the grab instead, the picture is where the pointer says it is, however many events
+    ! there have been.
     put the pick position into VizGrabPos
     put property `x` of VizGrabPos into VizGrabX
     put property `y` of VizGrabPos into VizGrabY
     put VizViewX0 into VizGrabFromX
     put VizViewY0 into VizGrabFromY
+    put 0 into VizSlide
+    gosub to VizHandleAt
     put 1 into VizGrabbed
     return
 
@@ -1409,13 +1466,13 @@ VizPan:
     take VizGrabY from VizDragY giving VizDy
     gosub to VizPixelScale
     multiply VizDx by 1000 giving VizDx
-    divide VizDx by VizPixelsK giving VizDx
+    divide VizDx by VizPixelsK
     multiply VizDy by 1000 giving VizDy
-    divide VizDy by VizPixelsK giving VizDy
-    multiply VizDx by VizViewXW giving VizDx
-    divide VizDx by VizPlotW giving VizDx
-    multiply VizDy by VizViewYH giving VizDy
-    divide VizDy by VizPlotH giving VizDy
+    divide VizDy by VizPixelsK
+    multiply VizDx by VizViewXW
+    divide VizDx by VizPlotW
+    multiply VizDy by VizViewYH
+    divide VizDy by VizPlotH
     take VizDx from VizGrabFromX giving VizViewX0
     take VizDy from VizGrabFromY giving VizViewY0
     gosub to VizClamp
@@ -1432,13 +1489,208 @@ VizPixelScale:
     ! naming: the canvas is an `svg`, and `svg` is the one element type the plugin registers without
     ! the `dom` extra, so `the width of` will not compile for it. The host's box is the canvas's box
     ! in practice, since the canvas is created to fill it.
+    ! **And the canvas is 740 tall, not 700.** The constant here was written for the canvas the view
+    ! started with; the extra forty units went in with the flow key and this line did not follow, so
+    ! every drag and every wheel moved the window 5.7% short of what the pointer did.
+    !
+    ! `VizPixelsW` and `VizPixelsH` are the panel's own two sides and are left *untouched*, because the
+    ! scrollbar's hit test needs them to work out how much of the panel the fitted canvas does not fill;
+    ! the height scaled to a thousand-wide canvas is a value in its own right and gets its own name,
+    ! which is a thing worth being strict about — the first version of the hit test read the scaled
+    ! number as though it were the height and put every hit 350 pixels out. See `VizHandleAt`.
     put the width of VizHost into VizPixelsW
     put the height of VizHost into VizPixelsH
-    multiply VizPixelsH by 1000 giving VizPixelsH
-    divide VizPixelsH by 700 giving VizPixelsH
-    put VizPixelsH into VizPixelsK
+    multiply VizPixelsH by 1000 giving VizPaneH
+    divide VizPaneH by 740 giving VizPaneH
+    put VizPaneH into VizPixelsK
     if VizPixelsW is less than VizPixelsK put VizPixelsW into VizPixelsK
     if VizPixelsK is less than 1 put 1 into VizPixelsK
+    return
+
+VizBars:
+    ! **The two bars, drawn from the window, and why the picture needs them.** Past a hundred per cent a
+    ! reader can see *where* they are — the axis says which lines are on screen — but not *how much* of
+    ! the run is on screen, and those are different questions. The vertical bar is the lines axis, the
+    ! horizontal the steps axis; each handle is the window's share of its axis, its length the fraction
+    ! in view — which is why the fit fills the bar — and its offset how far into the run the window has
+    ! gone.
+    !
+    ! That offset is scaled to the part of the bar the handle can *move* along rather than to the whole
+    ! bar, and the difference is the one thing worth stating: a handle of half the bar can travel half
+    ! the bar, so the ends of the run put it at the ends of the bar instead of three quarters of the way
+    ! along. Every scrollbar does this, and the reason is plain — the handle is a picture of the window,
+    ! and the window can be at an end of the run.
+    !
+    ! The lines bar needs no minimum: the legible floor holds the window to a tenth of even a short
+    ! file, so the handle cannot vanish. The steps axis can be zoomed to four steps out of thousands,
+    ! and a handle a quarter of a unit long is neither visible nor hittable, so ten units — the bar's
+    ! own thickness — is the floor. Where the true fraction is below it the handle is very slightly
+    ! longer than the truth it reports, which is what a real scrollbar does too.
+    put VizPlotH into VizBarLen
+    put VizSpanLines into VizBarExtent
+    put VizViewYH into VizBarSpan
+    put VizViewY0 into VizBarStart
+    put VizMinLine into VizBarOrigin
+    gosub to VizBarFit
+    put VizSlidePos into VizHandleVPos
+    put VizSlideSize into VizHandleVSize
+    add VizMargin to VizSlidePos
+    set attribute `y` of VizHandleV to VizSlidePos
+    set attribute `height` of VizHandleV to VizSlideSize
+
+    put VizPlotW into VizBarLen
+    put VizMaxSteps into VizBarExtent
+    put VizViewXW into VizBarSpan
+    put VizViewX0 into VizBarStart
+    put 0 into VizBarOrigin
+    gosub to VizBarFit
+    put VizSlidePos into VizHandleHPos
+    put VizSlideSize into VizHandleHSize
+    add VizMargin to VizSlidePos
+    set attribute `x` of VizHandleH to VizSlidePos
+    set attribute `width` of VizHandleH to VizSlideSize
+    return
+
+VizBarFit:
+    ! One bar, from five numbers about its axis: the bar's length, the size of the whole thing, the size
+    ! of the part in view, where that part starts, and where the whole thing starts. Two axes and one
+    ! rule, which is the whole point of writing it down once rather than twice.
+    !
+    ! reads VizBarLen, VizBarExtent, VizBarSpan, VizBarStart, VizBarOrigin
+    ! leaves VizSlideSize, VizSlidePos, VizSlideTravel, VizSlideRoom
+    multiply VizBarSpan by VizBarLen giving VizSlideSize
+    divide VizSlideSize by VizBarExtent
+    if VizSlideSize is less than 10 put 10 into VizSlideSize
+    if VizSlideSize is greater than VizBarLen put VizBarLen into VizSlideSize
+    take VizSlideSize from VizBarLen giving VizSlideTravel
+    take VizBarSpan from VizBarExtent giving VizSlideRoom
+    put 0 into VizSlidePos
+    ! At the fit there is no travel and nothing to divide by. That is not a fallback: it is the case
+    ! where the handle fills its bar and cannot be moved, so zero is the answer.
+    if VizSlideTravel is greater than 0
+    begin
+        take VizBarOrigin from VizBarStart giving VizSlidePos
+        multiply VizSlidePos by VizSlideTravel
+        divide VizSlidePos by VizSlideRoom
+    end
+    return
+
+VizDrag:
+    ! Which of the three ways to move a drag is, decided once by the press that began it: a pan of the
+    ! picture, or one of the two handles. A symbol rather than a handler body so that the gesture is one
+    ! entry point like the others — `VizGrab`, `VizWheel`, `VizReset` — and so a test can drive the real
+    ! path instead of the pair it would otherwise have to guess at.
+    if VizSlide is 0 gosub to VizPan
+    if VizSlide is 1 gosub to VizSlideTo
+    if VizSlide is 2 gosub to VizSlideTo
+    return
+
+VizHandleAt:
+    ! **Which control the pointer went down on — and why this is a hit test rather than a handler.** The
+    ! SVG plugin's shapes are not browser elements and the runtime's `on pick` accepts only those, so a
+    ! `rect` cannot be given a handler of its own: the pane's pick is the only one there is, and it has
+    ! to work out where it landed. The answer has to be in the *drawing's* units — the units the handles
+    ! are drawn in — and the pane's own box is not that, for the reason below.
+    !
+    ! The two boxes sit in different margins, so they cannot overlap and the order of the tests cannot
+    ! matter. Each is the drawn handle grown by four units: ten units is a thin thing to grab with a
+    ! mouse, and every scrollbar a reader has used lets them miss it slightly. The *troughs* are
+    ! deliberately not hit — a press there is a pan of the picture, which is the gesture the pane already
+    ! had, and a jump-to-page would be a second way to move that dragging back cannot undo.
+    !
+    ! So: from the pane's corner, less the letterbox, at the fitted scale. The letterbox is what the pan
+    ! does not care about and this does — the browser fits the canvas inside the pane and centres the
+    ! difference, so the canvas's top-left corner is *not* the pane's, and every unit of that offset is a
+    ! unit a hit test would be wrong by. It is half of what the canvas leaves over on each side, which
+    ! the pane's two sides and the scale between them give.
+    put the left of VizHost into VizPtrX
+    put the top of VizHost into VizPtrY
+    gosub to VizPixelScale
+    take VizPtrX from VizGrabX giving VizPtrX
+    take VizPtrY from VizGrabY giving VizPtrY
+    take VizPixelsK from VizPixelsW giving VizPtrA
+    divide VizPtrA by 2 giving VizPtrA
+    take VizPtrA from VizPtrX
+    multiply VizPixelsK by 740 giving VizPtrA
+    divide VizPtrA by 1000 giving VizPtrA
+    take VizPtrA from VizPixelsH giving VizPtrA
+    divide VizPtrA by 2 giving VizPtrA
+    take VizPtrA from VizPtrY
+    multiply VizPtrX by 1000 giving VizPtrX
+    divide VizPtrX by VizPixelsK
+    multiply VizPtrY by 1000 giving VizPtrY
+    divide VizPtrY by VizPixelsK
+    if VizPtrX is greater than 940 and VizPtrX is less than 958
+    begin
+        take VizHandleVPos from VizPtrY giving VizPtrA
+        add 4 to VizPtrA
+        if VizPtrA is not less than 0
+        begin
+            take VizHandleVSize from VizPtrA
+            if VizPtrA is less than 5 put 1 into VizSlide
+        end
+    end
+    if VizPtrY is greater than 642 and VizPtrY is less than 660
+    begin
+        take VizHandleHPos from VizPtrX giving VizPtrA
+        add 4 to VizPtrA
+        if VizPtrA is not less than 0
+        begin
+            take VizHandleHSize from VizPtrA
+            if VizPtrA is less than 5 put 2 into VizSlide
+        end
+    end
+    return
+
+VizSlideTo:
+    ! **Holding a handle, which is not a pan.** Holding the picture moves the window one unit per unit of
+    ! pointer travel, so the drawing stays under the finger. Holding a *handle* moves the whole run past
+    ! the window instead, so the handle follows the pointer — the two differ by the ratio of the run to
+    ! the window, which is exactly what the handle's length already says. That ratio is why the familiar
+    ! mapping is the right one rather than decoration: a drag that moved one line per line of handle
+    ! would take a hundred drags to cross a hundred-line file.
+    !
+    ! The travel is read from what is *drawn*, so a drag can never disagree with the bar in front of the
+    ! reader; the window it moves from is the one `VizGrab` kept.
+    if VizGrabbed is 0 return
+    if VizSlide is 0 return
+    gosub to VizNote
+    put the drag position into VizDragPos
+    put property `x` of VizDragPos into VizDragX
+    put property `y` of VizDragPos into VizDragY
+    if VizSlide is 1
+    begin
+        take VizGrabY from VizDragY giving VizDy
+        take VizHandleVSize from VizPlotH giving VizSlideTravel
+        take VizViewYH from VizSpanLines giving VizSlideRoom
+    end
+    if VizSlide is 2
+    begin
+        take VizGrabX from VizDragX giving VizDy
+        take VizHandleHSize from VizPlotW giving VizSlideTravel
+        take VizViewXW from VizMaxSteps giving VizSlideRoom
+    end
+    ! At the fit the handle fills its bar: no travel, no room, nothing to move. This is what makes a
+    ! hundred per cent immovable rather than merely hard to move.
+    if VizSlideTravel is less than 1 return
+    if VizSlideRoom is less than 1 return
+    gosub to VizPixelScale
+    multiply VizDy by 1000 giving VizDy
+    divide VizDy by VizPixelsK
+    multiply VizDy by VizSlideRoom
+    divide VizDy by VizSlideTravel
+    if VizSlide is 1
+    begin
+        put VizGrabFromY into VizViewY0
+        add VizDy to VizViewY0
+    end
+    if VizSlide is 2
+    begin
+        put VizGrabFromX into VizViewX0
+        add VizDy to VizViewX0
+    end
+    gosub to VizClamp
+    gosub to VizRedraw
     return
 
 VizScroll:
@@ -1479,13 +1731,13 @@ VizZoom:
     begin
         divide VizViewXW by 5 giving VizMove
         if VizMove is less than 1 put 1 into VizMove
-        take VizMove from VizViewXW giving VizViewXW
+        take VizMove from VizViewXW
     end
     if VizZoomDown is 1
     begin
         divide VizViewYH by 5 giving VizMove
         if VizMove is less than 1 put 1 into VizMove
-        take VizMove from VizViewYH giving VizViewYH
+        take VizMove from VizViewYH
     end
     go to VizZoomSettled
 VizZoomOut:
@@ -1611,6 +1863,13 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
+!! @hash 9380b07d
+!! @verified 9380b07d
+!!!
+!! And a doc block is not drawn in it.
+!!
+!! Every line of the file keeps its row, and a line belonging to a doc block — the `!!` prose, the `@hash`/`@verified` pair, the `!!!` terminator — is drawn as an empty row. The picture is of the *program*, and on a file written to this convention the prose is longer than the code by a wide margin and buries the flow; a bare `!` comment is a note to the line beside it rather than a block, so it stays. Blanked rather than skipped, because the rows are what the axis, the rules and the marks line up with: the pane's numbering still matches the editor's, and that is what makes the two views comparable at all.
+!! **The trap this had to dodge:** numbers read out of the trace stay *text*, and text compares lexically — `9` is not less than `10` — so the range-finding below converts with `add 0 to …` before it compares anything. Without that the picture is silently wrong, which is the failure mode the project's own notes warn about.
     ! ---- reading the source, and drawing it once ----
     ! `json split` with no `on` splits on the newline, and it is the one to use: it leaves a JSON array
     ! behind, which `element N of` can read. The plain `split` does not — it stores value objects, and
@@ -1726,6 +1985,12 @@ VizSourceMeasure:
     return
 
 VizLabelNames:
+!! @hash c42b1df1
+!! @verified c42b1df1
+!!!
+!! Every label is named at the right-hand edge, and the rules make room for it.
+!!
+!! A label is a line at the left margin ending in a colon — the pane is given the script as text and nothing else, and the recording carries no label names, so `VizLabelCheck` is where a label is recognised — and its name, without the colon, is drawn level with its own line in a strong indigo the picture uses nowhere else. The rule for such a line stops one em short of the name, so the two read as a signpost beside the line rather than as one long line with a word on the end. It began as a diagnostic, at Graham's suggestion, to test whether the drawing and the text agreed about where a line is; it settled that, then caught a fault no check could see, and he kept it because a column of names down the edge is a way to navigate a long file — so it stays, and it stays honest about its origin.
     ! ---- every label, named at the right-hand end of its own line ----
     ! **This began as a diagnostic and stays because it earns its place.** Graham asked for it to test the
     ! alignment — "render the name of that label onto the right-hand end of its line, using the same size
@@ -1753,10 +2018,10 @@ VizLabelNames:
     multiply 13 by VizPlotW giving VizLabelSize
     divide VizWindowW by 2 giving VizLabelDrop
     add VizLabelDrop to VizLabelSize
-    divide VizLabelSize by VizWindowW giving VizLabelSize
+    divide VizLabelSize by VizWindowW
     if VizLabelSize is less than 1 put 1 into VizLabelSize
     multiply 5 by VizPlotW giving VizLabelDrop
-    divide VizLabelDrop by VizWindowW giving VizLabelDrop
+    divide VizLabelDrop by VizWindowW
     if VizLabelSize is less than 4
     begin
         set attribute `href` of VizLabelText to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="740"></svg>`
@@ -1830,6 +2095,12 @@ VizLabelShape:
     return
 
 VizSourcePicture:
+!! @hash 2d741f7c
+!! @verified 2d741f7c
+!!!
+!! The picture never changes; the window over it does.
+!!
+!! `VizPane` is a nested `<svg>` the size of the frame, and its `viewBox` is the whole of the zoom and the pan — one attribute per draw, and the picture itself is drawn once when the run is opened. That is what keeps the text the shape it was written in: a window whose aspect followed the zoom instead is what stretched the letters as you zoomed in. The pane's size being the frame is also the clipping, which is the one thing a picture cannot do for itself — an `<image>` either scales its content to its own box or is clipped by the outer viewport.
     ! ---- the window on the picture ----
     ! The pane's `viewBox`, which is the whole of the zoom and the pan. The three values are the draw's
     ! own, computed at its top — see `VizWindow` for why they are not worked out here, where they are
@@ -1847,7 +2118,17 @@ VizSourcePicture:
     set attribute `viewBox` of VizPane to `0 ` cat VizWindowY cat ` ` cat VizWindowW cat ` ` cat VizWindowH
     set attribute `href` of VizGlyphs to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="` cat VizGlyphWidth cat `" height="` cat VizGlyphHeight cat `">` cat VizGlyphBody cat `</svg>`
     return
-
+!! @hash a514f9be
+!! @verified a514f9be
+!!!
+!! The mappings: the one place a line's y and a step's x are worked out.
+!!
+!! `VizPlaceY` turns a line number into the y of the row it occupies, and `VizPlaceX` turns a step into
+!! the x of its column. Every mark, every rule and every axis label goes through one of them, which is
+!! why they are here together and why the other code calls them rather than doing the arithmetic: when
+!! the axis and the marks disagreed about where a line was, the fault was one of these two and the
+!! picture said so at a glance.
+    ! ---- the mappings ----
 VizPlaceY:
     ! Where a line number lands in the frame. **This is the one place that mapping lives**, because the
     ! marks, the rules and the axis labels all have to agree about it — and they did not: the mapping
@@ -1865,18 +2146,18 @@ VizPlaceY:
     ! once the divisor is applied — the same scaled-integer pattern the marks use, and no fraction to
     ! lose.
     take VizViewY0 from VizTickValue giving VizTickPos
-    multiply VizTickPos by VizPlotH giving VizTickPos
+    multiply VizTickPos by VizPlotH
     add VizRowHalf to VizTickPos
-    divide VizTickPos by VizViewYH giving VizTickPos
+    divide VizTickPos by VizViewYH
     add VizMargin to VizTickPos
     return
 
 VizPlaceX:
     take VizViewX0 from VizTickValue giving VizTickPos
-    multiply VizTickPos by VizPlotW giving VizTickPos
-    divide VizTickPos by VizViewXW giving VizTickPos
+    multiply VizTickPos by VizPlotW
+    divide VizTickPos by VizViewXW
     add VizMargin to VizTickPos
     return
-!! @hash 981650bd
-!! @verified 89e939ce
+!! @hash 3de4d772
+!! @verified 3de4d772
 !!!

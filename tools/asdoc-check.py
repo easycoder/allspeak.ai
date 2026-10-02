@@ -4,13 +4,24 @@
 Doc-block convention (see prompt-260509.md for design notes). A "section"
 looks like this:
 
-    !! prose line                 <- doc prose (zero or more lines)
+    !! A one-line synopsis.       <- THE TITLE: this is what the Blocks view
+                                     lists down the left, so it must be short
     !!                            <- blank prose line (paragraph break)
-    !! @hash <hex>                <- machine-managed: hash of the code below
+    !! prose line                 <- doc prose (zero or more lines)
+    <any non-"!!" lines>          <- the code the section is about
+    !! @hash <hex>                <- machine-managed: hash of the code above
     !! @verified <hex>            <- set when a reviewer signs off; stores the
                                      code hash at the time of verification
-    <any non-"!!" lines>          <- the code (or labels, blanks, ! comments)
     !!!                           <- terminator (line containing only "!!!")
+
+**A block contains its code**, so the attributes and the terminator are the
+block's tail and the code sits between the prose and them. Every line of a file
+that uses the convention belongs to some section: a file may opt out entirely
+(no doc blocks at all, which is fine), but a file that has one must keep to the
+convention throughout, and code outside any section is then an error. That is
+what `code-outside-section` reports, and the fault it exists for is a terminator
+written *before* its code: the section closes, the editor shows a block with no
+script under it, and the code falls through the gap.
 
 Line classification (trailing whitespace is ignored — the spec was
 tightened so editors that strip it can't corrupt files):
@@ -134,6 +145,7 @@ def parse(text):
 
     cur = None  # current Section, or None if outside any section
     saw_code_in_section = False  # to flag misplaced doc/meta lines
+    bare_code = []  # non-blank code lines seen outside any section
 
     for i, raw in enumerate(raw_lines, start=1):
         kind, payload = classify(raw)
@@ -156,9 +168,12 @@ def parse(text):
                     cur.meta[key] = val
                     cur.meta_line_numbers[key] = i
             else:
-                # CODE outside a section — fine; not every file uses the
-                # convention. No issue raised.
-                pass
+                # CODE outside a section. Fine in a file that does not use the
+                # convention at all; a fault in one that does, which is decided
+                # at the end of the walk once we know whether there are any
+                # sections. See `code-outside-section` below.
+                if payload.strip() != '':
+                    bare_code.append(i)
             continue
 
         # Inside a section.
@@ -169,7 +184,7 @@ def parse(text):
             saw_code_in_section = False
         elif kind == 'DOC':
             if saw_code_in_section:
-                issues.append((i, 'info', 'doc-after-code',
+                issues.append((i, 'error', 'doc-after-code',
                                'doc prose line appears after code in section '
                                'opened at line %d' % cur.start_line))
             cur.doc.append(payload)
@@ -191,6 +206,26 @@ def parse(text):
         issues.append((cur.start_line, 'error', 'unclosed-section',
                        'section opened at line %d has no terminator before EOF'
                        % cur.start_line))
+
+    # **A file with doc blocks has to keep to the convention throughout.** Code
+    # outside any section means a block closed before its own code — the
+    # terminator written one place too early — and every later block inherits
+    # the fault: the editor shows it with no script under it. Nothing is said
+    # about a file with no sections, which is the documented opt-out.
+    if sections:
+        for lineno in bare_code:
+            issues.append((lineno, 'error', 'code-outside-section',
+                           'code outside any section, in a file that uses the '
+                           'convention: a block has closed before its own code'))
+
+    # And the first line is the section's title in the Blocks view, so it has to
+    # be a title rather than the opening paragraph of the prose.
+    for section in sections:
+        if section.doc and len(section.doc[0]) > 100:
+            issues.append((section.start_line, 'warn', 'title-long',
+                           'first doc line is %d characters, too long for the '
+                           'Blocks view list; keep the synopsis under 100'
+                           % len(section.doc[0])))
 
     return sections, issues, raw_lines
 
@@ -487,6 +522,33 @@ SELF_TEST_FIXTURES = [
      "!!\n"
      "!! second prose line\n"
      "!!!\n",
+     set()),
+    ('code-after-terminator',
+     # the fault this rule exists for: the terminator written before the code, so
+     # the block closes with no script and the code falls outside every section.
+     "!! a block that forgets its code\n"
+     "!!!\n"
+     "    code that belongs above the terminator\n"
+     "!! another block\n"
+     "    more code\n"
+     "!!!\n",
+     {'code-outside-section', 'hash-missing'}),
+    ('doc-after-code-is-an-error',
+     "!! a block\n"
+     "    code\n"
+     "!! prose that arrives late\n"
+     "    more code\n"
+     "!!!\n",
+     {'doc-after-code', 'hash-missing'}),
+    ('long-title',
+     "!! " + ("a synopsis that is far too long to read in a list " * 3).strip() + "\n"
+     "    code\n"
+     "!!!\n",
+     {'title-long', 'hash-missing'}),
+    ('no-convention-is-an-opt-out',
+     "    plain code\n"
+     "    more code\n"
+     "    and more\n",
      set()),
     ('terminator-tolerates-trailing-ws',
      "!! doc\n"

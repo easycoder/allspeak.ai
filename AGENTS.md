@@ -122,20 +122,31 @@ Date-time-based: `YYMMDDHHMM` (e.g. `2605101119` = 2026-05-10 at 11:19). Set in 
 
 Every section of new `.allspeak` code must be wrapped in a doc block:
 
-    !! Brief explanation of what this section does and why it exists.
-    !! Use multiple lines as needed. A bare `!!` line is a paragraph break.
+    !! A brief synopsis, and it is the section's title.
+    !!
+    !! What this section does and why it exists. One paragraph = one line;
+    !! a bare `!!` line separates paragraphs.
     SomeLabel:
         ! the code
         return
     !! @hash <managed>      ← inserted by the analyser (don't write by hand)
+    !! @verified <managed>  ← set by a reviewer's sign-off
     !!!                     ← required terminator (three bangs)
+
+**A block contains its code.** The first line is its **title**, which is what the
+Blocks view lists down the left, so it must be a short synopsis and not the
+opening paragraph of the prose — `tools/asdoc-check.py` warns past 100
+characters. The `@` attributes and the `!!!` are the block's **tail**, so they
+come *after* the code: a terminator written before its code closes the section
+early, the editor shows a block with no script under it, and the code falls
+through the gap. The analyser reports that as `code-outside-section`.
 
 Rules:
 - Lead with the **why** or the design constraint, not a paraphrase of the code.
+- **Use the convention properly or not at all.** A file with no doc blocks is opt-out and says nothing either way; a file that has one must keep to the convention throughout, because half a file of blocks is what makes the editor's view misleading. Existing files that break this are being fixed as they are found — `python3 tools/asdoc-check.py <path>` lists them.
 - **One paragraph = one line.** Each paragraph of prose is a single `!! ...` line, however long. Bare `!!` separates paragraphs. Don't insert hard line breaks for visual wrapping — they render badly in Blocks mode (which word-wraps the doc pane) and they fight you when editing. The flat-mode editor will show very long source lines; that's accepted, since the prose is meant to be read in Blocks mode and AI tools don't care about line length.
 - Don't start a prose line with `@hash` or `@verified` — the parser treats those as metadata. Quote them ("@verified") if you must mention the names.
 - After any code change inside a block, refresh hashes with `python3 tools/asdoc-check.py --write <file>`. Verifies that go stale show up as warnings — review the change and re-verify (asedit's Blocks mode has a one-click "Mark verified" button).
-- A file with no doc blocks at all is treated as opt-out (no errors, no warnings). Adopt the convention file-by-file as you touch them.
 
 Both implementations of the analyser validate the same convention:
 - `tools/asdoc-check.py` — Python CLI, recursive over a directory
