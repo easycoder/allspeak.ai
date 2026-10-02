@@ -266,6 +266,7 @@ VizRemember:
     variable VizPlotRight
     variable VizPlotBottom
     variable VizRowHalf      ! half of VizPlotH: the half row between a line's own y and its row's top
+    variable VizRowY         ! where one row's baseline goes inside the picture: each row names its own
     ! The flow, one path per kind of movement, because the colour *is* the kind. `branch` — the
     ! compiler's own `if`/`while`/`wait` jumps — is deliberately not among them: scaffolding is not a
     ! program jump, and the trace keeps it a separate kind precisely so a reader can be spared it.
@@ -344,6 +345,15 @@ VizRemember:
     variable VizWindowY
     variable VizWindowW
     variable VizWindowH
+    ! The diagnostic's own scratch: the document it builds, the line it is on, where that line lands, and
+    ! the two measurements the copy of the text needs — its size and how far its baseline sits below the
+    ! middle of a row. See the create block for why it exists at all.
+    variable VizLabelBody
+    variable VizLabelLine
+    variable VizLabelEnd
+    variable VizLabelY
+    variable VizLabelSize
+    variable VizLabelDrop
     ! Which axes a zoom notch applies to. Shift is the lines and control is the steps — the modifiers
     ! decide, so one handler serves both.
     variable VizZoomAcross
@@ -388,6 +398,9 @@ VizRemember:
     ! picture itself. See the note where they are created for why it takes two elements to do it.
     svg VizPane
     svgimage VizGlyphs
+    ! The diagnostic's own layer: the label lines of the script, right-aligned at the frame's edge, so
+    ! that the picture's text and the drawing's mapping can be compared side by side. Temporary.
+    svgimage VizLabelText
     path VizRules         ! a faint rule across the frame for every line the run touched
     path VizHeat0           ! the marks, coloured by how much work the line carried
     path VizHeat1
@@ -520,6 +533,28 @@ Draw:
     set attribute `preserveAspectRatio` of VizGlyphs to `none`
     set attribute `x` of VizGlyphs to 0
     set attribute `y` of VizGlyphs to 0
+
+    ! **The diagnostic: the name of every label at the right-hand end of its own line.** A second
+    ! picture, built per draw, holding nothing but the label lines of the script — each copied verbatim
+    ! and right-aligned at the frame's right-hand edge, in a font size the source's own size scaled to
+    ! the frame. It is *temporary*, and it exists to settle one question that reading the code cannot:
+    ! whether the picture's text and the drawing agree about where a line is.
+    !
+    ! The reason it works is that both copies are the *same string* in the *same font* at the *same
+    ! size*, drawn through two independent mappings — the source's own document (inside the pane, whose
+    ! `viewBox` is the window) and the canvas's units (this image, one unit to one canvas unit). If the
+    ! two mappings agree, each name sits on its own source line; if they are half a row apart, the eye
+    ! sees the name floating above or below the text it copies. Graham's idea, and the right instrument:
+    ! a comparison of identical things rather than a judgement of small offsets.
+    !
+    ! It is one `<image>` rather than a pool of text elements because the number of labels in view is
+    ! the file's business, not the pane's: at the widest zoom every label in the script is on screen.
+    create VizLabelText in VizCanvas
+    set attribute `preserveAspectRatio` of VizLabelText to `none`
+    set attribute `x` of VizLabelText to 0
+    set attribute `y` of VizLabelText to 0
+    set attribute `width` of VizLabelText to 1000
+    set attribute `height` of VizLabelText to 740
 
     ! A rule per line the run touched, faint and across the whole frame. It is drawn *over* the source
     ! so a line can be picked out of the texture, and *under* everything else so it never competes
@@ -1214,6 +1249,9 @@ VizWindow:
     ! reached still has its row. What is rebuilt on a redraw is the window alone — the pane's `viewBox`
     ! and the `href` naming the document.
     gosub to VizSourcePicture
+    ! And the diagnostic, which is rebuilt on every draw because it follows the window. Temporary: it is
+    ! here to be looked at, and it comes out when the question it answers is settled.
+    gosub to VizLabelNotes
 
     set attribute `d` of VizHeat0 to VizHeatD
     set attribute `d` of VizHeat1 to VizHeatE
@@ -1568,10 +1606,13 @@ VizSourceMeasure:
     multiply VizGlyphMax by 8 giving VizGlyphWidth
     multiply VizSpanLines by 18 giving VizGlyphHeight
 
-    ! The rows are `<tspan dy="18">` inside one `<text>`: the offset accumulates as the text is laid
-    ! out, so a whole file is one element and no per-line coordinate is computed at all. `y="-4"` puts
-    ! the first baseline four units down a row, so the last row's descenders sit inside the document
-    ! rather than on its very edge.
+    ! **Every row of the file is drawn, and each carries its own absolute `y`.** It used to be one
+    ! `<text>` whose rows were placed by `dy="18"` and accumulated — the cheaper document, and the one
+    ! that came apart: a `<tspan>` with no content does not advance the text position, so a row that
+    ! draws nothing collapses and every row below it is drawn too high. See the note where the rows are
+    ! built; the drift is the number of empty rows above a line, which is why blanking the doc blocks
+    ! made an invisible fault visible. `y="-4"` on the element keeps the first row's descenders off the
+    ! document's edge for a reader of the source; the rows themselves name their own place.
     put `<text x="0" y="-4" xml:space="preserve" font-family="monospace" font-size="` cat VizGlyphEm cat `" fill="#5b6472">` into VizGlyphBody
     put VizMinLine into VizSourceIndex
     while VizSourceIndex is not greater than VizMaxLine
@@ -1602,7 +1643,25 @@ VizSourceMeasure:
         replace `&` with `&amp;` in VizSourceLine
         replace `<` with `&lt;` in VizSourceLine
         replace `>` with `&gt;` in VizSourceLine
-        put VizGlyphBody cat `<tspan x="0" dy="18">` cat VizSourceLine cat `</tspan>` into VizGlyphBody
+        ! **Each row is placed at its own absolute `y`, and that is not a detail.** The rows used to be
+        ! positioned by `dy="18"` alone — the offset accumulating as the text was laid out, so a whole
+        ! file could be one element with no per-line coordinate computed at all. That reads as the
+        ! cheaper picture, and it is wrong: a `<tspan>` with **no content does not advance the text
+        ! position**, so every row that draws nothing collapses and every row below it is drawn that much
+        ! too high. With fourteen blank lines in a file of six hundred the drift was under a row and
+        ! invisible; blanking the doc blocks added a hundred and seventy-eight more, and the picture came
+        ! apart — Graham's *"the whole graph is still misaligned with the text"*, and it was neither: the
+        ! text was moved, by exactly the number of empty rows above each line.
+        !
+        ! So the saving is gone and the coordinate is computed. It is the one thing a renderer cannot
+        ! skip: an empty row is still given its `y`, and the row *after* it names its own place and does
+        ! not care what the empty one did. `14` is where the first row's baseline sits inside its
+        ! eighteen-unit row — four units down for the descenders, as the element's own `y` used to say,
+        ! plus the row it is in.
+        take VizMinLine from VizSourceIndex giving VizRowY
+        multiply VizRowY by 18 giving VizRowY
+        add 14 to VizRowY
+        put VizGlyphBody cat `<tspan x="0" y="` cat VizRowY cat `">` cat VizSourceLine cat `</tspan>` into VizGlyphBody
         add 1 to VizSourceIndex
     end
     put VizGlyphBody cat `</text>` into VizGlyphBody
@@ -1615,6 +1674,93 @@ VizSourceMeasure:
 
     set attribute `width` of VizGlyphs to VizGlyphWidth
     set attribute `height` of VizGlyphs to VizGlyphHeight
+    return
+
+VizLabelNotes:
+    ! ---- the diagnostic: every label, copied to the right-hand end of its own line ----
+    ! **Temporary, and it comes out once the question it answers is settled.** It copies each *label* line
+    ! of the script into its own picture, right-aligned at the frame's right-hand edge, in the source's
+    ! own font size scaled to the frame and on the baseline the source's own rows use. The same string
+    ! then appears twice on one row: once where the picture puts it, once where the drawing's mapping
+    ! puts it. If the two mappings agree the copies sit level; if they disagree — which is the misalignment
+    ! being chased, and which reading the code cannot settle — the copies show it as visible drift.
+    !
+    ! **A label is a line at the left margin whose last character is a colon.** The pane is given the
+    ! script as *text* and nothing else, and the recording carries no label names (its anchors are the
+    ! `viz` markers), so this is where they are found. A doc block is blanked here as it is in the
+    ! picture, which takes care of the `!!` lines; a bare `!` comment is excluded by hand because a
+    ! comment can end in a colon too. A line that ends in a colon and starts at the margin is a label in
+    ! every other case, and a false positive in a diagnostic costs a stray name at the frame's edge.
+    !
+    ! **The two measurements are what makes it a comparison rather than a resemblance.** The size is the
+    ! source's thirteen units scaled by the same factor the picture is — `VizPlotW` across `VizWindowW` —
+    ! and rounded rather than truncated, because a fifth of a font size shows where a fifth of a unit does
+    ! not. The drop is where a source row's baseline sits: five document units below the middle of the row,
+    ! a row being eighteen tall with the baseline fourteen below its top. Both are derived here from the
+    ! same numbers the picture is drawn from, so the copy's position is the drawing's *claim* about where
+    ! the line is, which is the thing under test. The colour is a strong indigo, deliberately nothing the
+    ! picture already uses, so an annotation cannot be mistaken for part of the drawing.
+    !
+    ! **And a caveat, because a diagnostic that flatters itself is worse than none:** both numbers are
+    ! integers, so the size is rounded and the drop is truncated. At the zoom this is meant to be read at
+    ! that is a few per cent on the size and well under a pixel on the baseline; at the widest zoom the
+    ! source's font is smaller than a single unit and the copy is therefore too large. The *baseline* is
+    ! what carries the comparison, and it is never more than one unit out.
+    multiply 13 by VizPlotW giving VizLabelSize
+    divide VizWindowW by 2 giving VizLabelDrop
+    add VizLabelDrop to VizLabelSize
+    divide VizLabelSize by VizWindowW giving VizLabelSize
+    if VizLabelSize is less than 1 put 1 into VizLabelSize
+    multiply 5 by VizPlotW giving VizLabelDrop
+    divide VizLabelDrop by VizWindowW giving VizLabelDrop
+
+    ! **And nothing at all when the copy would be too small to read.** Below four units the picture's own
+    ! text is a smudge — the fit of a long file is two units a line — and a stack of names that cannot be
+    ! compared against anything is worse than an empty layer, because it looks like a finding. The layer is
+    ! *cleared* rather than left as it was: an annotation left behind by a zoom is a stale artefact, and a
+    ! stale artefact in a diagnostic is a wrong answer.
+    if VizLabelSize is less than 4
+    begin
+        set attribute `href` of VizLabelText to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="740"></svg>`
+        return
+    end
+
+    put `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="740">` into VizLabelBody
+    put VizViewY0 into VizLabelLine
+    put VizViewY0 into VizLabelEnd
+    add VizViewYH to VizLabelEnd
+    while VizLabelLine is less than VizLabelEnd
+    begin
+        take 1 from VizLabelLine giving VizSourceAt
+        put `` into VizSourceLine
+        if VizSourceAt is less than VizSourceCount put element VizSourceAt of VizSourceLines into VizSourceLine
+        if VizSourceLine starts with `!!` put `` into VizSourceLine
+        ! Empty when the file has no such line, when the line is blank and when it is a doc block — and an
+        ! empty line does not end in a colon, so the one test below covers all three.
+        if VizSourceLine ends with `:`
+        begin
+            if VizSourceLine starts with ` ` go to VizLabelNext
+            if VizSourceLine starts with `!` go to VizLabelNext
+            ! The entities first, ampersand first, as the picture does — and the `%`/`#` pass at the end
+            ! covers the colour written into the text element below.
+            replace `&` with `&amp;` in VizSourceLine
+            replace `<` with `&lt;` in VizSourceLine
+            replace `>` with `&gt;` in VizSourceLine
+            put VizLabelLine into VizTickValue
+            gosub to VizPlaceY
+            add VizLabelDrop to VizTickPos giving VizLabelY
+            put VizLabelBody
+                cat `<text x="` cat VizPlotRight cat `" y="` cat VizLabelY cat `" font-family="monospace" font-size="` cat VizLabelSize
+                cat `" fill="#4338ca" text-anchor="end">` cat VizSourceLine cat `</text>`
+                into VizLabelBody
+        end
+VizLabelNext:
+        add 1 to VizLabelLine
+    end
+    put VizLabelBody cat `</svg>` into VizLabelBody
+    replace `%` with `%25` in VizLabelBody
+    replace `#` with `%23` in VizLabelBody
+    set attribute `href` of VizLabelText to `data:image/svg+xml;charset=utf-8,` cat VizLabelBody
     return
 
 VizSourcePicture:
@@ -1665,6 +1811,6 @@ VizPlaceX:
     divide VizTickPos by VizViewXW giving VizTickPos
     add VizMargin to VizTickPos
     return
-!! @hash 9b1bcb5f
+!! @hash 4476b20e
 !! @verified 89e939ce
 !!!
