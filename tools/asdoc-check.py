@@ -218,14 +218,99 @@ def parse(text):
                            'code outside any section, in a file that uses the '
                            'convention: a block has closed before its own code'))
 
-    # And the first line is the section's title in the Blocks view, so it has to
-    # be a title rather than the opening paragraph of the prose.
+    if not sections:
+        return sections, issues, raw_lines
+
+    # ---------- the prose rules ----------
+    # Everything below reads the prose rather than the shape, so these are warnings: a
+    # stale name or a wrapped paragraph is a review prompt, not a broken file.
+
     for section in sections:
-        if section.doc and len(section.doc[0]) > 100:
+        first = section.doc[0] if section.doc else ''
+        if not first.strip():
+            issues.append((section.start_line, 'warn', 'title-missing',
+                           'the first doc line is blank, so the Blocks view list '
+                           'shows nothing for this section'))
+        elif len(first) > 100:
             issues.append((section.start_line, 'warn', 'title-long',
                            'first doc line is %d characters, too long for the '
-                           'Blocks view list; keep the synopsis under 100'
-                           % len(section.doc[0])))
+                           'Blocks view list; keep the synopsis under 100' % len(first)))
+
+    # **One paragraph = one line.** A doc line that stops mid-sentence with another doc
+    # line continuing it in lower case is a hard-wrapped paragraph, which the convention
+    # forbids because it renders badly in Blocks mode. Terminal punctuation is what
+    # tells a deliberate short line from a wrap.
+    for i in range(len(raw_lines) - 1):
+        here, after = raw_lines[i], raw_lines[i + 1]
+        if not (here.startswith('!! ') and not here.startswith('!! @')):
+            continue
+        if here.rstrip()[-1:] in '.!:;?`)\u2026':
+            continue
+        # A short line is a heading, not half a sentence: `!! one` then `!! two` is two
+        # paragraphs however they are read. Only a substantial line can have been wrapped.
+        if len(here) < 24:
+            continue
+        if after.startswith('!! ') and not after.startswith('!! @') and re.match(r'!! [a-z]', after):
+            issues.append((i + 1, 'warn', 'doc-wrapped',
+                           'this paragraph continues on the next line; one paragraph '
+                           'is one line'))
+
+    # **The metadata is the block's tail.** `@hash` and `@verified` say what the code
+    # above them hashes to, so code *after* them is code the analyser is not looking
+    # at — which is what a block does when it puts the pair above the code by hand.
+    for i, line in enumerate(raw_lines):
+        if not line.startswith('!! @'):
+            continue
+        following = next((l for l in raw_lines[i + 1:] if l.strip()), '')
+        if following and not (following.startswith('!! @') or following == '!!!'):
+            issues.append((i + 1, 'error', 'meta-not-in-tail',
+                           "code follows the @%s line; a block's metadata and "
+                           'terminator are its tail, after the code'
+                           % line.split()[1].lstrip('@')))
+
+    # **A name in the prose that the file does not define.** Doc blocks name their own
+    # symbols constantly, and a name left behind by a deletion reads as documentation
+    # while being nothing of the kind — this project's caption and heat key survived
+    # two removals that way. The test is deliberately narrow: the name must share its
+    # first three characters with a symbol the file actually declares, so a proper noun
+    # like `Kdenlive` or `CodeMirror` cannot be caught by it.
+    whole = '\n'.join(raw_lines)
+    declared = set(re.findall(
+        r'^\s*(?:variable|svg|svgtext|svgimage|rect|path|group|script|element|image|text)\s+([A-Za-z_]\w*)',
+        whole, re.M))
+    declared |= set(re.findall(r'^([A-Za-z_][A-Za-z0-9_]*):', whole, re.M))
+    stems = {n[:3] for n in declared}
+    body = re.sub(r'^\s*!!.*$', '', whole, flags=re.M)
+    reported = set()
+    for i, line in enumerate(raw_lines):
+        for name in re.findall(r'`([A-Za-z_][A-Za-z0-9_]{3,})`', line):
+            if name in reported or name in declared or re.search(r'\b%s\b' % re.escape(name), body):
+                continue
+            if name[:3] in stems:
+                reported.add(name)
+                issues.append((i + 1, 'warn', 'symbol-unknown',
+                               '`%s` starts like a symbol this file declares but is '
+                               'declared nowhere' % name))
+
+    # **`giving` that says what the pattern already says.** `multiply {variable} by
+    # {value}` assigns to the variable; `giving` is for a *different* destination. The
+    # language pack's grammar names which placeholder is the variable, so this rule has
+    # no false positives by construction: the first operand for multiply and divide,
+    # the second for add and take.
+    for i, line in enumerate(raw_lines):
+        # The *second* operand may be a literal — `multiply VizX by 2 giving VizX` is the
+        # same redundancy as `by VizY` — but only an identifier can be the destination, so
+        # that is what the target test looks for.
+        m = re.match(r'^\s*(multiply|divide|add|take)\s+([A-Za-z_]\w*)\s+(by|to|from)'
+                     r'\s+(\S+)\s+giving\s+([A-Za-z_]\w*)\s*$', line)
+        if not m:
+            continue
+        kw, first, _, second, dest = m.groups()
+        target = first if kw in ('multiply', 'divide') else (second if re.match(r'^[A-Za-z_]\w*$', second) else None)
+        if target is not None and dest == target:
+            issues.append((i + 1, 'warn', 'redundant-giving',
+                           '`giving %s` names the variable the pattern already assigns '
+                           'to; drop it' % dest))
 
     return sections, issues, raw_lines
 
@@ -550,6 +635,41 @@ SELF_TEST_FIXTURES = [
      "    more code\n"
      "    and more\n",
      set()),
+    ('doc-wrapped-paragraph',
+     # one paragraph = one line; the full stop is what tells a short line from a wrap
+     "!! A title.\n"
+     "!! A paragraph that has been hard wrapped\n"
+     "!! across two lines, which the convention forbids.\n"
+     "    code\n"
+     "!!!\n",
+     {'doc-wrapped', 'hash-missing'}),
+    ('title-missing',
+     "!!\n"
+     "!! prose but no title, so the Blocks view list shows nothing\n"
+     "    code\n"
+     "!!!\n",
+     {'title-missing', 'hash-missing'}),
+    ('meta-not-in-tail',
+     # the pair says what the code hashes to, so code after it is code nobody is
+     # looking at — which is what a hand-written block does when it gets this wrong
+     "!! A title.\n"
+     "!! @hash deadbeef\n"
+     "    code below the metadata\n"
+     "!!!\n",
+     {'meta-not-in-tail', 'hash-stale'}),
+    ('symbol-unknown',
+     # the caption and the heat key of this project survived two removals this way
+     "!! A title naming `VizGone`, which the file does not declare.\n"
+     "!!\n"
+     "variable VizStillHere\n"
+     "    code\n"
+     "!!!\n",
+     {'symbol-unknown', 'hash-missing'}),
+    ('redundant-giving',
+     "!! A title.\n"
+     "multiply VizStillHere by 2 giving VizStillHere\n"
+     "!!!\n",
+     {'redundant-giving', 'hash-missing'}),
     ('terminator-tolerates-trailing-ws',
      "!! doc\n"
      "    code\n"

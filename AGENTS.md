@@ -52,6 +52,9 @@ The original EasyCoder repo continues unchanged as the stable English-only produ
 This repository is the **primary source of truth** for the JS runtime (`js/allspeak/`), the editor (`asedit.allspeak`), the doc-block analysers (`tools/asdoc-check*.py/.allspeak`), and the learning material (`learn/`). Other projects may mirror or symlink these files locally (e.g. the doclets project symlinks `allspeak-js/*.js` here via `relink-allspeak.sh` and keeps copies of `asedit.allspeak` / `asdoc-check.py`).
 
 - Make changes to shared files **here first**, then let consumer projects pick up the mirror.
+- **A tool that an agent can use to speed development or improve reliability ships.** It belongs in the starter packs as well as in this repo, so an agent working from a pack has it; `./build-starters` fails if one is missing rather than letting a pack lose it quietly. The analyser (`tools/asdoc-check.py`) is the first of these and the visualiser's own instruments — `tools/plotview-check.js` and `tools/viz-align-measure.py` — are the same thing for anyone changing the Graph pane.
+- **A tool that needs this repo's sources has to say so.** The starter packs are clients of the CDN, not checkouts, so they carry no `js/` — which means a tool that runs the runtime (the Graph pane's harness, for one) cannot work from a pack, and should fail with that sentence rather than a missing-file stack trace.
+- **`various/` is gitignored, so it is not a home for anything that has to travel.** Dev rigs that answer *this* repo's questions live there; a tool worth keeping or shipping belongs in `tools/`.
 - **Never "fix" a shared file in a consumer project's copy** — that silently forks the mirror and the divergence is hard to spot later.
 - If you're working in a consumer project and need a change to a file this repo owns, switch to this repo (a separate agent session anchored here) rather than editing the copy in place.
 

@@ -7,8 +7,13 @@
 # all at the zip root.
 #
 # Run after editing anything under starter/ or after changing
-# asedit.allspeak / asedit-graph.allspeak / asedit.json / tools/asdoc-check.py. Languages are
-# auto-discovered from starter/*/ subdirectories.
+# asedit.allspeak / asedit-graph.allspeak / asedit.json and the tools an agent can use:
+# tools/asdoc-check.py, tools/plotview-check.js, tools/asdoc-check-cli.allspeak and
+# tools/viz-align-measure.py. Languages are auto-discovered from starter/*/ subdirectories.
+#
+# **A tool that an agent can use to speed development or improve reliability ships.** The
+# analyser was already here; the visualiser's own instruments are here for the same reason,
+# and the guard below fails the build rather than let a pack lose one quietly.
 
 set -eu
 cd "$(dirname "$0")"
@@ -18,6 +23,12 @@ if [ ! -f asedit.allspeak ] || [ ! -f asedit.json ]; then
     exit 1
 fi
 
+for tool in tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py; do
+    if [ ! -f "$tool" ]; then
+        echo "Error: $tool not found." >&2
+        exit 1
+    fi
+done
 if [ ! -f tools/asdoc-check.py ]; then
     echo "Error: tools/asdoc-check.py not found." >&2
     exit 1
@@ -53,11 +64,14 @@ for dir in starter/*/; do
             cp -p "$dir$extra" "$work/"
         fi
     done
-    cp -p asedit.allspeak asedit-graph.allspeak asedit.json tools/asdoc-check.py "$work/"
+    cp -p asedit.allspeak asedit-graph.allspeak asedit.json "$work/"
+    for tool in asdoc-check.py plotview-check.js viz-align-measure.py; do
+        cp -p "tools/$tool" "$work/"
+    done
 
     out="$PWD/deploy/allspeak-$lang.zip"
     rm -f "$out"
-    zip_files="CLAUDE.md server.allspeak edit.html asedit.json asedit.allspeak asedit-graph.allspeak asdoc-check.py"
+    zip_files="CLAUDE.md server.allspeak edit.html asedit.json asedit.allspeak asedit-graph.allspeak asdoc-check.py plotview-check.js viz-align-measure.py"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$work/$extra" ]; then
             zip_files="$zip_files $extra"

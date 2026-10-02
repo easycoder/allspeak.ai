@@ -157,9 +157,9 @@ VizPredictJudged:
     if VizMillisPerKb is 0 return
     ! Multiply before dividing: the rate is per kilobyte and the recording is counted in bytes.
     multiply TraceSize by VizMillisPerKb giving VizPredicted
-    divide VizPredicted by 1024 giving VizPredicted
+    divide VizPredicted by 1024
     if VizPredicted is less than 5000 return
-    divide VizPredicted by 1000 giving VizPredicted
+    divide VizPredicted by 1000
     ! Say where the number comes from. It is a measurement of the last drawing, not a promise, and
     ! a stale one is self-explanatory when the reader knows that — which matters, because a single
     ! slow run sets the rate and the next run corrects it.
@@ -176,8 +176,8 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 3d8ece61
-!! @verified 3d8ece61
+!! @hash 3fce0448
+!! @verified 3fce0448
 !!!
 !! The view itself: everything from here down is the drawing.
 !!
@@ -942,12 +942,12 @@ VizWindow:
     ! The window's `y` is in the *document's* own units so that a row of text lands on the line the axis
     ! names, and its width is what the frame's aspect allows at that row height — there is no wider one.
     take VizMinLine from VizViewY0 giving VizWindowY
-    multiply VizWindowY by 18 giving VizWindowY
+    multiply VizWindowY by 18
     multiply VizViewYH by 18 giving VizWindowH
     multiply VizWindowH by VizPlotW giving VizWindowW
     divide VizWindowW by VizPlotH
-!! @hash 6291b136
-!! @verified 6291b136
+!! @hash 91fd04ef
+!! @verified 91fd04ef
 !!!
 !! The source is drawn behind the heat, once, and shown through a window.
 !!
@@ -1465,9 +1465,9 @@ VizPan:
     take VizGrabX from VizDragX giving VizDx
     take VizGrabY from VizDragY giving VizDy
     gosub to VizPixelScale
-    multiply VizDx by 1000 giving VizDx
+    multiply VizDx by 1000
     divide VizDx by VizPixelsK
-    multiply VizDy by 1000 giving VizDy
+    multiply VizDy by 1000
     divide VizDy by VizPixelsK
     multiply VizDx by VizViewXW
     divide VizDx by VizPlotW
@@ -1501,7 +1501,7 @@ VizPixelScale:
     put the width of VizHost into VizPixelsW
     put the height of VizHost into VizPixelsH
     multiply VizPixelsH by 1000 giving VizPaneH
-    divide VizPaneH by 740 giving VizPaneH
+    divide VizPaneH by 740
     put VizPaneH into VizPixelsK
     if VizPixelsW is less than VizPixelsK put VizPixelsW into VizPixelsK
     if VizPixelsK is less than 1 put 1 into VizPixelsK
@@ -1609,16 +1609,16 @@ VizHandleAt:
     take VizPtrX from VizGrabX giving VizPtrX
     take VizPtrY from VizGrabY giving VizPtrY
     take VizPixelsK from VizPixelsW giving VizPtrA
-    divide VizPtrA by 2 giving VizPtrA
+    divide VizPtrA by 2
     take VizPtrA from VizPtrX
     multiply VizPixelsK by 740 giving VizPtrA
-    divide VizPtrA by 1000 giving VizPtrA
+    divide VizPtrA by 1000
     take VizPtrA from VizPixelsH giving VizPtrA
-    divide VizPtrA by 2 giving VizPtrA
+    divide VizPtrA by 2
     take VizPtrA from VizPtrY
-    multiply VizPtrX by 1000 giving VizPtrX
+    multiply VizPtrX by 1000
     divide VizPtrX by VizPixelsK
-    multiply VizPtrY by 1000 giving VizPtrY
+    multiply VizPtrY by 1000
     divide VizPtrY by VizPixelsK
     if VizPtrX is greater than 940 and VizPtrX is less than 958
     begin
@@ -1675,7 +1675,7 @@ VizSlideTo:
     if VizSlideTravel is less than 1 return
     if VizSlideRoom is less than 1 return
     gosub to VizPixelScale
-    multiply VizDy by 1000 giving VizDy
+    multiply VizDy by 1000
     divide VizDy by VizPixelsK
     multiply VizDy by VizSlideRoom
     divide VizDy by VizSlideTravel
@@ -1762,10 +1762,10 @@ VizZoomSettled:
     gosub to VizClamp
     ! Now hold the middle still, using the size the clamp actually allowed.
     take VizViewXW from VizWasXW giving VizMove
-    divide VizMove by 2 giving VizMove
+    divide VizMove by 2
     add VizMove to VizViewX0
     take VizViewYH from VizWasYH giving VizMove
-    divide VizMove by 2 giving VizMove
+    divide VizMove by 2
     add VizMove to VizViewY0
     gosub to VizClamp
     gosub to VizRedraw
@@ -1863,8 +1863,8 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 9380b07d
-!! @verified 9380b07d
+!! @hash 59140335
+!! @verified 59140335
 !!!
 !! And a doc block is not drawn in it.
 !!
@@ -1967,7 +1967,7 @@ VizSourceMeasure:
         ! eighteen-unit row — four units down for the descenders, as the element's own `y` used to say,
         ! plus the row it is in.
         take VizMinLine from VizSourceIndex giving VizRowY
-        multiply VizRowY by 18 giving VizRowY
+        multiply VizRowY by 18
         add 14 to VizRowY
         put VizGlyphBody cat `<tspan x="0" y="` cat VizRowY cat `">` cat VizSourceLine cat `</tspan>` into VizGlyphBody
         add 1 to VizSourceIndex
@@ -1985,8 +1985,8 @@ VizSourceMeasure:
     return
 
 VizLabelNames:
-!! @hash c42b1df1
-!! @verified c42b1df1
+!! @hash ee395236
+!! @verified ee395236
 !!!
 !! Every label is named at the right-hand edge, and the rules make room for it.
 !!
@@ -2123,11 +2123,7 @@ VizSourcePicture:
 !!!
 !! The mappings: the one place a line's y and a step's x are worked out.
 !!
-!! `VizPlaceY` turns a line number into the y of the row it occupies, and `VizPlaceX` turns a step into
-!! the x of its column. Every mark, every rule and every axis label goes through one of them, which is
-!! why they are here together and why the other code calls them rather than doing the arithmetic: when
-!! the axis and the marks disagreed about where a line was, the fault was one of these two and the
-!! picture said so at a glance.
+!! `VizPlaceY` turns a line number into the y of the row it occupies, and `VizPlaceX` turns a step into the x of its column. Every mark, every rule and every axis label goes through one of them, which is why they are here together and why the other code calls them rather than doing the arithmetic: when the axis and the marks disagreed about where a line was, the fault was one of these two and the picture said so at a glance.
     ! ---- the mappings ----
 VizPlaceY:
     ! Where a line number lands in the frame. **This is the one place that mapping lives**, because the
