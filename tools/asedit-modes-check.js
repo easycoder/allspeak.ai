@@ -61,7 +61,10 @@ const mk = tag => {
 		setSelectionRange: noop, scrollIntoView: noop,
 		querySelector: () => null, querySelectorAll: () => [],
 		getElementsByTagName: () => [],
-		getBoundingClientRect: () => ({ left: 0, top: 0, right: 1000, bottom: 700, width: 1000, height: 700 }),
+		// A box a check can set, so an element's size is its own rather than every element being the whole
+		// window: the splitter arithmetic reads the widths either side of it, and a stub that gave them all
+		// the same one could not tell a sidebar from the area it sits in.
+		getBoundingClientRect: () => el.box || { left: 0, top: 0, right: 1000, bottom: 700, width: 1000, height: 700 },
 	};
 	return el;
 };
@@ -82,7 +85,17 @@ const headElement = mk(`head`);
 global.window = global;
 global.location = { search: ``, pathname: `/`, href: `http://localhost/` };
 global.navigator = { userAgent: `node` };
-global.localStorage = { getItem: () => null, setItem: noop, removeItem: noop };
+// **Storage that remembers.** The editor persists two splitter widths through this, and a stub that
+// swallowed every write made the whole round trip unobservable — a width could be saved to nowhere and no
+// check could tell. A real browser keeps it, so this does too.
+const store = {};
+global.localStorage = {
+	getItem: k => (k in store ? store[k] : null),
+	setItem: (k, v) => { store[String(k)] = String(v); },
+	removeItem: k => { delete store[k]; },
+	get length() { return Object.keys(store).length; },
+	key: i => Object.keys(store)[i],
+};
 global.addEventListener = noop;
 global.removeEventListener = noop;
 global.setTimeout = setTimeout;
@@ -306,6 +319,20 @@ if (!booted) {
 	process.exit(1);
 }
 
+// ---- the handler that is registered, not just written ------------------------------------------
+//
+// **A handler runs because its line was *executed*, and this editor's own flow stops in the middle of the
+// file** — everything after `fork to AutoSave` is a subroutine. So an `on message` written with the code
+// it runs, at the end, is a dead line: the pane's report arrives at a program with no handler and is
+// dropped without a word. That is exactly what happened the first time the sidebar was wired up, and the
+// relay check below did not catch it, because it called the handler by name — which is the fault a
+// harness repeats every time it enters a path the reader cannot. This asks the program the question that
+// decides, and it is here rather than with the relay checks for the reason it exists: it is about
+// *registration*, which every other check in this file silently depends on. It waits, because booting is
+// asynchronous — the page is up before the flow has finished — and a registration that never happens is
+// what the wait is for.
+check(await waitFor(() => !!program.onMessage), `the editor's inbound message handler is registered, not merely written (onMessage=${program.onMessage})`);
+
 // ---- the invariant that failed last time ----------------------------------------------------
 //
 // Every per-tab array has to be as long as there are tabs. A seventh one added to one of the two ways
@@ -407,10 +434,158 @@ check(loaded, `the Graph pane loads as a module on the first click (VizLoaded=${
 const took = await waitFor(() => vizValue(`VizShown`) === 1);
 check(took, `and the editor's message got there (its own VizShown=${vizValue(`VizShown`)})`);
 const attached = vizRecord(`VizHost`) && vizRecord(`VizHost`).element[vizRecord(`VizHost`).index];
-check(attached === byId[`se-graph-area`],
+check(attached === byId[`se-graph-host`],
 	`and it attached the pane by id, in a program that never declared the element (${attached ? attached.tagName : `nothing`})`);
 check(String(vizValue(`TracePath`)).endsWith(`.viz.json`),
 	`and the run's fields came with the message (the path it was told to report: ${JSON.stringify(vizValue(`TracePath`))})`);
+
+// ---- the sidebar, the pane's co-module ------------------------------------------------------
+//
+// The panel is `asedit-side.allspeak`, loaded the same way and for the same reason: the editor needs none
+// of it until somebody looks at a run, and the panel is bulky enough to want its own file. What is checked
+// here is the **relay**, because the relay is the editor's — the pane reports the line under a clicked
+// mark, this file looks it up in the doc-block model it already holds for Blocks mode, and the sidebar is
+// shown the result. Three programs, and the only place the look-up can be wrong is this one.
+//
+// **The pane's own hit test cannot be reached from here.** This harness stubs the DOM with no layout
+// engine, so no mark has a place to point at; `tools/plotview-check.js` is where a press on a mark is
+// checked, against the picture's own axis. And the line arrives here the way `send … to parent` delivers
+// it — as `message`, with the handler run — rather than by reaching into any module's internals.
+const side = () => AllSpeak.scripts[`ASEditorSide`];
+const sideRecord = name => (side() && side().getSymbolRecord(name)) || null;
+const sideValue = name => {
+	const record = sideRecord(name);
+	const v = record && record.value && record.value[record.index];
+	return v ? v.content : undefined;
+};
+const sideLoaded = await waitFor(() => valueOf(`SideLoaded`) === 1 && !!side());
+check(sideLoaded, `the sidebar loads as a second module beside the pane (SideLoaded=${valueOf(`SideLoaded`)}, program=${!!side()})`);
+// Its own handler, by the same rule the editor's is checked against: a handler runs only if its line was
+// executed, and a module whose registration sat after its `stop` would load, attach, build its panel and
+// then never hear a word — the failure that looks most like nothing being wrong.
+check(!!(side() && side().onMessage), `and the sidebar's own message handler is registered (onMessage=${side() && side().onMessage})`);
+const sideHost = sideRecord(`SideHost`);
+const sideAttached = sideHost && sideHost.element[sideHost.index];
+check(sideAttached === byId[`se-graph-side`],
+	`and it attached to its own box, not the pane's (${sideAttached ? sideAttached.tagName : `nothing`})`);
+// **Two elements, which is the whole of what the split buys.** Neither module lays the other out, so
+// neither can be broken by the other's size — which is the fault this arrangement exists to avoid, and
+// the one the pane's own geometry has no defence against (it cannot measure its own canvas).
+check(byId[`se-graph-host`] && byId[`se-graph-side`] && byId[`se-graph-host`] !== byId[`se-graph-side`],
+	`with the page giving each module its own element (host=${!!byId[`se-graph-host`]}, side=${!!byId[`se-graph-side`]})`);
+check(!!sideValue(`SideBuilt`) && !!sideRecord(`SideTabs`) && !!sideRecord(`SideProse`),
+	`and it built the panel itself — the tab strip, the body and the three things the body shows — because the editor declares no element for any of them (built=${!!sideValue(`SideBuilt`)})`);
+
+// ---- the grip that sizes the sidebar ---------------------------------------------------------
+//
+// The width control is a divider beside the sidebar, driven through the same document-level `on drag` the
+// Blocks splitter uses. Two things about it are invisible to the eye and are the reason this is checked
+// rather than looked at: **the sign** — the sidebar's *left* edge moves, so a pointer travelling left makes
+// the panel wider, which is the opposite sense to the Blocks splitter and exactly what a copy of it would
+// get wrong — and **the floor**, where a drag past the limit must stop rather than invert.
+//
+// The path driven is the shipped one: the grip's own pick handler, then the editor's `on drag` body, both
+// entered at the pc the runtime registered for them.
+const sideWidth = () => {
+	const m = /0 0 (\d+)px/.exec(((byId[`se-graph-side`].style || {}).flex) || ``);
+	return m ? Number(m[1]) : null;
+};
+const sideBox = width => {
+	byId[`se-graph-side`].box = { left: 1440 - width, top: 0, right: 1440, width, height: 700 };
+};
+const gripDrag = (from, to, startWidth = 340) => {
+	byId[`se-graph-area`].box = { left: 0, top: 0, right: 1440, width: 1440, height: 700 };
+	// The width the drag begins from, put in explicitly rather than left as whatever the last case left: a
+	// drag reads the *element's* width at the pick, so the fixture has to say what that is, or each of the
+	// four checks below would be measuring the one before.
+	sideBox(startWidth);
+	global.document.pickX = from; global.document.pickY = 300;
+	AllSpeak_Run.run(program, byId[`se-graph-grip`].mouseDownPc);
+	global.document.dragX = to; global.document.dragY = 300;
+	AllSpeak_Run.run(program, program.mouseMovePc);
+	const width = sideWidth();
+	// **The browser re-lays out, so the stub does too.** A drop reads the element's *width*, and a stub
+	// whose box never followed the style it was handed would report the width the drag started from — a
+	// fixture that would agree with an implementation that never stored anything.
+	if (width !== null) sideBox(width);
+	return width;
+};
+const gripDrop = () => AllSpeak_Run.run(program, program.mouseUpPc);
+check(!!byId[`se-graph-grip`] && byId[`se-graph-grip`] !== byId[`se-graph-side`] && !!byId[`se-graph-grip`].mouseDownPc,
+	`the sidebar has a width control of its own, a divider that takes a press (mouseDownPc=${byId[`se-graph-grip`] && byId[`se-graph-grip`].mouseDownPc})`);
+const widened = gripDrag(1100, 1000);
+check(widened === 440, `a drag to the left makes the panel wider (340 + 100 = ${widened})`);
+const narrowed = gripDrag(1100, 1200);
+check(narrowed === 240, `and a drag to the right makes it narrower (340 - 100 = ${narrowed})`);
+const floored = gripDrag(1100, 3000);
+check(floored === 200, `and a drag past the limit stops at the floor rather than inverting (${floored})`);
+const chosen = gripDrag(1100, 940);
+gripDrop();
+check(chosen === 500 && store[`asedit-graph-side-width`] === `500`,
+	`and the width the reader chose is kept (${chosen}, stored ${JSON.stringify(store[`asedit-graph-side-width`])})`);
+run(`ToggleGraph`); run(`ToggleGraph`);
+check(sideWidth() === 500, `and put back when the pane is opened again (${sideWidth()})`);
+
+// The look-up, with the model put in by hand. Which section holds a line is the one question here that
+// The look-up, spread over three checks: a line inside each of the fixture's two blocks, and one in
+// neither. Which block holds a line is the one question here that cannot be read off the run, so the
+// fixture supplies the structure and the editor's own parser supplies the model.
+//
+// **The fixture is not the editor's own source, on purpose.** The editor does parse itself in Blocks mode,
+// and the temptation is to point the look-up at it too and pick line numbers out of `asedit.allspeak` — a
+// check that would then fail whenever this file was edited, for a reason of its own making.
+const SIDEFIX = [
+	`!! The first block, and this line is its title.`,
+	`!!`,
+	`!! Its prose, which is what the panel shows.`,
+	`Alpha:`,
+	`    return`,
+	`!! @hash 00000000`,
+	`!!!`,
+	`!! The second block, and this one holds line twelve.`,
+	`!!`,
+	`!! Its prose too.`,
+	`Beta:`,
+	`    return`,
+	`!!!`,
+].join(`\n`);
+// **The fixture is set and then Graph is entered again, because entering is what builds the model** —
+// `EnterGraph` parses the buffer with the same `ParseSource` Blocks mode uses. That is not decoration: the
+// first version of this check set the buffer and called the handler, so it read the model left behind by
+// whatever was parsed last (the editor's own source, from the Blocks checks), and *two of the three checks
+// passed anyway* — lines 5 and 12 of `asedit.allspeak` happen to fall inside its first two sections. Hence
+// the exact titles below: a title that could belong to the wrong file is not a check.
+run(`ToggleGraph`);                    // out — the pane is already up from the checks above
+scriptElement.innerText = SIDEFIX;
+run(`ToggleGraph`);                    // and in again: this is the parse
+const modelled = await waitFor(() => Number(valueOf(`SecCount`)) === 2);
+check(modelled, `entering the pane builds the section model for the file being reviewed (SecCount=${valueOf(`SecCount`)})`);
+// **The report is delivered as the dict the pane actually sends, and that is the point of it.** A dict in
+// this language is a *JSON string* in a variable, so `send VizMark to parent` puts
+// `{"kind":"mark","line":N}` into `message` — not a number. The first version of this check put a bare
+// number there, which is kinder than reality in exactly the way that cost an afternoon: the handler was
+// written to convert its message rather than to read its property, the check agreed with it, and the
+// editor threw in the browser on the first real click. Anything a `send` can carry, this must carry too.
+const report = line => `{"kind":"mark","line":${line}}`;
+program.message = report(12);
+run(`SideMarkLine`);
+const relayed = await waitFor(() => Number(sideValue(`SideLine`)) === 12);
+check(relayed, `a line the pane reports is looked up here and shown in the sidebar (line=${sideValue(`SideLine`)}, found=${sideValue(`SideFound`)})`);
+check(sideValue(`SideFound`) === 1 && sideValue(`SideTitle`) === `2. The second block, and this one holds line twelve.`,
+	`and the block it names is the one holding that line, numbered as Blocks numbers it (${JSON.stringify(sideValue(`SideTitle`))})`);
+program.message = report(5);
+run(`SideMarkLine`);
+const firstBlock = await waitFor(() => Number(sideValue(`SideLine`)) === 5);
+check(firstBlock && sideValue(`SideFound`) === 1 && sideValue(`SideTitle`) === `1. The first block, and this line is its title.`,
+	`and the nearer block for a line inside it (${JSON.stringify(sideValue(`SideTitle`))})`);
+// A line in *no* block is an answer rather than a failure: the code before the first doc block, and
+// between two of them, is outside the convention by design, and saying so beats showing the last block
+// somebody looked at.
+program.message = report(20);
+run(`SideMarkLine`);
+const outside = await waitFor(() => Number(sideValue(`SideLine`)) === 20);
+check(outside && sideValue(`SideFound`) === 0,
+	`and a line in no block says so rather than leaving the last one up (found=${sideValue(`SideFound`)})`);
 
 // The caret and the view, remembered on the way in and put back on the way out — as a pair, and with
 // the caret written before the view so that neither can drag the other.

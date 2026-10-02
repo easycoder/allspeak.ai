@@ -251,8 +251,25 @@ try {
 
 // The module's host is the *panel*, and it is the only box the view reads. Set after the run, because
 // the attach happens inside it and the gestures — the only things that measure — come later.
-const hostEl = Object.values(byId).find(e => e.attributes.id === `se-graph-area`);
-if (hostEl) hostEl.box = PANEL;
+//
+// **The element is found through the view's own symbol, not by the page's id.** It used to be looked up
+// as `se-graph-area` — the id the editor's page gives the pane's host — and the page's elements are not
+// created here, so the lookup found nothing, the box stayed at the stub's default and *the letterbox
+// this fixture's own comment says is 247 was always zero*. It cost nothing visible, because the two
+// offsets cancel: the view subtracts the host's corner and `toClient` below adds it back. That is
+// exactly why it is worth fixing rather than leaving — the fixture could not have told anyone — and it
+// matters now that the panel is the graph area *less the sidebar*, so its width is a number the
+// sidebar's cost is measured in.
+if (program) {
+	const hostRecord = program.getSymbolRecord(`VizHost`);
+	const hostEl = hostRecord && hostRecord.element && hostRecord.element[0];
+	if (!hostEl) {
+		process.stderr.write(`plotview-check: the view has no panel element — the fixture's two boxes `
+			+ `would not be applied, so nothing below would mean what it says.\n`);
+		process.exit(1);
+	}
+	hostEl.box = PANEL;
+}
 
 // Report once the drawing has stopped changing, not when `run` returns.
 //
@@ -468,6 +485,27 @@ const pressAt = (x, y) => {
 	entry(`VizGrab`);
 	return [cx, cy];
 };
+// **A press on a mark, which is the whole of the sidebar's input.** The mark's place is read off the
+// drawn path rather than recomputed, so the press lands where the dot actually is — which is all a
+// reader does. And every mark's place is collected too, for the check that a press *away* from all of
+// them names nothing.
+const MARK_LAYERS = [`ec-VizHeat0`, `ec-VizHeat1`, `ec-VizHeat2`, `ec-VizHeat3`];
+const drawnById = id => {
+	const el = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(id));
+	return el ? String(el.attributes.d || ``) : ``;
+};
+const marksById = id => [...drawnById(id).matchAll(/[ML]([0-9.]+) ([0-9.]+)/g)]
+	.map(m => [Number(m[1]), Number(m[2])]);
+const allMarks = () => MARK_LAYERS.flatMap(marksById);
+const markPlace = () => allMarks()[0] || null;
+// A view variable by name, read the way `asedit-modes-check` reads the editor's: the report compares
+// what the view *drew*, and the one thing a press leaves behind is a number it keeps.
+const viewVar = name => {
+	const record = program && program.getSymbolRecord(name);
+	if (!record) throw new Error(`the view declares no '${name}'`);
+	const v = record.value && record.value[record.index];
+	return v ? v.content : undefined;
+};
 const dragTo = (cx, cy) => {
 	global.document.dragX = cx; global.document.dragY = cy;
 	entry(`VizDrag`);
@@ -564,6 +602,17 @@ const PHASES = [
 	{ name: `the steps axis, zoomed in again`, act: stepsIn },
 	{ name: `grab the steps handle and drag it along by its own travel`, act: slideStepsByTravel },
 	{ name: `grab the trough beside the lines handle and drag: the picture pans`, act: pressTroughAndDrag },
+	// **A press on a mark, which is the whole of the sidebar's input.** A phase rather than a check
+	// afterwards, because it also has to be shown to change *nothing on screen*: the picture is the
+	// picture and the selection is a panel beside it. That comparison is made in the checks below
+	// against this phase and the one before it — **not** by the "one picture, drawn once" check, which
+	// stops at the script edit and so never sees this far down the list. It is last, so the line it
+	// leaves behind is the one the checks below read.
+	{ name: `a press on a mark: it names its line and changes nothing`, act: () => {
+		const place = markPlace();
+		if (!place) throw new Error(`no mark was drawn to press on`);
+		pressAt(place[0], place[1]);
+	} },
 ];
 
 const taken = [];
@@ -1262,6 +1311,59 @@ if (fitted && reset) {
 	console.log(reset[1].raw === fitted.raw
 		? `  OK: VizReset put the fitted picture back`
 		: `  FAIL: VizReset did not put the fitted picture back`);
+}
+
+// **The line a press on a mark names.** This is the one thing the view reports rather than draws, and it
+// is what the sidebar is filled from, so it is checked against the picture's own ruler rather than
+// against a recomputation of the view's mapping: the axis says where a line is, and the line a press
+// names must be the one the axis puts at that mark's height. A sign error or a half-row offset — both
+// of which this file has paid for — would show here as a line one or two out.
+const pressed = taken[taken.length - 1];
+const beforePress = taken[taken.length - 2];
+if (pressed && beforePress) {
+	console.log(pressed[1].raw === beforePress[1].raw
+		? `  OK: and the press changed nothing on screen — the picture is byte-identical across it`
+		: `  FAIL: a press on a mark repainted the picture`);
+}
+const pressedTicks = (pressed && pressed[1].ticks) || [];
+const pressedPlace = markPlace();
+const named = Number(viewVar(`VizHit`));
+if (!pressedPlace || pressedTicks.length < 2) {
+	console.log(`  ..: a press on a mark cannot be checked here (${allMarks().length} mark(s) drawn, `
+		+ `${pressedTicks.length} axis tick(s)) — the fixture is too small to say`);
+} else {
+	const first = pressedTicks[0];
+	const lastTick = pressedTicks[pressedTicks.length - 1];
+	const slope = (lastTick.y - first.y) / (lastTick.line - first.line);
+	const expected = Math.round(first.line + (pressedPlace[1] - first.y) / slope);
+	console.log(Math.abs(expected - named) <= 1
+		? `  OK: a press on a mark names the line the axis puts at that mark's height `
+			+ `(pressed y=${pressedPlace[1]}, the axis says line ${expected}, the pane reported ${named})`
+		: `  FAIL: a press on a mark named line ${named}; the axis puts line ${expected} at that height`);
+}
+// And a press *away* from every mark must name nothing at all: the selection the reader made a moment
+// ago is still what they are looking at, so a pan that began on empty picture must not clear the panel
+// on its way past. The point chosen is the frame's corner furthest from any mark, and the check says
+// when the fixture has no such point rather than failing on a mark it could not avoid.
+const marks = allMarks();
+if (!marks.length) {
+	console.log(`  ..: no marks drawn, so there is no empty picture to press on`);
+} else {
+	const corners = [[70, 70], [930, 70], [70, 630], [930, 630]];
+	const away = corners
+		.map(c => ({ c, d: Math.min(...marks.map(m => Math.hypot(m[0] - c[0], m[1] - c[1]))) }))
+		.sort((a, b) => b.d - a.d)[0];
+	if (away.d < 30) {
+		console.log(`  ..: every corner is within ${Math.round(away.d)} units of a mark, so an empty `
+			+ `press cannot be made on this recording`);
+	} else {
+		pressAt(away.c[0], away.c[1]);
+		const empty = Number(viewVar(`VizHit`));
+		console.log(empty === 0
+			? `  OK: a press ${Math.round(away.d)} units clear of every mark names no line, so the last `
+				+ `selection stands`
+			: `  FAIL: a press on empty picture named line ${empty}`);
+	}
 }
 
 // What it asked the DOM for, and what the layers actually contain.

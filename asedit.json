@@ -221,12 +221,40 @@
     "overflow": "hidden",
     "#": ["$BlocksToc", "$BlocksCodePane", "$BlocksDivider", "$BlocksDocPane"]
   },
+  "$GraphHost": {
+    "#element": "div",
+    "@id": "se-graph-host",
+    "flex": "1",
+    "min-width": "0",
+    "height": "100%"
+  },
+  "$GraphSide": {
+    "#element": "div",
+    "@id": "se-graph-side",
+    "width": "340px",
+    "flex-shrink": "0",
+    "height": "100%",
+    "box-sizing": "border-box",
+    "background": "#f8f8f5",
+    "color": "#222",
+    "overflow": "hidden"
+  },
+  "$GraphGrip": {
+    "#element": "div",
+    "@id": "se-graph-grip",
+    "width": "6px",
+    "flex-shrink": "0",
+    "height": "100%",
+    "cursor": "col-resize",
+    "background": "#bbb"
+  },
   "$GraphArea": {
     "#element": "div",
     "@id": "se-graph-area",
     "display": "none",
+    "flex-direction": "row",
     "height": "calc(100vh - 40px)",
-    "#": []
+    "#": ["$GraphHost", "$GraphGrip", "$GraphSide"]
   },
   "$BlocksArea": {
     "#element": "div",

@@ -1,0 +1,198 @@
+!! asedit-side.allspeak — the editor's Graph sidebar, as a companion module.
+!!
+!! The sidebar is the reading aid beside the picture: a tabbed panel down the right-hand edge of the Graph pane, whose first tab shows the doc block that the line under a clicked mark belongs to. It is a module for the same reason the drawing is — the editor needs none of it until somebody opens a run — and it is a *separate* module from the drawing for a reason worth stating: the two are about different things, a picture and a reading, they attach to different elements, and either can grow without the other's file growing with it. Each is given its own box by `asedit.json`, so neither lays the other out.
+!!
+!! What it owns, and what it does not. Everything inside its panel: the tab strip, the body, the heading, the prose and the hint that stands in for them before anything is clicked. **It does not find the block.** Which doc block holds a line is a question about the script's structure, and the editor already answers it for Blocks mode; a second answer here would be a second parser to keep in step. So the editor sends the block — its heading and its prose — and this module is a pane. That is also why nothing is read from disk here: the run, the path, and every block all arrive by message.
+!!
+!! What crosses. One dict in, and it is one of two kinds, so the message says which: a `run` carries the script's path and whether the pane is still on screen, and a `block` carries the line that was clicked, whether any block holds it, and the heading and prose to show if one does. Nothing goes back — this module has no gestures and nothing to report — and it never needs to know that a picture exists.
+!   -- the module, and the panel it owns --
+
+    script ASEditorSide
+!! @hash 62b44485
+!! @verified 62b44485
+!!!
+!! What the module holds from the editor's page, and the state the boundary is kept in.
+!!
+!! The panel is attached **by id** — `asedit.json` names it, the same way the editor names every element it owns — so the module has a handle on the page without the editor creating anything for it. Everything the panel is made of is built inside that one element, so the page names one box for the sidebar and no more.
+!   -- the page, by id --
+    div SideHost
+!   -- the panel's own elements, built once --
+    div SideTabs            ! the strip along the top
+    div SideTab             ! a pool: one element per tab, created at its index
+    div SideBody            ! everything under the strip
+    span SideHead           ! what the body is showing, as a line
+    div SideProse           ! and the prose itself, in the reader's serif
+    div SideHint            ! what stands in for both before a mark is clicked
+    variable SideBuilt      ! 1 once the elements exist, because a message can arrive twice
+!   -- the tabs --
+    variable SideTabName    ! array: the label on each tab
+    variable SideTabCount   ! how many there are
+    variable SideTabSel     ! which is up
+    variable SideTabI       ! scratch: index over them
+    variable SideTabLabel   ! scratch: one tab's label, for the tooltip and the row
+!   -- the run, and the block shown for a click --
+    variable SideRun        ! the dict the editor sent, as it arrived
+    variable SideKind       ! `run` or `block`
+    variable SidePath       ! the script or its recording, named for the reader
+    variable SideLine       ! the line the clicked mark named
+    variable SideFound      ! 1 if a doc block holds that line
+    variable SideTitle      ! the block's heading, numbered as Blocks mode numbers it
+    variable SideProseText  ! its prose
+    variable SideTmp        ! general scratch
+
+    attach SideHost to `se-graph-side`
+    on message go to SideMessage
+    release parent
+    stop
+!! @hash 2eeca3e5
+!! @verified 2eeca3e5
+!!!
+!! Building the panel, once, and the tabs as the one pool of elements they are.
+!!
+!! **An AllSpeak element is a declared symbol, so a tab is a symbol rather than something grown at run time** — the same constraint the drawing's marks live under. The pool is `SideTab`, sized here to the number of tabs and created one element at a time at its own index, which is the shape Blocks mode's table of contents already uses; **so a tab is a name in `SideTabName` and a branch in `SideRender`**, and adding the next one is those two things and nothing else.
+!!
+!! The strip is built before the body so that it sits above it, and the three body elements are created once and emptied rather than replaced: a panel that rebuilt its own children on every click would flicker, and a hidden panel that keeps them is the cheaper thing to show again.
+SideBuild:
+    if SideBuilt is 1 return
+    put 1 into SideBuilt
+
+    create SideTabs in SideHost
+    set the style of SideTabs to `display:flex;gap:2px;padding:4px 8px 0 8px;border-bottom:1px solid #ddd;flex-shrink:0`
+
+    ! **The body holds no padding of its own, because the two text components carry their own margins.**
+    ! That is Graham's arrangement and it is the better one: the synopsis and the body are two things a
+    ! reader reads in two different ways, and giving each its own inset is what keeps them from being
+    ! pinned to the panel's edges at one width and lost in it at another. A single padding on the body
+    ! would look identical today and would have to be unpicked the moment one of them wanted a wider
+    ! gutter than the other.
+    create SideBody in SideHost
+    set the style of SideBody to `flex:1;overflow-y:auto;box-sizing:border-box`
+    create SideHead in SideBody
+    set the style of SideHead to `display:block;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#8a8a80;margin:14px 16px 6px 16px`
+    create SideProse in SideBody
+    ! **The prose is the same reading as Blocks gives it** — Georgia on the pane's own paper — because a
+    ! doc block a reader has met in Blocks should not meet them differently here. The colour is set rather
+    ! than inherited: the panel is light now, but a component that relied on that would break the day the
+    ! panel's colour changed, and light-grey-on-light is the failure nobody notices until it ships.
+    !
+    ! `pre-wrap` rather than running the text together, because the doc-block convention writes one
+    ! paragraph to a line and those lines are the paragraphs: re-flowing them here would throw the shape
+    ! away, which is the one thing the convention is for.
+    set the style of SideProse to `font-family:Georgia,serif;font-size:14px;line-height:1.5;white-space:pre-wrap;color:#222;margin:0 16px 16px 16px`
+    create SideHint in SideBody
+    set the style of SideHint to `color:#8a8a80;font-size:12px;font-style:italic;margin:14px 16px`
+
+    ! The names first, then the strip built from them, so the strip and this list cannot disagree
+    ! about how many tabs there are.
+    put 1 into SideTabCount
+    set the elements of SideTabName to SideTabCount
+    index SideTabName to 0
+    put `Doc block` into SideTabName
+
+    put 0 into SideTabSel
+    set the elements of SideTab to SideTabCount
+    put 0 into SideTabI
+    while SideTabI is less than SideTabCount
+    begin
+        index SideTab to SideTabI
+        create SideTab in SideTabs
+        index SideTabName to SideTabI
+        put SideTabName into SideTabLabel
+        set the content of SideTab to SideTabLabel
+        set attribute `title` of SideTab to `Show the ` cat SideTabLabel cat ` for the line a mark names`
+        on click SideTab go to SideTabClick
+        add 1 to SideTabI
+    end
+    gosub to SideTabsDraw
+    return
+!! @hash abc5520c
+!! @verified abc5520c
+!!!
+!! The tab strip's one piece of state, which is which tab is up.
+!!
+!! The selected tab is the only one that differs, and it is redrawn from `SideTabSel` rather than remembered on the element: the same rule the TOC rows follow, so a tab cannot be lit and not be the one being shown.
+SideTabsDraw:
+    put 0 into SideTabI
+    while SideTabI is less than SideTabCount
+    begin
+        index SideTab to SideTabI
+        put `padding:4px 10px;font-size:11px;border-radius:3px 3px 0 0;cursor:pointer;background:` into SideTmp
+        if SideTabI is SideTabSel put SideTmp cat `#1e88e5;color:white` into SideTmp
+        else put SideTmp cat `#e4e2da;color:#555` into SideTmp
+        set the style of SideTab to SideTmp
+        add 1 to SideTabI
+    end
+    return
+
+SideTabClick:
+    put the index of SideTab into SideTabSel
+    gosub to SideTabsDraw
+    gosub to SideRender
+    stop
+!! @hash e76c1079
+!! @verified e76c1079
+!!!
+!! What the body shows, which is one of three things: a block, a line in no block, or nothing yet.
+!!
+!! **The middle case is a real answer rather than an error.** The lines before the first doc block and the code between two of them are outside the convention by design, and a reader who clicks a mark there should be told that rather than shown the last block somebody looked at — which is what a panel that only ever replaced its contents on a hit would do.
+!!
+!! The hint is what the panel says whenever there is nothing to show, and it is the only thing in this module that tells a reader what the panel is for.
+SideRender:
+    if SideKind is not `block` go to SideRenderHint
+    if SideFound is 0 go to SideRenderOutside
+    set the content of SideHead to SideTitle
+    set the content of SideProse to SideProseText
+    set the content of SideHint to ``
+    return
+
+SideRenderOutside:
+    set the content of SideHead to `Line ` cat SideLine
+    set the content of SideProse to ``
+    set the content of SideHint to `This line is outside any doc block.`
+    return
+
+SideRenderHint:
+    set the content of SideHead to ``
+    set the content of SideProse to ``
+    set the content of SideHint to `Click a mark in the picture to see the doc block its line belongs to.`
+    return
+!! @hash edb50fbd
+!! @verified edb50fbd
+!!!
+!! The boundary: one message in, and the module parks until the next one.
+!!
+!! `release parent` in the plumbing above is what lets the editor's `run` return, and this is what carries on from there: the panel is built on the first message rather than at load, because a module that is loaded and never opened should cost nothing but its attach.
+!!
+!! The two kinds are told apart by the message's own `kind` rather than by which of its properties are present, so a field can be added to either without the other being read wrongly.
+SideMessage:
+    put the message into SideRun
+    put property `kind` of SideRun into SideKind
+    gosub to SideBuild
+    if SideKind is `block` go to SideBlockArrived
+    if property `open` of SideRun is 0 go to SideClosed
+    put property `path` of SideRun into SidePath
+    ! A new run clears whatever the last click left up, because the block it showed belonged to another
+    ! script — the picture has been replaced, and so has everything the sidebar was saying about it.
+    gosub to SideRender
+    stop
+
+SideBlockArrived:
+    put property `line` of SideRun into SideLine
+    put property `found` of SideRun into SideFound
+    put property `title` of SideRun into SideTitle
+    put property `prose` of SideRun into SideProseText
+    ! Said here as well as in the editor, so that the two halves of the relay can be told apart when only
+    ! one of them is working: this line means the panel was reached, and its absence means the message
+    ! never crossed. It names its own subject so a copied line still makes sense on its own.
+    log `sidebar: showing line ` cat SideLine cat ` found=` cat SideFound cat ` title=` cat SideTitle
+    gosub to SideRender
+    stop
+
+!   The pane is off screen. Nothing is said and nothing is cleared: the panel is hidden with the rest
+!   of the Graph area, so it will be showing the same block when the pane comes back, which is what a
+!   reader returning to the same run expects.
+SideClosed:
+    stop
+!! @hash 461c0cd1
+!! @verified 461c0cd1
+!!!

@@ -3,11 +3,17 @@
 #
 # Each starter zip bundles the language-specific bootstrap files
 # (CLAUDE.md, AGENTS.md, server.allspeak, edit.html) with the shared editor
-# (asedit.allspeak, asedit-graph.allspeak, asedit.json) and the doc-block analyser
-# all at the zip root.
+# (asedit.allspeak, asedit-graph.allspeak, asedit-side.allspeak, asedit.json) and the
+# doc-block analyser all at the zip root.
+#
+# **The Graph pane and its sidebar are two files and both travel.** They are separate modules because
+# each is bulky and the editor needs neither until a run is opened; a project that has one and not the
+# other gets a picture with a status line saying the sidebar could not be loaded, which is the pane's
+# own lenient path — but there is no reason to ship it that way.
 #
 # Run after editing anything under starter/ or after changing
-# asedit.allspeak / asedit-graph.allspeak / asedit.json and the tools an agent can use:
+# asedit.allspeak / asedit-graph.allspeak / asedit-side.allspeak / asedit.json and the tools an
+# agent can use:
 # tools/asdoc-check.py, tools/plotview-check.js, tools/asdoc-check-cli.allspeak and
 # tools/viz-align-measure.py. Languages are auto-discovered from starter/*/ subdirectories.
 #
@@ -64,14 +70,14 @@ for dir in starter/*/; do
             cp -p "$dir$extra" "$work/"
         fi
     done
-    cp -p asedit.allspeak asedit-graph.allspeak asedit.json "$work/"
+    cp -p asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json "$work/"
     for tool in asdoc-check.py plotview-check.js viz-align-measure.py; do
         cp -p "tools/$tool" "$work/"
     done
 
     out="$PWD/deploy/allspeak-$lang.zip"
     rm -f "$out"
-    zip_files="CLAUDE.md server.allspeak edit.html asedit.json asedit.allspeak asedit-graph.allspeak asdoc-check.py plotview-check.js viz-align-measure.py"
+    zip_files="CLAUDE.md server.allspeak edit.html asedit.json asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asdoc-check.py plotview-check.js viz-align-measure.py"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$work/$extra" ]; then
             zip_files="$zip_files $extra"

@@ -93,10 +93,12 @@
             download RepoBase cat `server.allspeak` to BaseDir cat `/server.allspeak`
             download RepoBase cat `asedit.json` to BaseDir cat `/asedit.json`
             download RepoBase cat `asedit.allspeak` to BaseDir cat `/asedit.allspeak`
-            ! The Graph pane is a companion module now, fetched by the editor when the pane is
-            ! first opened — so it travels with the editor, and a project that updates the editor
-            ! gets the pane that matches it.
+            ! The Graph pane and its sidebar are companion modules now, fetched by the editor when the
+            ! pane is first opened — so they travel with the editor, and a project that updates the
+            ! editor gets the pair that matches it. Both are listed: a project that fetched only one
+            ! would have a pane it can draw and a sidebar that never loads.
             download RepoBase cat `asedit-graph.allspeak` to BaseDir cat `/asedit-graph.allspeak`
+            download RepoBase cat `asedit-side.allspeak` to BaseDir cat `/asedit-side.allspeak`
             save RemoteVersion to BaseDir cat `/.code-version`
             print `Update complete`
         end

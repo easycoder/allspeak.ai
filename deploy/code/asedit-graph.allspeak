@@ -4,7 +4,7 @@
 !!
 !! What it owns. Everything inside the pane, and the pane itself. The drawing and its state, the four gestures (the wheel scrolls the lines, shift-wheel zooms the lines, control-wheel the steps, a drag pans), the label names down the right-hand edge, the source drawn behind the heat, the key, the caption, the estimate shown before a long draw and the calibration file that estimate is learned from, and the status line for as long as it has something to say on it.
 !!
-!! What crosses the boundary, and what does not. One dict in: the run's text, the script's text, the three localised flow words, and the path the recording was expected at — the last only so that "no recording beside this script" can name the file it looked for. Nothing else crosses. The gestures do not: pan and zoom are registered here, on the pane, because a message per drag event would put a round trip inside every pointer move. Nor does the pane's visibility, which is the editor's mode system to run — the editor says whether this pane is on screen, and the module's own `VizShown` is what its handlers consult, because that is the one thing it cannot see for itself.
+!! What crosses the boundary, and what does not. One dict in: the run's text, the script's text, the three localised flow words, and the path the recording was expected at — the last only so that "no recording beside this script" can name the file it looked for. The gestures do not cross: pan and zoom are registered here, on the pane, because a message per drag event would put a round trip inside every pointer move. Nor does the pane's visibility, which is the editor's mode system to run — the editor says whether this pane is on screen, and the module's own `VizShown` is what its handlers consult, because that is the one thing it cannot see for itself. **One small dict goes the other way**, and only on a press: which line the mark under the pointer names. What a line *means* is the editor's model and the sidebar's to show, so the pane reports the line and decides nothing about it.
 !!
 !! Acquisition stays with the editor. The recording and the script are fetched there, because the editor is the one that knows which tab is open; this module fetches only what is its own, the calibration file, and never executes anything in order to draw a run.
 !   -- the module, and the pane it owns --
@@ -55,7 +55,7 @@
 !!
 !! The pane's visibility is the one thing a module cannot see for itself, which is what `VizShown` is for: the editor turns it on and off with a message, and every handler below consults it.
 !   -- the pane, and the line that says what is happening --
-    attach VizHost to `se-graph-area`
+    attach VizHost to `se-graph-host`
     attach StatusSpan to `se-status`
 !   -- the gestures --
     on pick VizHost
@@ -77,8 +77,8 @@
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 694e24d1
-!! @verified 694e24d1
+!! @hash 10f33ffc
+!! @verified 10f33ffc
 !!!
 !! The boundary: one message in, and the module parks until the next one.
 !!
@@ -342,6 +342,20 @@ VizRemember:
     variable VizDragY
     variable VizDx
     variable VizDy
+    ! What a press on a *mark* needs: which line the nearest one names, how near it was, and the
+    ! scratch the walk over the recording uses. `VizMark` is the dict that carries the answer back to
+    ! the editor — the one thing that leaves this module, and only when a press names a line.
+    variable VizHit
+    variable VizHitDist
+    variable VizHitReach
+    variable VizHitI
+    variable VizHitX
+    variable VizHitY
+    variable VizHitDx
+    variable VizHitDy
+    variable VizHitNear
+    variable VizHitTmp
+    variable VizMark
     variable VizPixelsW
     variable VizPixelsH
     variable VizPixelsK
@@ -458,8 +472,8 @@ Draw:
     put 1 into VizDrawing
     put json of VizTrace into VizParsed
     put property `traceEvents` of VizParsed into VizEvents
-!! @hash e77c1d8d
-!! @verified e77c1d8d
+!! @hash d9880210
+!! @verified d9880210
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
 !!
@@ -1444,6 +1458,10 @@ VizGrab:
     put VizViewY0 into VizGrabFromY
     put 0 into VizSlide
     gosub to VizHandleAt
+    ! A press on the picture is also a *selection*. The bars are tested first because a press on one of
+    ! those is a grab rather than a pointing at a mark, which is why this sits behind the test above
+    ! rather than beside it — and a press that names no mark leaves the last selection alone.
+    if VizSlide is 0 gosub to VizSelect
     put 1 into VizGrabbed
     return
 
@@ -1640,6 +1658,94 @@ VizHandleAt:
             if VizPtrA is less than 5 put 2 into VizSlide
         end
     end
+    return
+
+VizMarkAt:
+    ! **Which mark the pointer went down on, if any — and why this is a walk rather than a hit box.**
+    ! Every mark of a kind is one path, which is the same constraint that makes a layer cost string
+    ! building rather than DOM nodes, so there is nothing for the DOM to hit and the answer has to be
+    ! arithmetic — exactly as it is for the bars above. The walk is over the recording's *arrivals*
+    ! rather than over what was drawn, and it runs once per press: a pass of a few hundred integer
+    ! operations is the cheapest thing in this file, and it is paid only when somebody clicks.
+    !
+    ! The comparison is in the picture's own units, which is what `VizPlaceX` and `VizPlaceY` produce.
+    ! **Reads `VizPtrX`/`VizPtrY`, the pointer converted into those units** — `VizHandleAt` has already done that work by the time this runs, and converting a second time would be a second copy of the letterbox arithmetic, which is the one thing here that has already been got wrong once. Both mappings are *called* rather than written out again, for the reason they exist: a mark and a rule that disagreed about where a line is was a real fault, found by measurement.
+    !
+    ! The reach is the dot's own radius plus a few units. A mark is fourteen units across, which is a
+    ! hard thing to hit exactly, and every scrollbar a reader has used forgives a near miss. The
+    ! *nearest* mark wins rather than the first found: two arrivals a line apart are a row apart, so a
+    ! press between them is closer to one of them, and that is the one the reader is pointing at.
+    !
+    ! A mark whose line is off the window is skipped by the same reasoning the draw uses: it is not in
+    ! the picture, so it cannot be pointed at.
+    put 0 into VizHit
+    put 1000000 into VizHitDist
+    divide VizDotSize by 2 giving VizHitReach
+    add 4 to VizHitReach
+    put 0 into VizHitI
+    while VizEvents has element VizHitI
+    begin
+        put element VizHitI of VizEvents into VizEvent
+        if property `cat` of VizEvent is `anchor`
+        begin
+            put property `args` of VizEvent into VizArgs
+            put property `steps` of VizArgs into VizSteps
+            add 0 to VizSteps
+            put VizSteps into VizTickValue
+            gosub to VizPlaceX
+            put VizTickPos into VizHitX
+            put property `line` of VizArgs into VizLine
+            add 0 to VizLine
+            put VizLine into VizTickValue
+            gosub to VizPlaceY
+            put VizTickPos into VizHitY
+            ! Outside the frame is outside the picture, and the margin is where the frame begins.
+            if VizHitX is not less than VizMargin and VizHitX is not greater than VizPlotRight
+            begin
+                if VizHitY is not less than VizMargin and VizHitY is not greater than VizPlotBottom
+                begin
+                    take VizPtrX from VizHitX giving VizHitDx
+                    take VizPtrY from VizHitY giving VizHitDy
+                    ! Absolute without a function: the language has no `abs`, and the axis clamp
+                    ! spells the same test out.
+                    if VizHitDx is less than 0 multiply VizHitDx by -1
+                    if VizHitDy is less than 0 multiply VizHitDy by -1
+                    if VizHitDx is not greater than VizHitReach and VizHitDy is not greater than VizHitReach
+                    begin
+                        ! Squared, so no square root is needed and the comparison is exact — the
+                        ! scaled-integer rule this file uses everywhere a proportion is wanted.
+                        multiply VizHitDx by VizHitDx giving VizHitNear
+                        multiply VizHitDy by VizHitDy giving VizHitTmp
+                        add VizHitTmp to VizHitNear
+                        if VizHitNear is less than VizHitDist
+                        begin
+                            put VizHitNear into VizHitDist
+                            put VizLine into VizHit
+                        end
+                    end
+                end
+            end
+        end
+        add 1 to VizHitI
+    end
+    return
+
+VizSelect:
+    ! **The pane reports and does not decide.** Which doc block holds a line is the editor's model and
+    ! the sidebar's to show, so one small dict goes back and nothing here changes on screen — the panel
+    ! beside the picture *is* the feedback. It travels on a press rather than on a move, for the same
+    ! reason the gestures are registered here: a report per pointer move would put a message round trip
+    ! inside every drag.
+    !
+    ! A press that names no mark reports nothing rather than reporting "nothing found". The selection
+    ! the reader made a moment ago is still what they are looking at, and a pan that began on empty
+    ! picture would otherwise clear the panel on its way past.
+    gosub to VizMarkAt
+    if VizHit is 0 return
+    put `{}` into VizMark
+    set property `kind` of VizMark to `mark`
+    set property `line` of VizMark to VizHit
+    send VizMark to parent
     return
 
 VizSlideTo:
@@ -1863,8 +1969,8 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 59140335
-!! @verified 59140335
+!! @hash 057331bc
+!! @verified 057331bc
 !!!
 !! And a doc block is not drawn in it.
 !!

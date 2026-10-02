@@ -87,12 +87,28 @@
 
 !   -- Blocks mode (parser + view + edit) --
     variable BlocksMode    ! 0 = flat, 1 = Blocks pane visible
-    div VizHost          ! Graph-mode pane: shown and hidden here, drawn in by the pane's module
+    div GraphArea        ! the Graph pane's whole area — the drawing, the grip and the sidebar — shown and hidden here
+    div GraphGrip        ! the draggable splitter between the drawing and the sidebar
+    div GraphSide        ! the sidebar's box, which is the module's; this file only sizes it
+    variable GripPicked    ! 1 while the drag in progress began on the Graph grip
+    variable GripWidthAtPick ! the sidebar's width when that drag began
+    variable GripMost      ! the widest the sidebar may get, which depends on the window
+    variable SideStored    ! the sidebar width kept from a previous session
     variable GraphMode     ! 0 = not graphed, 1 = Graph pane visible
     variable TracePath     ! the recording this tab expects, sent to the pane so a miss can name it
     module VizModule       ! the Graph pane, a companion module fetched and run on demand
     variable VizSrc         ! its source, as fetched — `run` compiles the text
     variable VizLoaded      ! 1 once it is running, so the fetch happens once
+    module SideModule      ! the Graph sidebar, a second companion module beside the pane
+    variable SideSrc        ! its source, as fetched
+    variable SideLoaded     ! 1 once it is running
+    variable SideIn         ! the dict the pane reported, as it arrived
+    variable SideSel        ! the line the pane last reported, which is what the sidebar is about
+    variable SideMsg        ! the dict sent to the sidebar: which kind of news, and what it is
+    variable SideFound      ! 1 if a doc block holds that line
+    variable SideTitle      ! the block's first prose line, for the sidebar's heading
+    variable SideProse      ! its prose
+    variable SideI          ! scratch: index over the sections looking for one
     variable VizRun         ! the dict the pane is sent: the run, the script, the words, the path
     variable TraceText      ! the recording, as read — the `trace` field of that dict
     variable SourceText     ! the script, as read — the `source` field of it
@@ -178,8 +194,8 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash c90d5637
-!! @verified c90d5637
+!! @hash f60e0a6d
+!! @verified f60e0a6d
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -204,7 +220,9 @@
     attach CloseBtn to `se-closebtn`
     attach BlocksBtn to `se-blocksbtn`
     attach GraphBtn to `se-graphbtn`
-    attach VizHost to `se-graph-area`
+    attach GraphArea to `se-graph-area`
+    attach GraphGrip to `se-graph-grip`
+    attach GraphSide to `se-graph-side`
     attach EditorArea to `se-editor-area`
     attach BlocksArea to `se-blocks-area`
     attach BlocksTitle to `se-blocks-title`
@@ -217,8 +235,8 @@
     attach BlocksDocPane to `se-blocks-doc`
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
-!! @hash 8cb592d8
-!! @verified 8cb592d8
+!! @hash c52f8b76
+!! @verified c52f8b76
 !!!
 !! Some general initialisation
 !   -- CodeMirror --
@@ -377,13 +395,50 @@ VersionDone:
 
     on pick BlocksDivider
     begin
+        ! Two splitters and one document-level drag, so the flag says which of them was taken hold of —
+        ! the drag and the drop then know which they are moving without having to ask the pointer.
+        put 0 into GripPicked
         put the pick position into PickPos
         put property `x` of PickPos into PickX
         put the width of BlocksCodePane into CodeWidthAtPick
     end
+    on pick GraphGrip
+    begin
+        put 1 into GripPicked
+        put the pick position into PickPos
+        put property `x` of PickPos into PickX
+        put the width of GraphSide into GripWidthAtPick
+    end
     on drag
     begin
         put the drag position into DragPos
+        ! **The Graph grip, which is the one drag that belongs to Graph mode.** It moves the sidebar's
+        ! *left* edge, so a pointer travelling left makes the panel wider — the opposite sense to the
+        ! Blocks splitter, whose right edge the pointer carries. The clamps are a floor and a ceiling: at
+        ! the floor the prose has no width left to be read in, and at the ceiling the drawing is the thing
+        ! being squeezed, which is the pane's whole purpose. The ceiling is the panel's own width less a
+        ! floor for the picture, so a narrow window cannot let the sidebar eat the run.
+        if GripPicked is 1
+        begin
+            put property `x` of DragPos into DragX
+            take DragX from PickX giving NewWidth
+            ! **The width kept at the pick is added *to* the travel, and the destination is the travel.**
+            ! Written the other way round — `add NewWidth to GripWidthAtPick` — this compiles and runs, and
+            ! is wrong twice over: the sum lands in the width kept at the pick, so the travel is left as it
+            ! was and every drag clamps, and the starting width grows by the travel on *every* pointer move,
+            ! so a drag that went on long enough would accelerate. The two idioms differ by which operand is
+            ! the destination, and both look reasonable; the harness's grip checks exist for this line.
+            add GripWidthAtPick to NewWidth
+            put 700 into GripMost
+            put the width of GraphArea into Tmp
+            take 320 from Tmp
+            if Tmp is less than GripMost put Tmp into GripMost
+            if GripMost is less than 200 put 200 into GripMost
+            if NewWidth is less than 200 put 200 into NewWidth
+            if NewWidth is greater than GripMost put GripMost into NewWidth
+            set style `flex` of GraphSide to `0 0 ` cat NewWidth cat `px`
+            return
+        end
         ! A drag in Graph mode belongs to the picture, and the pane's own handler is registered on the
         ! document too — so this one has nothing to do while that pane is up, and says so by doing
         ! nothing rather than by asking the pane whether it wants it.
@@ -399,6 +454,21 @@ VersionDone:
     end
     on drop
     begin
+        ! **The grip answers first**, because it is the one that can be held while Graph mode is up — the
+        ! Blocks splitter's own guard below refuses to do anything there and would otherwise swallow this
+        ! drop, losing the width the reader just chose.
+        !
+        ! Nothing is redrawn on the way out, and that is deliberate rather than an omission: the pane
+        ! measures its own box on every gesture (`VizPixelScale` is called from the pick), so the picture
+        ! needs no telling that its box has changed, and a redraw here would re-fit the drawing under the
+        ! reader's hand for nothing.
+        if GripPicked is 1
+        begin
+            put 0 into GripPicked
+            put the width of GraphSide into FinalWidth
+            put FinalWidth into storage as `asedit-graph-side-width`
+            return
+        end
         if GraphMode is 1 return
         put the width of BlocksCodePane into FinalWidth
         put FinalWidth into storage as `asedit-blocks-code-width`
@@ -407,8 +477,17 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash 4be08809
-!! @verified 4be08809
+!! @hash aeba3967
+!! @verified aeba3967
+!!!
+!! One `on message`, registered here rather than with the code it runs.
+!!
+!! **A handler is registered by *executing* the line, and this file stops in the block below.** Everything after `fork to AutoSave` is a subroutine, so a registration written beside its own handler at the end of the file would never run: the pane's report would arrive at a program with no handler and be dropped in silence. The rule that falls out of it is worth keeping — in this editor a handler goes where the flow reaches it, and only its *body* may live at the end.
+!!
+!! It is named here with its body for that reason: the handler is `SideMarkLine`, in the Graph sidebar section, and the two are one thing split by the shape of the file rather than by design.
+on message go to SideMarkLine
+!! @hash f327f0fa
+!! @verified f327f0fa
 !!!
 !! While editor is running it periodically saves changes made by the user
 !! and updates the display to show updates made externally.
@@ -1666,9 +1745,9 @@ JumpToBlock:
 !!
 !! **The recording is not made here.** It is a file beside the script — `<script>.viz.json`, which the runtime writes with `--trace=` — so a run captured on remote hardware arrives with the project however the project travels, and reviewing a script never has to execute it. This pane reads that file and draws it, nothing more.
 !!
-!! **The drawing is a module, loaded on demand.** It is half of this editor by size and none of it is needed until somebody looks at a run, so it lives in `asedit-graph.allspeak`: fetched, compiled and run on the first click on Graph, and messaged from then on. Two consequences are worth knowing. This file names no `svg` vocabulary any more — that left with the pane, and the pane is what needs the plugin, which the page still loads because the pane is compiled when it is fetched. And `various/plotview.allspeak` is gone: the module file *is* the view, so there is one copy of the drawing rather than a section kept verbatim beside the harness's own copy of the same code. The harness cuts the view out of the module at its header, so what it tests is still what ships.
+!! **The drawing and its sidebar are two modules, each loaded on demand.** They are half of this editor by size between them and none of it is needed until somebody looks at a run, so one is `asedit-graph.allspeak` and the other `asedit-side.allspeak`: each fetched, compiled and run on the first click on Graph, and messaged from then on. The split is by *what each is about* rather than by size alone — the pane is the picture and owns the gestures, the sidebar is the reading aid and owns its tabs — so either can grow without the other's file growing with it, and the two are given **different elements** to attach to, which is what keeps the layout out of both of them. Two consequences are worth knowing. This file names no `svg` vocabulary any more — that left with the pane, and the pane is what needs the plugin, which the page still loads because the pane is compiled when it is fetched. And `various/plotview.allspeak` is gone: the module file *is* the view, so there is one copy of the drawing rather than a section kept verbatim beside the harness's own copy of the same code. The harness cuts the view out of the module at its header, so what it tests is still what ships.
 !!
-!! **What crosses is a dict, and only when a run is opened.** This section fetches the recording and the script — it is the one that knows which tab is open — and sends the pane their text, the three localised flow words, and the path the recording was expected at. Nothing comes back that the editor uses: the wait, and the message about a recording that is not there, go on the status line, which the pane attached for itself. The gestures never cross at all, and leaving is one more message, because a module cannot see that it has been taken off the screen.
+!! **What crosses is a dict each way, and only when a run is opened.** This section fetches the recording and the script — it is the one that knows which tab is open — and sends the pane their text, the three localised flow words, and the path the recording was expected at. The sidebar is sent the same run, because a doc block is prose about a *line* and the click is what names the line. **And one thing comes back**: a click on a mark is reported here as the line it names, and this file looks that line up in the doc-block model it already holds and shows the result in the sidebar. The editor is the hub in both directions rather than the pane knowing that the sidebar exists, which is what keeps either of them replaceable. The wait, and the message about a recording that is not there, go on the status line, which the pane attached for itself. The gestures never cross at all, and leaving is one more message each, because a module cannot see that it has been taken off the screen.
 !!
 !! **The plumbing is one sentence.** Markers decide what is recorded, and a script without them has nothing to show; rather than explain that in the pane, the message names the file it looked for, because that is the one thing a reader needs in order to produce one.
 !!
@@ -1696,13 +1775,28 @@ EnterGraph:
     set the content of GraphBtn to `Edit`
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `none`
-    set style `display` of VizHost to `flex`
+    set style `display` of GraphArea to `flex`
+    ! The sidebar's width, from the last session that had one. Restored here, before the pane is fetched,
+    ! so the drawing is fitted to the box it will actually be drawn in — a re-fit a moment later would
+    ! move the picture under the reader's eye for no reason it could see.
+    get SideStored from storage as `asedit-graph-side-width`
+    if SideStored is `null` put 0 into SideStored
+    if SideStored is `undefined` put 0 into SideStored
+    if SideStored is empty put 0 into SideStored
+    if SideStored is greater than 200 set style `flex` of GraphSide to `0 0 ` cat SideStored cat `px`
     ! Where the flat editor was standing, so leaving puts it back there. Read before the editor is
     ! hidden: a hidden editor still answers, but reading it while it is up is the honest order.
     gosub to TabRemember
-    gosub to LoadVizModule
+    gosub to LoadModules
+    ! **The section model is built for this file before the sidebar can be asked about a line.** This file
+    ! parses its own buffer in Blocks mode and only there, so a reader who opens a run without ever having
+    ! opened Blocks would otherwise have no sections at all — or worse, the ones left behind by the last
+    ! file that *was* blocked. It is done here, before the fetch, because the fetch is what puts the pane
+    ! on screen: after it there is a window in which a mark could be clicked against a stale model.
+    gosub to ParseSource
     gosub to FetchRunText
     gosub to SendRunToViz
+    gosub to SendRunToSide
     stop
 
 !   The two files the run is made of, read and defaulted before either is fetched.
@@ -1726,17 +1820,48 @@ FetchRunText:
 VizSendTheRun:
     return
 
-!   The pane's module: fetched, compiled and run once, and messaged from then on.
+!   Both modules: each fetched, compiled and run once, and messaged from then on.
 !
 !   **`run` compiles the *text*, not a path**, which is why the fetch comes first — and it is a
-!   fetch of a file beside this page, so a project that has the editor has the pane as well.
-!   `release parent` inside the module is what makes this `run` return: by the time it does, the pane
-!   is attached, its handlers are registered and it is listening.
+!   fetch of a file beside this page, so a project that has the editor has both as well.
+!   `release parent` inside each module is what makes its `run` return: by the time it does, that
+!   module is attached, its handlers are registered and it is listening.
+LoadModules:
+    if VizLoaded is 0 gosub to LoadVizModule
+    if SideLoaded is 0 gosub to LoadSideModule
+    return
+
 LoadVizModule:
-    if VizLoaded is 1 return
     rest get VizSrc from `asedit-graph.allspeak?v=` cat now or go VizLoadFailed
     run VizSrc as VizModule
     put 1 into VizLoaded
+    return
+
+!   **The sidebar is not the pane, so it is loaded leniently.** Without it the picture still works —
+!   it is a reading aid beside a drawing — so a page that has one file and not the other says so on
+!   the status line and carries on, rather than dropping out of Graph mode over the half of the pane
+!   that is optional. The pane is the opposite case: with no pane there is nothing to look at, so a
+!   page without it leaves the mode entirely.
+!
+!   The default-then-read is `FetchRunText`'s pattern and for its reason: a failure clause ends the
+!   thread, so it has to point at the continuation rather than merely set a value. An empty source
+!   must not reach `run`, which would try to compile nothing.
+LoadSideModule:
+    put `` into SideSrc
+    rest get SideSrc from `asedit-side.allspeak?v=` cat now or go SideLoadFailed
+    if SideSrc is empty go to SideLoadFailed
+    run SideSrc as SideModule
+    put 1 into SideLoaded
+    return
+
+SideLoadFailed:
+    ! **Not cleared after three seconds, unlike every other message here.** A module that will not load is
+    ! a fault in the page rather than news about the work, and the reader needs it to still be there when
+    ! they look up from the pointer — which is exactly what went wrong the first time this path was hit:
+    ! the sidebar was not beside the editor, the line flashed and went, and the only symptom was that
+    ! nothing happened when a mark was clicked.
+    set the content of StatusSpan to `The Graph sidebar could not be loaded`
+    log `sidebar: could not fetch ` cat `asedit-side.allspeak` cat ` — is it beside the editor?`
     return
 
 !   A page served without the pane beside it, which is the one way this can fail. Said on the status
@@ -1775,10 +1900,15 @@ SendRunToViz:
 !   anywhere in the editor would otherwise be offered to a picture nobody is looking at.
 DoExitGraph:
     put 0 into GraphMode
+    ! The grip's flag goes with the mode. It is cleared on every drop, so this is only belt and braces —
+    ! but a press that ended outside the window leaves it set, and the next drag in the flat editor would
+    ! otherwise be offered to a splitter nobody can see.
+    put 0 into GripPicked
     set the content of GraphBtn to `Graph`
-    set style `display` of VizHost to `none`
+    set style `display` of GraphArea to `none`
     set style `display` of EditorArea to `block`
     if VizLoaded is 1 gosub to TellVizClosed
+    if SideLoaded is 1 gosub to TellSideClosed
     return
 
 TellVizClosed:
@@ -1800,6 +1930,97 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash c10d97ea
-!! @verified c10d97ea
+!! @hash 5964c053
+!! @verified 5964c053
+!!!
+!! The sidebar: what the pane reports back, and what the sidebar is shown.
+!!
+!! **The pane cannot look a line up, and this file already can.** A doc block is prose about a *line*; the click names the line; and the model that knows which block holds it is the one Blocks mode is built from. So the click travels here rather than the model travelling there — which is also why the editor, and not the pane, knows that a sidebar exists at all.
+!!
+!! **`on message` is this file's first inbound message.** Everything else here is driven by the reader clicking one of the editor's own buttons; this is the one path that arrives from another program, and it arrives on the pane's pick. **The registration itself is not here** — a handler runs only if its line is executed, this file stops before this block, and the registration is in its own block above, where the flow reaches it.
+!!
+!! **The line is looked up rather than the block searched for.** `SecStart` and `SecEnd` already bound every section, so "which block holds line N" is a walk over them. A line in *no* block is an answer too, and the sidebar is told so rather than being left showing the last block it had. **And the model is built on the way in**, by the same `ParseSource` Blocks mode uses, because it used to be built *only* there: a reader who opened a run without ever opening Blocks had no sections at all — or, worse, the ones left behind by the last file that was blocked, which is the kind of stale answer that reads as a working panel.
+SideMarkLine:
+    if GraphMode is 0 stop
+    ! **The report arrives as a dict, so its line is read as a property and never converted.** Two things
+    ! are being avoided here, and both were live faults in the first cut: `put the message into SideSel`
+    ! leaves a dict in a variable the look-up does arithmetic on, and `add 0 to` it throws rather than
+    ! coercing; and the other tempting spelling, `the value of the message`, is `parseInt` of its argument
+    ! — which on a dict is *0 for every click*, so the panel faithfully reported that line 0 is in no doc
+    ! block. The one honest spelling is the property, because the property is what the pane set.
+    put the message into SideIn
+    put property `line` of SideIn into SideSel
+    gosub to SideFindBlock
+    gosub to SendBlockToSide
+    stop
+
+SideFindBlock:
+    ! A line lies in at most one block, so the walk stops at the first it finds. The bounds are the
+    ! block's own two documented lines — its opener and its terminator — and the code the click landed
+    ! on is between them, which is why both tests are inclusive.
+    !
+    ! The heading is the block's first prose line, numbered as the Blocks view numbers it, because that
+    ! number is how a reader gets from the sidebar back to the same block in the other pane.
+    put 0 into SideFound
+    put `` into SideTitle
+    put `` into SideProse
+    put 0 into SideI
+    while SideI is less than SecCount
+    begin
+        index SecStart to SideI
+        put SecStart into From
+        index SecEnd to SideI
+        put SecEnd into To
+        if SideSel is not less than From and SideSel is not greater than To
+        begin
+            put 1 into SideFound
+            index SecProse to SideI
+            put SecProse into SideProse
+            put the position of newline in SideProse into NL
+            if NL is less than 0 put SideProse into SideTitle
+            else put left NL of SideProse into SideTitle
+            put SideI into Tmp
+            add 1 to Tmp
+            put Tmp cat `. ` cat SideTitle into SideTitle
+        end
+        add 1 to SideI
+    end
+    return
+
+SendBlockToSide:
+    if SideLoaded is 0
+    begin
+        log `sidebar: not loaded, so the block for line ` cat SideSel cat ` has nowhere to go`
+        return
+    end
+    log `sidebar: line ` cat SideSel cat ` found=` cat SideFound cat ` title=` cat SideTitle
+    put `{}` into SideMsg
+    set property `kind` of SideMsg to `block`
+    set property `line` of SideMsg to SideSel
+    set property `found` of SideMsg to SideFound
+    set property `title` of SideMsg to SideTitle
+    set property `prose` of SideMsg to SideProse
+    send SideMsg to SideModule
+    return
+
+!   The run itself, sent beside the pane's own copy of it, because the sidebar is told about a run
+!   whether or not a mark is ever clicked — and a new run has to clear whatever block the last one
+!   was showing, which is why this carries nothing but the script's name.
+SendRunToSide:
+    if SideLoaded is 0 return
+    put `{}` into SideMsg
+    set property `kind` of SideMsg to `run`
+    set property `open` of SideMsg to 1
+    set property `path` of SideMsg to TracePath
+    send SideMsg to SideModule
+    return
+
+TellSideClosed:
+    put `{}` into SideMsg
+    set property `kind` of SideMsg to `run`
+    set property `open` of SideMsg to 0
+    send SideMsg to SideModule
+    return
+!! @hash b93cb6df
+!! @verified b93cb6df
 !!!
