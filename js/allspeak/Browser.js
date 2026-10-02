@@ -1622,6 +1622,20 @@ const AllSpeak_Browser = {
 			case `pick`:
 				const pickRecord = program.getSymbolRecord(command.symbol);
 				document.pickRecord = pickRecord;
+				// **Every program that asked for a drag is run, not just the last one to ask.** The pc used
+				// to be a single value on the document, so a second `on drag` silently took the handler from
+				// the first. That is exactly what happened when the editor's Graph pane became a module: the
+				// module registers its own drag for panning, over the editor's own handler for the Blocks
+				// divider, and one of the two then did nothing at all — while the module's own comment said
+				// the two "each ignore the mode it is not in", which is only true if both of them run.
+				// `on key` has always worked by keeping a list, so this does too.
+				const fireDrag = (pcName) => {
+					for (const listener of (document.dragListeners || [])) {
+						if (typeof listener[pcName] === `number`) {
+							setTimeout(function () { listener.run(listener[pcName]); }, 1);
+						}
+					}
+				};
 				pickRecord.element.forEach(function (element, index) {
 					if (!element) {
 						return;
@@ -1634,7 +1648,9 @@ const AllSpeak_Browser = {
 					let isTouchDevice = `ontouchstart` in element;
 					if (isTouchDevice) {
 						element.addEventListener(`touchstart`, function (e) {
-							const element = e.targetTouches[0].target;
+							// The same shadowing as the mouse branch, and the same reason it goes: the attached
+							// element is the one with `blur()` and `mouseDownPc`, and the touch's own target is
+							// not it.
 							document.pickX = e.touches[0].clientX;
 							document.pickY = e.touches[0].clientY;
 							element.blur();
@@ -1646,26 +1662,29 @@ const AllSpeak_Browser = {
 						element.addEventListener(`touchmove`, function (e) {
 							document.dragX = e.touches[0].clientX;
 							document.dragY = e.touches[0].clientY;
-							setTimeout(function () {
-								program.run(document.mouseMovePc);
-							}, 1);
+							fireDrag(`mouseMovePc`);
 							return false;
 						}, false);
 						element.addEventListener(`touchend`, function () {
-							setTimeout(function () {
-								program.run(document.mouseUpPc);
-							}, 1);
+							fireDrag(`mouseUpPc`);
 							return false;
 						});
 					} else {
 						element.onmousedown = function (event) {
 							let e = event ? event : window.event;
 							e.stopPropagation();
-							// IE uses srcElement, others use target
+							// **The target is not the element, and this used to shadow one with the other.**
+							// The press lands on whatever is under the pointer — inside the editor's Graph pane
+							// that is an `<svg>`, a child of the one the script attached — while `pickIndex`,
+							// `mouseDownPc` and `blur()` all belong to the *attached* element, a `div`. An SVG
+							// element has no `blur`, so the call threw, the handler aborted, and the document's
+							// `onmousemove` — the whole of where a drag comes from — was never installed. A
+							// pane that pans by dragging simply did nothing, and the pick handler never ran
+							// either, because its `program.run` is below the throw.
 							if (program.length > 0) {
-								const element = e.target ? e.target : e.srcElement;
-								element.offsetX = e.offsetX;
-								element.offsetY = e.offsetY;
+								const target = e.target ? e.target : e.srcElement;   // IE uses srcElement
+								target.offsetX = e.offsetX;
+								target.offsetY = e.offsetY;
 								document.pickX = e.clientX;
 								document.pickY = e.clientY;
 								element.blur();
@@ -1679,21 +1698,13 @@ const AllSpeak_Browser = {
 								e.stopPropagation();
 								document.dragX = e.clientX;
 								document.dragY = e.clientY;
-								if (document.onmousemove) {
-									setTimeout(function () {
-										program.run(document.mouseMovePc);
-									}, 1);
-								}
+								fireDrag(`mouseMovePc`);
 								return false;
 							};
 							window.onmouseup = function () {
 								document.onmousemove = null;
 								document.onmouseup = null;
-								setTimeout(function () {
-									if (program && program.run) {
-										program.run(document.mouseUpPc);
-									}
-								}, 1);
+								fireDrag(`mouseUpPc`);
 								return false;
 							};
 							return false;
@@ -1702,12 +1713,22 @@ const AllSpeak_Browser = {
 				});
 				break;
 			case `drag`:
-				// Set up the move listener
-				document.mouseMovePc = command.pc + 2;
-				break;
 			case `drop`:
-				// Set up the move listener
-				document.mouseUpPc = command.pc + 2;
+				// **A drag belongs to every program that asks for one**, so the program is added to a list and
+				// keeps its own pc. This used to be a single `document.mouseMovePc`, which meant the *last*
+				// program to register a drag owned the handler — see `pick` below for what that cost. `on key`
+				// has always kept a list; this is the same shape.
+				if (typeof document.dragListeners === `undefined`) {
+					document.dragListeners = [];
+				}
+				if (!document.dragListeners.includes(program)) {
+					document.dragListeners.push(program);
+				}
+				if (command.action === `drag`) {
+					program.mouseMovePc = command.pc + 2;
+				} else {
+					program.mouseUpPc = command.pc + 2;
+				}
 				break;
 			case `key`:
 				if (typeof document.onKeyListeners === `undefined`) {

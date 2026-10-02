@@ -2,7 +2,7 @@
 !!
 !! The pane draws a run: a recording sitting beside a script, read as a sequence, as an arrival count per line, and as the flow between the marks. That is half of the editor by size, and none of it is needed until somebody looks at a run — so it is a module, fetched, compiled and run on the first click on **Graph**, and messaged from then on. The `svg` vocabulary is here rather than in the editor, and this is where the plugin is needed: the pane is compiled when it is fetched, which is why the page loads the plugin whether or not a run is ever opened.
 !!
-!! **What it owns.** Everything inside the pane, and the pane itself. The drawing and its state, the five gestures (the wheel scrolls the lines, shift-wheel zooms the lines, control-wheel the steps, both together scroll the steps, a drag pans), the source drawn behind the heat, the key, the caption, the estimate shown before a long draw and the calibration file that estimate is learned from, and the status line for as long as it has something to say on it.
+!! **What it owns.** Everything inside the pane, and the pane itself. The drawing and its state, the four gestures (the wheel scrolls the lines, shift-wheel zooms the lines, control-wheel the steps, a drag pans), the label names down the right-hand edge, the source drawn behind the heat, the key, the caption, the estimate shown before a long draw and the calibration file that estimate is learned from, and the status line for as long as it has something to say on it.
 !!
 !! **What crosses the boundary, and what does not.** One dict in: the run's text, the script's text, the three localised flow words, and the path the recording was expected at — the last only so that "no recording beside this script" can name the file it looked for. Nothing else crosses. The gestures do not: pan and zoom are registered here, on the pane, because a message per drag event would put a round trip inside every pointer move. Nor does the pane's visibility, which is the editor's mode system to run — the editor says whether this pane is on screen, and the module's own `VizShown` is what its handlers consult, because that is the one thing it cannot see for itself.
 !!
@@ -202,7 +202,9 @@ VizRemember:
 !!
 !! **The source is anchored to the left edge of the pane, and it is the `viewBox`'s `x` that says so.** The window's `y` moves over the document as the lines move and its height is the vertical zoom, but its `x` is always zero: what the recording does cannot drag the source sideways. The left-hand end of a line is the part that says what the line is — the indentation and the first word — so losing sight of it is losing the reading, and the window's `x` used to be derived from the horizontal window, which is exactly what took it away whenever the run was panned along. The price is the tail of a line wider than the frame, which is not reachable on screen at all now: the frame shows about a hundred and ten columns at the legible floor, so most lines fit and a few do not.
 !!
-!! **A rule is a leader, and the flow is drawn only where it is complete.** Each rule runs from one em past the last character of the line it names to the right-hand edge of the frame, so it points at its line instead of crossing it — the indentation and the first word are the part the eye reads first, and they are the part a rule drawn from the frame's left edge used to run straight through. And a transfer is drawn only when *both* of its ends are in the window, so every line in the picture begins and ends on a rule. A transfer reaching outside used to be kept and clamped to the frame's border, which put an end on a border rather than on a line; both changes come from the same look at the picture.
+!! **A rule is a leader, and the flow is drawn in full and masked.** Each rule runs from one em past the last character of the line it names to the right-hand edge of the frame, so it points at its line instead of crossing it — the indentation and the first word are the part the eye reads first, and they are the part a rule drawn from the frame's left edge used to run straight through. And a transfer is drawn at its true ends whenever it *crosses* the window, the part outside the frame being cut off by the plot — a nested `<svg>` the size of the frame, the same mechanism the source picture is shown through. **Two earlier answers to this were wrong in the same way:** clamping each end to the frame put an end on a border rather than on a line, which reads as a fault; leaving the whole segment out then lost the fact itself, because a line leaving the frame is the only way a picture of a *sliced* run can say that control came from somewhere off-screen.
+!!
+!! **Every label is named at the right-hand edge, and the rules make room for it.** A label is a line at the left margin ending in a colon — the pane is given the script as text and nothing else, and the recording carries no label names, so `VizLabelCheck` is where a label is recognised — and its name, without the colon, is drawn level with its own line in a strong indigo the picture uses nowhere else. The rule for such a line stops one em short of the name, so the two read as a signpost beside the line rather than as one long line with a word on the end. It began as a diagnostic, at Graham's suggestion, to test whether the drawing and the text agreed about where a line is; it settled that, then caught a fault no check could see, and he kept it because a column of names down the edge is a way to navigate a long file — so it stays, and it stays honest about its origin.
 !!
 !! **The zoom stops where the text is drawn at its own size.** A source line is eighteen units tall, so a window of fewer than `VizGlyphRows` rows would only blow the text up, and there is nothing more to see. Applied before the clamp to the run, so a recording shorter than that many lines simply has no vertical zoom — the whole run is already legible and there is nothing to zoom into.
 !!
@@ -354,6 +356,11 @@ VizRemember:
     variable VizLabelY
     variable VizLabelSize
     variable VizLabelDrop
+    variable VizLabelSpace     ! the width a label's name and its one-em gap take, in frame units
+    ! And what `VizLabelCheck` answers: whether the line in `VizSourceLine` is a label, and how long its
+    ! name is — the line without the colon.
+    variable VizIsLabel
+    variable VizLabelLen
     ! Which axes a zoom notch applies to. Shift is the lines and control is the steps — the modifiers
     ! decide, so one handler serves both.
     variable VizZoomAcross
@@ -397,6 +404,7 @@ VizRemember:
     ! it. It is shown through `VizPane`, a nested `<svg>` the size of the frame, and `VizGlyphs` is the
     ! picture itself. See the note where they are created for why it takes two elements to do it.
     svg VizPane
+    svg VizPlot
     svgimage VizGlyphs
     ! The diagnostic's own layer: the label lines of the script, right-aligned at the frame's edge, so
     ! that the picture's text and the drawing's mapping can be compared side by side. Temporary.
@@ -549,6 +557,30 @@ Draw:
     !
     ! It is one `<image>` rather than a pool of text elements because the number of labels in view is
     ! the file's business, not the pane's: at the widest zoom every label in the script is on screen.
+    ! **The plot, and it is the mask.** A nested `<svg>` over the frame — 60,60 to 940,640 in canvas units,
+    ! its `viewBox` the same, so one unit inside is one unit outside and *no* coordinate below has to
+    ! change — whose whole purpose is to clip. Everything that belongs to the plot is created *in* it: the
+    ! source picture's overlay, the rules, the marks and the flow. A transfer whose other end is off-screen
+    ! is now drawn at its true position and cut off by this viewport, which is the only way a picture of a
+    ! sliced run can say "control came from above and left that way". The axis, the key, the caption and the
+    ! status line stay outside it, because they live in the margin and a line crossing them would be a line
+    ! crossing the reader's instruments.
+    !
+    ! This is the mechanism the picture already used — see `VizPane` — rather than a `clipPath`, which the
+    ! plugin has no element for and which would take a second element anyway. A nested viewport clips by
+    ! default; the style is here for the same reason it is there: with no style of its own the plugin
+    ! defaults the element to `width:100%;height:100%`, and CSS beats the attributes.
+    create VizPlot in VizCanvas style `overflow:hidden`
+    set attribute `preserveAspectRatio` of VizPlot to `none`
+    set attribute `x` of VizPlot to VizMargin
+    set attribute `y` of VizPlot to VizMargin
+    set attribute `width` of VizPlot to VizPlotW
+    set attribute `height` of VizPlot to VizPlotH
+    set attribute `viewBox` of VizPlot to VizMargin cat ` ` cat VizMargin cat ` ` cat VizPlotW cat ` ` cat VizPlotH
+
+    ! The label names, created *after* the plot so they sit above the marks and the flow — they are the
+    ! reading aid, and nothing should be drawn over them. They are outside the plot's clipping for the
+    ! same reason: they are drawn inside the frame by construction, so there is nothing to clip.
     create VizLabelText in VizCanvas
     set attribute `preserveAspectRatio` of VizLabelText to `none`
     set attribute `x` of VizLabelText to 0
@@ -556,11 +588,12 @@ Draw:
     set attribute `width` of VizLabelText to 1000
     set attribute `height` of VizLabelText to 740
 
+
     ! A rule per line the run touched, faint and across the whole frame. It is drawn *over* the source
     ! so a line can be picked out of the texture, and *under* everything else so it never competes
     ! with a mark: at low zoom a mark is a dot in mid-space, and the rule is what says which line the
     ! dot belongs to. Kept faint deliberately — it is a grid, not a reading.
-    create VizRules in VizCanvas
+    create VizRules in VizPlot
     set attribute `stroke` of VizRules to `#eee`
     set attribute `stroke-width` of VizRules to 1
     set attribute `fill` of VizRules to `none`
@@ -600,19 +633,19 @@ Draw:
     ! The heat ramp's four bands, coolest first, and the only scheme. The marks were once drawn a
     ! second time by a plain single-colour path; the fold removed the duplication, and with it the
     ! template that the mark-size and line-cap mistakes were both copied from.
-    create VizHeat0 in VizCanvas
+    create VizHeat0 in VizPlot
     set attribute `fill` of VizHeat0 to `none`
     set attribute `stroke` of VizHeat0 to `#6b8fa8`
     set attribute `stroke-linecap` of VizHeat0 to `round`
-    create VizHeat1 in VizCanvas
+    create VizHeat1 in VizPlot
     set attribute `fill` of VizHeat1 to `none`
     set attribute `stroke` of VizHeat1 to `#c9a227`
     set attribute `stroke-linecap` of VizHeat1 to `round`
-    create VizHeat2 in VizCanvas
+    create VizHeat2 in VizPlot
     set attribute `fill` of VizHeat2 to `none`
     set attribute `stroke` of VizHeat2 to `#e07b39`
     set attribute `stroke-linecap` of VizHeat2 to `round`
-    create VizHeat3 in VizCanvas
+    create VizHeat3 in VizPlot
     set attribute `fill` of VizHeat3 to `none`
     set attribute `stroke` of VizHeat3 to `#e5484d`
     set attribute `stroke-linecap` of VizHeat3 to `round`
@@ -626,15 +659,15 @@ Draw:
     put `#e0a44a` into VizColourCall
     put `#43c6a8` into VizColourJump
     put `#c07ad0` into VizColourReturn
-    create VizFlowCall in VizCanvas
+    create VizFlowCall in VizPlot
     set attribute `stroke` of VizFlowCall to VizColourCall
     set attribute `stroke-width` of VizFlowCall to 2
     set attribute `fill` of VizFlowCall to `none`
-    create VizFlowJump in VizCanvas
+    create VizFlowJump in VizPlot
     set attribute `stroke` of VizFlowJump to VizColourJump
     set attribute `stroke-width` of VizFlowJump to 2
     set attribute `fill` of VizFlowJump to `none`
-    create VizFlowReturn in VizCanvas
+    create VizFlowReturn in VizPlot
     set attribute `stroke` of VizFlowReturn to VizColourReturn
     set attribute `stroke-width` of VizFlowReturn to 2
     set attribute `fill` of VizFlowReturn to `none`
@@ -1001,19 +1034,20 @@ VizWindow:
             ! One x decides a transfer, because a transfer is a vertical segment: its two ends differ
             ! only in their line, so if the x is outside the window the whole segment is.
             !
-            ! **And both its ends have to be in the window, or it is not drawn at all.** A segment whose
-            ! ends straddle the window used to be kept and clamped to the frame, so that a transfer from
-            ! off-screen still showed as a line arriving — but a clamped end lands on the frame's border
-            ! and not on a rule, and a line that begins on nothing reads as a fault rather than as a fact.
-            ! Left out instead, exactly as a mark outside the window is left out, so that every line that
-            ! *is* drawn begins and ends on a horizontal line.
+            ! **And it is drawn whenever it *crosses* the window — in full, at its true ends.** Two earlier
+            ! answers to this were wrong in the same way. Clamping each end to the frame put an end on the
+            ! border rather than on a line, which reads as a fault; leaving the whole segment out then lost
+            ! the fact itself, because a transfer from off-screen is the one thing a picture of a *sliced*
+            ! run can only say by showing a line leave the frame. Graham's correction: *"the panel
+            ! displaying all of each line and leaving the existing mask to hide what goes outside."* So the
+            ! ends stay where the lines are and the plot's nested viewport cuts them off, which is the same
+            ! mechanism the source picture is shown through. A transfer wholly above or wholly below the
+            ! window is still left out — it is not in the picture at all.
             put 0 into VizOutside
             if VizX is less than VizMargin put 1 into VizOutside
             if VizX is greater than VizPlotRight put 1 into VizOutside
-            if VizY is less than VizMargin put 1 into VizOutside
-            if VizY is greater than VizPlotBottom put 1 into VizOutside
-            if VizY2 is less than VizMargin put 1 into VizOutside
-            if VizY2 is greater than VizPlotBottom put 1 into VizOutside
+            if VizY is less than VizMargin and VizY2 is less than VizMargin put 1 into VizOutside
+            if VizY is greater than VizPlotBottom and VizY2 is greater than VizPlotBottom put 1 into VizOutside
             if VizOutside is 0
             begin
                 ! The head is a chevron drawn in the path data, not a marker element — the plugin has
@@ -1235,8 +1269,21 @@ VizWindow:
             ! one case where crossing the text costs nothing, because what is crossed is already gone.
             if VizRuleX is greater than VizPlotRight put VizMargin into VizRuleX
             if VizRuleX is less than VizMargin put VizMargin into VizRuleX
-            ! To the frame's right-hand edge, which is as far as the drawing goes.
+            ! To the frame's right-hand edge, which is as far as the drawing goes — unless the line is a
+            ! label, whose name is drawn at that edge: then the rule stops one em short of the name, so the
+            ! two read as a signpost beside the line rather than as one long line with a word on the end.
+            ! The space the name and the gap need is measured in the same document units the left end was.
             take VizRuleX from VizPlotRight giving VizRuleWidth
+            gosub to VizLabelCheck
+            if VizIsLabel is 1
+            begin
+                multiply VizLabelLen by 8 giving VizLabelSpace
+                add VizGlyphEm to VizLabelSpace
+                multiply VizLabelSpace by VizPlotW giving VizLabelSpace
+                divide VizLabelSpace by VizWindowW giving VizLabelSpace
+                take VizLabelSpace from VizPlotRight giving VizLabelSpace
+                take VizRuleX from VizLabelSpace giving VizRuleWidth
+            end
             if VizRuleWidth is less than 1 put 1 into VizRuleWidth
             if VizOutside is 0 put VizRulesD cat `M` cat VizRuleX cat ` ` cat VizRuleY cat `h` cat VizRuleWidth into VizRulesD
         end
@@ -1249,9 +1296,8 @@ VizWindow:
     ! reached still has its row. What is rebuilt on a redraw is the window alone — the pane's `viewBox`
     ! and the `href` naming the document.
     gosub to VizSourcePicture
-    ! And the diagnostic, which is rebuilt on every draw because it follows the window. Temporary: it is
-    ! here to be looked at, and it comes out when the question it answers is settled.
-    gosub to VizLabelNotes
+    ! And the labels, which are rebuilt on every draw because they follow the window.
+    gosub to VizLabelNames
 
     set attribute `d` of VizHeat0 to VizHeatD
     set attribute `d` of VizHeat1 to VizHeatE
@@ -1285,10 +1331,12 @@ VizWindow:
 !   view's own state; a host that wants the picture to move has only to wire them up. There are
 !   four entry points in all — those three and `VizReset` — and that is the whole of the interface.
 !
-!   Graham's scheme, from Kdenlive and Audacity: the wheel scrolls, shift-wheel zooms, drag pans —
-!   with control added for the second axis and both modifiers together to scroll along it. The
-!   modifier therefore decides and the direction does not, which is why the wheel handler asks for
-!   `the wheel shift` rather than reading the sign of the amount.
+!   Graham's scheme, from Kdenlive and Audacity: the wheel scrolls, shift-wheel zooms the lines,
+!   control-wheel the steps, and a drag pans. **The drag is the way the run is moved**, and the one
+!   gesture that asks for no modifier — Graham's own correction, having found the modifier pair for the
+!   scroll-across unnatural to reach for. That pair is *parked*, see `VizWheel`. The modifier therefore
+!   decides which axis a zoom applies to and the direction does not, which is why the wheel handler asks
+!   for `the wheel shift` rather than reading the sign of the amount.
 VizWheel:
     ! Which gesture a notch is, is the modifiers' business, not the wheel's. Shift zooms the lines,
     ! control zooms the steps, and with neither the wheel scrolls down the run, which is what it does
@@ -1297,12 +1345,14 @@ VizWheel:
     ! calls `preventDefault`, so the page never sees it, and the pane is where the gesture is being
     ! aimed.
     !
-    ! **Both modifiers together scroll the steps, and that is a normalization rather than a fourth
-    ! gesture.** Two zooms at once is what the arithmetic used to give — shift set one flag, control
-    ! the other, and the zoom applied both — which is nobody's idea of a gesture and was never asked
-    ! for. The pair is taken out here instead, before the zoom can see it: both flags are cleared and
-    ! the scroll is pointed across, so the one test below still sorts a notch into a scroll or a zoom,
-    ! and each of those still reads one flag.
+    ! **Both modifiers together used to scroll the steps, and that is parked.** It was a normalization
+    ! rather than a fourth gesture — two zooms at once is what the plain arithmetic gave, and the pair
+    ! was taken out here instead so the one test below still sorted a notch into a scroll or a zoom. It
+    ! worked, and Graham did not want it: *"I've placed over-emphasis on the use of modifier keys … for
+    ! panning I found myself wanting to mouse click/drag as this seems to be the natural instinct."* The
+    ! drag does that job, so the binding is gone and the machinery is left standing: `VizScrollAcross` and
+    ! `VizScroll`'s second axis are still here, and **restoring the gesture is the three lines that set
+    ! the flags** — clear the two zooms and put 1 into `VizScrollAcross`. Nothing else refers to them.
     !
     ! **The gesture is never what waits.** This used to return at once when a draw was running, so a
     ! slow draw swallowed every notch meanwhile — the reader had to repeat themselves, and at a deep
@@ -1316,12 +1366,11 @@ VizWheel:
     put 0 into VizScrollAcross
     if the wheel shift is 1 put 1 into VizZoomDown
     if the wheel control is 1 put 1 into VizZoomAcross
-    if VizZoomAcross is 1 and VizZoomDown is 1
-    begin
-        put 0 into VizZoomAcross
-        put 0 into VizZoomDown
-        put 1 into VizScrollAcross
-    end
+    ! **Both modifiers together is ignored, which is not the same as deleting the test.** With no special
+    ! case the pair sets both flags and `VizZoom` applies both axes — the accidental two-at-once zoom that
+    ! the plain arithmetic gave before this file had any gesture for the pair. Graham asked for the pair to
+    ! go, so it goes: a notch with both modifiers down does nothing at all.
+    if VizZoomAcross is 1 and VizZoomDown is 1 return
     put VizZoomAcross into VizMove
     add VizZoomDown to VizMove
     if VizMove is 0 gosub to VizScroll
@@ -1676,36 +1725,31 @@ VizSourceMeasure:
     set attribute `height` of VizGlyphs to VizGlyphHeight
     return
 
-VizLabelNotes:
-    ! ---- the diagnostic: every label, copied to the right-hand end of its own line ----
-    ! **Temporary, and it comes out once the question it answers is settled.** It copies each *label* line
-    ! of the script into its own picture, right-aligned at the frame's right-hand edge, in the source's
-    ! own font size scaled to the frame and on the baseline the source's own rows use. The same string
-    ! then appears twice on one row: once where the picture puts it, once where the drawing's mapping
-    ! puts it. If the two mappings agree the copies sit level; if they disagree — which is the misalignment
-    ! being chased, and which reading the code cannot settle — the copies show it as visible drift.
+VizLabelNames:
+    ! ---- every label, named at the right-hand end of its own line ----
+    ! **This began as a diagnostic and stays because it earns its place.** Graham asked for it to test the
+    ! alignment — "render the name of that label onto the right-hand end of its line, using the same size
+    ! font" — and it did that job twice over: it showed that the drawing's mapping was right, and later
+    ! that the picture's *rows* were being misplaced. He then kept it on his own judgement: it collides
+    ! with nothing, and a column of label names down the right-hand edge is a way to navigate a long file.
     !
-    ! **A label is a line at the left margin whose last character is a colon.** The pane is given the
-    ! script as *text* and nothing else, and the recording carries no label names (its anchors are the
-    ! `viz` markers), so this is where they are found. A doc block is blanked here as it is in the
-    ! picture, which takes care of the `!!` lines; a bare `!` comment is excluded by hand because a
-    ! comment can end in a colon too. A line that ends in a colon and starts at the margin is a label in
-    ! every other case, and a false positive in a diagnostic costs a stray name at the frame's edge.
+    ! It is *folded into the drawing* rather than drawn beside it: each name is put where `VizPlaceY` says
+    ! its line is, in the same font at the same size as the source, in a strong indigo the picture uses
+    ! nowhere else. So it is also a standing check on the mapping — if the names ever stop sitting level
+    ! with the lines they name, the mapping has moved again — which is worth knowing given that the last
+    ! fault of that kind cost a morning.
     !
-    ! **The two measurements are what makes it a comparison rather than a resemblance.** The size is the
-    ! source's thirteen units scaled by the same factor the picture is — `VizPlotW` across `VizWindowW` —
-    ! and rounded rather than truncated, because a fifth of a font size shows where a fifth of a unit does
-    ! not. The drop is where a source row's baseline sits: five document units below the middle of the row,
-    ! a row being eighteen tall with the baseline fourteen below its top. Both are derived here from the
-    ! same numbers the picture is drawn from, so the copy's position is the drawing's *claim* about where
-    ! the line is, which is the thing under test. The colour is a strong indigo, deliberately nothing the
-    ! picture already uses, so an annotation cannot be mistaken for part of the drawing.
+    ! **The numbers are what put it on the line rather than near it.** The size is the source's thirteen
+    ! units scaled by the same factor the picture is — `VizPlotW` across `VizWindowW` — and rounded rather
+    ! than truncated, because a fifth of a font size shows where a fifth of a unit does not. The drop is
+    ! where a source row's baseline sits: five document units below the middle of the row, a row being
+    ! eighteen tall with the baseline fourteen below its top. Both are derived from the same numbers the
+    ! picture is drawn from.
     !
-    ! **And a caveat, because a diagnostic that flatters itself is worse than none:** both numbers are
-    ! integers, so the size is rounded and the drop is truncated. At the zoom this is meant to be read at
-    ! that is a few per cent on the size and well under a pixel on the baseline; at the widest zoom the
-    ! source's font is smaller than a single unit and the copy is therefore too large. The *baseline* is
-    ! what carries the comparison, and it is never more than one unit out.
+    ! **And it draws nothing when the copy would be too small to read**, clearing the layer rather than
+    ! leaving it: below four units the picture's own text is a smudge, and a name that cannot be compared
+    ! with the line it names is noise. Clearing matters more than the threshold — an annotation left behind
+    ! by a zoom is a stale artefact, and a stale artefact in a picture is a wrong answer.
     multiply 13 by VizPlotW giving VizLabelSize
     divide VizWindowW by 2 giving VizLabelDrop
     add VizLabelDrop to VizLabelSize
@@ -1713,12 +1757,6 @@ VizLabelNotes:
     if VizLabelSize is less than 1 put 1 into VizLabelSize
     multiply 5 by VizPlotW giving VizLabelDrop
     divide VizLabelDrop by VizWindowW giving VizLabelDrop
-
-    ! **And nothing at all when the copy would be too small to read.** Below four units the picture's own
-    ! text is a smudge — the fit of a long file is two units a line — and a stack of names that cannot be
-    ! compared against anything is worse than an empty layer, because it looks like a finding. The layer is
-    ! *cleared* rather than left as it was: an annotation left behind by a zoom is a stale artefact, and a
-    ! stale artefact in a diagnostic is a wrong answer.
     if VizLabelSize is less than 4
     begin
         set attribute `href` of VizLabelText to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="740"></svg>`
@@ -1735,12 +1773,13 @@ VizLabelNotes:
         put `` into VizSourceLine
         if VizSourceAt is less than VizSourceCount put element VizSourceAt of VizSourceLines into VizSourceLine
         if VizSourceLine starts with `!!` put `` into VizSourceLine
-        ! Empty when the file has no such line, when the line is blank and when it is a doc block — and an
-        ! empty line does not end in a colon, so the one test below covers all three.
-        if VizSourceLine ends with `:`
+        gosub to VizLabelCheck
+        if VizIsLabel is 1
         begin
-            if VizSourceLine starts with ` ` go to VizLabelNext
-            if VizSourceLine starts with `!` go to VizLabelNext
+            ! The name without its colon: it is a signpost, and the colon belongs to the line of code the
+            ! pane does not draw. `left` of the line is the language's own way to say that, and it is done
+            ! before the escaping below so the length is the character count and not a byte count.
+            put left VizLabelLen of VizSourceLine into VizSourceLine
             ! The entities first, ampersand first, as the picture does — and the `%`/`#` pass at the end
             ! covers the colour written into the text element below.
             replace `&` with `&amp;` in VizSourceLine
@@ -1754,13 +1793,40 @@ VizLabelNotes:
                 cat `" fill="#4338ca" text-anchor="end">` cat VizSourceLine cat `</text>`
                 into VizLabelBody
         end
-VizLabelNext:
         add 1 to VizLabelLine
     end
     put VizLabelBody cat `</svg>` into VizLabelBody
     replace `%` with `%25` in VizLabelBody
     replace `#` with `%23` in VizLabelBody
     set attribute `href` of VizLabelText to `data:image/svg+xml;charset=utf-8,` cat VizLabelBody
+    return
+
+VizLabelCheck:
+    ! **Is this line a label, and how long is its name?** A label is a whole line at the left margin whose
+    ! last character is a colon — the language has no other shape for one, the pane is given the script as
+    ! *text* and nothing else, and the recording carries no label names (its anchors are the `viz` markers,
+    ! named `viz-start@206` and the like). So this is where a label is recognised.
+    !
+    ! **One routine because two things ask.** The rules stop short of a label so that the name at the
+    ! frame's edge reads as a signpost rather than as the end of the line, and the names themselves are
+    ! drawn from the same answer — so the whole meaning of "a label" is here, and there is no second copy
+    ! of it to drift. A doc block is blanked by both callers before they come here, which takes care of the
+    ! `!!` lines; a bare `!` comment is excluded by hand because a comment can end in a colon too. What is
+    ! left is a label in every case, and the cost of a false positive is a stray name at the frame's edge.
+    !
+    ! `VizSourceLine` holds the line on the way in; `VizIsLabel` is 0 or 1 on the way out and `VizLabelLen`
+    ! is the length of the name — the line without its colon.
+    put 0 into VizIsLabel
+    put 0 into VizLabelLen
+    if VizSourceLine is `` return
+    if VizSourceLine ends with `:` go to VizLabelShape
+    return
+VizLabelShape:
+    if VizSourceLine starts with ` ` return
+    if VizSourceLine starts with `!` return
+    put 1 into VizIsLabel
+    put the length of VizSourceLine into VizLabelLen
+    take 1 from VizLabelLen giving VizLabelLen
     return
 
 VizSourcePicture:
@@ -1811,6 +1877,6 @@ VizPlaceX:
     divide VizTickPos by VizViewXW giving VizTickPos
     add VizMargin to VizTickPos
     return
-!! @hash 4476b20e
+!! @hash 981650bd
 !! @verified 89e939ce
 !!!
