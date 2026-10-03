@@ -96,6 +96,8 @@ global.navigator = { userAgent: `node` };
 // swallowed every write made the whole round trip unobservable — a width could be saved to nowhere and no
 // check could tell. A real browser keeps it, so this does too.
 const store = {};
+// Every write the editor performs, so a check can see what a path actually put on disk.
+const written = [];
 global.localStorage = {
 	getItem: k => (k in store ? store[k] : null),
 	setItem: (k, v) => { store[String(k)] = String(v); },
@@ -163,6 +165,11 @@ global.CodeMirror = { fromTextArea: () => fakeEditor, version: `stub` };
 // its `or go` failure path, the Graph pane never appears, and the checks about the pane would pass on
 // an editor that had quietly gone back to flat mode.
 global.fetch = (url, opts) => {
+
+	// **A POST is remembered rather than dropped.** `rest post` is how the editor writes a file — a saved tab,
+	// and now a recording — so a write is the *outcome* of those paths, and a stub that swallowed it could
+	// not tell a save from a no-op. Only the method and the path are kept: the body is the file.
+	if (opts && opts.method === `POST`) written.push({ url: String(url), body: String(opts.body || ``) });
 
 	const body = (() => {
 		const read = rel => {
@@ -409,6 +416,25 @@ let text = labels();
 check(shown.length === 1 && shown[0] === `blocks`, `Blocks mode shows one pane, the Blocks one (${shown.join(`,`) || `none`})`);
 check(text.blocks === `Edit` && text.graph === `Graph`, `and only its own button offers the way out (${text.blocks} | ${text.graph} | ${text.find})`);
 
+// ---- and the file the editor is editing can be the editor's own ------------------------------------
+//
+// **Blocks mode models the *buffer*, and here the buffer is `asedit.allspeak`** — the harness loads the
+// editor's own source into the page, as the page does. So this is the real path for a fault Graham met with
+// the message *"problem | script=asedit.allspeak | Script 'ASEditor' is already running."* on the status
+// line: the model compile ran `script ASEditor` while the editor was running under that very name, the
+// runtime's duplicate guard refused it — a rule about *running* two copies, applied to a compile that never
+// runs — and the plugin reported the refusal as a problem with the file, which it was not. The registry is
+// the witness: the editor is still registered, under its own name, after a pass that borrowed it.
+const model = (program.getSymbolRecord(`Model`) || {}).value || [];
+const complaints = model.map(v => String(v.content)).filter(line => line.startsWith(`problem |`));
+check(valueOf(`SecCount`) > 0 && complaints.length === 0,
+	`the editor's own file models cleanly while the editor is running under the name it declares `
+	+ `(sections=${valueOf(`SecCount`)}, ${complaints.length} problem record(s)`
+	+ (complaints.length ? `: ${JSON.stringify(complaints.slice(0, 2))}` : ``) + `)`);
+check(!!AllSpeak.scripts[`ASEditor`] && AllSpeak.scripts[`ASEditor`] === program,
+	`and the running program still owns its name after the pass borrowed it `
+	+ `(ASEditor=${AllSpeak.scripts[`ASEditor`] === program ? `this program` : JSON.stringify(!!AllSpeak.scripts[`ASEditor`])})`);
+
 run(`ToggleGraph`);
 shown = up(panes());
 text = labels();
@@ -636,6 +662,54 @@ check(shown.length === 1 && shown[0] === `editor`, `and the flat editor is the o
 // recording fetch comes back must not leave the pane believing it is on screen.
 check(await waitFor(() => vizValue(`VizShown`) === 0),
 	`and the pane is told it is off screen, and not told otherwise by a late reply (VizShown=${vizValue(`VizShown`)})`);
+
+// ---- and the Record button does what it says ------------------------------------------------
+//
+// **The trigger, end to end through the editor's own path.** `RecordRun` is what the button runs: it reads the
+// buffer, has the plugin run it with a recorder and the guard armed, and writes `<script>.viz.json` back
+// through the route a saved tab uses. What is checked here is that a recording comes out and reaches the
+// server under the name the pane will look for — the rest of the loop (the pane drawing it) is the harness
+// next door.
+//
+// **It is last in this file on purpose**: opening a tab drops out of whatever mode was up, and the checks above
+// are fastidious about which pane is showing.
+//
+// The buffer is then replaced with a small script rather than left as the file's own text: recording *that*
+// file would run a second copy of the editor inside the harness — slow, and writing to the stubs — which is not
+// what this asks about.
+program.getSymbolRecord(`TabItem`).value[0] = { type: `constant`, numeric: false, content: `tools/trace-wide.allspeak` };
+program.getSymbolRecord(`File`).value[0] = { type: `constant`, numeric: false, content: `trace-wide.allspeak` };
+run(`OpenFile`);
+// The read is a `rest get`, so it hands control back and resumes: the tab is not open yet without this wait.
+await waitFor(() => String(valueOf(`TabPath`)).endsWith(`.allspeak`));
+scriptElement.innerText = [
+	`    script Tiny`,
+	`    variable N`,
+	`Main:`,
+	`    viz start`,
+	`    put 0 into N`,
+	`    while N is less than 5`,
+	`    begin`,
+	`        add 1 to N`,
+	`    end`,
+	`    viz stop`,
+	`    stop`,
+].join(`\n`);
+written.length = 0;
+run(`RecordRun`);
+const posted = written.find(w => /\.viz\.json$/.test(w.url));
+let recorded = null;
+try { recorded = JSON.parse(posted.body); } catch (err) { recorded = null; }
+check(!!posted && !!recorded && Array.isArray(recorded.traceEvents),
+	`the Record button runs the buffer with a recorder and writes the recording beside the script `
+	+ `(POST ${posted ? posted.url.replace(/^.*?\/write\//, `/write/`) : `nothing`}, `
+	+ `${recorded && recorded.traceEvents ? recorded.traceEvents.length : 0} event(s))`);
+check(!!posted && /"cat":\s*"window"/.test(posted.body),
+	`and what it wrote is a recording of that run rather than an empty document `
+	+ `(${posted ? posted.body.length : 0} bytes)`);
+check(!!AllSpeak.scripts[`ASEditor`] && AllSpeak.scripts[`ASEditor`] === program,
+	`with the editor still registered under its own name afterwards, the recording having borrowed it`);
+
 
 console.log(failures.length === 0
 	? `\nasedit-modes-check: all checks passed`

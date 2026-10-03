@@ -28,6 +28,7 @@
     button FindBtn
     button BlocksBtn
     button GraphBtn
+    button RecordBtn     ! record the open script and put the recording beside it
     button BlocksPrev
     button BlocksNext
     button BlocksVerify
@@ -112,6 +113,9 @@
     variable SideProse      ! its prose
     variable SideI          ! scratch: index over the sections looking for one
     variable VizRun         ! the dict the pane is sent: the run, the script, the words, the path
+    variable RecordSource   ! the open buffer, handed to the plugin as the script to run
+    variable RecordTrace     ! what that run collected, as the trace document's text
+    variable RecordCut       ! 1 when the run was still going, so the recording ends at its first wait
     variable TraceText      ! the recording, as read — the `trace` field of that dict
     variable SourceText     ! the script, as read — the `source` field of it
     variable CurBlock      ! 0-based index into Sections arrays
@@ -196,7 +200,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash b3977d8a
+!! @hash d31ca2bf
 !! @verified b3977d8a
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -222,6 +226,7 @@
     attach CloseBtn to `se-closebtn`
     attach BlocksBtn to `se-blocksbtn`
     attach GraphBtn to `se-graphbtn`
+    attach RecordBtn to `se-recordbtn`
     attach GraphArea to `se-graph-area`
     attach GraphGrip to `se-graph-grip`
     attach GraphSide to `se-graph-side`
@@ -237,7 +242,7 @@
     attach BlocksDocPane to `se-blocks-doc`
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
-!! @hash c52f8b76
+!! @hash 280f53ec
 !! @verified c52f8b76
 !!!
 !! Some general initialisation
@@ -390,6 +395,7 @@ VersionDone:
     on click FindBtn go to DoFind
     on click BlocksBtn go to ToggleBlocks
     on click GraphBtn go to ToggleGraph
+    on click RecordBtn go to RecordRun
     on click BlocksPrev go to PrevBlock
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
@@ -479,7 +485,7 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash aeba3967
+!! @hash f804ba38
 !! @verified aeba3967
 !!!
 !! One `on message`, registered here rather than with the code it runs.
@@ -2032,4 +2038,45 @@ TellSideClosed:
     return
 !! @hash c33ecd04
 !! @verified c33ecd04
+!!!
+
+!! Recording a run, from the button.
+!!
+!! **This is the trigger, and the pane's empty state is its argument.** A pane that says *"no recording beside this script"* names a file and leaves the reader to produce one at a console; this makes it instead — the buffer is already here, and so is the plugin, which the page loads for the pane's sake.
+!!
+!! **The recording is written beside the script, not handed straight to the pane**, and that is the pane's own decision rather than a convenience: `<script>.viz.json` is a file, so a run captured here travels with the project and can be read again without running anything. It is written through the `/write/` route a tab already uses, so nothing needs a new channel.
+!!
+!! **A run that waits is recorded as far as its first wait, and says so.** `wait` hands the rest of the program to a timer, so a capture made inside a call cannot follow it; the flag the command answers with is what the status line reports, rather than a slice being passed off as a whole run. Following one through is a different shape — the caller being *told* when the run ends — and it is recorded in TODO.md.
+!!
+!! **And a guard is armed, with the recorder's own defaults.** A script handed to the editor by a tool is not to be trusted with the editor's responsiveness: a busy loop and a never-returning wait both end here, and the recording says which.
+RecordRun:
+    if TabCount is 0 stop
+    index TabPath to ActiveTab
+    put TabPath into EditorPath
+    ! A buffer that has never been saved has nowhere to put a recording, and the pane's message names the file it
+    ! would look for — so say the same thing here rather than record beside a name that is not there.
+    if EditorPath is empty
+    begin
+        set the content of StatusSpan to `Save this script first: a recording goes beside it`
+        fork to ClearStatus
+        stop
+    end
+    codemirror get content of ContentEditor into RecordSource
+    put EditorPath cat `.viz.json` into TracePath
+    record the script in EditorPath as RecordSource giving RecordTrace incomplete RecordCut
+    if RecordTrace is empty go to RecordFailed
+    rest post RecordTrace to `/write/` cat TracePath or go RecordFailed
+    if RecordCut is 1 set the content of StatusSpan to `Recorded ` cat TracePath cat ` — the run waits, so the recording ends there`
+    else set the content of StatusSpan to `Recorded ` cat TracePath
+    fork to ClearStatus
+    ! The pane, if it is up, is drawing whatever recording was there before this one.
+    if GraphMode is 1 gosub to SendRunToViz
+    stop
+
+RecordFailed:
+    set the content of StatusSpan to `Could not record this script`
+    fork to ClearStatus
+    stop
+!! @hash ca0b2743
+!! @verified 00000000
 !!!

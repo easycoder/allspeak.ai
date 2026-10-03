@@ -9,7 +9,10 @@
 // command line instead of a page.
 //
 // Usage:  node tools/asviz-run.js [script.allspeak ...]
-//         node tools/asviz-run.js --run [--trace=<file.json>] <script.allspeak>
+//         node tools/asviz-run.js --run [--trace=<file.json>] [--budget=<ms>] [--ceiling=<ms>] <script.allspeak>
+//
+// `--budget` and `--ceiling` arm the recorder's guard — see the constants in plugins/asviz.js. "Armed from the
+// editor" is what a trigger does, so a host that can do it too is what makes the guard testable without one.
 //         (default target: codex/en/code/step13.allspeak)
 //
 // `--run` also runs the target with a recorder attached, so the markers it carries produce a
@@ -140,6 +143,14 @@ const value = (name) => {
 const wantsRun = flag(`--run`) || flag(`-r`);
 const tracePath = value(`--trace`) || value(`--trace-pretty`) || value(`--trace-compact`);
 const pretty = flag(`--trace-pretty`) || value(`--trace-pretty`) !== null;
+// The guard, in milliseconds on the command line and nanoseconds in the recorder, which is where the two
+// runtimes' clocks agree. Absent means that half does not guard — so a plain `--run` records an unbounded run,
+// exactly as it always has and as the Python host does.
+const ms = (name) => {
+	const raw = value(name);
+	return raw === null ? undefined : Math.round(Number(raw) * 1e6);
+};
+const guard = { budget: ms(`--budget`), ceiling: ms(`--ceiling`) };
 const targets = argv.filter(a => !a.startsWith(`-`));
 if (targets.length === 0) {
 	targets.push(`codex/en/code/step13.allspeak`);
@@ -165,7 +176,9 @@ const runTarget = function (target) {
 	// not something a script should have to say. Given to the plugin under the path it was
 	// asked for, so the report can say what the run collected — the counterpart of the Python
 	// host's `VizState.trace[program.scriptName] = program.recorder`.
-	program.vizRecorder = new AllSpeak_Viz.Recorder();
+	// The guard, off unless the command line asked for it: a recording made by hand at a terminal is that
+	// person's own business, and a bounded one would misreport what the program did.
+	program.vizRecorder = new AllSpeak_Viz.Recorder(guard.budget, guard.ceiling);
 	AllSpeak_Viz.trace[target] = program.vizRecorder;
 	const out = console.log;
 	console.log = (...args) => { process.stderr.write(args.join(` `) + `\n`); };

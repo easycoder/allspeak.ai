@@ -8,7 +8,7 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 |---|---|
 | `js/allspeak/*.js` (runtime, plugins, language packs) | `./build-allspeak` |
 | `js/allspeak/LanguagePack_*.js` | `./build-allspeak` **and** `./sync-language-packs` |
-| `starter/<lang>/*` or repo-root `asedit.allspeak` / `asedit-graph.allspeak` / `asedit-side.allspeak` / `asedit.json` | `./build-starters` — and refresh any extracted starter directory (`edit.html`, `asedit.allspeak`, `asedit-graph.allspeak`, `asedit-side.allspeak`), since a running server serves the copy on disk, not the repository |
+| `starter/<lang>/*`, repo-root `asedit.allspeak` / `asedit-graph.allspeak` / `asedit-side.allspeak` / `asedit.json`, or a tool an agent uses (`tools/asdoc-check.py` / `plotview-check.js` / `viz-align-measure.py` / `guard-check.js`) | `./build-starters` — and refresh any extracted starter directory (`edit.html`, `asedit.allspeak`, `asedit-graph.allspeak`, `asedit-side.allspeak`), since a running server serves the copy on disk, not the repository |
 | `server.allspeak` or `edit.html` (auto-update payload) | nothing locally — committed file is used directly by deploy |
 | `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
 | Any of the above, shipping to allspeak.ai | `./deploy-allspeak` (local) **or** trigger the GitHub `Deploy to allspeak.ai` workflow |
@@ -16,8 +16,13 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 Editing either of the two `asedit` files needs no build — what it needs is a check:
 `node tools/asedit-check.js asedit.allspeak`, `node tools/asedit-check.js asedit-graph.allspeak`,
 `node tools/asedit-check.js asedit-side.allspeak`, `node tools/asedit-modes-check.js` (which runs the editor,
-drives both modules' load and the pane's report to the sidebar) and `node tools/plotview-check.js <trace>`
-(which drives the drawing, cutting the view out of the module).
+drives both modules' load and the pane's report to the sidebar), `node tools/plotview-check.js <trace>`
+(which drives the drawing, cutting the view out of the module) and `node tools/guard-check.js` (which drives
+both run hosts on two deliberately bad scripts, to prove the recorder's guard still guards).
+
+**After editing `js/plugins/asviz.js` or `js/allspeak/Run.js`**: `./build-allspeak` (they are in the bundle and
+the copied plugins), and `node tools/guard-check.js` — the recorder's guard lives in the plugin and the
+runtime is what reads its answer.
 
 ## The four scripts
 

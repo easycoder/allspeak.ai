@@ -70,8 +70,15 @@ const AllSpeak_Run = {
 				// when armed, one or two list writes — nothing when it is not. It sits here
 				// because this is where every command passes exactly once, in execution
 				// order, which is the whole of what a recording needs.
+				//
+				// **`false` means the recorder's guard ended the run**, and breaking here is what
+				// ends it: the recorder marks the window stopped and clears `running`, but the
+				// break is what runs no further command. Python's runtime reads the same answer
+				// the same way, so a guarded recording stops at the same command on both — and a
+				// handler that found the program already stopped reports "Improper use of runtime
+				// function", which would be a lie about what happened.
 				if (program.vizRecorder) {
-					program.vizRecorder.tick(program, program.pc);
+					if (program.vizRecorder.tick(program, program.pc) === false) break;
 				}
 				const activeCommand = program[program.pc];
 				if (activeCommand && activeCommand.lino) {

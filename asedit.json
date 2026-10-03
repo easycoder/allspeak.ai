@@ -49,6 +49,14 @@
     "cursor": "pointer",
     "flex-shrink": "0"
   },
+  "$RecordBtn": {
+    "#element": "button",
+    "@id": "se-recordbtn",
+    "#content": "Record",
+    "padding": "4px 12px",
+    "cursor": "pointer",
+    "flex-shrink": "0"
+  },
   "$FindBtn": {
     "#element": "button",
     "@id": "se-findbtn",
@@ -84,7 +92,7 @@
     "background": "#2d2d2d",
     "padding": "4px",
     "gap": "4px",
-    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$GraphBtn", "$FindBtn"]
+    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$GraphBtn", "$RecordBtn", "$FindBtn"]
   },
   "$ContentEditor": {
     "#element": "textarea",

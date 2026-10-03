@@ -120,6 +120,173 @@ const AllSpeak_Viz = {
 		}
 	},
 
+	// record the script [in <path>] [as <source>] giving <variable> [incomplete <flag>]
+	//
+	// **The trigger.** `model` compiles a script to *read* it; this compiles one to *run* it with a recorder
+	// attached and the guard armed, and hands back the recording as the Chrome trace — the same document the
+	// command-line hosts write, made here so a caller holding the text needs nothing else. An editor with the
+	// buffer open is the case that matters: the pane's empty state says "no recording beside this script",
+	// and this is what makes one.
+	//
+	// **Two things it has to get right, and they are the name and the stopping.**
+	//
+	// The *name*: a compile registers the program under the name the script declares, and this runtime refuses
+	// a name a running program already holds — rightly, since two running copies of one script are
+	// indistinguishable. And the likeliest collision is the reviewed file's own: recording `asedit.allspeak`
+	// while `ASEditor` is the program doing the recording. So the declared name is stepped aside for the
+	// compile, the recording's program is re-keyed to a number of its own, and the name is handed back —
+	// exactly what `tools/asviz-run.js` does, and for the same reason.
+	//
+	// The *stopping*: this call returns when the run hands control away or ends, and a `wait` hands the rest of
+	// the program to a timer. **So a recording made this way covers a run up to its first wait**, and a script
+	// that is still going when this returns is reported through the `incomplete` flag rather than passed off
+	// as a whole run. A computation — which is what a capture is usually for — has no waits and is covered
+	// whole. Following a waiting run needs the caller to be *told* when it ends rather than to wait for it,
+	// which is a different shape; see TODO.md.
+	Record: {
+
+		compile: (compiler) => {
+			const lino = compiler.getLino();
+			compiler.next();
+			if (compiler.isWord(`the`)) compiler.next();
+			if (compiler.isWord(`script`)) compiler.next();
+			let path = null;
+			if (compiler.isWord(`in`)) {
+				compiler.next();
+				path = compiler.getValue();
+			}
+			let text = null;
+			if (compiler.isWord(`as`)) {
+				compiler.next();
+				text = compiler.getValue();
+			}
+			if (!compiler.isWord(`giving`)) {
+				throw new Error(`viz 'record' (line ${lino + 1}): expected ` +
+					`'record the script [in <path>] [as <source>] giving <variable> [incomplete <flag>]'`);
+			}
+			compiler.next();
+			const target = compiler.getToken();
+			compiler.next();
+			let flag = null;
+			if (compiler.isWord(`incomplete`)) {
+				compiler.next();
+				flag = compiler.getToken();
+				compiler.next();
+			}
+			compiler.addCommand({
+				domain: `viz`,
+				keyword: `record`,
+				lino,
+				path,
+				text,
+				target,
+				flag
+			});
+			return true;
+		},
+
+		run: (program) => {
+			const command = program[program.pc];
+			const path = command.path ? program.getValue(command.path) : AllSpeak_Viz.target;
+			// A caller that supplies the text registers it under the path, so every other reader in this
+			// plugin keeps working from one place — the same bargain `model` makes.
+			if (command.text) {
+				AllSpeak_Viz.sources[path] = program.getValue(command.text);
+			}
+			const text = AllSpeak_Viz.sources[path];
+			if (typeof text !== `string`) {
+				program.runtimeError(command.lino,
+					`viz: no source registered for '${path}' — the host must set ` +
+					`AllSpeak_Viz.sources['${path}']`);
+				return command.pc + 1;
+			}
+			const outcome = AllSpeak_Viz.record(path, text);
+			const target = program.getSymbolRecord(command.target);
+			target.value[0] = {
+				type: `constant`,
+				numeric: false,
+				content: outcome.trace
+			};
+			target.index = 0;
+			if (command.flag) {
+				const flag = program.getSymbolRecord(command.flag);
+				flag.value[0] = {
+					type: `constant`,
+					numeric: true,
+					content: outcome.incomplete ? 1 : 0
+				};
+				flag.index = 0;
+			}
+			return command.pc + 1;
+		}
+	},
+
+	// The name a source declares, from its tokens. `script <name>` is untranslated — it is in no language pack
+	// — so the raw token is the right test in every language, and taking the token after it is the same small
+	// scan `labelLine` does for a label.
+	declaredScript: function (tokens) {
+		for (let i = 0; i + 1 < tokens.length; i++) {
+			if (tokens[i].token === `script`) return tokens[i + 1].token;
+		}
+		return null;
+	},
+
+	// Run a script with a recorder attached and the guard armed, and hand back what it collected.
+	//
+	// `{ trace, incomplete }` — the recording as JSON text, and whether the run was still going when this
+	// returned. The command above is a shell over this, and a host that wants the two facts apart can call
+	// this directly (as `tools/guard-check.js` calls the hosts).
+	record: function (path, text) {
+		const lines = text.split(`\n`);
+		if (lines.length > 0 && lines[lines.length - 1] === ``) lines.pop();
+		const source = AllSpeak.tokeniseFile(lines);
+		// The name the script declares, stepped aside for the compile and handed back after it — see the
+		// note on the command for why the collision is expected rather than exceptional.
+		const declared = AllSpeak_Viz.declaredScript(source.tokens);
+		const held = declared ? AllSpeak.scripts[declared] : undefined;
+		if (held) delete AllSpeak.scripts[declared];
+		let program;
+		try {
+			program = AllSpeak.compileScript(source, [], null, null);
+		} catch (err) {
+			if (held) AllSpeak.scripts[declared] = held;
+			AllSpeak_Viz.problems.push(String((err && err.message) || err).split(`\n`)[0]);
+			return { trace: ``, incomplete: false, failed: true };
+		}
+		// **The recording is a run of its own, so it gets a name of its own.** Two programs under one name is
+		// what the registry refuses, and the caller may be the program holding the name the script declares —
+		// so the recording is re-keyed, exactly as the command-line host does it.
+		delete AllSpeak.scripts[program.script];
+		program.script = AllSpeak.scriptIndex++;
+		AllSpeak.scripts[program.script] = program;
+		if (held) AllSpeak.scripts[declared] = held;
+		// **The guard, armed with the recorder's own defaults — and this is the caller it was built for.** A
+		// script handed over by a tool is not to be trusted with that tool's responsiveness: `while true`
+		// busy-loops and never-returning waits both end here, and the recording says which.
+		const recorder = new AllSpeak_Viz_Recorder(VIZ_DEFAULT_BUDGET_NS, VIZ_DEFAULT_CEILING_NS);
+		program.vizRecorder = recorder;
+		let failed = false;
+		try {
+			program.running = true;
+			AllSpeak_Run.run(program, 0);
+		} catch (err) {
+			AllSpeak_Viz.problems.push(String((err && err.message) || err).split(`\n`)[0]);
+			failed = true;
+		}
+		// A `wait` hands the rest of the program to a timer, so this call returns with the run parked and the
+		// rest of it still to come — and the caller is told rather than left with a slice that looks like a
+		// whole run. `parked` is the recorder's own reading of the command stream, which is the only place
+		// that fact exists: a program waiting on a timer is registered just like one that has ended.
+		const incomplete = recorder.parked === true;
+		recorder.finish();
+		delete AllSpeak.scripts[program.script];
+		return {
+			trace: JSON.stringify(AllSpeak_Viz.traceDocument(path, recorder.finishedWindows())),
+			incomplete,
+			failed
+		};
+	},
+
 	// Compile the source without running it, then report the anchors.
 	model: function (path, text) {
 		const lines = text.split(`\n`);
@@ -135,6 +302,17 @@ const AllSpeak_Viz = {
 		// target would inherit the language of the script just analysed. Save and
 		// restore around the compile; the model itself is already built by then.
 		const savedPack = AllSpeak_Language.pack;
+		// **A compile-only pass must not be refused by a guard meant for running.** `Script.compile` holds one
+		// program per declared name and refuses a name it already has, because two running copies of one script
+		// would be indistinguishable — a sound rule, applied here to a compile that will never run. And the name
+		// it collides with is usually the reviewed file's own: Blocks mode models the *buffer*, so with
+		// `asedit.allspeak` open it compiles a second `ASEditor` while the first is running, the compile is
+		// refused, and the file is reported as broken on the status line — *"Script 'ASEditor' is already
+		// running."* — which is a fault it does not have. So the name is stepped aside for the pass and put back
+		// after it: the running program keeps it, and the pass leaves nothing behind (see the diff below).
+		const declared = AllSpeak_Viz.declaredScript(source.tokens);
+		const held = declared ? AllSpeak.scripts[declared] : undefined;
+		if (held) delete AllSpeak.scripts[declared];
 		// The target's own `script <name>` command registers it in the global script
 		// registry during compile. A compile-only pass must not leave it there: a
 		// second script declaring the same name would then refuse to compile.
@@ -156,6 +334,9 @@ const AllSpeak_Viz = {
 			for (const key of Object.keys(AllSpeak.scripts)) {
 				if (knownScripts.indexOf(key) < 0) delete AllSpeak.scripts[key];
 			}
+			// And the running program gets its name back. It is the one that owns it: this pass only borrowed
+			// the registry for as long as it took to read a file's structure.
+			if (held) AllSpeak.scripts[declared] = held;
 			if (savedPack && AllSpeak_Language.pack !== savedPack) {
 				AllSpeak_Language.init(savedPack);
 				AllSpeak_Viz.clearCompileCaches();
@@ -941,6 +1122,9 @@ const AllSpeak_Viz = {
 		if (AllSpeak_Language.matchesWord(name, `model`)) {
 			return AllSpeak_Viz.Model;
 		}
+		if (AllSpeak_Language.matchesWord(name, `record`)) {
+			return AllSpeak_Viz.Record;
+		}
 		// `viz` itself is core syntax: the plugin never compiles a marker.
 		return null;
 	},
@@ -974,6 +1158,46 @@ function parseSections(text) {
 	return files.length > 0 ? (files[0].sections || []) : [];
 }
 
+// ---------------------------------------------------------------- the guard
+
+// `vizClock` counts microseconds because that is what the trace format stores — but the *guard* must not, and
+// that is not a detail: a compiled command can take less than a microsecond, so a budget accrued in
+// microseconds would count only the commands that happened to round up, and the same bound would mean a
+// different amount of work on every machine. Python's recorder accumulates `perf_counter_ns` for the same
+// reason, so this is the nanosecond clock its guard uses.
+const vizClockNs = function () {
+	if (typeof process !== `undefined` && process.hrtime && process.hrtime.bigint) {
+		return Number(process.hrtime.bigint());
+	}
+	return Math.round(performance.now() * 1e6);
+};
+
+// **The same guard the Python recorder has, in the same units of meaning.** A run started from the editor
+// — which is what usually asks for one — must not be trusted with the editor's responsiveness, so a
+// recording can be *bounded* two ways at once. The bound is a *time budget* rather than a count of
+// commands because the two failure shapes are not alike: a loop that waits or calls out between iterations
+// reaches any command count eventually, so a step counter either fires early on a script that was only
+// waiting or has to be set so high that a genuinely busy loop runs for minutes. The budget measures the
+// program's *own* work instead, which is what a runaway actually burns.
+//
+// And a ceiling on the whole run, because the budget bounds only what the program *does*: a loop that waits
+// between iterations never spends it and would run for ever, so the editor would still be hangable by
+// `while true ... wait 1 second ... end`. The two reasons are told apart and reported, because one is slow
+// code, the other is usually wrong code, and the person reviewing the script needs to know which.
+//
+// These are the Python recorder's defaults, in its own units: two seconds of work, twenty of wall clock, and
+// a gap cap of twenty milliseconds. Kept in step with `allspeak-py/plugins/as_viz.py`, value for value and
+// reason for reason.
+const VIZ_DEFAULT_BUDGET_NS = 2000000000;
+const VIZ_DEFAULT_CEILING_NS = 20000000000;
+// A single gap longer than this is waiting rather than work — a scheduled callback arriving, or an idle
+// program. Without the cap an idle program would look busy, since only the command *before* a gap can be
+// charged with it.
+const VIZ_GAP_CAP_NS = 20000000;
+// Commands whose time is not the program's own, because they wait by design. A `url` field is checked
+// separately rather than by keyword, since the fetch spells itself several ways.
+const VIZ_WAITING_KEYWORDS = [`wait`, `every`, `release`, `input`, `download`, `alert`];
+
 // ---------------------------------------------------------------- the recording
 
 // The recorder: what the runtime collects while a window is open, and nothing more. The host
@@ -985,10 +1209,19 @@ function parseSections(text) {
 // the two can be laid against each other. The parts where the runtimes differ — no command is
 // emitted for a label here, so a label is a symbol whose pc is the command that follows it —
 // are absorbed below rather than pushed into the format.
-const AllSpeak_Viz_Recorder = function () {
+const AllSpeak_Viz_Recorder = function (budget, ceiling) {
 	this.windows = [];
 	this.current = null;
 	this.sealed = false;        // a `once` window has been recorded; further starts ignored
+	// The guard, off unless a host asks for it. See the constants above for what the two bounds are
+	// for; a `null` means that half is not guarding anything.
+	this.budget = typeof budget === `number` ? budget : null;
+	this.ceiling = typeof ceiling === `number` ? ceiling : null;
+	this.busy = 0;              // the program's own work, in nanoseconds, as Python counts it
+	this.started = null;
+	this.lastCommand = null;
+	this.lastAt = null;
+	this.stopped = null;        // `work` or `wall` when the guard ended the run
 };
 
 AllSpeak_Viz_Recorder.prototype = {
@@ -1127,7 +1360,8 @@ AllSpeak_Viz_Recorder.prototype = {
 			line_before: command.lino,
 			t0: vizClock(),
 			t1: null,
-			truncated: false
+			truncated: false,
+			stopped: null
 		};
 	},
 
@@ -1160,8 +1394,56 @@ AllSpeak_Viz_Recorder.prototype = {
 		return windows;
 	},
 
+	// Whether the time a command took is the program's *own*. Two exclusions, the same two Python makes:
+	// a command that waits by design or carries a `url` is waiting for something else, and a command
+	// outside the `core` domain is a plugin talking to a device, a database or a network. Loop *control*
+	// is always core, so a runaway loop still trips on the statements that make it a loop.
+	countsAsWork: function (command) {
+		if (VIZ_WAITING_KEYWORDS.indexOf(String((command && command.keyword) || ``)) >= 0) return false;
+		if (command && command.url !== undefined) return false;
+		return !!command && command.domain === `core`;
+	},
+
+	// Add this command's share of the clock to the budget, and answer whether the run must end. The gap is
+	// the time the *previous* command took, so both the exclusion and the cap are applied to the command
+	// that ran rather than to the one about to.
+	account: function (program, command) {
+		const now = vizClockNs();
+		const previous = this.lastCommand;
+		const last = this.lastAt;
+		this.lastCommand = command;
+		this.lastAt = now;
+		if (this.started === null) this.started = now;
+		if (previous && last !== null && this.countsAsWork(previous)) {
+			this.busy += Math.min(now - last, VIZ_GAP_CAP_NS);
+		}
+		let reason = null;
+		if (this.ceiling !== null && now - this.started > this.ceiling) reason = `wall`;
+		else if (this.budget !== null && this.busy > this.budget) reason = `work`;
+		if (reason === null) return false;
+		this.stopped = reason;
+		if (this.current) {
+			this.current.stopped = reason;
+			this.stop();
+		}
+		// Marked stopped, and *not* halted only from here: `tick` answers false and the runtime breaks its
+		// own loop on that, so no command runs with the program already stopped. Setting `running` as well
+		// is what the Python recorder does, and for the same reason — the break is what makes it honest,
+		// and this is what makes it immediate.
+		program.running = false;
+		return true;
+	},
+
 	tick: function (program, pc) {
 		const command = program[pc];
+		// **Whether the run has just handed control to a timer**, which is what a `wait` does: the command
+		// returns without advancing the pc, the run loop breaks, and `AllSpeak_Run.run` comes back to its
+		// caller with the program still to continue. Nothing else records that fact — a program parked on a
+		// timer looks exactly like one that has stopped — so the recorder notes it as it passes, and a
+		// capture made inside a call can say that its recording ends there rather than pass off a slice as
+		// a whole run. It is `waiting`, not `stopped`: nothing has ended.
+		this.parked = VIZ_WAITING_KEYWORDS.indexOf(String((command && command.keyword) || ``)) >= 0;
+		if (this.account(program, command)) return false;   // the guard ended the run; the runtime breaks
 		const marker = command && command.keyword === `viz` ? command.request : undefined;
 		if (marker === `start`) this.arm(program, command, pc);
 		const window = this.current;
@@ -1303,6 +1585,7 @@ const vizTraceDocument = function (script, windows) {
 				anchors: Object.keys(window.anchors).length,
 				steps: window.steps,
 				truncated: !!window.truncated,
+				stopped: window.stopped || null,
 				line_counts: ordered
 			}
 		});
@@ -1427,6 +1710,11 @@ const vizTraceRecords = function (path, covered, seq, top) {
 // these — `Run` tests `program.vizRecorder` and nothing else — so an instrumented script still
 // runs with no plugin loaded at all.
 AllSpeak_Viz.Recorder = AllSpeak_Viz_Recorder;
+// **The guard's defaults, published so a host does not restate them.** A run started from the editor arms
+// the recorder with these; the command-line hosts arm it with nothing, because a recording made by hand at a
+// terminal is that person's own business and a bounded one would misreport what the program did.
+AllSpeak_Viz.DEFAULT_BUDGET_NS = VIZ_DEFAULT_BUDGET_NS;
+AllSpeak_Viz.DEFAULT_CEILING_NS = VIZ_DEFAULT_CEILING_NS;
 AllSpeak_Viz.traceDocument = vizTraceDocument;
 AllSpeak_Viz.traceRecords = vizTraceRecords;
 AllSpeak_Viz.transferKind = vizTransferKind;

@@ -29,9 +29,15 @@ import subprocess
 import sys
 
 USAGE = """usage: asviz-run.py [--run|-r] [--trace=<file.json>] [--trace-pretty[=<file.json>]]
-                       [--trace-compact[=<file.json>]] <script.allspeak> [...]
+                       [--trace-compact[=<file.json>]] [--budget=<ms>] [--ceiling=<ms>]
+                       <script.allspeak> [...]
        A trace needs --run, and one target. Either trace flag may carry the path, so
        --trace-pretty=pretrace.json is the same as --trace=pretrace.json --trace-pretty.
+
+       --budget and --ceiling arm the recorder's guard, in milliseconds: the program's own
+       work, and the wall clock of the whole run. Without them a recording is unbounded, which
+       is what a run made by hand at a terminal wants and what a trigger from the editor must
+       not have. See the constants in plugins/as_viz.py.
 """
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -61,7 +67,7 @@ def sectionsFor(target):
         return ''
 
 
-def runTarget(target):
+def runTarget(target, budget=None, ceiling=None):
     """Run the instrumented script so the markers have something to record.
 
     This executes the target, side effects and all. That is the point of a recording:
@@ -74,7 +80,9 @@ def runTarget(target):
     # The recorder is the facility that makes a run a *recording*: it watches the markers
     # go past and collects the trace. Attached here rather than by a keyword, because
     # collecting data is not something the script should have to ask for.
-    program.recorder = Recorder()
+    # The guard, off unless the command line asked for it: a recording made by hand at a terminal is that
+    # person's own business, and a bounded one would misreport what the program did.
+    program.recorder = Recorder(budget=budget, ceiling=ceiling)
     VizState.trace[program.scriptName] = program.recorder
     try:
         program.start()
@@ -92,6 +100,8 @@ def main(argv):
     run = False
     trace = None
     pretty = False
+    budget = None
+    ceiling = None
     while argv and argv[0].startswith('-'):
         flag = argv.pop(0)
         if flag in ('--run', '-r'):
@@ -107,6 +117,10 @@ def main(argv):
             trace = flag.split('=', 1)[1]
         elif flag.startswith('--trace-compact='):
             trace = flag.split('=', 1)[1]
+        elif flag.startswith('--budget='):
+            budget = int(round(float(flag.split('=', 1)[1]) * 1e6))
+        elif flag.startswith('--ceiling='):
+            ceiling = int(round(float(flag.split('=', 1)[1]) * 1e6))
         elif flag == '--trace':
             # `--trace` alone would have to guess a filename, and guessing writes files
             # nobody asked for. The equals form is unambiguous beside a list of targets.
@@ -154,7 +168,7 @@ def main(argv):
                 # on stdout it would land in the middle of the model records. The JS host does
                 # the same, so a `print` in the target behaves identically under both.
                 with contextlib.redirect_stdout(sys.stderr):
-                    recorder = runTarget(target)
+                    recorder = runTarget(target, budget, ceiling)
             except BaseException as e:     # noqa: BLE001 - report per target, keep going
                 detail = str(e) or f'{type(e).__name__} (see the log above)'
                 sys.stderr.write(f'FAIL {target}: run: {detail}\n')
