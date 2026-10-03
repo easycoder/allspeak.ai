@@ -1783,7 +1783,13 @@ const AllSpeak_Core = {
 					});
 					return true;
 				}
-				compiler.warning(`core:put: No such variable: '${compiler.getToken()}'`);
+				// **A warning here, not an error, and `false` means "try the next handler".** Returning false is
+				// a fallback, not a refusal: `put <value> into storage as <key>` is legitimate and owned by
+				// another handler, so throwing on an unknown target broke it. The sentence the reader needs is
+				// this warning's, and the dispatch below carries it into the error when nothing claims the
+				// statement — which is the case where it is a missing declaration.
+				compiler.warning(`'${compiler.getToken()}' is not a variable: declare it with ` +
+					`'variable ${compiler.getToken()}' above this line`);
 			}
 			return false;
 		},
@@ -11897,7 +11903,7 @@ const AllSpeak_Value = {
 		const token = compiler.getToken();
 		let item = AllSpeak_Value.getItem(compiler);
 		if (!item) {
-			throw new Error(`Undefined value: '${token}'`);
+			throw new Error(`Undefined value: '${token}' — if it is a variable, declare it above this line`);
 		}
 
 		if (compiler.getToken() === AllSpeak_Language.word(`cat`)) {
@@ -11910,7 +11916,7 @@ const AllSpeak_Value = {
 				compiler.next();
                 item = AllSpeak_Value.getItem(compiler);
                 if (!item) {
-                    throw new Error(`Undefined value: '${token}'`);
+                    throw new Error(`Undefined value: '${token}' — if it is a variable, declare it above this line`);
                 }
 				value.parts.push(item);
 			}
@@ -11922,7 +11928,7 @@ const AllSpeak_Value = {
 			compiler.next();
 			const divisor = AllSpeak_Value.getItem(compiler);
 			if (!divisor) {
-				throw new Error(`Undefined value: '${token}'`);
+				throw new Error(`Undefined value: '${token}' — if it is a variable, declare it above this line`);
 			}
 			return {
 				type: `modulo`,
@@ -11937,7 +11943,7 @@ const AllSpeak_Value = {
 			compiler.next();
 			const scaleFactor = AllSpeak_Value.getItem(compiler);
 			if (!scaleFactor) {
-				throw new Error(`Undefined value: '${token}'`);
+				throw new Error(`Undefined value: '${token}' — if it is a variable, declare it above this line`);
 			}
 			return {
 				type: `scale`,
@@ -12278,6 +12284,15 @@ const AllSpeak_Run = {
 					break;
 				}
 				if (!program.pc) {
+					break;
+				}
+				// **An unhandled runtime error ends the run.** `Main.js`'s `runtimeError` marks the program
+				// `aborted` after reporting — unless an `onError` handler took the error, which returns before
+				// the mark — and nothing read the flag, so the script carried on past a fault: an arithmetic
+				// error on a variable that held nothing printed `Non-numeric value` and then `add: NaN`, a
+				// wrong number travelling as if it were an answer. Python stops at the same point, so this is
+				// the two runtimes agreeing rather than a new rule.
+				if (program.aborted) {
 					break;
 				}
 				if (program.stop) {
@@ -14334,6 +14349,9 @@ const AllSpeak_Compiler = {
 
 	warning: function(message) {
 		this.addWarning(message);
+		// Kept with the line it belongs to, so a later error can quote it (see the unknown-command throw).
+		this.lastWarning = message;
+		this.lastWarningLine = this.getLino();
 	},
 
 	unrecognisedSymbol: function(item) {
@@ -14651,6 +14669,17 @@ const AllSpeak_Compiler = {
 		// here reported the line after the offending token.
 		const lino = this.getLino();
 		if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(token) && !(token in this.symbols)) {
+			// **The last warning, if it was this line's, is the useful half of this error.** A handler that
+			// returns false (meaning "try the next one") may still have said something worth keeping — an
+			// unknown target, say — and when no handler claims the statement, that sentence explains it far
+			// better than "I don't understand 'put'", which names the verb when the subject is the variable.
+			// **And when there is one, it *is* the error.** The generic sentence names the verb; the warning
+			// names the variable and what to do about it, so the reader gets that and nothing else. A
+			// genuinely unknown word still gets the pack's sentence — no handler warned about it, because
+			// there was nothing to recognise.
+			if (this.lastWarningLine === lino && this.lastWarning) {
+				throw new Error(this.lastWarning);
+			}
 			throw new Error(AllSpeak_Language.diagnostic(`unknownCommand`, {token, line: lino}));
 		}
 		throw new Error(AllSpeak_Language.diagnostic(`unknownCommand`, {token: token + `...`, line: lino}));
@@ -14988,9 +15017,14 @@ const AllSpeak = {
 		}
 		this.reportError({
 			message: `Line ${(lino >= 0) ? lino : ``}: ${message}`
-		}, this.program);
-		if (this.program) {
-			this.program.aborted = true;
+		}, prog);
+		// **`prog`, not `this.program`.** The routing above already resolves the program either way — handlers
+		// call this as `program.runtimeError`, where `this.program` is undefined — and the mark used the
+		// unresolved one, so it was set on nothing and never read. A handler's own errors aborted the program
+		// only when the call happened to come through `AllSpeak`, which is why an unhandled arithmetic error
+		// reported and then carried on.
+		if (prog) {
+			prog.aborted = true;
 		}
 	},
 	nonNumericValueError: function (lino) {

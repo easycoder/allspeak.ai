@@ -88,7 +88,7 @@ const AllSpeak_Value = {
 		const token = compiler.getToken();
 		let item = AllSpeak_Value.getItem(compiler);
 		if (!item) {
-			throw new Error(`Undefined value: '${token}'`);
+			throw new Error(`Undefined value: '${token}' — if it is a variable, declare it above this line`);
 		}
 
 		if (compiler.getToken() === AllSpeak_Language.word(`cat`)) {
@@ -101,7 +101,7 @@ const AllSpeak_Value = {
 				compiler.next();
                 item = AllSpeak_Value.getItem(compiler);
                 if (!item) {
-                    throw new Error(`Undefined value: '${token}'`);
+                    throw new Error(`Undefined value: '${token}' — if it is a variable, declare it above this line`);
                 }
 				value.parts.push(item);
 			}
@@ -113,7 +113,7 @@ const AllSpeak_Value = {
 			compiler.next();
 			const divisor = AllSpeak_Value.getItem(compiler);
 			if (!divisor) {
-				throw new Error(`Undefined value: '${token}'`);
+				throw new Error(`Undefined value: '${token}' — if it is a variable, declare it above this line`);
 			}
 			return {
 				type: `modulo`,
@@ -128,7 +128,7 @@ const AllSpeak_Value = {
 			compiler.next();
 			const scaleFactor = AllSpeak_Value.getItem(compiler);
 			if (!scaleFactor) {
-				throw new Error(`Undefined value: '${token}'`);
+				throw new Error(`Undefined value: '${token}' — if it is a variable, declare it above this line`);
 			}
 			return {
 				type: `scale`,

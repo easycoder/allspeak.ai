@@ -1783,7 +1783,13 @@ const AllSpeak_Core = {
 					});
 					return true;
 				}
-				compiler.warning(`core:put: No such variable: '${compiler.getToken()}'`);
+				// **A warning here, not an error, and `false` means "try the next handler".** Returning false is
+				// a fallback, not a refusal: `put <value> into storage as <key>` is legitimate and owned by
+				// another handler, so throwing on an unknown target broke it. The sentence the reader needs is
+				// this warning's, and the dispatch below carries it into the error when nothing claims the
+				// statement — which is the case where it is a missing declaration.
+				compiler.warning(`'${compiler.getToken()}' is not a variable: declare it with ` +
+					`'variable ${compiler.getToken()}' above this line`);
 			}
 			return false;
 		},

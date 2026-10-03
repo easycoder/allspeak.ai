@@ -40,8 +40,12 @@ echo "==> 1/6 build-allspeak"
 echo "==> 2/6 deploy-sync"
 ./deploy-sync
 
-echo "==> 3/6 prepare deploy/code/"
+echo "==> 3/6 prepare deploy/code/ and deploy/dist/"
 cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json server.allspeak edit.html .code-version deploy/code/
+# The editor itself reaches a project as `dist/asedit.js`, written by ./build-allspeak (step 1): a page fetches
+# the editor's source as *text*, and a text fetch is governed by CORS where a `<script>` is not. The site answers
+# `access-control-allow-origin: *` for `.js` and `.css` only (measured, per file type), so the four files are
+# wrapped in one script rather than fetched by name.
 
 echo "==> 4/6 build-starters"
 ./build-starters

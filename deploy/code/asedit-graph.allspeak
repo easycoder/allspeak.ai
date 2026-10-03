@@ -1,4 +1,6 @@
 !! asedit-graph.allspeak — the editor's Graph pane, as a companion module.
+!! **The vocabulary the picture is built from is the script's own, where the script offers one.** An attribute is a note a script writes about itself and the runtime ignores — text for a tool — so the recorder reads two keys and the pane shows what they collect: `@viz start` / `@viz stop` name the window in the script's own words, and `@show Total, Row` says which values are worth watching at that arrival, which reach the sidebar beside the line and visit of the mark they belong to. Nothing else is read, so a note written for a person or for another tool passes both by.
+!!
 !!
 !! The pane draws a run: a recording sitting beside a script, read as a sequence, as an arrival count per line, and as the flow between the marks. That is half of the editor by size, and none of it is needed until somebody looks at a run — so it is a module, fetched, compiled and run on the first click on **Graph**, and messaged from then on. The `svg` vocabulary is here rather than in the editor, and this is where the plugin is needed: the pane is compiled when it is fetched, which is why the page loads the plugin whether or not a run is ever opened.
 !!
@@ -77,7 +79,7 @@
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 10f33ffc
+!! @hash 06bab40f
 !! @verified 10f33ffc
 !!!
 !! The boundary: one message in, and the module parks until the next one.
@@ -95,7 +97,13 @@
 !!
 !! The status line is the module's own during the wait, so the three-second clear is its own copy of the editor's: this one clears this message and nothing else.
 VizDrawRun:
-    if VizTrace is empty go to GraphNone
+    ! **A recording that is not there is a state to draw, not a reason to stop drawing.** This used to jump
+    ! away to `GraphNone`, which named the missing file on the status line and returned — leaving the pane
+    ! showing whichever recording it drew last. Two tabs a click apart then showed one recording, which is the
+    ! confusion a reader cannot see through: the picture looks like an answer and belongs to another file.
+    ! Taking the notice as a *subroutine* keeps the naming and lets the draw carry on, so the empty state is
+    ! drawn — the script plain, no arrivals — and `GraphNone` is still the one place that says why.
+    if VizTrace is empty gosub to GraphNone
     set the content of StatusSpan to `Drawing the recording - please wait`
     put the length of VizTrace into TraceSize
     gosub to VizPredict
@@ -115,7 +123,7 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 
-!! @hash 1d924ebf
+!! @hash fdfb5b3b
 !! @verified 1d924ebf
 !!!
 !! The module's one message: take the run, or stand down.
@@ -371,6 +379,7 @@ VizRemember:
     ! that line had in the whole recording. `VizHitSeen` is the table the walk fills as it goes.
     variable VizHitSeen
     variable VizHitVisit
+    variable VizHitValues      ! what that arrival captured, if the script asked for anything
     variable VizHitTotal
     variable VizHitCount
     variable VizMark
@@ -491,9 +500,19 @@ Draw:
     ! but the gestures are the last thing that should wait, because a wheel notch that is dropped is a
     ! notch the reader has to repeat.
     put 1 into VizDrawing
-    put json of VizTrace into VizParsed
-    put property `traceEvents` of VizParsed into VizEvents
-!! @hash 625a1848
+    ! **The arrivals are replaced, never left over, and the reading happens *inside* the guard that has a
+    ! recording to read.** Two faults met here and looked like one. The clearing must come first, because
+    ! `put json of` raises on an empty value and the raise ends the draw; and the parse must not be consulted
+    ! when there was nothing to parse, because `VizParsed` is scratch that keeps the *last* recording's document
+    ! — so a guard reading it re-set the previous tab's arrivals and the pane went on showing a recording that
+    ! belongs to another file. Both were found by asserting the empty state rather than by reading this.
+    put json of `[]` into VizEvents
+    if VizTrace is not empty
+    begin
+        put json of VizTrace into VizParsed
+        put property `traceEvents` of VizParsed into VizEvents
+    end
+!! @hash 1ae42b87
 !! @verified 625a1848
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -1713,6 +1732,7 @@ VizMarkAt:
     ! A mark whose line is off the window is skipped by the same reasoning the draw uses: it is not in
     ! the picture, so it cannot be pointed at.
     put 0 into VizHit
+    put json of `{}` into VizHitValues
     put 1000000 into VizHitDist
     divide VizDotSize by 2 giving VizHitReach
     add 4 to VizHitReach
@@ -1772,6 +1792,11 @@ VizMarkAt:
                             put VizHitNear into VizHitDist
                             put VizLine into VizHit
                             put VizHitCount into VizHitVisit
+                            ! **`@show N, Total` arrives with the arrival it belongs to**, so the values
+                            ! travel with the mark and the sidebar never has to find the trace again. They are
+                            ! taken here, where the winning arrival is known, rather than off the drawn dots —
+                            ! a dot is not where the values live, and the walk already has the event.
+                            put property `values` of VizArgs into VizHitValues
                         end
                     end
                 end
@@ -1801,6 +1826,9 @@ VizSelect:
     set property `line` of VizMark to VizHit
     set property `visit` of VizMark to VizHitVisit
     set property `total` of VizMark to VizHitTotal
+    ! Only when the script said something worth watching: an empty dict would tell the sidebar to print
+    ! nothing, which is the same as saying nothing at all, and one message shape is easier to read.
+    if VizHitValues is not empty set property `values` of VizMark to VizHitValues
     send VizMark to parent
     return
 
@@ -2025,7 +2053,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 14f5b57b
+!! @hash dc725895
 !! @verified 14f5b57b
 !!!
 !! And a doc block is not drawn in it.
@@ -2329,8 +2357,8 @@ VizSourcePicture:
     ! Through a string, because `the length of` a *number* is undefined in this runtime — the same trap the
     ! source's measure dodges by counting characters rather than digits.
     !
-    ! **Built in steps rather than one expression, and that is not a style choice.** `left 1 of X cat '.'
-    ! cat right 3 of X` reads as the three parts it looks like, and the runtime reads it as
+    ! **Built in steps rather than one expression, and that is not a style choice.**
+    ! `left 1 of X cat '.' cat right 3 of X` reads as the three parts it looks like, and the runtime reads it as
     ! `left 1 of (X cat '.' cat right 3 of X)`: `cat`'s right-hand side is the whole rest of the expression,
     ! so the first part takes the leading digit of everything that follows. It compiles, it runs, and the
     ! factor came out as `8` where `8.068` was meant — which the harness caught as a width that still moved
@@ -2345,7 +2373,7 @@ VizSourcePicture:
     set attribute `transform` of VizRedact to `scale(` cat VizRedactFactor cat ` 1)`
     set attribute `href` of VizGlyphs to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="` cat VizGlyphWidth cat `" height="` cat VizGlyphHeight cat `">` cat VizGlyphBody cat `</svg>`
     return
-!! @hash 055f01b9
+!! @hash 78dcffaf
 !! @verified 055f01b9
 !!!
 !! The mappings: the one place a line's y and a step's x are worked out.

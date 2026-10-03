@@ -158,9 +158,14 @@ const AllSpeak = {
 		}
 		this.reportError({
 			message: `Line ${(lino >= 0) ? lino : ``}: ${message}`
-		}, this.program);
-		if (this.program) {
-			this.program.aborted = true;
+		}, prog);
+		// **`prog`, not `this.program`.** The routing above already resolves the program either way — handlers
+		// call this as `program.runtimeError`, where `this.program` is undefined — and the mark used the
+		// unresolved one, so it was set on nothing and never read. A handler's own errors aborted the program
+		// only when the call happened to come through `AllSpeak`, which is why an unhandled arithmetic error
+		// reported and then carried on.
+		if (prog) {
+			prog.aborted = true;
 		}
 	},
 	nonNumericValueError: function (lino) {

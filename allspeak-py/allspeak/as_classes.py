@@ -87,7 +87,14 @@ class RuntimeError(BaseException):
 
 class NoValueRuntimeError(RuntimeError):
 	def __init__(self, program, record):
-		super().__init__(program, 'Variable {record["name"]} does not hold a value')
+		# **A name or a record, because callers pass both.** The role of this error is to say *which* variable
+		# held nothing, and the argument that arrives is sometimes the symbol record and sometimes the target's
+		# name — `getVariable` hands back a code record, while several call sites in `as_core` pass
+		# `command['target']`, which is a string. Indexing a string for `name` raised inside the construction of
+		# the message, so the message was never shown: it became a TypeError reported by whichever handler was
+		# wrapping the call. (This line also had no `f`, which hid the mismatch for as long as it was there.)
+		name = record['name'] if isinstance(record, dict) else record
+		super().__init__(program, f'Variable {name} does not hold a value')
 
 class RuntimeWarning:
 	def __init__(self, program, message):

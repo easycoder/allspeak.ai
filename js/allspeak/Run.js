@@ -122,6 +122,15 @@ const AllSpeak_Run = {
 				if (!program.pc) {
 					break;
 				}
+				// **An unhandled runtime error ends the run.** `Main.js`'s `runtimeError` marks the program
+				// `aborted` after reporting — unless an `onError` handler took the error, which returns before
+				// the mark — and nothing read the flag, so the script carried on past a fault: an arithmetic
+				// error on a variable that held nothing printed `Non-numeric value` and then `add: NaN`, a
+				// wrong number travelling as if it were an answer. Python stops at the same point, so this is
+				// the two runtimes agreeing rather than a new rule.
+				if (program.aborted) {
+					break;
+				}
 				if (program.stop) {
 					program.tracing = false;
 					break;

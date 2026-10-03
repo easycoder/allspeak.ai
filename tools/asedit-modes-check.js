@@ -103,6 +103,8 @@ global.navigator = { userAgent: `node` };
 const store = {};
 // Every write the editor performs, so a check can see what a path actually put on disk.
 const written = [];
+// Every recording it asked for, so a check can see which tab it was asking about.
+const served = [];
 global.localStorage = {
 	getItem: k => (k in store ? store[k] : null),
 	setItem: (k, v) => { store[String(k)] = String(v); },
@@ -175,6 +177,10 @@ global.fetch = (url, opts) => {
 	// and now a recording — so a write is the *outcome* of those paths, and a stub that swallowed it could
 	// not tell a save from a no-op. Only the method and the path are kept: the body is the file.
 	if (opts && opts.method === `POST`) written.push({ url: String(url), body: String(opts.body || ``) });
+	// **And which recording was asked for, and by whom.** The editor keys a recording by the *tab's* path, so
+	// the request is the evidence for "each tab keeps its own" — and it is the only place that fact is visible,
+	// since a tab with no recording and a tab whose recording is empty look the same on screen.
+	if (/\.viz\.json/.test(String(url))) served.push(String(url));
 
 	const body = (() => {
 		const read = rel => {
@@ -203,8 +209,15 @@ global.fetch = (url, opts) => {
 		}
 		return ``;
 	})();
-	if (body === null || (opts && opts.method === `POST`)) {
-		return Promise.resolve({ ok: opts && opts.method === `POST`, status: 200, statusText: `OK`, text: () => Promise.resolve(``) });
+	if (opts && opts.method === `POST`) {
+		return Promise.resolve({ ok: true, status: 200, statusText: `OK`, text: () => Promise.resolve(``) });
+	}
+	// **A file that is not there is a 404, which is what a server says and what the editor's `or go` waits for.**
+	// Answering `ok` with an empty body instead was the stub being kinder than reality in the way that hides
+	// faults: the editor took its *success* path with nothing to read, the pane kept whatever it was already
+	// showing, and a tab with no recording looked like a tab with the last one's.
+	if (body === null) {
+		return Promise.resolve({ ok: false, status: 404, statusText: `Not Found`, text: () => Promise.resolve(``) });
 	}
 	return Promise.resolve({ ok: true, status: 200, statusText: `OK`, text: () => Promise.resolve(body) });
 };
@@ -622,8 +635,9 @@ check(modelled, `entering the pane builds the section model for the file being r
 // the handler was written to convert its message rather than to read its property, the check agreed with
 // it, and the editor threw in the browser on the first real click. Anything a `send` can carry, this must
 // carry too — which is why the visit figures are here as well, the moment the pane began sending them.
-const report = (line, visit, total) =>
-	`{"kind":"mark","line":${line},"visit":${visit},"total":${total}}`;
+const report = (line, visit, total, values) =>
+	`{"kind":"mark","line":${line},"visit":${visit},"total":${total}`
+	+ (values === undefined ? `` : `,"values":${JSON.stringify(values)}`) + `}`;
 program.message = report(12, 3, 7);
 run(`SideMarkLine`);
 const relayed = await waitFor(() => Number(sideValue(`SideLine`)) === 12);
@@ -651,6 +665,26 @@ check(outside && sideValue(`SideFound`) === 0,
 // about the block: a line with no doc block still had its second visit.
 check(String(sideElText(`ec-SideStatus`)).includes(`2 of 2`),
 	`with the mark's own figures still in the status bar, because they are about the mark (${JSON.stringify(sideElText(`ec-SideStatus`))})`);
+
+// **And the values a script asked to have watched travel the whole way**: pane → editor → sidebar → the
+// status bar. This is what `@show Total` buys at the moment somebody clicks the arrival it sits beside, and it
+// is the half of attributes that no other check can see — `capture-check` proves the values reach the trace,
+// and this proves they reach the reader.
+program.message = report(5, 1, 4, { Total: `0`, N: `0` });
+run(`SideMarkLine`);
+const valuesShown = await waitFor(() => String(sideElText(`ec-SideStatus`)).includes(`N=0`));
+check(valuesShown && String(sideElText(`ec-SideStatus`)).includes(`Total=0`),
+	`and a mark's captured values are shown with it, in name order `
+	+ `(${JSON.stringify(String(sideElText(`ec-SideStatus`)))})`);
+// A mark with nothing captured must clear the last one's values rather than leave them standing — the same
+// fault the block's own state had, one field along: a reader would be shown the numbers of a different arrival
+// under the line and visit of this one.
+program.message = report(5, 1, 4);
+run(`SideMarkLine`);
+const valuesCleared = await waitFor(() => !String(sideElText(`ec-SideStatus`)).includes(`Total=`));
+check(valuesCleared,
+	`and a mark with no captured values clears the last one's rather than leaving them standing `
+	+ `(${JSON.stringify(String(sideElText(`ec-SideStatus`)))})`);
 
 // The caret and the view, remembered on the way in and put back on the way out — as a pair, and with
 // the caret written before the view so that neither can drag the other.
@@ -737,6 +771,46 @@ check(/\b8 visits in 1 window\b/.test(String(valueOf(`RecordVerdict`))),
 check(!!AllSpeak.scripts[`ASEditor`] && AllSpeak.scripts[`ASEditor`] === program,
 	`with the editor still registered under its own name afterwards, the recording having borrowed it`);
 
+// **And Record opens an app rather than running it** — one button, two acts, and the *script* says which. The
+// observable half is the window: a buffer naming an app must make the editor open that page, and a buffer naming
+// none must not. The arming itself happens across a window boundary and cannot be reached from here; the honest
+// note is on the assertion below rather than a pretence that it was covered.
+scriptElement.innerText = [
+	`@app parser.html`,
+	`    script TinyApp`,
+	`    variable N`,
+	`Main:`,
+	`    @viz start`,
+	`    @viz stop`,
+	`    stop`,
+].join(`\n`) + `\n`;
+written.length = 0;
+openedPages.length = 0;
+run(`RecordRun`);
+check(openedPages.length === 1 && openedPages[0] === `parser.html` && written.length === 0,
+	`Record opens the page an app script names, instead of running it here `
+	+ `(opened ${JSON.stringify(openedPages)}, ${written.length} write(s))`);
+console.log(`  ..    the arming across the window boundary is not asserted: it needs two live windows, and the `
+	+ `editor's own harness has one`);
+
+// A script with no app still takes the other path, so the branch is not a switch that lost its other half.
+scriptElement.innerText = [
+	`    script PlainAgain`,
+	`    variable N`,
+	`Main:`,
+	`    @viz start`,
+	`    put 0 into N`,
+	`    add 1 to N`,
+	`    @viz stop`,
+	`    stop`,
+].join(`\n`) + `\n`;
+written.length = 0;
+openedPages.length = 0;
+run(`RecordRun`);
+check(openedPages.length === 0 && written.some(w => /\.viz\.json$/.test(w.url)),
+	`and a script with no app is still run and recorded here `
+	+ `(opened ${openedPages.length}, ${written.length} write(s))`);
+
 // **A recording that comes back empty has to say why, and this is the case that was reported.** A script
 // written for the *other* runtime compiles to a refusal, not to a recording — `dictionary` exists in the Python
 // flavour and in no JS one — and "Could not record this script" on its own sends a reader looking for a fault in
@@ -777,7 +851,10 @@ const TINY_APP = [
 	`    viz stop`,
 	`    stop`,
 ].join(`\n`);
-scriptElement.innerText = `!! A block.\n!! More.\n` + TINY_APP + `\n!! @app parser.html\n!!!\n`;
+// **The real spelling, as an attribute of the program** — a line of its own, which the tokeniser lifts into the
+// compiled program. Read from there rather than from the buffer's text, so it is the *tokeniser* that decides
+// what an attribute is and not a scan of this file.
+scriptElement.innerText = `@app parser.html\n` + TINY_APP + `\n`;
 openedPages.length = 0;
 run(`LaunchApp`);
 check(openedPages.length === 1 && openedPages[0] === `parser.html`,
@@ -789,9 +866,83 @@ check(openedPages.length === 1 && openedPages[0] === `parser.html`,
 scriptElement.innerText = TINY_APP + `\n`;
 openedPages.length = 0;
 run(`LaunchApp`);
-check(openedPages.length === 0 && /names no app/.test(String(contentOf(`se-status`))),
+// **And the message has to say *where*, which is the part this check did not ask for and a reader had to.**
+// The first version said "to a doc block" — the one place an attribute cannot go, since a `@`-line inside a `!!`
+// block is the analyser's metadata and never reaches the compiler. So the assertion is no longer "it complains":
+// it is that the complaint names the line and denies the comment.
+check(openedPages.length === 0
+	&& /No app named/.test(String(contentOf(`se-status`)))
+	&& /line of its own/.test(String(contentOf(`se-status`)))
+	&& /not a comment/.test(String(contentOf(`se-status`))),
 	`and a script with no '@app' is told so, and how to declare one, rather than the button doing nothing `
 	+ `(opened ${openedPages.length}, status ${JSON.stringify(String(contentOf(`se-status`)).slice(0, 46))})`);
+
+// ---- is returning to Graph the same recording, and does each tab keep its own? ----------------
+//
+// **Two questions of Graham's, asked of the code rather than answered from reading it** — this session has twice
+// proved that reading the drawing is a poor substitute for measuring it. The pane is reopened on every entry, so
+// the *file* is refetched each time; what needs saying is whether that lands on the same recording, and whose
+// recording it is when the tab changes.
+const enterWith = async file => {
+	program.getSymbolRecord(`TabItem`).value[0] = { type: `constant`, numeric: false, content: file };
+	run(`OpenFile`);
+	await waitFor(() => String(valueOf(`TabPath`)) === file);
+	served.length = 0;
+	run(`ToggleGraph`);
+	await waitFor(() => up(panes()).includes(`GraphArea`));
+	await waitFor(() => vizValue(`VizEvents`) !== undefined && vizValue(`VizEvents`) !== ``);
+	return { events: String(vizValue(`VizEvents`) || ``), asked: served.slice() };
+};
+
+// A recording to look at, made the way the Record button makes one, so this needs no fixture on disk: the
+// stub serves what was posted — which is how the pane reads it back.
+program.getSymbolRecord(`TabItem`).value[0] = { type: `constant`, numeric: false, content: `tools/trace-wide.allspeak` };
+run(`OpenFile`);
+await waitFor(() => String(valueOf(`TabPath`)) === `tools/trace-wide.allspeak`);
+scriptElement.innerText = [
+	`    script GraphKeeps`,
+	`    variable N`,
+	`Main:`,
+	`    @viz start`,
+	`    put 0 into N`,
+	`    while N is less than 3 @show N`,
+	`    begin`,
+	`        add 1 to N`,
+	`    end`,
+	`    @viz stop`,
+	`    stop`,
+].join(`\n`) + `\n`;
+written.length = 0;
+run(`RecordRun`);
+const madeRecording = await waitFor(() => written.some(w => /\.viz\.json$/.test(w.url)));
+check(madeRecording, `a recording is made for the tab under test (${written.length} write(s))`);
+
+const firstLook = await enterWith(`tools/trace-wide.allspeak`);
+run(`ToggleGraph`);                       // out to the flat editor
+const secondLook = await enterWith(`tools/trace-wide.allspeak`);
+check(firstLook.events !== `` && firstLook.events === secondLook.events,
+	`leaving the pane and coming back shows the same recording, because the recording is the file `
+	+ `(${firstLook.events.length} bytes both times)`);
+check(secondLook.asked.some(u => /trace-wide\.allspeak\.viz\.json/.test(u)),
+	`and it is fetched again rather than remembered, so an edited and re-recorded script is not shown stale `
+	+ `(${JSON.stringify(secondLook.asked)})`);
+
+const otherLook = await enterWith(`asedit-side.allspeak`);
+// **And here is the answer to "does each tab keep its own", which is not quite what it looked like.** The tab
+// does ask for its own recording — but the pane is a panel, not a tab: it holds what it was last told, so a tab
+// whose recording is missing would go on showing the previous tab's unless the editor clears it. So the check
+// asks for the *empty* state, which is the behaviour a reader needs, not merely for a different one.
+// The cleared pane holds an **empty list** of arrivals (`[]`), not an absent one — that is what the draw sets
+// when there is no recording to read, and asserting the spelling rather than "no events" is what made this
+// check red for a round after the fault itself was fixed.
+check(otherLook.asked.some(u => /asedit-side\.allspeak\.viz\.json/.test(u))
+	&& (otherLook.events === `` || otherLook.events === `[]`),
+	`and another tab asks for its own recording and the pane is cleared to no arrivals rather than left `
+	+ `showing the last one (asked ${JSON.stringify(otherLook.asked)}, events=${JSON.stringify(otherLook.events)})`);
+
+const backLook = await enterWith(`tools/trace-wide.allspeak`);
+check(backLook.events === firstLook.events,
+	`so returning to the first tab shows that tab's recording again (${backLook.events.length} bytes)`);
 
 console.log(failures.length === 0
 	? `\nasedit-modes-check: all checks passed`

@@ -29,7 +29,7 @@ if [ ! -f asedit.allspeak ] || [ ! -f asedit.json ]; then
     exit 1
 fi
 
-for tool in tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js; do
+for tool in tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js tools/capture-check.js; do
     if [ ! -f "$tool" ]; then
         echo "Error: $tool not found." >&2
         exit 1
@@ -54,7 +54,7 @@ built=0
 for dir in starter/*/; do
     lang=$(basename "$dir")
     missing=
-    for f in CLAUDE.md server.allspeak edit.html; do
+    for f in CLAUDE.md server.allspeak; do
         [ -f "$dir$f" ] || missing="$missing $f"
     done
     if [ -n "$missing" ]; then
@@ -64,20 +64,34 @@ for dir in starter/*/; do
 
     work="$STAGE/$lang"
     mkdir -p "$work"
-    cp -p "$dir"CLAUDE.md "$dir"server.allspeak "$dir"edit.html "$work/"
+    cp -p "$dir"CLAUDE.md "$dir"server.allspeak "$work/"
+    # **The page is generated from the one in the repo root, not copied from a starter.** Four copies of a page
+    # are four things to keep in step and they had already drifted — `starter/en/edit.html` was an older page
+    # than the other three. Two things differ in a pack, and both are substitutions here: which language the
+    # editor speaks, and where its own files live. The second is what makes an editor update reach every project
+    # the moment it is deployed: a pack carries no editor, and its page names the deployed one.
+    sed -e 's|<html lang="en">|<html lang="'"$lang"'">|' \
+        -e 's|id="editor-lang" style="display:none">en<|id="editor-lang" style="display:none">'"$lang"'<|' \
+        -e 's|id="editor-home" style="display:none"></div>|id="editor-home" style="display:none">https://allspeak.ai/dist/</div>|' \
+        edit.html > "$work/edit.html"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$dir$extra" ]; then
             cp -p "$dir$extra" "$work/"
         fi
     done
-    cp -p asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json "$work/"
-    for tool in asdoc-check.py plotview-check.js viz-align-measure.py guard-check.js; do
+    # **No editor in a pack.** `edit.html` fetches `asedit.allspeak`, its two modules and `asedit.json` from
+    # this directory and then from https://allspeak.ai/code/, and a pack carries none of them — so a pack always
+    # runs the released editor rather than a copy of one that has since moved. A copy is what went stale twice
+    # in one evening: a project ran an old editor beside a current runtime and plugin, and found out when the
+    # editor refused to compile its own source. The page, the server and the tools stay: they are what a project
+    # *is*, and none of them is fetched from anywhere else.
+    for tool in asdoc-check.py plotview-check.js viz-align-measure.py guard-check.js capture-check.js; do
         cp -p "tools/$tool" "$work/"
     done
 
     out="$PWD/deploy/allspeak-$lang.zip"
     rm -f "$out"
-    zip_files="CLAUDE.md server.allspeak edit.html asedit.json asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asdoc-check.py plotview-check.js viz-align-measure.py guard-check.js"
+    zip_files="CLAUDE.md server.allspeak edit.html asdoc-check.py plotview-check.js viz-align-measure.py guard-check.js capture-check.js"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$work/$extra" ]; then
             zip_files="$zip_files $extra"

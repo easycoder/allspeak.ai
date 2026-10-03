@@ -15,6 +15,21 @@
 // because that is where the platform differences live. See tools/asviz-run.js
 // (Node) and viz.html (browser).
 //
+// The trigger — the vocabulary a *script* uses, as against the host contract above:
+//
+//     record the script [in <path>] [as <source>] giving <trace> [reporting <verdict>]
+//         run a script of the caller's choosing under a recorder, and hand back the recording
+//     record this run
+//         arm a recorder for the program that calls this — what a button in an *already running app*
+//         needs, since nothing outside a live program can attach a recorder to it
+//     save the recording to <path>
+//         collect what the recorder has and write it beside the script, through the page's /write/
+//
+// All three arm the guard with the recorder's own defaults: a script handed over by a tool, or one
+// arming its own recording, is not to be trusted with the caller's responsiveness. And the recorder
+// reads two attributes, so a script can say where a window opens and what is worth watching there —
+// `@viz start` / `@viz stop`, and `@show Total, Row`.
+//
 // Output: newline-separated records of 'field=value' pairs joined by ' | '. The
 // kind is first, and `reachable` comes immediately after the word `anchor`, so the
 // framework can classify and filter with prefix tests and core vocabulary alone.
@@ -166,9 +181,50 @@ const AllSpeak_Viz = {
 				compiler.next();
 				text = compiler.getValue();
 			}
+			// **`record this run` — the other half of the trigger, and the one a running app needs.** The
+			// shape above runs a script of its own with a recorder attached; this arms a recorder for the
+			// program *calling* it, which is what a button handler wants: the app is already running, so
+			// nothing outside it can attach a recorder, and the recording is taken from the next marker the
+			// program reaches onwards.
+			//
+			// It reads as one command with two shapes — `record the script …` and `record this run` — because
+			// they are the same act from two sides: run something under a recorder, or have the recorder watch
+			// what is already running.
+			// **The third shape of the same verb**, and it belongs here rather than in a handler of its own:
+			// the keyword is `record` in all three, so the compiler can only tell them apart by the word that
+			// follows. An app is recorded from *outside* its own window, which is what makes it a shape of its
+			// own rather than another way of saying `record this run`.
+			if (compiler.isWord(`app`)) {
+				compiler.next();
+				if (!compiler.isWord(`at`)) {
+					throw new Error(`viz 'record' (line ${lino + 1}): expected ` +
+						`'record the app at <url> to <path>'`);
+				}
+				compiler.next();
+				const appUrl = compiler.getValue();
+				if (!compiler.isWord(`to`)) {
+					throw new Error(`viz 'record' (line ${lino + 1}): expected ` +
+						`'record the app at <url> to <path>'`);
+				}
+				compiler.next();
+				const appPath = compiler.getValue();
+				compiler.addCommand({ domain: `viz`, keyword: `record`, lino, appUrl, path: appPath });
+				return true;
+			}
+			if (compiler.isWord(`this`)) {
+				compiler.next();
+				if (!compiler.isWord(`run`)) {
+					throw new Error(`viz 'record' (line ${lino + 1}): expected 'record this run' or ` +
+						`'record the script [in <path>] [as <source>] giving <variable>'`);
+				}
+				compiler.next();
+				compiler.addCommand({ domain: `viz`, keyword: `record`, lino, thisRun: true });
+				return true;
+			}
 			if (!compiler.isWord(`giving`)) {
 				throw new Error(`viz 'record' (line ${lino + 1}): expected ` +
-					`'record the script [in <path>] [as <source>] giving <variable> [incomplete <flag>]'`);
+					`'record this run' or 'record the script [in <path>] [as <source>] giving <variable> ` +
+					`[reporting <verdict>]'`);
 			}
 			compiler.next();
 			const target = compiler.getToken();
@@ -193,6 +249,31 @@ const AllSpeak_Viz = {
 
 		run: (program) => {
 			const command = program[program.pc];
+			if (command.appUrl) {
+				const url = String(program.getValue(command.appUrl));
+				const path = String(program.getValue(command.path)).replace(/^\/+/, ``);
+				if (!AllSpeak_Viz.watchApp(url, path)) {
+					// A blocked popup is the one failure worth naming: nothing else about this can be diagnosed
+					// from the script, and every browser does it silently when the click was not close enough.
+					vizLog(`viz: could not open ${url} — a popup blocker, or no window to open into`);
+				}
+				return command.pc + 1;
+			}
+			if (command.thisRun) {
+				// **The guard is armed here too, and it matters more than anywhere else.** A script that arms
+				// its own recording is a script that may then run for ever, and the editor that launched the
+				// app has no say in it — so the recorder's own defaults apply, exactly as they do to a script
+				// handed over by a tool.
+				if (program.vizRecorder && !program.vizRecorder.stopped) {
+					vizLog(`viz: a recording is already armed — 'record this run' left it alone, and ` +
+						`'save the recording to <path>' writes it`);
+					return command.pc + 1;
+				}
+				program.vizRecorder = new AllSpeak_Viz_Recorder(VIZ_DEFAULT_BUDGET_NS,
+					VIZ_DEFAULT_CEILING_NS);
+				vizLog(`viz: recording this run — the next 'viz start' opens the window`);
+				return command.pc + 1;
+			}
 			const path = command.path ? program.getValue(command.path) : AllSpeak_Viz.target;
 			// A caller that supplies the text registers it under the path, so every other reader in this
 			// plugin keeps working from one place — the same bargain `model` makes.
@@ -224,6 +305,171 @@ const AllSpeak_Viz = {
 				verdict.index = 0;
 			}
 			return command.pc + 1;
+		}
+	},
+
+	// save the recording to <path>
+	//
+	// **The other end of `record this run`.** A recording is only worth having if it can be looked at, and the
+	// script that made it is the one that knows when it is finished — so this collects what the recorder has and
+	// writes it where the pane will find it, through the same `/write/` route a saved tab uses. The path is
+	// relative to where the page is served from, the project root, exactly as `@app`'s page is.
+	//
+	// **It says what it collected, on the console.** The verdict is the same sentence the Record button puts on
+	// the status line — `12 visits in 1 window`, or why there is nothing — because a recording that collected
+	// nothing and a recording that worked look identical in a file, and this is the moment to say which.
+	Save: {
+
+		compile: (compiler) => {
+			const lino = compiler.getLino();
+			compiler.next();
+			if (compiler.isWord(`the`)) compiler.next();
+			if (compiler.isWord(`recording`)) compiler.next();
+			if (!compiler.isWord(`to`)) {
+				throw new Error(`viz 'save' (line ${lino + 1}): expected ` +
+					`'save the recording to <path>'`);
+			}
+			compiler.next();
+			const path = compiler.getValue();
+			compiler.addCommand({ domain: `viz`, keyword: `save`, lino, path });
+			return true;
+		},
+
+		run: (program) => {
+			const command = program[program.pc];
+			// The path is relative to where the page is served from — the project root — so a leading slash is
+			// the reader's habit rather than part of the name, and joining it as it stands would ask the server
+			// for `/write//report.json`.
+			const path = String(program.getValue(command.path)).replace(/^\/+/, ``);
+			const recorder = program.vizRecorder;
+			if (!recorder) {
+				vizLog(`viz: nothing to save — 'record this run' has not been run`);
+				return command.pc + 1;
+			}
+			const parked = recorder.parked === true;
+			const windows = recorder.finishedWindows();
+			recorder.finish();
+			program.vizRecorder = null;
+			const document = AllSpeak_Viz.traceDocument(path, windows);
+			const verdict = AllSpeak_Viz.verdict(windows, recorder.stopped || null, parked);
+			fetch(`/write/` + path, { method: `POST`, body: JSON.stringify(document) })
+				.then(response => {
+					vizLog(response && response.ok
+						? `viz: recording saved to ${path} — ${verdict}`
+						: `viz: could not write ${path} — ${verdict}`);
+				})
+				.catch(err => {
+					vizLog(`viz: could not write ${path}: ${err} — ${verdict}`);
+				});
+			return command.pc + 1;
+		}
+	},
+
+	// Open the app, arm it, and write what it recorded when its window closes.
+	//
+	// **Everything after the first line is a poll**, because a window has no events this side of the boundary: the
+	// app loads its runtime and compiles its script on its own schedule, and the only honest way to know it is
+	// ready is to look. One timer does all three waits in turn — for a live document, for the visualiser to be
+	// present there, and later for the window to close — so there is one thing to cancel and one thing to read
+	// when diagnosing.
+	watchApp: function (url, path) {
+		if (typeof window === `undefined` || !window.open) return false;
+		const win = window.open(url, `_blank`);
+		if (!win) return false;
+		const plugin = AllSpeak_Viz.pluginUrl();
+		let armed = false;
+		const timer = setInterval(function () {
+			if (win.closed) {
+				clearInterval(timer);
+				AllSpeak_Viz.collectApp(win, path);
+				return;
+			}
+			if (armed) return;
+			let alive = false;
+			try { alive = !!win.AllSpeak; } catch (err) { alive = false; }   // cross-origin throws, not false
+			if (!alive) return;
+			// The visualiser is what builds a recorder, so the app's window needs it as well. It is injected
+			// rather than asked for, so an app that has not been changed for any of this still works — and it is
+			// injected *now*, after the app is up, which is safe because the script is parked on its first wait
+			// and every marker it reaches from here on is reached after the arming.
+			if (!win.AllSpeak_Viz) {
+				AllSpeak_Viz.injectPlugin(win, plugin);
+				return;
+			}
+			let count = 0;
+			const scripts = win.AllSpeak.scripts || {};
+			for (const name of Object.keys(scripts)) {
+				const target = scripts[name];
+				if (!target || target.vizRecorder) continue;    // the app's own `record this run` wins
+				try {
+					target.vizRecorder = new win.AllSpeak_Viz.Recorder(
+						VIZ_DEFAULT_BUDGET_NS, VIZ_DEFAULT_CEILING_NS);
+					count++;
+				} catch (err) {
+					vizLog(`viz: could not arm a program in the app: ${err}`);
+				}
+			}
+			armed = true;
+			vizLog(`viz: recording the app — ${count} program(s) armed; close its window to save ${path}`);
+		}, 200);
+		return true;
+	},
+
+	// Collect from an app whose window has closed, and write it where the pane will find it.
+	collectApp: function (win, path) {
+		let windows = [];
+		let stopped = null;
+		let parked = false;
+		try {
+			const scripts = win.AllSpeak.scripts || {};
+			for (const name of Object.keys(scripts)) {
+				const recorder = scripts[name] && scripts[name].vizRecorder;
+				if (!recorder) continue;
+				parked = parked || recorder.parked === true;
+				stopped = stopped || recorder.stopped || null;
+				windows = windows.concat(recorder.finishedWindows());
+			}
+		} catch (err) {
+			vizLog(`viz: the app's window is gone — nothing to collect (${err})`);
+			return;
+		}
+		if (windows.length === 0) {
+			vizLog(`viz: nothing recorded — the app reached no marker while it was armed`);
+			return;
+		}
+		const document = AllSpeak_Viz.traceDocument(path, windows);
+		const verdict = AllSpeak_Viz.verdict(windows, stopped, parked);
+		fetch(`/write/` + path, { method: `POST`, body: JSON.stringify(document) })
+			.then(response => {
+				vizLog(response && response.ok
+					? `viz: the app's recording is saved to ${path} — ${verdict}`
+					: `viz: could not write ${path} — ${verdict}`);
+			})
+			.catch(err => vizLog(`viz: could not write ${path}: ${err} — ${verdict}`));
+	},
+
+	// This plugin's own URL, so it can be put into a window that does not have it.
+	pluginUrl: function () {
+		try {
+			for (const tag of document.scripts) {
+				if (tag.src && /asviz/.test(tag.src)) return tag.src;
+			}
+		} catch (err) { /* no scripts to look at */ }
+		return null;
+	},
+
+	injectPlugin: function (win, url) {
+		if (!url) {
+			vizLog(`viz: the app has no visualiser and this page cannot find its own copy of it — ` +
+				`add the plugin to the app's page`);
+			return;
+		}
+		try {
+			const tag = win.document.createElement(`script`);
+			tag.src = url;
+			win.document.head.appendChild(tag);
+		} catch (err) {
+			vizLog(`viz: could not load the visualiser into the app: ${err}`);
 		}
 	},
 
@@ -984,6 +1230,16 @@ const AllSpeak_Viz = {
 			out.push(`note | reachability is approximate: ${dynamic} computed jump(s) ` +
 				`or returns`);
 		}
+		// **The attributes the program carries, one record each, with the line they sit on.** They are the one
+		// thing a script can say to a tool that the language itself has no use for, and a reader of this model
+		// is such a tool. They are read from the *compiled* program rather than from the source text because
+		// the tokeniser is what knows an `@` inside a literal from an attribute — a reader scanning the text
+		// itself would be a second, worse implementation of that rule, and would misread a script that merely
+		// mentions `@` in a string.
+		for (const element of compiled) {
+			if (!element || !element.attr) continue;
+			out.push(`attr | line=${element.lino + 1} | ${element.attr}`);
+		}
 		// The census of block shapes. A label can appear in more than one entry or
 		// exit bucket, so these are counts of labels carrying that shape, not a
 		// partition of the label count.
@@ -1159,6 +1415,9 @@ const AllSpeak_Viz = {
 		if (AllSpeak_Language.matchesWord(name, `record`)) {
 			return AllSpeak_Viz.Record;
 		}
+		if (AllSpeak_Language.matchesWord(name, `save`)) {
+			return AllSpeak_Viz.Save;
+		}
 		// `viz` itself is core syntax: the plugin never compiles a marker.
 		return null;
 	},
@@ -1231,6 +1490,69 @@ const VIZ_GAP_CAP_NS = 20000000;
 // Commands whose time is not the program's own, because they wait by design. A `url` field is checked
 // separately rather than by keyword, since the fetch spells itself several ways.
 const VIZ_WAITING_KEYWORDS = [`wait`, `every`, `release`, `input`, `download`, `alert`];
+
+
+// **The recorder's slice of the attribute vocabulary.** An attribute is one unparsed string — the language has no
+// opinion on a key and a value, so a tool that wants them apart splits them itself — and this is the recorder's
+// answer to that. Two keys, both of which the language reference names as reasons for attributes to exist:
+//
+//     @viz start / @viz stop          a window, written on the statement's line rather than as a command
+//     @show Total, Row                the values worth watching here
+//
+// Nothing else is read, so a note written for a reader or for another tool passes the recorder by — and the two
+// spellings of a window (this and the `viz start` command) are deliberately both accepted, because a script that
+// already works must not stop working for having a spare way to say the same thing.
+// **A line for the console, named so it still makes sense when it is copied out of one.** The plugin's own
+// messages go here rather than to a dialog: a copied line can be quoted into a conversation, a bug report or a
+// commit, which is the whole reason to prefer a log to a box — and a recording that collected nothing is
+// indistinguishable from one that worked until somebody says which. `console` is absent in some hosts, so this
+// checks rather than assuming.
+const vizLog = function (message) {
+	if (typeof console !== `undefined` && console.log) console.log(message);
+};
+
+const VIZ_ATTR_MARKER = `viz`;
+const VIZ_ATTR_SHOW = `show`;
+
+// The key of an attribute, as the recorder reads it: the first word, and the rest left alone. Deliberately not a
+// parser — `@show Total, Row` and a project's `@key: value` both hand their tail over unexamined.
+const vizAttributeKey = function (text) {
+	const whole = String(text || ``);
+	const gap = whole.indexOf(` `);
+	return gap === -1 ? whole : whole.slice(0, gap);
+};
+
+// Which marker a command is, from either spelling. The `viz` command is the language's own marker; `@viz start`
+// is the same thing said as an attribute, which is the spelling a script wants when the marker belongs to *this*
+// statement rather than needing a line of its own.
+const vizMarkerOf = function (command, attr) {
+	if (command && command.keyword === `viz`) return command.request;
+	if (vizAttributeKey(attr) !== VIZ_ATTR_MARKER) return undefined;
+	const rest = String(attr).slice(VIZ_ATTR_MARKER.length).trim();
+	return rest === `start` || rest === `stop` ? rest : undefined;
+};
+
+// A variable's value as text, read out of the program the recorder is watching.
+//
+// **Read straight off the symbol rather than through the runtime's evaluator, and that is deliberate.** The
+// evaluator reports a value it cannot decode as a *runtime error*, and a runtime error can be routed to the
+// script's own error handler — so an attribute naming something odd could change what the script does. The
+// contract says attributes do not affect behavior, and the cheapest way to keep that promise is not to call
+// anything that can route an error. A name the program does not hold comes back marked `?` rather than missing:
+// an attribute naming something the runtime cannot see is worth seeing in the picture.
+const vizValueText = function (program, name) {
+	try {
+		const symbol = program.getSymbolRecord(name);
+		if (!symbol) return `?`;
+		const slot = symbol.index === undefined ? 0 : symbol.index;
+		const record = symbol.value ? symbol.value[slot] : undefined;
+		const content = record && typeof record === `object` ? record.content : record;
+		if (content === null || content === undefined) return ``;
+		return typeof content === `object` ? JSON.stringify(content) : String(content);
+	} catch (err) {
+		return `?`;
+	}
+};
 
 // ---------------------------------------------------------------- the recording
 
@@ -1478,7 +1800,10 @@ AllSpeak_Viz_Recorder.prototype = {
 		// a whole run. It is `waiting`, not `stopped`: nothing has ended.
 		this.parked = VIZ_WAITING_KEYWORDS.indexOf(String((command && command.keyword) || ``)) >= 0;
 		if (this.account(program, command)) return false;   // the guard ended the run; the runtime breaks
-		const marker = command && command.keyword === `viz` ? command.request : undefined;
+		// **Where attributes stop being inert.** They arrive in the program and nothing else looks at them, so
+		// this is the one place they are read — which is what lets a run with a recorder match a run without one.
+		const attr = command && command.attr ? String(command.attr) : ``;
+		const marker = vizMarkerOf(command, attr);
 		if (marker === `start`) this.arm(program, command, pc);
 		const window = this.current;
 		if (!window || pc >= window.counts.length) return;
@@ -1493,13 +1818,40 @@ AllSpeak_Viz_Recorder.prototype = {
 			this.stop();
 			return;
 		}
-		if (window.anchors[pc] === undefined) return;
+		if (window.anchors[pc] === undefined) {
+			// A statement inside a block: its values belong to the visit in flight, which is the same span.
+			this.capture(program, attr, window);
+			return;
+		}
 		if (window.visits.length >= window.limit) {
 			window.truncated = true;        // keep counting, stop collecting visits
 			return;
 		}
 		window.visits.push({ pc: pc, steps: window.steps, at: vizClock() });
+		this.capture(program, attr, window);
 		if (marker === `stop`) this.stop();
+	},
+
+	// **`@show Total, Row` — the values worth watching, taken as the recorder passes.**
+	//
+	// This is the use the language reference leads with, and it is the difference between a viewer that infers
+	// which of a loop's variables matter from the finished picture and one that is told. The values ride on the
+	// *visit* they fall inside: a visit is an anchor's residence, from the arrival to the next, so
+	// `while Total is less than Limit @show Total, Row` attaches to the arrival it belongs to and a `@show`
+	// further down the block attaches to the visit in flight, which covers it. A second `@show` in one span
+	// rewrites the same names rather than adding a second reading — one value per name per visit is what a pane
+	// can show without becoming a log.
+	capture: function (program, attr, window) {
+		if (!attr || vizAttributeKey(attr) !== VIZ_ATTR_SHOW) return;
+		const visit = window.visits[window.visits.length - 1];
+		if (!visit) return;
+		const values = visit.values || (visit.values = {});
+		const names = String(attr).slice(VIZ_ATTR_SHOW.length).split(`,`);
+		for (let n = 0; n < names.length; n++) {
+			const name = names[n].trim();
+			if (name === ``) continue;
+			values[name] = vizValueText(program, name);
+		}
 	},
 
 	// Where control came from, when it did not simply fall through.
@@ -1634,11 +1986,16 @@ const vizTraceDocument = function (script, windows) {
 			const following = position + 1 < visits.length ? visits[position + 1].at : end;
 			const line = window.anchorLines[visit.pc];
 			const name = window.anchors[visit.pc] || ``;
+			const args = { line: line, pc: visit.pc, name: name, steps: visit.steps,
+				visit: position + 1 };
+			// **A captured value is the one optional thing an anchor carries**, and it is omitted entirely when
+			// the script says nothing worth watching — so a trace of a script with no `@show` is byte-for-byte
+			// what it was before this existed, and the two runtimes stay comparable on what they share.
+			if (visit.values) args.values = visit.values;
 			timeline.push([visit.at, {
 				name: name || `line ${line}`, cat: `anchor`, ph: `X`, pid: 1, tid: tid,
 				ts: visit.at, dur: Math.max(0, following - visit.at),
-				args: { line: line, pc: visit.pc, name: name, steps: visit.steps,
-					visit: position + 1 }
+				args: args
 			}]);
 		});
 		window.transfers.forEach(function (transfer) {

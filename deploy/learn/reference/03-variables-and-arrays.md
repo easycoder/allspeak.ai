@@ -9,6 +9,7 @@ Variables in AllSpeak are containers. A variable can hold a value (number, strin
 - Name variables for what they hold, not how they're used. A button representing the primary action is `PrimaryButton`, not `Btn1`.
 - Group variables by type and by function, not alphabetically.
 - Scratch variables — short-lived reusables like `I`, `N`, `Temp` — are best grouped together and separated from main variables by a blank line.
+- **Declare every variable at the top of the script, in groups — never locally beside the code that uses it.** A variable must be declared *before* the statement that writes it, because the compiler reads the script once from top to bottom: move the code and the declaration falls behind it. Local declarations read well and break silently under refactoring, which is why the house style puts them all at the top.
 
 ## All variables are arrays
 

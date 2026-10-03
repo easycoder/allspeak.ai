@@ -13,6 +13,9 @@ const AllSpeak_Compiler = {
 
 	warning: function(message) {
 		this.addWarning(message);
+		// Kept with the line it belongs to, so a later error can quote it (see the unknown-command throw).
+		this.lastWarning = message;
+		this.lastWarningLine = this.getLino();
 	},
 
 	unrecognisedSymbol: function(item) {
@@ -330,6 +333,17 @@ const AllSpeak_Compiler = {
 		// here reported the line after the offending token.
 		const lino = this.getLino();
 		if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(token) && !(token in this.symbols)) {
+			// **The last warning, if it was this line's, is the useful half of this error.** A handler that
+			// returns false (meaning "try the next one") may still have said something worth keeping — an
+			// unknown target, say — and when no handler claims the statement, that sentence explains it far
+			// better than "I don't understand 'put'", which names the verb when the subject is the variable.
+			// **And when there is one, it *is* the error.** The generic sentence names the verb; the warning
+			// names the variable and what to do about it, so the reader gets that and nothing else. A
+			// genuinely unknown word still gets the pack's sentence — no handler warned about it, because
+			// there was nothing to recognise.
+			if (this.lastWarningLine === lino && this.lastWarning) {
+				throw new Error(this.lastWarning);
+			}
 			throw new Error(AllSpeak_Language.diagnostic(`unknownCommand`, {token, line: lino}));
 		}
 		throw new Error(AllSpeak_Language.diagnostic(`unknownCommand`, {token: token + `...`, line: lino}));

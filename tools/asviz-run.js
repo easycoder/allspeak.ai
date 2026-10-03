@@ -61,6 +61,14 @@ global.localStorage = { getItem: () => null, setItem: noop, removeItem: noop };
 global.addEventListener = noop;
 global.removeEventListener = noop;
 
+// **`alert`, because that is how this runtime reports a runtime error** — and without it the host died with
+// `ReferenceError: alert is not defined`, which reads as a host crash rather than as the script's own message.
+// It cost a diagnosis today: a JS runtime error looked like a script that produced no output at all, while the
+// Python host printed the same error plainly. A dialog box is the wrong thing in a terminal, so this writes the
+// message the way the rest of the host's own reporting does — to stderr — and the *next* alert is still a
+// dialog in a browser, which is where that belongs.
+global.alert = message => process.stderr.write(String(message) + `\n`);
+
 global.document = {
 	getElementById: () => null,
 	querySelector: () => null,
@@ -151,6 +159,12 @@ const ms = (name) => {
 	return raw === null ? undefined : Math.round(Number(raw) * 1e6);
 };
 const guard = { budget: ms(`--budget`), ceiling: ms(`--ceiling`) };
+// **`--no-recorder` leaves the arming to the script.** A host has always armed its own recorder, because a
+// trace is what a host is for — but a script can now arm its own with `record this run`, and with the host's
+// recorder in place that call correctly declines. So there has to be a way to run a self-arming script, or the
+// half of the trigger a *running app* needs cannot be exercised at all. This is how `tools/capture-check.js`
+// proves the arming.
+const noRecorder = flag(`--no-recorder`);
 const targets = argv.filter(a => !a.startsWith(`-`));
 if (targets.length === 0) {
 	targets.push(`codex/en/code/step13.allspeak`);
@@ -178,7 +192,9 @@ const runTarget = function (target) {
 	// host's `VizState.trace[program.scriptName] = program.recorder`.
 	// The guard, off unless the command line asked for it: a recording made by hand at a terminal is that
 	// person's own business, and a bounded one would misreport what the program did.
-	program.vizRecorder = new AllSpeak_Viz.Recorder(guard.budget, guard.ceiling);
+	if (!noRecorder) {
+		program.vizRecorder = new AllSpeak_Viz.Recorder(guard.budget, guard.ceiling);
+	}
 	AllSpeak_Viz.trace[target] = program.vizRecorder;
 	const out = console.log;
 	console.log = (...args) => { process.stderr.write(args.join(` `) + `\n`); };

@@ -107,6 +107,7 @@
     variable SideIn         ! the dict the pane reported, as it arrived
     variable SideSel        ! the line the pane last reported, which is what the sidebar is about
     variable SideVisit      ! which arrival on that line the clicked dot was
+    variable SideValues     ! what that arrival captured, passed on untouched
     variable SideTotal      ! how many arrivals that line had in the whole recording
     variable SideMsg        ! the dict sent to the sidebar: which kind of news, and what it is
     variable SideFound      ! 1 if a doc block holds that line
@@ -202,7 +203,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 859b70b9
+!! @hash 821fc25a
 !! @verified b3977d8a
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -263,6 +264,8 @@
 !! and defaults to 'en'. All of the language-specific strings are then defined for each language.
 !   -- Detect language and set strings for each supported language --
     div LangDiv
+    div VizSrcDiv
+    div SideSrcDiv
     put `en` into Lang
     attach LangDiv to `editor-lang` or go to SetStrings
     put the text of LangDiv into Lang
@@ -354,7 +357,7 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash 3ec54b89
+!! @hash 1ef8e8d5
 !! @verified 3ec54b89
 !!!
 !! The editor checks on startup and periodically for updates to itself.
@@ -1130,6 +1133,31 @@ ParseSource:
         if MarkRecord starts with `problem |` gosub to NoteProblem
         add 1 to K
     end
+
+    ! **The attributes the program carries — the real spelling.** The plugin reads them off the compiled
+    ! program, which is the only place they can be read correctly: the tokeniser is what knows an `@` inside a
+    ! literal from an attribute, so a reader scanning the buffer's text would be a second, worse implementation
+    ! of that rule. A file-level attribute like `@app parser.html` is a line of its own, and its record carries
+    ! the line it is on, so a tool that wants to point at it can.
+    put 0 into K
+    while K is less than MarkCount
+    begin
+        index Model to K
+        put Model into MarkRecord
+        if MarkRecord starts with `attr | ` gosub to NoteAttribute
+        add 1 to K
+    end
+    return
+
+!   One attribute, as the model reports it: `attr | line=N | <text>`.
+!   The text is the language's to carry and a tool's to read — the runtime never splits a key from a value — so
+!   the split below is the tool's, on the record's own separator, which the text cannot contain.
+NoteAttribute:
+    split MarkRecord on ` | `
+    if the elements of MarkRecord is less than 3 return
+    index MarkRecord to 2
+    put MarkRecord into LContent
+    gosub to SplitMeta
     return
 
 OutsideDispatch:
@@ -1177,28 +1205,35 @@ MaybeMeta:
     if LContent starts with `@`
     begin
         put `META` into Kind
-        put from 1 of LContent into Tmp
-        put the position of ` ` in Tmp into Pos
-        if Pos is less than 0
-        begin
-            put Tmp into MetaKey
-            put `` into MetaValue
-        end
-        else
-        begin
-            put left Pos of Tmp into MetaKey
-            add 1 to Pos
-            put from Pos of Tmp into MetaValue
-        end
-        ! **`@app <page>` is the one attribute the editor acts on itself.** The key and the value are already
-        ! apart by the time this runs, so taking it is one line — and it belongs here rather than in a scan of its
-        ! own, because this is the parse the Blocks view uses: one reading of the buffer, so a block that shows
-        ! `@app parser.html` is a block that launches `parser.html`.
-        !
-        ! The spelling is provisional, like the marker's option words: the attribute syntax is being settled in a
-        ! separate session, and a page named differently there is a one-line change here.
-        if MetaKey is `app` put MetaValue into AppPage
+        put from 1 of LContent into LContent
+        gosub to SplitMeta
     end
+    return
+
+!   A key and the rest of it, from an attribute's text.
+!
+!   **The one reading of an attribute's text, shared by both places attributes arrive.** A `@`-line inside a
+!   `!!` doc block is the analyser's metadata and never reaches the compiler; an attribute in the script itself
+!   is carried into the program and comes back through the model. They are the same thing to a reader — a key,
+!   a space, and the rest — so they are split in one place rather than two, and a tool vocabulary read here
+!   reads the same either way.
+!
+!   The spelling `!! @app` is accepted and is not the real thing: the doc-block form says nothing to the
+!   compiler, so a page named there launches a page that the *program* does not know about. Prefer `@app`.
+SplitMeta:
+    put the position of ` ` in LContent into Pos
+    if Pos is less than 0
+    begin
+        put LContent into MetaKey
+        put `` into MetaValue
+    end
+    else
+    begin
+        put left Pos of LContent into MetaKey
+        add 1 to Pos
+        put from Pos of LContent into MetaValue
+    end
+    if MetaKey is `app` put MetaValue into AppPage
     return
 
 OpenSection:
@@ -1290,7 +1325,7 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash 7c30b193
+!! @hash d37980ab
 !! @verified fab5b751
 !!!
 !! Blocks view.
@@ -1853,10 +1888,37 @@ LoadModules:
     return
 
 LoadVizModule:
-    rest get VizSrc from `asedit-graph.allspeak?v=` cat now or go VizLoadFailed
+    ! **This directory first, the served copy second, and that order is the page's.** The editor is a file a
+    ! project can be *given* — a pack used to carry one — and a copy of a thing that moves is a copy that goes
+    ! stale: a project could run an old editor beside a current runtime and plugin, and only found out when the
+    ! editor refused to compile its own source. A pack carries none now, so this falls through to the released
+    ! one and cannot be stale; a working tree carries its own, and an edit to the pane is visible in it.
+    put `` into VizSrc
+    ! **The page's element first, then this directory.** A project cannot *fetch* the pane from the site — the
+    ! site answers `access-control-allow-origin: *` for `.js` and `.css` but not for `.allspeak` — so the page
+    ! hands it over in an element instead, the same channel the language comes through. A working tree has no
+    ! such element and reads the pane beside it, which is what makes an edit to the pane visible there.
+    attach VizSrcDiv to `editor-graph` or go VizModuleLocal
+    put the text of VizSrcDiv into VizSrc
+    if VizSrc is not empty go to VizModuleHere
+VizModuleLocal:
+    rest get VizSrc from `asedit-graph.allspeak?v=` cat now or go VizModuleHosted
+    ! **A `<` means the server sent a page, not a module.** A dev server that answers an unknown path with its
+    ! own page does it with `200` and a type guessed from the extension, so the body is the only thing that
+    ! says whether the file arrived — and a page is treated as a miss, so the next place gets its turn. Without
+    ! this, a mis-serving server takes the editor down with one syntax error per asset and names no cause.
+    if VizSrc starts with `<` put `` into VizSrc
+    if VizSrc is empty go to VizModuleHosted
+VizModuleHere:
+    if VizSrc is empty go to VizLoadFailed
     run VizSrc as VizModule
     put 1 into VizLoaded
     return
+
+VizModuleHosted:
+    rest get VizSrc from `https://allspeak.ai/dist/asedit-graph.allspeak?v=` cat now or go VizLoadFailed
+    if VizSrc starts with `<` go to VizLoadFailed
+    go to VizModuleHere
 
 !   **The sidebar is not the pane, so it is loaded leniently.** Without it the picture still works —
 !   it is a reading aid beside a drawing — so a page that has one file and not the other says so on
@@ -1868,12 +1930,25 @@ LoadVizModule:
 !   thread, so it has to point at the continuation rather than merely set a value. An empty source
 !   must not reach `run`, which would try to compile nothing.
 LoadSideModule:
+    ! The same two places as the pane, for the same reason and in the same order.
     put `` into SideSrc
-    rest get SideSrc from `asedit-side.allspeak?v=` cat now or go SideLoadFailed
+    attach SideSrcDiv to `editor-side` or go SideModuleLocal
+    put the text of SideSrcDiv into SideSrc
+    if SideSrc is not empty go to SideModuleHere
+SideModuleLocal:
+    rest get SideSrc from `asedit-side.allspeak?v=` cat now or go SideModuleHosted
+    if SideSrc starts with `<` put `` into SideSrc
+    if SideSrc is empty go to SideModuleHosted
+SideModuleHere:
     if SideSrc is empty go to SideLoadFailed
     run SideSrc as SideModule
     put 1 into SideLoaded
     return
+
+SideModuleHosted:
+    rest get SideSrc from `https://allspeak.ai/dist/asedit-side.allspeak?v=` cat now or go SideLoadFailed
+    if SideSrc starts with `<` go to SideLoadFailed
+    go to SideModuleHere
 
 SideLoadFailed:
     ! **Not cleared after three seconds, unlike every other message here.** A module that will not load is
@@ -1951,7 +2026,7 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash 5964c053
+!! @hash ecd231d6
 !! @verified 5964c053
 !!!
 !! The sidebar: what the pane reports back, and what the sidebar is shown.
@@ -1976,6 +2051,9 @@ SideMarkLine:
     ! in no doc block still has a visit number, and the status bar shows it either way.
     put property `visit` of SideIn into SideVisit
     put property `total` of SideIn into SideTotal
+    ! Captured values, if the script asked for any. An absent property reads as nothing at all, so a press on
+    ! a mark with no `@show` beside it leaves this empty and the sidebar prints only the line and the visit.
+    put property `values` of SideIn into SideValues
     gosub to SideFindBlock
     gosub to SendBlockToSide
     stop
@@ -2025,6 +2103,7 @@ SendBlockToSide:
     set property `line` of SideMsg to SideSel
     set property `visit` of SideMsg to SideVisit
     set property `total` of SideMsg to SideTotal
+    if SideValues is not empty set property `values` of SideMsg to SideValues
     set property `found` of SideMsg to SideFound
     set property `title` of SideMsg to SideTitle
     set property `prose` of SideMsg to SideProse
@@ -2049,7 +2128,7 @@ TellSideClosed:
     set property `open` of SideMsg to 0
     send SideMsg to SideModule
     return
-!! @hash c33ecd04
+!! @hash 0c4a0949
 !! @verified c33ecd04
 !!!
 
@@ -2060,6 +2139,8 @@ TellSideClosed:
 !! **The recording is written beside the script, not handed straight to the pane**, and that is the pane's own decision rather than a convenience: `<script>.viz.json` is a file, so a run captured here travels with the project and can be read again without running anything. It is written through the `/write/` route a tab already uses, so nothing needs a new channel.
 !!
 !! **A run that waits is recorded as far as its first wait, and says so.** `wait` hands the rest of the program to a timer, so a capture made inside a call cannot follow it; the flag the command answers with is what the status line reports, rather than a slice being passed off as a whole run. Following one through is a different shape — the caller being *told* when the run ends — and it is recorded in TODO.md.
+!!
+!! **And a script that names an app is opened rather than run.** `@app parser.html` means the script is driven by its own page, so running it here could only ever fail — its markers are reached by a *person* clicking, not by the script starting. Record opens that page, arms it from outside and saves the recording when the window closes; the block below that is the script path, unchanged. The two acts are one button because the script already says which is right.
 !!
 !! **The status line says what the recording *is*, not just that one was made.** A document holding nothing but its header is still a valid document, so a button reading only the trace reports a run that died on its first statement as a success — and the two ways a recording comes back empty are worth telling apart, because one is a script this runtime cannot compile and the other is a script that stopped. So the plugin answers with a sentence — `12 visits in 1 window`, or `could not run: I don't understand 'dictionary' at line 46` — and it is shown as it stands.
 !!
@@ -2078,6 +2159,18 @@ RecordRun:
     end
     codemirror get content of ContentEditor into RecordSource
     put EditorPath cat `.viz.json` into TracePath
+    ! **One button, two acts, and the script says which is right.** A script that names an app runs *as* an app —
+    ! driven by its own page, clicked by a person — so it cannot be run here: the editor opens it instead and arms
+    ! it from outside, and the recording is written when that window closes. Anything else is a script, and Record
+    ! runs it here as it always has. The parse is what knows the difference, and it is the same parse the Blocks
+    ! view uses, so `@app parser.html` means the same thing on both sides of the editor.
+    gosub to ParseSource
+    if AppPage is not empty
+    begin
+        record the app at AppPage to TracePath
+        set the content of StatusSpan to `Recording ` cat AppPage cat ` — close its window and the recording is saved to ` cat TracePath
+        stop
+    end
     record the script in EditorPath as RecordSource giving RecordTrace reporting RecordVerdict
     ! An empty trace is how a run that never got started comes back — a script this runtime cannot compile, most
     ! often — and the verdict is the reason, in the runtime's own words. It names the word and the line, which is
@@ -2099,7 +2192,7 @@ RecordFailed:
     set the content of StatusSpan to `Could not record this script`
     fork to ClearStatus
     stop
-!! @hash d7011a10
+!! @hash 88d3e846
 !! @verified 00000000
 !!!
 
@@ -2109,7 +2202,7 @@ RecordFailed:
 !!
 !! **Nothing about the app changes, and that is deliberate.** `parser.html` fetches its script and runs it; the editor does not run it, poke it, or wrap it. That is what keeps this half simple, and it is also what makes the *next* half — recording a launched app — a separate problem: the recorder has to be armed before the app's own `viz start` line runs, which means the app page carrying a bootstrap or the editor injecting one before its scripts run. Launching needs neither.
 !!
-!! **A script that names no app says so** rather than the button doing nothing, because "nothing happened" is the one report a reader cannot act on. The message names the spelling, so the fix is in front of them.
+!! **A script that names no app says so** rather than the button doing nothing, because "nothing happened" is the one report a reader cannot act on. The message names the spelling, says it goes on a line of its own, and says it is not a comment — the three things a reader needs and the three the first version got wrong: it pointed at a doc block, which is where the *analyser's* `@hash` and `@verified` live and where an attribute never reaches the compiler.
 LaunchApp:
     if TabCount is 0 stop
     ! The parse is what reads the attributes, and the buffer may have changed since the last one — so read it now
@@ -2118,7 +2211,11 @@ LaunchApp:
     gosub to ParseSource
     if AppPage is empty
     begin
-        set the content of StatusSpan to `This script names no app: add a line '@app <page>' to a doc block`
+        ! **The message says where, and that is the whole of its job.** It used to say "to a doc block", which is
+        ! where an attribute must *not* go: a `@`-line inside a `!!` block is the analyser's metadata and never
+        ! reaches the compiler, so a reader who followed that advice would have written something the program
+        ! cannot see. Graham asked which it was, which is the message failing at the one moment it exists for.
+        set the content of StatusSpan to `No app named: add '@app <page>' on a line of its own — a script attribute, not a comment`
         fork to ClearStatus
         stop
     end
@@ -2126,6 +2223,6 @@ LaunchApp:
     set the content of StatusSpan to `Opened ` cat AppPage
     fork to ClearStatus
     stop
-!! @hash 9ee4406f
+!! @hash 0faead49
 !! @verified 00000000
 !!!

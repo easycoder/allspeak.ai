@@ -34,6 +34,46 @@ import time
 # outlive the thread that opened it and pick up whatever that thread set in motion.
 DEFAULT_LIMIT = 100000
 
+
+# **This module's slice of the attribute vocabulary.** An attribute is one unparsed string — the language has
+# no opinion on a key and a value, so a tool that wants them apart splits them itself. Two keys, both of which
+# the language reference names as reasons for attributes to exist:
+#
+#     @viz start / @viz stop          a window, written on the statement's line rather than as a command
+#     @show Total, Row                the values worth watching here
+#
+# Nothing else is read, so a note written for a reader or for another tool passes the recorder by.
+def _attrKey(text):
+    whole = str(text or '')
+    gap = whole.find(' ')
+    return whole if gap < 0 else whole[:gap]
+
+
+def _valueText(program, name):
+    """A variable's value as text, read out of the program the recorder is watching.
+
+    **Read straight off the symbol, and never through anything that can raise into the run.** A runtime error
+    here is routed to the script's own error handler, and the contract says attributes do not affect behavior
+    — so a name this program does not hold comes back marked `?` rather than becoming an error the script can
+    see. An attribute naming something the runtime cannot see is worth seeing in the picture.
+    """
+    try:
+        pc = program.symbols.get(name)
+        if pc is None:
+            return '?'
+        value = program.getObject(program.code[pc]).getValue()
+        if value is None:
+            return ''
+        content = value.getContent()
+        if content is None:
+            return ''
+        if isinstance(content, (dict, list, tuple)):
+            return json.dumps(content)
+        return str(content)
+    except Exception:
+        return '?'
+
+
 # A run has to be bounded, because the editor is what usually asks for one and a script under
 # review is not to be trusted with the editor's responsiveness. The bound is a *time* budget
 # rather than a count of commands, because the two failure shapes are not alike: a loop that waits
@@ -176,6 +216,11 @@ class Recorder:
             'block_end': blockEnd,
             'depth': len(program.stack),
             'visits': [],
+            # **What `@show` captured, keyed by the visit it fell inside.** A separate dict rather than a
+            # fourth field on each visit, because a visit is a tuple: every other reader of one — the report's
+            # sequence, its per-line share, this module's own writer — takes it apart positionally, and one
+            # field for a tool to read is not worth rewriting them all.
+            'values': {},
             'counts': [0] * len(program.code),
             'linos': [c.get('lino', 0) + 1 for c in program.code],
             'steps': 0,
@@ -222,6 +267,31 @@ class Recorder:
         self.windows.append(self.current)
         self.current = None
 
+    def capture(self, program, attr, window):
+        """`@show Total, Row` — the values worth watching, taken as the recorder passes.
+
+        The values ride on the *visit* they fall inside. A visit is an anchor's residence — from the arrival to
+        the next — so `while Total is less than Limit @show Total, Row` attaches to the arrival it belongs to,
+        and a `@show` further down the block attaches to the visit in flight, which covers it. A second `@show`
+        in one span rewrites the same names rather than adding a second reading: one value per name per visit is
+        what a pane can show without becoming a log.
+
+        **The values are read as the statement is *reached*, before it runs** — the recorder is a pre-execution
+        hook — so an attribute beside the statement that changes a variable shows the value going in. The
+        language reference's own example puts `@show Total` on the line *after* the change, which is that fact
+        written down.
+        """
+        if not attr or _attrKey(attr) != 'show':
+            return
+        if not window['visits']:
+            return
+        index = len(window['visits']) - 1
+        here = window['values'].setdefault(index, {})
+        for name in attr[len('show'):].split(','):
+            name = name.strip()
+            if name:
+                here[name] = _valueText(program, name)
+
     def tick(self, program, pc):
         # Reaching a marker opens or closes a window. This is the whole of the marker's
         # runtime behaviour: the syntax lives in core, so a script with markers in it still
@@ -230,9 +300,16 @@ class Recorder:
         command = program.code[pc] if pc < len(program.code) else None
         if self.account(program, command):
             return False        # the guard ended the run; the runtime breaks on this
+        # **Where attributes stop being inert.** They arrive in the program and nothing else looks at them,
+        # so this is the one place they are read — which is what lets a run with a recorder match one without.
+        attr = str(command.get('attr') or '') if command is not None else ''
         marker = None
         if command is not None and command.get('keyword') == 'viz':
             marker = command.get('request')
+        elif _attrKey(attr) == 'viz':
+            rest = attr[len('viz'):].strip()
+            if rest in ('start', 'stop'):
+                marker = rest
         if marker == 'start':
             self.arm(program, command, pc)
         window = self.current
@@ -249,11 +326,14 @@ class Recorder:
             self.stop()
             return
         if pc not in window['anchors']:
+            # A statement inside a block: its values belong to the visit in flight, which is the same span.
+            self.capture(program, attr, window)
             return
         if len(window['visits']) >= window['limit']:
             window['truncated'] = True      # keep counting, stop collecting visits
             return
         window['visits'].append((pc, window['steps'], time.perf_counter_ns()))
+        self.capture(program, attr, window)
         if marker == 'stop':
             self.stop()
 
@@ -1290,6 +1370,18 @@ def traceDocument(script, windows):
             following = visits[position + 1][2] if position + 1 < len(visits) else end
             line = window['linos'][pc]
             name = window['anchors'].get(pc, '')
+            args = {
+                'line': line,
+                'pc': pc,
+                'name': name,
+                'steps': steps,
+                'visit': position + 1
+            }
+            # **A captured value is the one optional thing an anchor carries**, and it is omitted entirely when
+            # the script says nothing worth watching — so a trace of a script with no `@show` is byte-for-byte
+            # what it was before this existed, and the two runtimes stay comparable on what they share.
+            if window['values'].get(position):
+                args['values'] = window['values'][position]
             timeline.append((stamp, {
                 'name': name or f'line {line}',
                 'cat': 'anchor',
@@ -1298,13 +1390,7 @@ def traceDocument(script, windows):
                 'tid': index,
                 'ts': stamp // 1000,
                 'dur': max(0, (following - stamp) // 1000),
-                'args': {
-                    'line': line,
-                    'pc': pc,
-                    'name': name,
-                    'steps': steps,
-                    'visit': position + 1
-                }
+                'args': args
             }))
         for steps, stamp, from_line, to_line, kind in window.get('transfers', []):
             timeline.append((stamp, {

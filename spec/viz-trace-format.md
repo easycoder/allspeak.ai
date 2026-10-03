@@ -106,6 +106,20 @@ Required `args`, emitted by both runtimes:
   differ" — so traces from the two are joined on `line`, and `steps` compares within one runtime.
 - `visit` — 1-based index of the arrival within its window.
 
+**Optional `args`**, for a writer that has something of its own to add:
+
+- `values` — what the script asked to have watched at this arrival: the text of each named value, keyed by the
+  name as written. A script says so with an attribute — `@show Total, Row` on the statement the values belong
+  to — and the recorder reads it and resolves it against the program it is watching. **The values are read as
+  the statement is *reached*, before it runs**, so an attribute beside the statement that changes a variable
+  records the value going in; the language reference's own example puts `@show Total` on the line *after* the
+  change, which is that fact written down. Absent when the script asked for nothing, so a recording of a script
+  with no `@show` is byte-for-byte what it always was. A name the program does not hold is recorded as `?`
+  rather than dropped, because an attribute naming something the runtime cannot see is worth seeing.
+  **Text rather than a typed value**, deliberately: it is what the script asked to *see*, so it is rendered the
+  way that runtime renders a value in its own output, and the two runtimes differ only where their own printing
+  already does.
+
 When a window has `truncated: true`, visit collection stopped at the cap while counting went on:
 the final interval therefore covers everything after the last collected arrival, and a viewer
 should say so rather than presenting it as one block's residence.

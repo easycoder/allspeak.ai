@@ -10,17 +10,104 @@
 
 <body>
 <div id="editor-lang" style="display:none">en</div>
+<!-- **Which copy of the editor is home, and the one thing a pack's page changes.** Empty means this
+     directory, so the working tree runs the editor it is editing; a deployed base here means a project runs
+     the *released* editor and every update reaches it the moment it is deployed, with no copy to refresh.
+     `build-starters` fills this in when it writes a pack's page, and the editor reads it through the same
+     `attach ... to` that reads the language above. -->
+<div id="editor-home" style="display:none"></div>
+<!-- The pane and the sidebar, when they came with the payload rather than from beside this page. Empty in a
+     working tree, and the editor reads them through the same `attach ... to` as the two above. -->
+<pre id="editor-graph" style="display:none"></pre>
+<pre id="editor-side" style="display:none"></pre>
 <pre id="asedit-ui" style="display:none"></pre>
 <pre id="allspeak-script" style="display:none"></pre>
 
 <script>
 (async function() {
-	const ui = await fetch('asedit.json?v=' + Date.now()).then(r => r.text());
-	document.getElementById('asedit-ui').textContent = ui;
-	const ecs = await fetch('asedit.allspeak?v=' + Date.now()).then(r => r.text());
-	document.getElementById('allspeak-script').textContent = ecs;
+	const t = Date.now();   // one stamp per load, so every request this page makes bypasses a stale cache
+	// **The editor's own files, from the same two places as everything else.** They used to be fetched from
+	// this page's own directory and *nowhere else*, which is what made a stale copy possible: a project could
+	// mirror the editor once and then run an old one beside a current runtime and plugin, and the skew only
+	// surfaced when the editor refused to compile its own source. Two evenings went to that in one evening.
+	//
+	// **This directory first, then the served copy** — the working tree's, so an edit to the editor is visible
+	// where the editor is being edited — and the fallback is what makes a copy unnecessary: a project that
+	// carries no `asedit.allspeak` gets the current one, and `build-starters` no longer puts one in a pack, so
+	// a pack cannot go stale at all. Order matters here; it is the opposite of the runtime's for that reason.
+	const editorLocal = '';                                  // this directory
+	// **The editor arrives as a script, because a script crosses origins and a text fetch does not.** The site
+	// answers `access-control-allow-origin: *` for `.js` and `.css` and not for `.allspeak` (measured, per file
+	// type), so a page served from anywhere else is refused the editor however it asks for it — which is why the
+	// runtime has always worked from a pack and the editor did not. `./build-allspeak` wraps the four files in
+	// `dist/asedit.js`, and the *presence of the global* is the proof the script arrived: a server that answers
+	// an unknown path with its own page cannot fake it.
+	const editorHome = ((document.getElementById('editor-home') || {}).textContent || '').replace(/\s+/g, '');
+	const payloadBases = (() => {
+		const localDist = 'deploy/dist/';                    // where build-allspeak writes it, as served
+		const deployed = 'https://allspeak.ai/dist/';        // where it lands once deploy-sync has run
+		// `#editor-home` is the only difference between a working tree's page and a pack's: empty here, a
+		// deployed base in a pack. Asked for first either way, so a pack that names one uses it.
+		return editorHome ? [editorHome, localDist, deployed] : [localDist, deployed];
+	})();
+	let parts = null;
+	for (const base of payloadBases) {
+		await new Promise(resolve => {
+			const s = document.createElement('script');
+			s.src = base + 'asedit.js?v=' + t;
+			s.onload = resolve;
+			s.onerror = resolve;
+			document.head.appendChild(s);
+		});
+		if (window.AllSpeak_EditorParts) { parts = window.AllSpeak_EditorParts; break; }
+	}
+	if (!parts) {
+		console.warn('asedit: no editor payload — ./build-allspeak writes dist/asedit.js, and the site serves it');
+	}
 
-	const t = Date.now();
+	const editors = ['asedit.json', 'asedit.allspeak'];
+	const editorText = {};
+	let fromThisDirectory = true;
+	for (const name of editors) {
+		let text = null;
+		// **This directory first, and only from here: the site cannot be *fetched* at all**, which is the whole
+		// reason the payload exists. A working tree therefore reads the editor it is editing, and a project —
+		// which has no copy — takes the one that came with the payload.
+		try {
+			const got = await fetch(editorLocal + name + '?v=' + Date.now());
+			if (got.ok) {
+				const body = await got.text();
+				// A page served in place of a file starts with `<`; so does nothing the editor is made of.
+				if (!/^\s*</.test(body)) text = body;
+			}
+		} catch (err) { /* not beside us */ }
+		if (text === null && parts && parts[name]) {
+			text = parts[name];
+			fromThisDirectory = false;
+		}
+		if (text === null) {
+			document.body.textContent = 'asedit: could not load ' + name + ' from this directory, and the ' +
+				'editor payload did not bring one — run ./build-allspeak, and serve dist/asedit.js';
+			return;
+		}
+		editorText[name] = text;
+	}
+	// **The editor fetches its own two modules, so a project has to be given them** — and it cannot fetch them
+	// from the site for the same CORS reason. They travel in the payload and are put in front of the editor
+	// through hidden elements, which is the channel the page already uses for the language. A working tree gets
+	// none of this: its modules are beside it, and an edited pane must be visible in it.
+	if (!fromThisDirectory && parts) {
+		for (const [id, name] of [['editor-graph', 'asedit-graph.allspeak'], ['editor-side', 'asedit-side.allspeak']]) {
+			const holder = document.getElementById(id);
+			if (holder && parts[name]) holder.textContent = parts[name];
+		}
+	}
+	document.getElementById('asedit-ui').textContent = editorText['asedit.json'];
+	// **The editor is told the same two places, because it fetches its own two modules itself** — and a page
+	// cannot set an AllSpeak variable any other way, so it is put in front of the editor's own source. The
+	// declaration comes with it: a variable must be declared before the statement that writes it, and this is
+	// the only place that knows which of the two copies is the editor's home.
+	document.getElementById('allspeak-script').textContent = editorText['asedit.allspeak'];
 
 	// The runtime and its plugins: the working tree's build first, the deployed one as a fallback.
 	//
@@ -28,13 +115,37 @@
 	// change to the runtime or a plugin cannot be seen at all until it is deployed — which is not a
 	// hypothetical: the editor needs the svg plugin to compile its own Graph pane, and while this
 	// list named no svg plugin, asedit failed to compile with "I don't understand 'svg'".
+	// **A base is only usable if it *serves* the file, and a status code does not say so.** A dev server that
+	// answers every unknown path with its own page returns `200 application/javascript` for a missing bundle —
+	// the type guessed from the extension — and the browser then fails with `Unexpected token '<'`, one error
+	// per asset, with the real cause nowhere in sight. So each base is asked for the runtime once, and kept only
+	// if what comes back is a script. The site is asked last and always is one, so this can only ever remove a
+	// base that was going to break the page.
+	const looksLikeScript = text => {
+		const head = String(text).replace(/^\s+/, '').slice(0, 200);
+		return head !== '' && head[0] !== '<' && !/^<!doctype/i.test(head);
+	};
 	const local = 'deploy/dist/';                 // where build-allspeak puts it, as served
 	const deployed = 'https://allspeak.ai/dist/'; // where it lands once deploy-sync has run
+	const bases = [];
+	for (const base of [local, deployed]) {
+		let text = null;
+		try {
+			const got = await fetch(base + 'allspeak-min.js?v=' + t);
+			if (got.ok) text = await got.text();
+		} catch (err) { /* not this one */ }
+		if (text !== null && looksLikeScript(text)) {
+			bases.push(base);
+		} else {
+			console.warn('asedit: ' + (base || 'this directory') + ' did not serve the runtime as a script, ' +
+				'so it is not used — a server that answers a missing file with a page looks like this');
+		}
+	}
 	const bundles = ['allspeak-min.js', 'plugins/asviz.js', 'plugins/svg.js', 
 		'plugins/codemirror.js', 'plugins/codemirror/codemirror.js', 'plugins/codemirror-ecs.js'];
 	for (const name of bundles) {
 		let loaded = false;
-		for (const base of [local, deployed]) {
+		for (const base of bases) {
 			loaded = await new Promise(resolve => {
 				const s = document.createElement('script');
 				s.src = base + name + '?v=' + t;

@@ -144,6 +144,8 @@ This directory contains `AGENTS.md` — this file. Read it now to understand the
 
 **Important:** Check whether a file called `.allspeak-init` exists in this directory. If it does, read it to learn the project name and type. If it does NOT exist, the project has not been set up yet — guide the user through the initialisation process below.
 
+**The editor is not in this directory, and that is deliberate.** `edit.html` is here, and it fetches the editor itself — `asedit.allspeak`, its two modules and `asedit.json` — from https://allspeak.ai/code/, falling back to this directory only if a copy has been placed here. So a project always runs the *current* editor rather than a copy of one that has since moved, and an agent should not look for those files locally or add them.
+
 ### Initialisation process
 
 1. **Greet the user** and briefly explain what AllSpeak is — a scripting language that reads like plain English, designed so AI writes the code and the user reviews it.

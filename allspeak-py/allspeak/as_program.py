@@ -570,7 +570,10 @@ class Program:
 		self.checkObjectType(object, ECObject)
 		value = object.getValue() # type: ignore
 		if value is None:
-			raise NoValueRuntimeError(self, f'Symbol "{record["name"]}" has no value')
+			# The error says which variable, in its own words — so it is given the *record*, not a sentence
+			# already built: `NoValueRuntimeError` formats the name itself, and a caller that formatted it
+			# first produced "Variable Symbol \"N\" has no value does not hold a value".
+			raise NoValueRuntimeError(self, record)
 		copy = ECValue(domain=value.getDomain(),type=value.getType(),content=deepcopy(value.getContent()))
 		return copy
 
