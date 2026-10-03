@@ -300,7 +300,16 @@ const drawing = () => {
 	// The fit used to guarantee that on its own; a window is what can break it, and a mark outside
 	// the frame lands on the axis.
 	const inFrame = [], inFlow = [];
+	// **A third coordinate system, and it is the source's own.** `VizPane` is a nested viewport whose
+	// `viewBox` is the *document* — eighteen units to a row and eight to a column — so anything drawn
+	// inside it is in document units and scaled by the browser into the frame. The redaction lives there,
+	// beside the very text it covers, which is exactly why it needs no re-rendering on a zoom. The frame's
+	// test can therefore say nothing about it, and asking it to would have failed on a picture that is
+	// right: the whole point of the layer is that its coordinates are the file's, not the canvas's.
+	const paneEl = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizPane`));
+	const insidePane = p => !!paneEl && (paneEl.children || []).includes(p);
 	for (const p of paths) {
+		if (insidePane(p)) continue;
 		const isFlow = /Flow/.test(String(p.attributes.id || ``));
 		for (const pair of (p.attributes.d || ``).matchAll(/([0-9.-]+) ([0-9.-]+)/g)) {
 			const x = Number(pair[1]);
@@ -401,6 +410,14 @@ const drawing = () => {
 		ruleYs,
 		markYs,
 		rows: (href.match(/<tspan/g) || []).length,
+		// The redaction, as drawn: one bar per line that shows anything, in the document's own units —
+		// plus the `transform` that pins its width while the zoom moves.
+		redact: dOf(`ec-VizRedact`),
+		redactScale: (() => {
+			const el = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizRedact`));
+			const m = el && /scale\(([0-9.]+) 1\)/.exec(String(el.attributes.transform || ``));
+			return m ? Number(m[1]) : null;
+		})(),
 		ticks,
 		// The status line is the one that says which lines the *window* is on; the caption says which
 		// lines the *recording* covered, and they are different things — a check that read the caption
@@ -1058,6 +1075,32 @@ if (withPicture.length === 0) {
 		? `  OK: one picture, drawn once, and all ${steady.length} phases still point at it`
 		: `  FAIL: the picture was rebuilt ${hrefs.size} times, which is the redraw this was meant to remove`);
 
+	// **And the redaction is built once with it, which is what makes a zoom free.** The bars are a
+	// function of the *source*, not of the window, so they belong with the document and not with the marks
+	// and rules that every draw rebuilds — and the check is the same instrument: their path data has to be
+	// byte-identical across every phase before the source changes. That is the whole of the claim Graham
+	// expected to cost something: *"rendering this costs more CPU time, so if it becomes too slow let's
+	// defer rendering while zooming"*. There is nothing to defer, because a zoom does not rebuild it — and
+	// this is the check that would fail if that ever stopped being true.
+	const redactions = new Set(steady.map(([, s]) => s.redact));
+	console.log(redactions.size === 1 && String(steady[0][1].redact || ``).length > 0
+		? `  OK: the redaction rides with the picture rather than being rebuilt — one path of `
+			+ `${(String(steady[0][1].redact).match(/M0 /g) || []).length} bar(s) across all ${steady.length} `
+			+ `phases, unchanged by every zoom and pan in them`
+		: redactions.size === 1
+			? `  FAIL: the redaction is empty in every phase (${String(steady[0][1].redact).length} chars)`
+			: `  FAIL: the redaction was rebuilt ${redactions.size} times across ${steady.length} phases, `
+				+ `so a zoom is rebuilding it`);
+	// And it does follow the source: an edit has to change it, or the bars would be the shape of a file
+	// that is no longer on screen.
+	const after = withPicture.slice(swapAt);
+	if (swapAt > 0 && after.length) {
+		const changed = after.some(([, s]) => s.redact !== steady[0][1].redact);
+		console.log(changed
+			? `  OK: and an edited script redraws the redaction with it, so the bars follow the text`
+			: `  FAIL: the script was edited and the redaction did not change`);
+	}
+
 	// And the window moves over it. How much room there is depends on the recording: a run shorter
 	// than the legible row count cannot zoom vertically at all, and a source narrower than the
 	// window cannot be panned horizontally, so a short fixture shows no movement — which is the
@@ -1138,6 +1181,67 @@ if (withPicture.length === 0) {
 		console.log(rowYs.length === lineCount && gaps.length === 1 && gaps[0] === 18
 			? `  OK: every row carries its own y and they are 18 apart (${rowYs.length} rows, ${rowYs[0]} to ${rowYs[rowYs.length - 1]}), so no empty row can shift the text above it`
 			: `  FAIL: ${rowYs.length} placed row(s) of ${lineCount}, gaps ${JSON.stringify(gaps)} — a row placed by accumulation would leave this empty`);
+
+		// **The redaction is the text's shape, and that is checkable rather than a matter of taste.** The
+		// bars are built from the same lines in the same pass, so either they agree with the text or the
+		// arithmetic is wrong — and "agree" is two numbers per line: a bar's top must be its own row's top
+		// (the baseline the document names, less the fourteen units the row holds above it) and its width
+		// must be that line's own length at eight units a column. That is what "preserve the visible shape
+		// of the text" means once it is written down. **And the zoom cannot spoil it**: the bars are in the
+		// document's units, beside the glyphs, so the two are scaled by one `viewBox` and no zoom can move
+		// one without the other — which is why this is a check on geometry and not on a rendered frame.
+		const bars = [...String(withPicture[0][1].redact || ``).matchAll(/M0 (-?\d+)h(\d+)v18h-\d+z/g)]
+			.map(m => ({ top: Number(m[1]), w: Number(m[2]) }));
+		// **The row's text is the text a reader sees, not the document's transport encoding.** An SVG
+		// document cannot spell `&`, `<` or `>` for itself, so the picture writes `&amp;`, `&lt;` and
+		// `&gt;` — and the fixture deliberately carries a line with all three, which is how this was
+		// caught: the bar was measured against forty-one characters where thirty are drawn. `&amp;` goes
+		// last, because unescaping the other two first cannot invent one for it to eat.
+		const shown = text => text.replace(/&lt;/g, `<`).replace(/&gt;/g, `>`).replace(/&amp;/g, `&`);
+		const drawnRows = rows.map((text, i) => ({ text: shown(text), y: rowYs[i] }))
+			.filter(r => r.text !== `` && r.y !== undefined);
+		const wrong = drawnRows.filter(r => {
+			const bar = bars.find(b => b.top === r.y - 14);
+			return !bar || bar.w !== r.text.length * 8;
+		});
+		console.log(bars.length === drawnRows.length && wrong.length === 0
+			? `  OK: every line's redaction is its own row exactly — ${bars.length} bar(s), each spanning the full `
+				+ `18-unit row and as wide as its text at 8 units a column`
+			: `  FAIL: ${bars.length} bar(s) for ${drawnRows.length} drawn row(s), ${wrong.length} mismatched`
+				+ (wrong.length ? ` — first "${wrong[0].text}" on row y=${wrong[0].y}, bar ${JSON.stringify(bars.find(b => b.top === wrong[0].y - 14))}` : ``));
+
+		// **The width is pinned and the height is not, which is the whole of the ask.** What a reader sees is
+		// two numbers multiplied: the `transform` that widens the bars inside the document, and the pane's
+		// `viewBox` that shrinks the document into the frame. Their product is the width on screen, and the
+		// claim is that it *does not move* while the zoom does — the same bar at the same width at every
+		// notch, so the file's shape reads the same however far in the reader is. The height is the other half
+		// of the claim: it follows the row, so it does move. A build that rebuilt the bars per zoom to keep
+		// their width would pass this too — and the check above, that the path is unchanged across the
+		// phases, is what tells the two apart.
+		const pinnedAcross = withPicture
+			.filter(([, s]) => s.redactScale && /M0 /.test(String(s.redact)))
+			.map(([name, s]) => {
+				const bar = /M0 (-?\d+)h(\d+)v18h-\d+z/.exec(String(s.redact));
+				const shrink = 580 / s.box[3];          // the pane's viewBox height against the frame's
+				return {
+					name,
+					width: Number(bar[2]) * s.redactScale * shrink,
+					height: 18 * shrink,
+					view: s.viewBox,
+				};
+			});
+		const widthSpread = pinnedAcross.length
+			? (Math.max(...pinnedAcross.map(p => p.width)) - Math.min(...pinnedAcross.map(p => p.width)))
+				/ Math.min(...pinnedAcross.map(p => p.width))
+			: 1;
+		const rowHeights = [...new Set(pinnedAcross.map(p => p.height.toFixed(2)))];
+		console.log(pinnedAcross.length && widthSpread < 0.01 && rowHeights.length > 1
+			? `  OK: and its width is pinned while its height follows the row — ${pinnedAcross.length} phase(s), `
+				+ `${pinnedAcross[0].width.toFixed(1)} units wide at every one (${(widthSpread * 100).toFixed(2)}% spread), `
+				+ `rows ${Math.min(...pinnedAcross.map(p => p.height)).toFixed(2)} to ${Math.max(...pinnedAcross.map(p => p.height)).toFixed(2)} units tall`
+			: `  FAIL: the bars' on-screen width should not move with the zoom and their height should — `
+				+ `${pinnedAcross.length} phase(s), spread ${(widthSpread * 100).toFixed(2)}%, `
+				+ `${rowHeights.length} distinct row height(s) ${JSON.stringify(rowHeights.slice(0, 4))}`);
 		if (process.env.PICTURE) {
 			fs.writeFileSync(process.env.PICTURE, fittedDoc);
 			console.log(`    the document written to ${process.env.PICTURE}`);
