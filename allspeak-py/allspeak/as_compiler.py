@@ -21,6 +21,11 @@ class Compiler:
 		self.index = 0
 		self.warnings = []
 		self.valueTypes = {}
+		# The attribute of the statement being compiled, and whether it has been attached
+		# yet. Both are saved and restored around every statement, because compiling one
+		# statement can compile another — a `begin` compiles its whole body.
+		self.attrPending = None
+		self.attrStamped = False
 
 	# Get the current code size. Used during compilation
 	def getCodeSize(self):
@@ -121,6 +126,14 @@ class Compiler:
 	def addCommand(self, command, debug=True):
 		command['debug'] = debug
 		command['bp'] = False
+		# The attribute written on the statement's line rides on the first command the
+		# statement compiles to — which is the command the runtime arrives at for that
+		# statement, and so the one a tool is looking at when it asks what the statement is
+		# for. A statement that compiles to no command of its own keeps its attribute for an
+		# entry of its own, added by compileOne.
+		if self.attrPending != None and not self.attrStamped and not 'attr' in command:
+			command['attr'] = self.attrPending
+			self.attrStamped = True
 		self.code.append(command)
 
 	# Test if the current token is a symbol
@@ -294,10 +307,45 @@ class Compiler:
 		keyword = self.getToken()
 		if not keyword:
 			return False
+		# The attribute on this statement's line, if it has one. It is held for the length of
+		# the statement so that addCommand can attach it to the command the statement compiles
+		# to, and released at the end for the statements that compile to nothing. Both fields
+		# are saved because compiling a statement can compile another one — a `begin` compiles
+		# its whole body.
+		token = self.tokens[self.index]
+		own = token.attr
+		saved_pending = self.attrPending
+		saved_stamped = self.attrStamped
+		self.attrPending = own
+		self.attrStamped = False
+		try:
+			result = self.compileStatement(keyword)
+		finally:
+			stamped = self.attrStamped
+			if own != None and not stamped:
+				# A statement that compiles to no command of its own — a bare attribute line,
+				# or a compile-only keyword such as `continue` — still carries its attribute:
+				# it becomes an entry of its own, which the runtime steps over and nothing
+				# else notices. (A label is not one of these: this runtime gives a label a
+				# record of its own, so the attribute rides on that.)
+				self.addCommand({'domain': 'core', 'keyword': 'attr', 'lino': token.lino,
+					'attr': own})
+			self.attrPending = saved_pending
+			self.attrStamped = saved_stamped
+		return result
+
+	# Compile one statement, with its attribute already held by compileOne.
+	def compileStatement(self, keyword):
 #		print(f'Compile keyword "{keyword}"')
 		# Skip the 'info' directive (used by 'allspeak info <script>')
 		if keyword == 'info' or keyword == language.word('info'):
 			self.nextToken()  # skip the info text
+			return True
+		if keyword == '@':
+			# A line that is nothing but an attribute. There is no command here for it to
+			# describe, so it becomes an entry of its own, added by compileOne — the sigil is
+			# the whole statement, the text came on the token, and the index stays on the
+			# sigil so that compileFrom steps off it as it does for any other statement.
 			return True
 		if keyword.endswith(':'):
 			command = {}

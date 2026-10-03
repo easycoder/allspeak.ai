@@ -38,6 +38,7 @@ const AllSpeak_Opcodes = {
 
 		// Instrumentation markers: core syntax, no runtime effect of their own.
 		case `viz`:      return `VIZ`;
+		case `attr`:     return `ATTR`;
 
 		// Arithmetic
 		case `add`:       return `ADD`;

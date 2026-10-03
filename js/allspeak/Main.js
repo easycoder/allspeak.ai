@@ -466,6 +466,20 @@ const AllSpeak = {
 		return program;
 	},
 
+	// The text of an attribute: everything after the `@`, up to the end of the line or to a
+	// `!` comment, whichever comes first, with surrounding whitespace removed.
+	//
+	// `!` starts a comment everywhere else in the language, so it ends an attribute too.
+	// The other reading — that the attribute runs to the end of the line whatever it holds —
+	// is the one to be careful of, because it fails silently in the direction that matters:
+	// `@app parser.html ! the parser page` would name a page called
+	// `parser.html ! the parser page`, and nothing would report it.
+	attributeText: function(line, at) {
+		const rest = line.slice(at + 1);
+		const comment = rest.indexOf(`!`);
+		return (comment < 0 ? rest : rest.slice(0, comment)).trim();
+	},
+
 	tokeniseFile: function(file) {
 		const scriptLines = [];
 		const tokens = [];
@@ -486,6 +500,7 @@ const AllSpeak = {
 				return;
 			}
 			let n;
+			let firstToken = -1;
 			if (literal) {
 				// Continuing a multi-line literal: every char including leading
 				// whitespace is part of the content. Append the newline crossed,
@@ -502,7 +517,9 @@ const AllSpeak = {
 				if (n === length) {
 					return;
 				}
+				firstToken = index;
 			}
+			let attr = null;
 			for (; n < length; n++) {
 				const c = line[n];
 				if (!literal) {
@@ -519,6 +536,15 @@ const AllSpeak = {
 						continue;
 					} else if (c === `!`) {
 						break;
+					} else if (c === `@` && token.length === 0) {
+						// An attribute — see attributeText. It is carried by the program for
+						// other tooling to read and the runtime does nothing with it, so it
+						// is lifted out of the token stream here, where the grammar can no
+						// longer be confused by a word it did not expect: a compile handler
+						// has to know nothing about `@` for `while X is less than 10 @show X`
+						// to compile.
+						attr = AllSpeak.attributeText(line, n);
+						break;
 					}
 				}
 				if (c === `\``) {
@@ -532,6 +558,23 @@ const AllSpeak = {
 					}
 				} else {
 					token += c;
+				}
+			}
+			if (attr !== null) {
+				// A line that is nothing but an attribute is a statement in its own right,
+				// so it needs a token for the compiler to compile: the sigil, with the text
+				// on the token beside it. An attribute with code before it rides on that
+				// line's first token instead, which is the statement it belongs to.
+				if (index === firstToken) {
+					tokens.push({
+						index,
+						lino: lino + 1,
+						token: `@`,
+						attr
+					});
+					index++;
+				} else {
+					tokens[firstToken].attr = attr;
 				}
 			}
 			if (token.length > 0 && !literal) {

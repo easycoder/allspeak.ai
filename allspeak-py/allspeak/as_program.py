@@ -40,6 +40,18 @@ def flush():
 #	print('End flush',flushes)
 	flushes += 1
 
+# The text of an attribute: everything after the `@`, up to the end of the line or to a
+# `!` comment, whichever comes first, with surrounding whitespace removed.
+#
+# `!` starts a comment everywhere else in the language, so it ends an attribute too. The
+# other reading — that the attribute runs to the end of the line whatever it holds — is the
+# one to be careful of, because it fails silently in the direction that matters: a value with
+# a comment after it would carry the comment, and nothing would report it.
+def attribute_text(line, at):
+	rest = line[at + 1:]
+	comment = rest.find('!')
+	return (rest if comment < 0 else rest[:comment]).strip()
+
 class Program:
 
 	def __init__(self, arg, testMode=False, source=None, name=None):
@@ -605,6 +617,8 @@ class Program:
 				if n == length:
 					continue
 				start = n
+			first_token = len(script.tokens)
+			attr = None
 			for n in range(start, length):
 				c = line[n]
 				# Test if we are in a literal
@@ -615,6 +629,14 @@ class Program:
 							token = ''
 						continue
 					elif c == '!':
+						break
+					elif c == '@' and len(token) == 0:
+						# An attribute — see attribute_text. It is carried by the program for
+						# other tooling to read and the runtime does nothing with it, so it is
+						# lifted out of the token stream here, where the grammar cannot be
+						# confused by a word it did not expect: no keyword handler has to know
+						# that `@` exists for an attributed statement to compile.
+						attr = attribute_text(line, n)
 						break
 				# Test for the start or end of a literal
 				if c == '`':
@@ -628,6 +650,15 @@ class Program:
 						continue
 				else:
 					token += c
+			if attr != None:
+				# A line that is nothing but an attribute is a statement in its own right, so
+				# it needs a token for the compiler to compile: the sigil, with the text on
+				# the token beside it. An attribute with code before it rides on that line's
+				# first token instead, which is the statement it belongs to.
+				if len(script.tokens) == first_token:
+					script.tokens.append(Token(lino, '@', attr))
+				else:
+					script.tokens[first_token].attr = attr
 			if len(token) > 0 and not literal:
 				script.tokens.append(Token(lino, token))
 				token = ''

@@ -62,6 +62,17 @@
         "onError?"
       ]
     },
+    "ATTR": {
+      "domain": "core",
+      "category": "instrumentation",
+      "description": "Carry an attribute — text for other tooling to read, with no effect on the run. Compiles to an 'attr' field on the statement's own element, or to an element of its own where the statement compiles to none",
+      "current": {
+        "keyword": "attr"
+      },
+      "params": [
+        "text"
+      ]
+    },
     "CHECK": {
       "domain": "core",
       "category": "control_flow",

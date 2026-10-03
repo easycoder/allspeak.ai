@@ -183,6 +183,15 @@ const AllSpeak_Compiler = {
 
 	addCommand: function(item) {
 		item.pc = this.program.length;
+		// The attribute written on the statement's line rides on the first command the
+		// statement compiles to — which is the command the runtime arrives at for that
+		// statement, and so the one a tool is looking at when it asks what the statement
+		// is for. A statement that compiles to no command keeps its attribute for an entry
+		// of its own, added by compileOne.
+		if (this.attrPending !== null && !this.attrStamped && typeof item.attr === `undefined`) {
+			item.attr = this.attrPending;
+			this.attrStamped = true;
+		}
 		// Stamp the canonical opcode
 		const opcode = AllSpeak_Opcodes.resolve(item);
 		if (opcode) {
@@ -326,6 +335,12 @@ const AllSpeak_Compiler = {
 		throw new Error(AllSpeak_Language.diagnostic(`unknownCommand`, {token: token + `...`, line: lino}));
 	},
 
+	// The attribute of the statement being compiled, and whether it has been attached yet.
+	// Both are saved and restored around every statement, because compiling one statement
+	// can compile another — a `begin` compiles its whole body.
+	attrPending: null,
+	attrStamped: false,
+
 	compileOne: function() {
 		const keyword = this.getToken();
 		if (!keyword) {
@@ -334,19 +349,52 @@ const AllSpeak_Compiler = {
 		// console.log(`Compile keyword '${keyword}'`);
 		this.warnings = [];
 		const pc = this.program.length;
-		// First check for a label
-		if (keyword.endsWith(`:`)) {
-			// console.log(`Label: ${keyword}`);
-			const name = keyword.substring(0, keyword.length - 1);
-			if (this.symbols[name]) {
-				throw new Error(`Duplicate symbol: '${name}'`);
+		// The attribute on this statement's line, if it has one. It is held for the length
+		// of the statement so that addCommand can attach it to the command the statement
+		// compiles to, and released at the end for the statements that compile to nothing.
+		const token = this.tokens[this.index];
+		const ownAttr = typeof token.attr === `string` ? token.attr : null;
+		const savedAttr = this.attrPending;
+		const savedStamped = this.attrStamped;
+		this.attrPending = ownAttr;
+		this.attrStamped = false;
+		try {
+			// First check for a label
+			if (keyword.endsWith(`:`)) {
+				// console.log(`Label: ${keyword}`);
+				const name = keyword.substring(0, keyword.length - 1);
+				if (this.symbols[name]) {
+					throw new Error(`Duplicate symbol: '${name}'`);
+				}
+				this.symbols[name] = {
+					pc
+				};
+				this.index++;
+			} else if (keyword === `@`) {
+				// A line that is nothing but an attribute. There is no command here for it
+				// to describe, so it becomes an entry of its own below — the sigil is the
+				// whole statement, and the text came with the token.
+				this.index++;
+			} else {
+				this.compileToken();
 			}
-			this.symbols[name] = {
-				pc
-			};
-			this.index++;
-		} else {
-			this.compileToken();
+		} finally {
+			const stamped = this.attrStamped;
+			this.attrPending = savedAttr;
+			this.attrStamped = savedStamped;
+			if (ownAttr !== null && !stamped) {
+				// A statement that compiles to no command of its own — a label, or a line
+				// holding only an attribute — still carries its attribute. It becomes an
+				// entry in its own right, which the runtime steps over and nothing else
+				// notices; for a label that entry is what the label's pc addresses, so a
+				// tool follows the label to its attribute the way the runtime does.
+				this.addCommand({
+					domain: `core`,
+					keyword: `attr`,
+					lino: token.lino,
+					attr: ownAttr
+				});
+			}
 		}
 	},
 
@@ -421,6 +469,8 @@ const AllSpeak_Compiler = {
 		this.program.symbols = {};
 		this.symbols = this.program.symbols;
 		this.warnings = [];
+		this.attrPending = null;
+		this.attrStamped = false;
 		this.checkLanguageDirective();
 		this.compileFromHere([]);
 		this.addCommand({

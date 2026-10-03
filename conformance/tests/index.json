@@ -15,6 +15,7 @@
   "EC-0012-test-blocks.json",
   "EC-0013-check-clauses.json",
   "EC-0014-on-failure.json",
-  "EC-0015-case-conditions.json"
+  "EC-0015-case-conditions.json",
+  "EC-0016-attributes.json"
  ]
 }

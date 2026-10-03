@@ -30,6 +30,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 19. [Testing](reference/19-testing.md) — `check` assertions, `test … end test` cases, failure clauses, the `--test` runner and exit codes.
 20. [Desktop graphics (Qt)](reference/20-graphics.md) — the Python runtime's PySide6 GUI domain: `use graphics`, widgets, layouts, events, dialogs.
 21. [House style](reference/21-house-style.md) — where `begin` and `end` go, and how a long statement is split across lines.
+22. [Attributes](reference/22-attributes.md) — `@`-notes a script carries for other tooling, and why they change nothing about a run.
 
 ## Idioms
 

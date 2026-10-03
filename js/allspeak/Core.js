@@ -370,6 +370,19 @@ const AllSpeak_Core = {
 		run: program => program.pc + 1
 	},
 
+	// An attribute: text a script carries about itself, for other tooling to read.
+	//
+	// Nothing here compiles one — the tokeniser lifts the text out of the line and the
+	// compiler attaches it to the statement's own command. This entry is what a statement
+	// that compiles to no command gets instead: a line holding only an attribute, or a
+	// label. It is in core, and it is a marker, for the same reason `viz` is: a script
+	// carrying attributes has to run as an ordinary script whether or not the tool that
+	// reads them is loaded, so the syntax may not go with the tool.
+	Attr: {
+
+		run: program => program.pc + 1
+	},
+
 	// model the script [in <path>] [as <source>] giving <variable>
 	//
 	// A fallback, and the reason it belongs in core rather than being left to the viz
@@ -3446,6 +3459,7 @@ const AllSpeak_Core = {
 			TEST_ERROR: this.TestError,
 			GOTO_TEST_END: this.GotoTestEnd,
 			VIZ: this.Viz,
+			ATTR: this.Attr,
 			BEGIN: this.Begin,
 			END: this.End,
 			SCRIPT: this.Script

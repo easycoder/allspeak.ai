@@ -370,6 +370,19 @@ const AllSpeak_Core = {
 		run: program => program.pc + 1
 	},
 
+	// An attribute: text a script carries about itself, for other tooling to read.
+	//
+	// Nothing here compiles one — the tokeniser lifts the text out of the line and the
+	// compiler attaches it to the statement's own command. This entry is what a statement
+	// that compiles to no command gets instead: a line holding only an attribute, or a
+	// label. It is in core, and it is a marker, for the same reason `viz` is: a script
+	// carrying attributes has to run as an ordinary script whether or not the tool that
+	// reads them is loaded, so the syntax may not go with the tool.
+	Attr: {
+
+		run: program => program.pc + 1
+	},
+
 	// model the script [in <path>] [as <source>] giving <variable>
 	//
 	// A fallback, and the reason it belongs in core rather than being left to the viz
@@ -3446,6 +3459,7 @@ const AllSpeak_Core = {
 			TEST_ERROR: this.TestError,
 			GOTO_TEST_END: this.GotoTestEnd,
 			VIZ: this.Viz,
+			ATTR: this.Attr,
 			BEGIN: this.Begin,
 			END: this.End,
 			SCRIPT: this.Script
@@ -12440,6 +12454,7 @@ const AllSpeak_Opcodes = {
 
 		// Instrumentation markers: core syntax, no runtime effect of their own.
 		case `viz`:      return `VIZ`;
+		case `attr`:     return `ATTR`;
 
 		// Arithmetic
 		case `add`:       return `ADD`;
@@ -14489,6 +14504,15 @@ const AllSpeak_Compiler = {
 
 	addCommand: function(item) {
 		item.pc = this.program.length;
+		// The attribute written on the statement's line rides on the first command the
+		// statement compiles to — which is the command the runtime arrives at for that
+		// statement, and so the one a tool is looking at when it asks what the statement
+		// is for. A statement that compiles to no command keeps its attribute for an entry
+		// of its own, added by compileOne.
+		if (this.attrPending !== null && !this.attrStamped && typeof item.attr === `undefined`) {
+			item.attr = this.attrPending;
+			this.attrStamped = true;
+		}
 		// Stamp the canonical opcode
 		const opcode = AllSpeak_Opcodes.resolve(item);
 		if (opcode) {
@@ -14632,6 +14656,12 @@ const AllSpeak_Compiler = {
 		throw new Error(AllSpeak_Language.diagnostic(`unknownCommand`, {token: token + `...`, line: lino}));
 	},
 
+	// The attribute of the statement being compiled, and whether it has been attached yet.
+	// Both are saved and restored around every statement, because compiling one statement
+	// can compile another — a `begin` compiles its whole body.
+	attrPending: null,
+	attrStamped: false,
+
 	compileOne: function() {
 		const keyword = this.getToken();
 		if (!keyword) {
@@ -14640,19 +14670,52 @@ const AllSpeak_Compiler = {
 		// console.log(`Compile keyword '${keyword}'`);
 		this.warnings = [];
 		const pc = this.program.length;
-		// First check for a label
-		if (keyword.endsWith(`:`)) {
-			// console.log(`Label: ${keyword}`);
-			const name = keyword.substring(0, keyword.length - 1);
-			if (this.symbols[name]) {
-				throw new Error(`Duplicate symbol: '${name}'`);
+		// The attribute on this statement's line, if it has one. It is held for the length
+		// of the statement so that addCommand can attach it to the command the statement
+		// compiles to, and released at the end for the statements that compile to nothing.
+		const token = this.tokens[this.index];
+		const ownAttr = typeof token.attr === `string` ? token.attr : null;
+		const savedAttr = this.attrPending;
+		const savedStamped = this.attrStamped;
+		this.attrPending = ownAttr;
+		this.attrStamped = false;
+		try {
+			// First check for a label
+			if (keyword.endsWith(`:`)) {
+				// console.log(`Label: ${keyword}`);
+				const name = keyword.substring(0, keyword.length - 1);
+				if (this.symbols[name]) {
+					throw new Error(`Duplicate symbol: '${name}'`);
+				}
+				this.symbols[name] = {
+					pc
+				};
+				this.index++;
+			} else if (keyword === `@`) {
+				// A line that is nothing but an attribute. There is no command here for it
+				// to describe, so it becomes an entry of its own below — the sigil is the
+				// whole statement, and the text came with the token.
+				this.index++;
+			} else {
+				this.compileToken();
 			}
-			this.symbols[name] = {
-				pc
-			};
-			this.index++;
-		} else {
-			this.compileToken();
+		} finally {
+			const stamped = this.attrStamped;
+			this.attrPending = savedAttr;
+			this.attrStamped = savedStamped;
+			if (ownAttr !== null && !stamped) {
+				// A statement that compiles to no command of its own — a label, or a line
+				// holding only an attribute — still carries its attribute. It becomes an
+				// entry in its own right, which the runtime steps over and nothing else
+				// notices; for a label that entry is what the label's pc addresses, so a
+				// tool follows the label to its attribute the way the runtime does.
+				this.addCommand({
+					domain: `core`,
+					keyword: `attr`,
+					lino: token.lino,
+					attr: ownAttr
+				});
+			}
 		}
 	},
 
@@ -14727,6 +14790,8 @@ const AllSpeak_Compiler = {
 		this.program.symbols = {};
 		this.symbols = this.program.symbols;
 		this.warnings = [];
+		this.attrPending = null;
+		this.attrStamped = false;
 		this.checkLanguageDirective();
 		this.compileFromHere([]);
 		this.addCommand({
@@ -15231,6 +15296,20 @@ const AllSpeak = {
 		return program;
 	},
 
+	// The text of an attribute: everything after the `@`, up to the end of the line or to a
+	// `!` comment, whichever comes first, with surrounding whitespace removed.
+	//
+	// `!` starts a comment everywhere else in the language, so it ends an attribute too.
+	// The other reading — that the attribute runs to the end of the line whatever it holds —
+	// is the one to be careful of, because it fails silently in the direction that matters:
+	// `@app parser.html ! the parser page` would name a page called
+	// `parser.html ! the parser page`, and nothing would report it.
+	attributeText: function(line, at) {
+		const rest = line.slice(at + 1);
+		const comment = rest.indexOf(`!`);
+		return (comment < 0 ? rest : rest.slice(0, comment)).trim();
+	},
+
 	tokeniseFile: function(file) {
 		const scriptLines = [];
 		const tokens = [];
@@ -15251,6 +15330,7 @@ const AllSpeak = {
 				return;
 			}
 			let n;
+			let firstToken = -1;
 			if (literal) {
 				// Continuing a multi-line literal: every char including leading
 				// whitespace is part of the content. Append the newline crossed,
@@ -15267,7 +15347,9 @@ const AllSpeak = {
 				if (n === length) {
 					return;
 				}
+				firstToken = index;
 			}
+			let attr = null;
 			for (; n < length; n++) {
 				const c = line[n];
 				if (!literal) {
@@ -15284,6 +15366,15 @@ const AllSpeak = {
 						continue;
 					} else if (c === `!`) {
 						break;
+					} else if (c === `@` && token.length === 0) {
+						// An attribute — see attributeText. It is carried by the program for
+						// other tooling to read and the runtime does nothing with it, so it
+						// is lifted out of the token stream here, where the grammar can no
+						// longer be confused by a word it did not expect: a compile handler
+						// has to know nothing about `@` for `while X is less than 10 @show X`
+						// to compile.
+						attr = AllSpeak.attributeText(line, n);
+						break;
 					}
 				}
 				if (c === `\``) {
@@ -15297,6 +15388,23 @@ const AllSpeak = {
 					}
 				} else {
 					token += c;
+				}
+			}
+			if (attr !== null) {
+				// A line that is nothing but an attribute is a statement in its own right,
+				// so it needs a token for the compiler to compile: the sigil, with the text
+				// on the token beside it. An attribute with code before it rides on that
+				// line's first token instead, which is the statement it belongs to.
+				if (index === firstToken) {
+					tokens.push({
+						index,
+						lino: lino + 1,
+						token: `@`,
+						attr
+					});
+					index++;
+				} else {
+					tokens[firstToken].attr = attr;
 				}
 			}
 			if (token.length > 0 && !literal) {
@@ -15377,7 +15485,7 @@ const AllSpeak = {
 		}
 	},
 };
-AllSpeak.version = `2608191442`;
+AllSpeak.version = `2610031512`;
 AllSpeak.timestamp = Date.now();
 AllSpeak.writeStartupTrace(`AllSpeak loaded; waiting for page`);
 

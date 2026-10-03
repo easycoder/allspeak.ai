@@ -29,6 +29,7 @@
     button BlocksBtn
     button GraphBtn
     button RecordBtn     ! record the open script and put the recording beside it
+    button LaunchBtn     ! open the page this script's `@app` names, in a window of its own
     button BlocksPrev
     button BlocksNext
     button BlocksVerify
@@ -115,7 +116,8 @@
     variable VizRun         ! the dict the pane is sent: the run, the script, the words, the path
     variable RecordSource   ! the open buffer, handed to the plugin as the script to run
     variable RecordTrace     ! what that run collected, as the trace document's text
-    variable RecordCut       ! 1 when the run was still going, so the recording ends at its first wait
+    variable RecordVerdict   ! what the recording amounts to — visits and windows, or why there is none
+    variable AppPage         ! the page this script's `@app` attribute names, if it has one
     variable TraceText      ! the recording, as read — the `trace` field of that dict
     variable SourceText     ! the script, as read — the `source` field of it
     variable CurBlock      ! 0-based index into Sections arrays
@@ -200,7 +202,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash d31ca2bf
+!! @hash 859b70b9
 !! @verified b3977d8a
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -227,6 +229,7 @@
     attach BlocksBtn to `se-blocksbtn`
     attach GraphBtn to `se-graphbtn`
     attach RecordBtn to `se-recordbtn`
+    attach LaunchBtn to `se-launchbtn`
     attach GraphArea to `se-graph-area`
     attach GraphGrip to `se-graph-grip`
     attach GraphSide to `se-graph-side`
@@ -242,7 +245,7 @@
     attach BlocksDocPane to `se-blocks-doc`
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
-!! @hash 280f53ec
+!! @hash 414ea5b9
 !! @verified c52f8b76
 !!!
 !! Some general initialisation
@@ -396,6 +399,7 @@ VersionDone:
     on click BlocksBtn go to ToggleBlocks
     on click GraphBtn go to ToggleGraph
     on click RecordBtn go to RecordRun
+    on click LaunchBtn go to LaunchApp
     on click BlocksPrev go to PrevBlock
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
@@ -485,7 +489,7 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash f804ba38
+!! @hash 3efa1530
 !! @verified aeba3967
 !!!
 !! One `on message`, registered here rather than with the code it runs.
@@ -1060,6 +1064,7 @@ ClearStatus:
 !!
 !! Same classifier logic as tools/asdoc-check.allspeak — the spec is one source of truth even though the code is duplicated here for the editor's in-process use.
 ParseSource:
+    put `` into AppPage
     put 0 into SecCount
     put 0 into InSection
     put `` into Source
@@ -1185,6 +1190,14 @@ MaybeMeta:
             add 1 to Pos
             put from Pos of Tmp into MetaValue
         end
+        ! **`@app <page>` is the one attribute the editor acts on itself.** The key and the value are already
+        ! apart by the time this runs, so taking it is one line — and it belongs here rather than in a scan of its
+        ! own, because this is the parse the Blocks view uses: one reading of the buffer, so a block that shows
+        ! `@app parser.html` is a block that launches `parser.html`.
+        !
+        ! The spelling is provisional, like the marker's option words: the attribute syntax is being settled in a
+        ! separate session, and a page named differently there is a one-line change here.
+        if MetaKey is `app` put MetaValue into AppPage
     end
     return
 
@@ -1277,7 +1290,7 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash fab5b751
+!! @hash 7c30b193
 !! @verified fab5b751
 !!!
 !! Blocks view.
@@ -2048,6 +2061,8 @@ TellSideClosed:
 !!
 !! **A run that waits is recorded as far as its first wait, and says so.** `wait` hands the rest of the program to a timer, so a capture made inside a call cannot follow it; the flag the command answers with is what the status line reports, rather than a slice being passed off as a whole run. Following one through is a different shape — the caller being *told* when the run ends — and it is recorded in TODO.md.
 !!
+!! **The status line says what the recording *is*, not just that one was made.** A document holding nothing but its header is still a valid document, so a button reading only the trace reports a run that died on its first statement as a success — and the two ways a recording comes back empty are worth telling apart, because one is a script this runtime cannot compile and the other is a script that stopped. So the plugin answers with a sentence — `12 visits in 1 window`, or `could not run: I don't understand 'dictionary' at line 46` — and it is shown as it stands.
+!!
 !! **And a guard is armed, with the recorder's own defaults.** A script handed to the editor by a tool is not to be trusted with the editor's responsiveness: a busy loop and a never-returning wait both end here, and the recording says which.
 RecordRun:
     if TabCount is 0 stop
@@ -2063,11 +2078,18 @@ RecordRun:
     end
     codemirror get content of ContentEditor into RecordSource
     put EditorPath cat `.viz.json` into TracePath
-    record the script in EditorPath as RecordSource giving RecordTrace incomplete RecordCut
-    if RecordTrace is empty go to RecordFailed
+    record the script in EditorPath as RecordSource giving RecordTrace reporting RecordVerdict
+    ! An empty trace is how a run that never got started comes back — a script this runtime cannot compile, most
+    ! often — and the verdict is the reason, in the runtime's own words. It names the word and the line, which is
+    ! what tells a reader that this is not the runtime the script was written for.
+    if RecordTrace is empty
+    begin
+        set the content of StatusSpan to `Could not record this script — ` cat RecordVerdict
+        fork to ClearStatus
+        stop
+    end
     rest post RecordTrace to `/write/` cat TracePath or go RecordFailed
-    if RecordCut is 1 set the content of StatusSpan to `Recorded ` cat TracePath cat ` — the run waits, so the recording ends there`
-    else set the content of StatusSpan to `Recorded ` cat TracePath
+    set the content of StatusSpan to `Recorded ` cat TracePath cat ` — ` cat RecordVerdict
     fork to ClearStatus
     ! The pane, if it is up, is drawing whatever recording was there before this one.
     if GraphMode is 1 gosub to SendRunToViz
@@ -2077,6 +2099,33 @@ RecordFailed:
     set the content of StatusSpan to `Could not record this script`
     fork to ClearStatus
     stop
-!! @hash ca0b2743
+!! @hash d7011a10
+!! @verified 00000000
+!!!
+
+!! Opening the project's app, from the editor.
+!!
+!! **The app is a page, and a page the editor can already reach: its own.** `@app parser.html` names it relative to where the editor is served from — the project root — so no path has to be assembled, no server route is added, and the page resolves against the editor's own location. It opens in a window of its own, which is the point: the app runs exactly as it does when you open it by hand, with its own layout, its own DOM and its own `rest get`s, unconstrained by the editor's.
+!!
+!! **Nothing about the app changes, and that is deliberate.** `parser.html` fetches its script and runs it; the editor does not run it, poke it, or wrap it. That is what keeps this half simple, and it is also what makes the *next* half — recording a launched app — a separate problem: the recorder has to be armed before the app's own `viz start` line runs, which means the app page carrying a bootstrap or the editor injecting one before its scripts run. Launching needs neither.
+!!
+!! **A script that names no app says so** rather than the button doing nothing, because "nothing happened" is the one report a reader cannot act on. The message names the spelling, so the fix is in front of them.
+LaunchApp:
+    if TabCount is 0 stop
+    ! The parse is what reads the attributes, and the buffer may have changed since the last one — so read it now
+    ! rather than trusting `AppPage` to be current. It is the same walk the Blocks view uses, and it clears
+    ! `AppPage` first, so an attribute that has just been deleted cannot go on launching a page.
+    gosub to ParseSource
+    if AppPage is empty
+    begin
+        set the content of StatusSpan to `This script names no app: add a line '@app <page>' to a doc block`
+        fork to ClearStatus
+        stop
+    end
+    location new AppPage
+    set the content of StatusSpan to `Opened ` cat AppPage
+    fork to ClearStatus
+    stop
+!! @hash 9ee4406f
 !! @verified 00000000
 !!!

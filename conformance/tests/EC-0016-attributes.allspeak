@@ -1,0 +1,15 @@
+! EC-0016: attributes are carried by the program and change nothing about the run
+
+@this script is a conformance case for attributes
+
+variable Total @the running total
+
+Main: @where the counting happens
+	put 0 into Total
+	while Total is less than 4 @show Total
+	begin
+		add 1 to Total
+		log Total @show Total ! the comment is not part of the attribute
+	end
+	log `done @ last`
+	log `a literal @ is not an attribute`

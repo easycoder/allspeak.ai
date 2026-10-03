@@ -2329,6 +2329,15 @@ class Core(Handler):
     def r_viz(self, command):
         return self.nextPC()
 
+    # An attribute: text a script carries about itself, for other tooling to read. Nothing
+    # compiles one — the tokeniser lifts the text out of the line and the compiler attaches
+    # it to the statement's own command — and this entry is what a statement that compiles to
+    # no command gets instead. It is in core for the same reason `viz` is: a script carrying
+    # attributes has to run as an ordinary script whether or not the tool that reads them is
+    # loaded, so the syntax may not go with the tool.
+    def r_attr(self, command):
+        return self.nextPC()
+
     def k_wait(self, command):
         command['value'] = self.nextValue()
         multipliers = {}

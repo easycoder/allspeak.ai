@@ -1,11 +1,11 @@
 {
   "specVersion": "0.1",
-  "generatedAt": "2026-09-23T18:10:39.141324+00:00",
+  "generatedAt": "2026-10-03T14:10:45.524068+00:00",
   "implementations": {
     "js-browser": {
       "runtimeVersion": "unknown",
       "summary": {
-        "pass": 13,
+        "pass": 14,
         "fail": 2,
         "skip": 0
       },
@@ -193,6 +193,21 @@
               "lower case ok",
               "not lowercase ok",
               "not uppercase ok"
+            ],
+            "error": null
+          }
+        },
+        {
+          "id": "EC-0016",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "done @ last",
+              "a literal @ is not an attribute"
             ],
             "error": null
           }

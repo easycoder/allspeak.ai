@@ -105,9 +105,13 @@ class Script:
 		self.tokens = []
 
 class Token:
-	def __init__(self, lino, token):
+	# `attr` is the attribute written on this token's line, when there is one: the text of
+	# whatever followed the `@`. The tokeniser takes it out of the line so the grammar never
+	# meets it, and the compiler reads it back off the first token of the statement.
+	def __init__(self, lino, token, attr=None):
 		self.lino = lino
 		self.token = token
+		self.attr = attr
 
 ###############################################################################
 # This is the set of generic AllSpeak objects (values and variables)

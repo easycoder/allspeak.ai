@@ -120,7 +120,7 @@ const AllSpeak_Viz = {
 		}
 	},
 
-	// record the script [in <path>] [as <source>] giving <variable> [incomplete <flag>]
+	// record the script [in <path>] [as <source>] giving <variable> [reporting <verdict>]
 	//
 	// **The trigger.** `model` compiles a script to *read* it; this compiles one to *run* it with a recorder
 	// attached and the guard armed, and hands back the recording as the Chrome trace — the same document the
@@ -139,10 +139,16 @@ const AllSpeak_Viz = {
 	//
 	// The *stopping*: this call returns when the run hands control away or ends, and a `wait` hands the rest of
 	// the program to a timer. **So a recording made this way covers a run up to its first wait**, and a script
-	// that is still going when this returns is reported through the `incomplete` flag rather than passed off
-	// as a whole run. A computation — which is what a capture is usually for — has no waits and is covered
-	// whole. Following a waiting run needs the caller to be *told* when it ends rather than to wait for it,
-	// which is a different shape; see TODO.md.
+	// that is still going when this returns says so in its verdict rather than passing a slice off as a whole
+	// run. A computation — which is what a capture is usually for — has no waits and is covered whole.
+	// Following a waiting run needs the caller to be *told* when it ends rather than to wait for it, which is a
+	// different shape; see TODO.md.
+	//
+	// **And `reporting` is the sentence about the recording, because a caller cannot write one itself.** That is
+	// not a convenience: a document with nothing in it but its header is still a *valid* document, so a caller
+	// holding only the trace cannot tell "the run recorded a loop" from "the run died on its first statement",
+	// and a button that reads only the trace reports the second as a success. The plugin saw the run, so the
+	// plugin says what happened. See `verdict` below.
 	Record: {
 
 		compile: (compiler) => {
@@ -167,10 +173,10 @@ const AllSpeak_Viz = {
 			compiler.next();
 			const target = compiler.getToken();
 			compiler.next();
-			let flag = null;
-			if (compiler.isWord(`incomplete`)) {
+			let verdict = null;
+			if (compiler.isWord(`reporting`)) {
 				compiler.next();
-				flag = compiler.getToken();
+				verdict = compiler.getToken();
 				compiler.next();
 			}
 			compiler.addCommand({
@@ -180,7 +186,7 @@ const AllSpeak_Viz = {
 				path,
 				text,
 				target,
-				flag
+				verdict
 			});
 			return true;
 		},
@@ -208,14 +214,14 @@ const AllSpeak_Viz = {
 				content: outcome.trace
 			};
 			target.index = 0;
-			if (command.flag) {
-				const flag = program.getSymbolRecord(command.flag);
-				flag.value[0] = {
+			if (command.verdict) {
+				const verdict = program.getSymbolRecord(command.verdict);
+				verdict.value[0] = {
 					type: `constant`,
-					numeric: true,
-					content: outcome.incomplete ? 1 : 0
+					numeric: false,
+					content: outcome.verdict
 				};
-				flag.index = 0;
+				verdict.index = 0;
 			}
 			return command.pc + 1;
 		}
@@ -231,11 +237,12 @@ const AllSpeak_Viz = {
 		return null;
 	},
 
-	// Run a script with a recorder attached and the guard armed, and hand back what it collected.
+	// Run a script with a recorder attached and the guard armed, and hand back what it collected *and* what
+	// that amounts to.
 	//
-	// `{ trace, incomplete }` — the recording as JSON text, and whether the run was still going when this
-	// returned. The command above is a shell over this, and a host that wants the two facts apart can call
-	// this directly (as `tools/guard-check.js` calls the hosts).
+	// `{ trace, verdict }` — the recording as JSON text, and the one line about it that a caller can say out
+	// loud. The command above is a shell over this, and a host that wants the two apart can call this directly
+	// (as `tools/guard-check.js` calls the hosts).
 	record: function (path, text) {
 		const lines = text.split(`\n`);
 		if (lines.length > 0 && lines[lines.length - 1] === ``) lines.pop();
@@ -250,8 +257,12 @@ const AllSpeak_Viz = {
 			program = AllSpeak.compileScript(source, [], null, null);
 		} catch (err) {
 			if (held) AllSpeak.scripts[declared] = held;
-			AllSpeak_Viz.problems.push(String((err && err.message) || err).split(`\n`)[0]);
-			return { trace: ``, incomplete: false, failed: true };
+			// **A refusal is the most useful thing a recording can report**, and the runtime's own sentence is
+			// the whole of it: "I don't understand 'dictionary' at line 46" names the word *and* the line, and
+			// it is how a caller learns that this runtime is not the one the script was written for.
+			const why = AllSpeak_Viz.reasonFor(err);
+			AllSpeak_Viz.problems.push(why);
+			return { trace: ``, verdict: `could not run: ` + why };
 		}
 		// **The recording is a run of its own, so it gets a name of its own.** Two programs under one name is
 		// what the registry refuses, and the caller may be the program holding the name the script declares —
@@ -265,26 +276,49 @@ const AllSpeak_Viz = {
 		// busy-loops and never-returning waits both end here, and the recording says which.
 		const recorder = new AllSpeak_Viz_Recorder(VIZ_DEFAULT_BUDGET_NS, VIZ_DEFAULT_CEILING_NS);
 		program.vizRecorder = recorder;
-		let failed = false;
+		let stopped = null;
 		try {
 			program.running = true;
 			AllSpeak_Run.run(program, 0);
 		} catch (err) {
-			AllSpeak_Viz.problems.push(String((err && err.message) || err).split(`\n`)[0]);
-			failed = true;
+			stopped = AllSpeak_Viz.reasonFor(err);
+			AllSpeak_Viz.problems.push(stopped);
 		}
 		// A `wait` hands the rest of the program to a timer, so this call returns with the run parked and the
 		// rest of it still to come — and the caller is told rather than left with a slice that looks like a
 		// whole run. `parked` is the recorder's own reading of the command stream, which is the only place
 		// that fact exists: a program waiting on a timer is registered just like one that has ended.
-		const incomplete = recorder.parked === true;
+		const parked = recorder.parked === true;
+		const windows = recorder.finishedWindows();
 		recorder.finish();
 		delete AllSpeak.scripts[program.script];
 		return {
-			trace: JSON.stringify(AllSpeak_Viz.traceDocument(path, recorder.finishedWindows())),
-			incomplete,
-			failed
+			trace: JSON.stringify(AllSpeak_Viz.traceDocument(path, windows)),
+			verdict: AllSpeak_Viz.verdict(windows, stopped, parked)
 		};
+	},
+
+	// The first line of an error, which is the sentence a person needs and the rest of which is a stack.
+	reasonFor: function (err) {
+		return String((err && err.message) || err).split(`\n`)[0];
+	},
+
+	// **What a recording amounts to, in one line, for a caller to say out loud.** The three things worth
+	// knowing, in the order they matter: what stopped the run, what was collected, and whether the run was
+	// parked on a timer when the call returned — the last of which is why a recording can be a slice of a run
+	// rather than the whole of it. Visits are the pane's own unit (`line N visit V of T`), so the number on the
+	// status line is the number in the pane's sidebar.
+	verdict: function (windows, stopped, parked) {
+		if (stopped) return `stopped: ` + stopped;
+		let visits = 0;
+		for (let n = 0; n < windows.length; n++) visits += windows[n].visits.length;
+		if (windows.length === 0) {
+			return `nothing recorded: the run finished without reaching a marker`;
+		}
+		let line = visits === 1 ? `1 visit` : visits.toLocaleString() + ` visits`;
+		line += windows.length === 1 ? ` in 1 window` : ` in ${windows.length} windows`;
+		if (parked) line += `, and the run waits there — the recording ends at its first wait`;
+		return line;
 	},
 
 	// Compile the source without running it, then report the anchors.

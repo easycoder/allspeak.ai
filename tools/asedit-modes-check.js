@@ -90,6 +90,11 @@ const bodyElement = mk(`body`);
 const headElement = mk(`head`);
 
 global.window = global;
+// **A window that remembers what it was asked to open.** `location new <page>` is how the Launch button opens
+// the project's app, and a stub without `open` would make the whole button unobservable — the browser window
+// again, which is the fault storage had.
+const openedPages = [];
+global.open = url => { openedPages.push(String(url)); return null; };
 global.location = { search: ``, pathname: `/`, href: `http://localhost/` };
 global.navigator = { userAgent: `node` };
 // **Storage that remembers.** The editor persists two splitter widths through this, and a stub that
@@ -176,8 +181,19 @@ global.fetch = (url, opts) => {
 			try { return fs.readFileSync(path.join(root, decodeURIComponent(rel)), `utf8`); }
 			catch (err) { return null; }
 		};
+		// **A write this harness saw is a file the server would serve.** The editor does not only write a file,
+		// it goes on to *read it back* — the pane fetches the recording the button just made — so a stub that
+		// remembered a POST but not its body would report a successful write and then fail the read, and the
+		// failure would land on the status line as if the recording had never been made.
+		const posted = rel => {
+			const want = String(rel).replace(/^\.\//, ``);
+			for (let n = written.length - 1; n >= 0; n--) {
+				if (written[n].url.replace(/^.*?\/write\//, ``) === want) return written[n].body;
+			}
+			return null;
+		};
 		const m = /\/read\/(.*)$/.exec(url);
-		if (m) return read(m[1]);
+		if (m) return read(m[1]) !== null ? read(m[1]) : posted(m[1]);
 		// A static fetch is a plain path, with or without a directory part, plus the
 		// cache-busting query the editor appends.
 		const stat = /([^/?#]+)(?:\?[^#]*)?$/.exec(url.split(`/read/`).pop());
@@ -707,9 +723,75 @@ check(!!posted && !!recorded && Array.isArray(recorded.traceEvents),
 check(!!posted && /"cat":\s*"window"/.test(posted.body),
 	`and what it wrote is a recording of that run rather than an empty document `
 	+ `(${posted ? posted.body.length : 0} bytes)`);
+// **And the recording is reported for what it *is*, not just as a write that happened.** The buffer is a loop
+// of five over one mark line, and the count is exact and in the pane's own unit: eight visits is what that run
+// does, five of them through the marked line.
+//
+// **This is asserted on the verdict rather than on the status line, and that is not a shortcut.** The status
+// line has three writers — this, the auto-save ("Saved"), and the pane when it fetches a run — and any of them
+// can land between the button's press and the next line of a check, so a check reading it is a race dressed as
+// an assertion. The verdict is what the status line is *built from*, so it is the same fact without the race.
+check(/\b8 visits in 1 window\b/.test(String(valueOf(`RecordVerdict`))),
+	`and what the recording amounted to is reported rather than only that a file was written `
+	+ `(verdict ${JSON.stringify(String(valueOf(`RecordVerdict`)))})`);
 check(!!AllSpeak.scripts[`ASEditor`] && AllSpeak.scripts[`ASEditor`] === program,
 	`with the editor still registered under its own name afterwards, the recording having borrowed it`);
 
+// **A recording that comes back empty has to say why, and this is the case that was reported.** A script
+// written for the *other* runtime compiles to a refusal, not to a recording — `dictionary` exists in the Python
+// flavour and in no JS one — and "Could not record this script" on its own sends a reader looking for a fault in
+// a script that is perfectly good, in a runtime it was never meant for. So the refusal's own words are shown:
+// the word, the line, and therefore the reason. Reported by Graham, 2026-10-03, from a two-variant project.
+written.length = 0;
+scriptElement.innerText = [
+	`    script PythonFlavour`,
+	`    variable Lookup`,
+	`Main:`,
+	`    dictionary Lookup`,
+	`    viz start`,
+	`    viz stop`,
+	`    stop`,
+].join(`\n`);
+written.length = 0;
+run(`RecordRun`);
+const verdict = String(valueOf(`RecordVerdict`));
+check(written.length === 0 && /could not run/.test(verdict) && /dictionary/.test(verdict),
+	`a script this runtime cannot compile is refused with the runtime's own words, not a silent empty recording `
+	+ `(verdict ${JSON.stringify(verdict.slice(0, 80))}, ${written.length} write(s))`);
+
+
+// ---- and Launch opens the page the script names ----------------------------------------------
+//
+// **The app is named by an attribute, and the attribute is read by the same parse the Blocks view uses** — so
+// what is being checked is not a scan of its own but that the editor's one reading of the buffer feeds the
+// button. `@app parser.html` arrives through `MaybeMeta`, where the key and value are already apart.
+//
+// The page is opened relative to the editor's own location, so the editor hands the browser the string as it
+// stands; that the app then resolves it against the project root is the browser's business, and it is why no
+// path is assembled here.
+const TINY_APP = [
+	`    script TinyApp`,
+	`    variable N`,
+	`Main:`,
+	`    viz start`,
+	`    viz stop`,
+	`    stop`,
+].join(`\n`);
+scriptElement.innerText = `!! A block.\n!! More.\n` + TINY_APP + `\n!! @app parser.html\n!!!\n`;
+openedPages.length = 0;
+run(`LaunchApp`);
+check(openedPages.length === 1 && openedPages[0] === `parser.html`,
+	`Launch opens the page the script's '@app' names, in a window of its own `
+	+ `(opened ${JSON.stringify(openedPages)})`);
+
+// Removing the attribute must stop the launch rather than leave the last one standing: the parse clears the
+// page before it reads the buffer, and this is what says so.
+scriptElement.innerText = TINY_APP + `\n`;
+openedPages.length = 0;
+run(`LaunchApp`);
+check(openedPages.length === 0 && /names no app/.test(String(contentOf(`se-status`))),
+	`and a script with no '@app' is told so, and how to declare one, rather than the button doing nothing `
+	+ `(opened ${openedPages.length}, status ${JSON.stringify(String(contentOf(`se-status`)).slice(0, 46))})`);
 
 console.log(failures.length === 0
 	? `\nasedit-modes-check: all checks passed`
