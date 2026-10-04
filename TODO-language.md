@@ -49,6 +49,8 @@ The detail behind `TODO.md`'s language row. Anything here that is settled says s
 - **Python → JS: a debugger.** `allspeak-py/allspeak/debugger/` is a working Qt debugger with a watchlist and a value display. JS has nothing. **This is the ancestor of the sidebar's debug tab.**
 - **JS → Python: nothing.** The Graph pane is an editor feature and Python has no editor — by design, not a backlog.
 
+**One parity gap found on 2026-10-04, and it is a *leniency* rather than a break:** the JS compiler accepts `run <value>` with **no `as <module>`**, the Python one refuses it (`'as {module name}' expected`). `learn/reference/12-modules.md` documents only the `as` form, and the starter packs' GUI launcher template uses the bare form — inside an HTML page, which the browser's runtime compiles, so it never meets Python there. It bites the moment somebody copies the idiom into a `.allspeak` file: measured at 2026-10-04, `run Script` compiled with 0 problems under `tools/asviz-run.js` and failed to compile under the CLI.
+
 **On versions, for the record:** `js/allspeak/AllSpeak.js` line 1 still reads `2608191442` while `Browser.js` changed on 2026-10-02. The versioning policy says the runtime scheme "may remain implementation-specific", so this breaks no rule — but the string no longer dates the runtime, and AGENTS.md describes it as date-time.
 
 ---
