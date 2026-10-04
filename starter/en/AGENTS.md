@@ -61,10 +61,11 @@ Example:
 
 Add doc blocks **as you write** — not after. The prose forces you to state intent in plain language, which surfaces mistakes (a doc block saying "creates 9 cells" while the code creates 1 makes the mismatch obvious before you ever run it). See `learn/reference/16-doc-blocks.md` for the full convention.
 
-After any code edit, run:
+After any code edit, fetch the analyser and run it. The checks are *published* rather than shipped, so that a project never holds a copy that has gone stale — fetch the one you need into your own scratch directory, not into the project:
 
 ```
-python3 asdoc-check.py --write <file>
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.py -o /tmp/asdoc-check.py
+python3 /tmp/asdoc-check.py --write <file>
 ```
 
 This refreshes the `@hash` lines in each block so that future edits can detect drift between prose and code.
@@ -142,9 +143,9 @@ Keep it to a few lines, and lead with the action. It is **not** a changelog: it 
 
 This directory contains `AGENTS.md` — this file. Read it now to understand the AllSpeak language and workflow before working on any code.
 
-**Important:** Check whether a file called `.allspeak-init` exists in this directory. If it does, read it to learn the project name and type. If it does NOT exist, the project has not been set up yet — guide the user through the initialisation process below.
+**Important:** Read `.allspeak-init` in this directory. It declares **the project's language**, and its name and type once the project has been set up. If it names no project, this project has not been set up yet — guide the user through the initialisation process below. **Leave the `lang:` line exactly as it is**: the dev server reads it to serve the editor in this project's language.
 
-**The editor is not in this directory, and that is deliberate.** `edit.html` is here, and it fetches the editor itself — `asedit.allspeak`, its two modules and `asedit.json` — from https://allspeak.ai/code/, falling back to this directory only if a copy has been placed here. So a project always runs the *current* editor rather than a copy of one that has since moved, and an agent should not look for those files locally or add them.
+**No tooling is in this directory, and that is deliberate.** There is no `server.allspeak` (the `allspeak server` command fetches the current one), no `edit.html` (the server serves the deployed page and gives it this project's language), no editor files (the page brings them) and none of the checks. A project holds its own code, `AGENTS.md`, `CLAUDE.md` and `.allspeak-init` — nothing else. So everything a project runs is the *current* one rather than a copy of something that has since moved, and an agent should neither look for those files locally nor add them.
 
 ### Initialisation process
 
@@ -160,7 +161,7 @@ This directory contains `AGENTS.md` — this file. Read it now to understand the
    - **GUI**: Create `<project>.html`, `<project>-main.allspeak`, and `<project>.json` from the GUI templates below.
    - **Both**: Create all files.
 
-5. **Create `.allspeak-init`** containing the project name and type (cli/gui/both) so this setup is not repeated.
+5. **Complete `.allspeak-init`** — add the project name and type (cli/gui/both) so this setup is not repeated, leaving the `lang:` line that is already there.
 
 6. **Tell the user the project files are ready and where to view them.**
 

@@ -61,10 +61,11 @@ Beispiel:
 
 Fügen Sie Doc-Blöcke **beim Schreiben** hinzu — nicht danach. Die Prosa zwingt Sie, die Absicht in klarer Sprache zu formulieren, was Fehler aufdeckt (ein Doc-Block, der „erstellt 9 Zellen" sagt, während der Code 1 erstellt, macht die Diskrepanz offensichtlich, bevor Sie ihn überhaupt ausführen). Die vollständige Konvention steht in `learn/reference/16-doc-blocks.md`.
 
-Führen Sie nach jeder Codeänderung aus:
+Führen Sie nach jeder Codeänderung den Analysator aus — holen Sie ihn zuerst (die Werkzeuge werden *veröffentlicht* statt mitgeliefert, damit ein Projekt nie eine veraltete Kopie behält; holen Sie das benötigte in Ihr eigenes Arbeitsverzeichnis, nicht in das Projekt):
 
 ```
-python3 asdoc-check.py --write <datei>
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.py -o /tmp/asdoc-check.py
+python3 /tmp/asdoc-check.py --write <datei>
 ```
 
 Dies aktualisiert die `@hash`-Zeilen in jedem Block, damit spätere Änderungen eine Abweichung zwischen Prosa und Code erkennen können.
@@ -142,7 +143,9 @@ Wenige Zeilen genügen, und beginnen Sie mit der Handlung. Es ist **kein** Ände
 
 Dieses Verzeichnis enthält `AGENTS.md` — diese Datei. Lesen Sie sie jetzt, um die AllSpeak-Sprache und den Arbeitsablauf zu verstehen, bevor Sie Code bearbeiten.
 
-**Wichtig:** Prüfen Sie, ob eine Datei namens `.allspeak-init` in diesem Verzeichnis existiert. Wenn ja, lesen Sie sie, um Projektname und -typ zu erfahren. Wenn nicht, wurde das Projekt noch nicht eingerichtet — führen Sie den untenstehenden Initialisierungsprozess durch.
+**Wichtig:** Lesen Sie `.allspeak-init` in diesem Verzeichnis. Sie nennt **die Sprache des Projekts** und, sobald das Projekt eingerichtet ist, dessen Namen und Typ. Wenn sie kein Projekt nennt, wurde das Projekt noch nicht eingerichtet — führen Sie den untenstehenden Initialisierungsprozess durch. **Lassen Sie die Zeile `lang:` unverändert**: der Entwicklungsserver liest sie, um den Editor in der Sprache dieses Projekts auszuliefern.
+
+**In diesem Verzeichnis liegt kein Werkzeug, und das ist Absicht.** Es gibt kein `server.allspeak` (der Befehl `allspeak server` holt das aktuelle), kein `edit.html` (der Server liefert die veröffentlichte Seite aus und gibt ihr die Sprache dieses Projekts), keine Editor-Dateien (die Seite bringt sie mit) und keine Prüfwerkzeuge. Ein Projekt enthält seinen eigenen Code, `AGENTS.md`, `CLAUDE.md` und `.allspeak-init` — sonst nichts. So ist alles, was ein Projekt ausführt, die *aktuelle* Fassung statt einer Kopie von etwas, das sich seither bewegt hat; ein Agent sollte diese Dateien weder lokal suchen noch hinzufügen.
 
 ### Initialisierungsprozess
 
@@ -158,7 +161,7 @@ Dieses Verzeichnis enthält `AGENTS.md` — diese Datei. Lesen Sie sie jetzt, um
    - **GUI**: Erstellen Sie `<projekt>.html`, `<projekt>-main.allspeak` und `<projekt>.json` aus den GUI-Vorlagen unten.
    - **Beides**: Erstellen Sie alle Dateien.
 
-5. **Erstellen Sie `.allspeak-init`** mit Projektname und -typ (cli/gui/both), damit dieses Setup nicht wiederholt wird.
+5. **Vervollständigen Sie `.allspeak-init`** — ergänzen Sie Projektname und -typ (cli/gui/both), damit dieses Setup nicht wiederholt wird, und lassen Sie die bereits vorhandene Zeile `lang:` stehen.
 
 6. **Sagen Sie dem Benutzer, dass die Projektdateien bereit sind und wo er sie sieht.**
 

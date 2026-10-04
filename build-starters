@@ -1,46 +1,31 @@
 #!/bin/sh
 # build-starters: rebuild deploy/allspeak-<lang>.zip from starter/<lang>/.
 #
-# Each starter zip bundles the language-specific bootstrap files
-# (CLAUDE.md, AGENTS.md) with the shared server and editor
-# (server.allspeak, edit.html, asedit.allspeak, asedit-graph.allspeak, asedit-side.allspeak,
-# asedit.json) and the doc-block analyser and the recorder's own check all at the zip root.
-# **`server.allspeak` and `edit.html` come from the repo root, not from a starter directory** —
-# see the note at the copy below.
+# **A pack is the project's own files and nothing else.** Three of them: the agent's instructions for this
+# language (`AGENTS.md`, and `CLAUDE.md` pointing at it), and `.allspeak-init`, which declares which
+# language the project speaks. Everything else is fetched at the moment it is needed and so cannot go
+# stale — a copy of the tooling in a project is what cost two evenings and a broken page on 2026-10-04:
 #
-# **The Graph pane and its sidebar are two files and both travel.** They are separate modules because
-# each is bulky and the editor needs neither until a run is opened; a project that has one and not the
-# other gets a picture with a status line saying the sidebar could not be loaded, which is the pane's
-# own lenient path — but there is no reason to ship it that way.
+#   * `server.allspeak` — fetched by the CLI, which runs the published one when the directory has none
+#   * `edit.html` — served by that server, which fills in the language from `.allspeak-init`
+#   * `asedit.allspeak`, `asedit-graph.allspeak`, `asedit-side.allspeak`, `asedit.json` — in the page's
+#     payload (`dist/asedit.js`, written by ./build-allspeak)
+#   * `asdoc-check.py`, `plotview-check.js`, `viz-align-measure.py`, `guard-check.js`, `capture-check.js`
+#     — published at https://allspeak.ai/code/tools/ by the deploy, and fetched by whoever wants one
 #
-# Run after editing anything under starter/ or after changing
-# asedit.allspeak / asedit-graph.allspeak / asedit-side.allspeak / asedit.json and the tools an
-# agent can use:
-# tools/asdoc-check.py, tools/plotview-check.js, tools/viz-align-measure.py and
-# tools/guard-check.js. Languages are auto-discovered from starter/*/ subdirectories.
-#
-# **A tool that an agent can use to speed development or improve reliability ships.** The
-# analyser was already here; the visualiser's own instruments are here for the same reason,
-# and the guard below fails the build rather than let a pack lose one quietly.
+# Languages are auto-discovered from starter/*/ subdirectories. Run this after editing anything under
+# starter/, and after editing a tool that an agent uses — the check below fails the build rather than let
+# a tool that must reach an agent go missing from the repository.
 
 set -eu
 cd "$(dirname "$0")"
 
-if [ ! -f asedit.allspeak ] || [ ! -f asedit.json ] || [ ! -f server.allspeak ] || [ ! -f edit.html ]; then
-    echo "Error: asedit.allspeak / asedit.json / server.allspeak / edit.html not found in repo root." >&2
-    exit 1
-fi
-
 for tool in tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js tools/capture-check.js; do
     if [ ! -f "$tool" ]; then
-        echo "Error: $tool not found." >&2
+        echo "Error: $tool not found — it is published by the deploy, not shipped in a pack." >&2
         exit 1
     fi
 done
-if [ ! -f tools/asdoc-check.py ]; then
-    echo "Error: tools/asdoc-check.py not found." >&2
-    exit 1
-fi
 
 if ! command -v zip >/dev/null 2>&1; then
     echo "Error: 'zip' command not found." >&2
@@ -56,7 +41,9 @@ built=0
 for dir in starter/*/; do
     lang=$(basename "$dir")
     missing=
-    [ -f "$dir"CLAUDE.md ] || missing="$missing CLAUDE.md"
+    for f in CLAUDE.md AGENTS.md; do
+        [ -f "$dir$f" ] || missing="$missing $f"
+    done
     if [ -n "$missing" ]; then
         echo "  skip: starter/$lang missing:$missing"
         continue
@@ -65,39 +52,33 @@ for dir in starter/*/; do
     work="$STAGE/$lang"
     mkdir -p "$work"
     cp -p "$dir"CLAUDE.md "$work/"
-    # **The server script is the root's, not a starter copy.** Four copies of a file are four things to
-    # keep in step, and these had already drifted: all four still held the version from 1 October while the
-    # root's had moved on — so every pack, and every project made from one, ran a server two revisions old
-    # without any way to tell. It is language-neutral, which is why one copy can serve every pack.
-    cp -p server.allspeak "$work/"
-    # **The page is generated from the one in the repo root, not copied from a starter.** Four copies of a page
-    # are four things to keep in step and they had already drifted — `starter/en/edit.html` was an older page
-    # than the other three. Two things differ in a pack, and both are substitutions here: which language the
-    # editor speaks, and where its own files live. The second is what makes an editor update reach every project
-    # the moment it is deployed: a pack carries no editor, and its page names the deployed one.
-    sed -e 's|<html lang="en">|<html lang="'"$lang"'">|' \
-        -e 's|id="editor-lang" style="display:none">en<|id="editor-lang" style="display:none">'"$lang"'<|' \
-        -e 's|id="editor-home" style="display:none"></div>|id="editor-home" style="display:none">https://allspeak.ai/dist/</div>|' \
-        edit.html > "$work/edit.html"
+    # **`.allspeak-init` carries the language, and it is the only thing in a pack that is not prose.**
+    # The page is not in a pack any more: the dev server serves the deployed one and fills in the
+    # language, and the language can only come from the project — so the pack declares it here. The agent
+    # completes this file on first setup (project name and type) and is told to leave the `lang:` line be.
+    printf 'lang: %s\n' "$lang" > "$work/.allspeak-init"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$dir$extra" ]; then
             cp -p "$dir$extra" "$work/"
         fi
     done
-    # **No editor in a pack.** `edit.html` fetches `asedit.allspeak`, its two modules and `asedit.json` from
-    # this directory and then from https://allspeak.ai/code/, and a pack carries none of them — so a pack always
-    # runs the released editor rather than a copy of one that has since moved. A copy is what went stale twice
-    # in one evening: a project ran an old editor beside a current runtime and plugin, and found out when the
-    # editor refused to compile its own source. The page, the server and the tools stay: they are what a project
-    # *is*, and none of them is fetched from anywhere else.
+    # **Nothing here is tooling.** What a pack carries is the project's own: its agent instructions and
+    # the declaration of which language it speaks. Everything else is fetched at the moment it is needed
+    # and therefore cannot go stale — the server script by the CLI (`allspeak server`), the page by that
+    # server, the editor and its modules by the page's payload, and the checks from /code/tools/. The
+    # rule this replaces put the checks in every pack, which is what made four copies of the tooling and
+    # no way for a project to notice the repository had moved on.
     for tool in asdoc-check.py plotview-check.js viz-align-measure.py guard-check.js capture-check.js; do
-        cp -p "tools/$tool" "$work/"
+        if [ ! -f "tools/$tool" ]; then
+            echo "Error: tools/$tool not found — it is published by the deploy (see deploy-allspeak)." >&2
+            exit 1
+        fi
     done
 
     out="$PWD/deploy/allspeak-$lang.zip"
     rm -f "$out"
-    zip_files="CLAUDE.md server.allspeak edit.html asdoc-check.py plotview-check.js viz-align-measure.py guard-check.js capture-check.js"
-    for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
+    zip_files="CLAUDE.md AGENTS.md .allspeak-init"
+    for extra in DEEPSEEK.md CODEWHALE.md; do
         if [ -f "$work/$extra" ]; then
             zip_files="$zip_files $extra"
         fi

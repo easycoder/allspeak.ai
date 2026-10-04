@@ -61,10 +61,11 @@ Esempio:
 
 Aggiungi i blocchi di doc **mentre scrivi** — non dopo. La prosa ti costringe a dichiarare l'intento in linguaggio chiaro, il che fa emergere gli errori (un blocco di doc che dice «crea 9 celle» mentre il codice ne crea 1 rende evidente la discrepanza prima ancora di eseguirlo). Vedi `learn/reference/16-doc-blocks.md` per la convenzione completa.
 
-Dopo ogni modifica al codice, esegui:
+Dopo ogni modifica al codice, recupera l'analizzatore ed eseguilo. Gli strumenti sono *pubblicati* invece che forniti, così un progetto non conserva mai una copia diventata obsoleta — recupera quello che ti serve nella tua directory di lavoro, non nel progetto:
 
 ```
-python3 asdoc-check.py --write <file>
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.py -o /tmp/asdoc-check.py
+python3 /tmp/asdoc-check.py --write <file>
 ```
 
 Questo aggiorna le righe `@hash` in ogni blocco, così le modifiche successive possono rilevare uno scostamento fra la prosa e il codice.
@@ -142,7 +143,9 @@ Poche righe bastano, e iniziate dall'azione. **Non** è un registro delle modifi
 
 Questa directory contiene `AGENTS.md` — questo file. Leggilo ora per comprendere il linguaggio AllSpeak e il flusso di lavoro prima di lavorare su qualsiasi codice.
 
-**Importante:** verifica se esiste un file chiamato `.allspeak-init` in questa directory. Se esiste, leggilo per conoscere il nome e il tipo del progetto. Se non esiste, il progetto non è stato ancora configurato — guida l'utente attraverso il processo di inizializzazione qui sotto.
+**Importante:** leggi `.allspeak-init` in questa directory. Dichiara **la lingua del progetto**, e il suo nome e tipo una volta configurato il progetto. Se non indica alcun progetto, il progetto non è stato ancora configurato — guida l'utente attraverso il processo di inizializzazione qui sotto. **Lascia la riga `lang:` esattamente com'è**: il server di sviluppo la legge per servire l'editor nella lingua di questo progetto.
+
+**In questa directory non c'è alcuno strumento, ed è voluto.** Non c'è `server.allspeak` (il comando `allspeak server` recupera quello corrente), non c'è `edit.html` (il server serve la pagina distribuita e le dà la lingua di questo progetto), non ci sono file dell'editor (li porta la pagina) e non ci sono strumenti di verifica. Un progetto contiene il proprio codice, `AGENTS.md`, `CLAUDE.md` e `.allspeak-init` — nient'altro. Così tutto ciò che un progetto esegue è la versione *corrente* invece di una copia di qualcosa che si è spostato nel frattempo, e un agente non deve cercare quei file in locale né aggiungerli.
 
 ### Processo di inizializzazione
 
@@ -158,7 +161,7 @@ Questa directory contiene `AGENTS.md` — questo file. Leggilo ora per comprende
    - **GUI**: Crea `<progetto>.html`, `<progetto>-main.allspeak` e `<progetto>.json` dai modelli GUI qui sotto.
    - **Entrambi**: Crea tutti i file.
 
-5. **Crea `.allspeak-init`** contenente il nome e il tipo del progetto (cli/gui/both) così questa configurazione non viene ripetuta.
+5. **Completa `.allspeak-init`** — aggiungi il nome e il tipo del progetto (cli/gui/both) così questa configurazione non viene ripetuta, lasciando la riga `lang:` già presente.
 
 6. **Di' all'utente che i file del progetto sono pronti e dove vederli.**
 

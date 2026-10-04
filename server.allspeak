@@ -18,7 +18,9 @@
 !                            returns OK or updated
 !     GET  /restart       →  restarts the server process
 !     GET  /<file>        →  serves static files (HTML, JS, CSS, JSON, ECS);
-!                            404 when there is no such file
+!                            404 when there is no such file. `edit.html` is
+!                            served from the deploy when the project has none,
+!                            with the project's language filled in.
 
     script CodeServer
 
@@ -33,12 +35,20 @@
     variable MimeType
     variable FileLoaded
     variable RepoBase
+    variable DistBase
     variable RemoteServer
     variable LocalServer
     variable LocalServerPath
+    variable Lang
+    variable InitText
+    variable LangTag
+    variable LangDiv
+    variable HomeDiv
+    variable Page
     server Files
 
     put `https://allspeak.ai/code/` into RepoBase
+    put `https://allspeak.ai/dist/` into DistBase
 
     put cwd into BaseDir
     variable ArgCount
@@ -132,7 +142,12 @@
             if left 1 of FilePath is `/` put from 1 of FilePath into FilePath
             if FilePath includes `..`
             begin
+                ! **`stop`, because a refusal that only sets a response does not refuse.** The lines
+                ! after this block ran and overwrote the 403 — measured 2026-10-04: in the static
+                ! branch, `curl --path-as-is /../secret-outside.txt` returned the file with `200`,
+                ! and the same fall-through defeated the guards on /list, /read and /write.
                 return `Forbidden` to Files with status 403
+                stop
             end
             if FilePath is empty
                 set FileList to entries in BaseDir type `allspeak,as,ecs,md,txt,json,html,css,js,py`
@@ -146,7 +161,12 @@
             replace `/read/` with `` in FilePath
             if FilePath includes `..`
             begin
+                ! **`stop`, because a refusal that only sets a response does not refuse.** The lines
+                ! after this block ran and overwrote the 403 — measured 2026-10-04: in the static
+                ! branch, `curl --path-as-is /../secret-outside.txt` returned the file with `200`,
+                ! and the same fall-through defeated the guards on /list, /read and /write.
                 return `Forbidden` to Files with status 403
+                stop
             end
             load Content from BaseDir cat `/` cat FilePath
             	on failure
@@ -162,7 +182,12 @@
             replace `/write/` with `` in FilePath
             if FilePath includes `..`
             begin
+                ! **`stop`, because a refusal that only sets a response does not refuse.** The lines
+                ! after this block ran and overwrote the 403 — measured 2026-10-04: in the static
+                ! branch, `curl --path-as-is /../secret-outside.txt` returned the file with `200`,
+                ! and the same fall-through defeated the guards on /list, /read and /write.
                 return `Forbidden` to Files with status 403
+                stop
             end
             get Content from Files
             save Content to BaseDir cat `/` cat FilePath
@@ -174,7 +199,12 @@
             put from 1 of FullPath into FilePath
             if FilePath includes `..`
             begin
+                ! **`stop`, because a refusal that only sets a response does not refuse.** The lines
+                ! after this block ran and overwrote the 403 — measured 2026-10-04: in the static
+                ! branch, `curl --path-as-is /../secret-outside.txt` returned the file with `200`,
+                ! and the same fall-through defeated the guards on /list, /read and /write.
                 return `Forbidden` to Files with status 403
+                stop
             end
             if FilePath ends with `.html` put `text/html` into MimeType
             else if FilePath ends with `.json` put `application/json` into MimeType
@@ -199,6 +229,48 @@
                 end
             if FileLoaded is `yes`
                 return Content to Files with type MimeType
+            else if FilePath is `edit.html`
+            begin
+                ! **The page is served, not shipped.** A pack used to carry `edit.html`, generated per
+                ! language — which put a copy of the *tooling* in every project, and nothing in a project
+                ! knows when the repository's page has moved on. So the page is not in a project at all
+                ! unless somebody chose to put one there (a local `edit.html` still wins, above): the
+                ! server fetches the deployed page and fills in the two things a pack's page used to
+                ! get from the pack — the language, and where the editor's payload lives.
+                !
+                ! The language comes from the project's own `.allspeak-init` (`lang: fr`), the file the
+                ! starter AGENTS.md already has the agent create and complete; with no such line it is
+                ! English. Everything else in the page is already language-neutral.
+                put `en` into Lang
+                put empty into InitText
+                load InitText from BaseDir cat `/.allspeak-init`
+                    on failure
+                    begin
+                        put empty into InitText
+                    end
+                if InitText is not empty
+                begin
+                    ! `field 1 ... delimited by` is the text *after* the marker (measured: the
+                    ! occurrences are numbered, not the segments), so with one `lang:` line the
+                    ! language is field 1 and there is no field 2.
+                    put field 1 of InitText delimited by `lang:` into Lang
+                    replace ` ` with `` in Lang
+                    replace newline with `` in Lang
+                    if Lang is empty put `en` into Lang
+                end
+                get Page from url RepoBase cat `edit.html`
+                    on failure
+                    begin
+                        return `Not found` to Files with status 404
+                    end
+                put `<html lang="` cat Lang cat `">` into LangTag
+                put `id="editor-lang" style="display:none">` cat Lang cat `<` into LangDiv
+                put `id="editor-home" style="display:none">` cat DistBase cat `</div>` into HomeDiv
+                replace `<html lang="en">` with LangTag in Page
+                replace `id="editor-lang" style="display:none">en<` with LangDiv in Page
+                replace `id="editor-home" style="display:none"></div>` with HomeDiv in Page
+                return Page to Files with type `text/html`
+            end
             else
                 return `Not found` to Files with status 404
         end

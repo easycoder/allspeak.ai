@@ -25,6 +25,10 @@ jobs:
         run: |
           # build-allspeak already writes directly to deploy/dist/
           cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json server.allspeak edit.html deploy/code/
+          # The tools an agent uses are published, not shipped in a pack: a project fetches the one it
+          # needs from https://allspeak.ai/code/tools/. Kept in step with ./deploy-allspeak.
+          mkdir -p deploy/code/tools
+          cp -p tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js tools/capture-check.js deploy/code/tools/
           ./build-starters
 
       - name: Set up SSH
