@@ -150,9 +150,16 @@
 		if (text !== null && looksLikeScript(text)) {
 			bases.push(base);
 		} else {
-			console.warn('asedit: ' + (base || 'this directory') + ' did not serve the runtime as a script, ' +
-				'so it is not used — either it has no build there, or the server answered a missing file ' +
-				'with a page of its own instead of a 404');
+			// **Say which of the three it is**, because this warning fires in two ordinary situations and one
+			// mistake. A working tree has no build there until `./build-allspeak` has run; a project has no
+			// build there at all and must have no `edit.html` of its own either, or it runs a copy of *this*
+			// repository's page — the one whose `#editor-home` is deliberately empty — and looks beside itself
+			// on every load. That happened on 2026-10-04, and the warning did not say so.
+			console.warn('asedit: ' + (base || 'this directory') + ' did not serve the runtime as a script, so it is not used'
+				+ ' — either it has no build there yet (a working tree needs ./build-allspeak), or the server answered'
+				+ ' a missing file with a page of its own instead of a 404, or this is a project holding a copy of a'
+				+ " working tree's page: a project should have no edit.html of its own, and the server will serve the"
+				+ ' deployed one, with its language filled in, if this file is removed');
 		}
 	}
 	const bundles = ['allspeak-min.js', 'plugins/asviz.js', 'plugins/svg.js', 
