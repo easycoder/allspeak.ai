@@ -16,7 +16,9 @@
 
 ## What changed most recently
 
-**The recording lifecycle changed shape on 2026-10-04 (`23a9b30`):** `@viz start` arms a recording, `@viz stop` ends a *segment* and writes it into the file `save the recording to <path>` names, and one file accumulates segments as a single recording. It also fixed a real bug — `@viz stop` had never closed its window. The outstanding evidence is a real browser run, and the editor's Record creating the trace file is the next piece; both are in `TODO-viz.md`, and the reasoning is in `various/record-and-launch.md`.
+**2026-10-04, end of session: the Graph pane works, and three things were fixed to get there.** (1) The recording lifecycle: `@viz start` arms, `@viz stop` ends a *segment* and writes it into the file `save the recording to <path>` names, and one file accumulates segments — with a real bug fixed on the way, that `@viz stop` had never closed its window. (2) The dev server now hands the editor's Graph pane and sidebar to the page, in `#editor-graph`/`#editor-side`, because a pack carries neither and the site's `.allspeak` has no CORS — until that, the pane could never load on a dev server. (3) Those holders are `<textarea>`s and the editor reads them with `textarea` symbols, because `the text of` a `div` strips every newline and the pane's `!!` first line then commented the whole module out (`1 lines (0 tokens)`, drawn as nothing). All three are in `AGENTS.md`'s trap list. What is open is in `TODO-viz.md`: a check for the page a dev server serves, a check that exercises the pane's element path, and the reference chapter on recording a run.
+
+Was: **The recording lifecycle changed shape on 2026-10-04 (`23a9b30`):** `@viz start` arms a recording, `@viz stop` ends a *segment* and writes it into the file `save the recording to <path>` names, and one file accumulates segments as a single recording. It also fixed a real bug — `@viz stop` had never closed its window. The outstanding evidence is a real browser run, and the editor's Record creating the trace file is the next piece; both are in `TODO-viz.md`, and the reasoning is in `various/record-and-launch.md`.
 
 ## Where things stand
 
