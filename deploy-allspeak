@@ -41,16 +41,19 @@ echo "==> 2/6 deploy-sync"
 ./deploy-sync
 
 echo "==> 3/6 prepare deploy/code/ and deploy/dist/"
-cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json server.allspeak edit.html deploy/code/
+cp server.allspeak edit.html deploy/code/
 # **The tools an agent uses are published, not shipped in a pack.** A project fetches the one it needs —
 # https://allspeak.ai/code/tools/asdoc-check.py and friends — so it holds no copy that could go stale, and
 # one published set serves every project. `build-starters` checks that all five exist before a pack is built.
+cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json deploy/dist/
 mkdir -p deploy/code/tools
 cp -p tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js tools/capture-check.js deploy/code/tools/
-# The editor itself reaches a project as `dist/asedit.js`, written by ./build-allspeak (step 1): a page fetches
-# the editor's source as *text*, and a text fetch is governed by CORS where a `<script>` is not. The site answers
-# `access-control-allow-origin: *` for `.js` and `.css` only (measured, per file type), so the four files are
-# wrapped in one script rather than fetched by name.
+# **`/code/` carries only what is fetched from there by name**: the server script (the CLI fetches it)
+# and the page (that server fetches it). The editor's own four files belong at `/dist/`, which is where
+# both the page and the editor look for them — a page fetches the editor's source as *text*, and a text
+# fetch is governed by CORS where a `<script>` is not, and the site answers `access-control-allow-origin: *`
+# for `.js` and `.css` only (measured, per file type). So they travel wrapped in `dist/asedit.js` as well,
+# and they sit beside it as the fallback for a payload that did not arrive.
 
 echo "==> 4/6 build-starters"
 ./build-starters

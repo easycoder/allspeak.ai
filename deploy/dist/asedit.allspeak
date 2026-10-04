@@ -1,0 +1,2228 @@
+!!  Tabbed script editor with auto-save and external change detection.
+!!  Served by server.allspeak locally, or any web server with /list, /read, /write routes.
+!   asedit.allspeak
+
+    script ASEditor
+!! @hash 57eacdb1
+!! @verified 57eacdb1
+!!!
+!! Variable declarations
+!! The script uses a lot of variables; they are grouped here by function.
+!   -- DOM --
+    div Body
+    div TabBar
+    div TabBtn
+    div Overlay
+    div Scroller
+    div FileRow
+    div EditorArea       ! flat-mode pane (CodeMirror-wrapped textarea)
+    div BlocksArea       ! Blocks-mode pane (toolbar + split)
+    textarea ContentEditor
+    textarea BlocksCodePane
+    textarea BlocksDocPane
+    span StatusSpan
+    span TabLabel
+    span BlocksTitle
+    span BlocksBadge
+    button OpenBtn
+    button FindBtn
+    button BlocksBtn
+    button GraphBtn
+    button RecordBtn     ! record the open script and put the recording beside it
+    button LaunchBtn     ! open the page this script's `@app` names, in a window of its own
+    button BlocksPrev
+    button BlocksNext
+    button BlocksVerify
+    button BlocksVerifyAll
+    button CloseBtn
+    img PlusBtn
+    img TabClose
+    a FileName
+    pre UIPre
+
+!   -- State --
+    variable Lang
+    variable StrOpen
+    variable StrFind
+    variable StrFlowCall
+    variable StrFlowJump
+    variable StrFlowReturn
+    variable StrClose
+    variable StrSaved
+    variable StrSaveFailed
+    variable StrReloaded
+    variable StrExtChange
+    variable StrNoConnect
+    variable StrSaveAs
+    variable StrEmpty
+    variable StrUpLevel
+    variable StrRoot
+    variable StrUpdated
+    variable StrRestart
+    variable TabPath       ! array: full file path per tab (relative to project root)
+    variable TabName       ! array: display name (basename) per tab
+    variable TabSaved      ! array: last content saved to server per tab
+    ! Where the flat editor was standing, per tab: the caret's line and the viewport's scroll offset.
+    ! Two values and not one, because they are independent — scrolling does not move the insertion
+    ! point, and coming back must not carry the view to the caret. A video editor teaches you to
+    ! expect that; a text editor usually does not, and the jump is what catches you out.
+    variable TabCursor     ! array: the caret's line, per tab
+    variable TabView       ! array: the viewport's scroll offset, per tab
+    variable TabCount
+    variable ActiveTab
+    variable Content       ! scratch: current editor content
+    variable FileContent   ! scratch: content fetched from server
+    variable FileList      ! scratch: JSON array from /list
+    variable JsonLines     ! scratch: a JSON file's text split into lines
+    variable JsonText      ! scratch: text on its way to the JSON formatter
+    variable N
+    variable M
+    variable Item          ! scratch: single entry object from list
+    variable File          ! scratch: single filename
+    variable FileCount
+    variable TabItem
+    variable UIWebson
+    variable VersionResult
+    variable CurrentPath   ! current directory being browsed (relative, no leading /)
+    variable EntryName
+    variable EntryType
+
+!   -- Blocks mode (parser + view + edit) --
+    variable BlocksMode    ! 0 = flat, 1 = Blocks pane visible
+    div GraphArea        ! the Graph pane's whole area — the drawing, the grip and the sidebar — shown and hidden here
+    div GraphGrip        ! the draggable splitter between the drawing and the sidebar
+    div GraphSide        ! the sidebar's box, which is the module's; this file only sizes it
+    variable GripPicked    ! 1 while the drag in progress began on the Graph grip
+    variable GripWidthAtPick ! the sidebar's width when that drag began
+    variable GripMost      ! the widest the sidebar may get, which depends on the window
+    variable SideStored    ! the sidebar width kept from a previous session
+    variable GraphMode     ! 0 = not graphed, 1 = Graph pane visible
+    variable TracePath     ! the recording this tab expects, sent to the pane so a miss can name it
+    module VizModule       ! the Graph pane, a companion module fetched and run on demand
+    variable VizSrc         ! its source, as fetched — `run` compiles the text
+    variable VizLoaded      ! 1 once it is running, so the fetch happens once
+    module SideModule      ! the Graph sidebar, a second companion module beside the pane
+    variable SideSrc        ! its source, as fetched
+    variable SideLoaded     ! 1 once it is running
+    variable SideIn         ! the dict the pane reported, as it arrived
+    variable SideSel        ! the line the pane last reported, which is what the sidebar is about
+    variable SideVisit      ! which arrival on that line the clicked dot was
+    variable SideValues     ! what that arrival captured, passed on untouched
+    variable SideTotal      ! how many arrivals that line had in the whole recording
+    variable SideMsg        ! the dict sent to the sidebar: which kind of news, and what it is
+    variable SideFound      ! 1 if a doc block holds that line
+    variable SideTitle      ! the block's first prose line, for the sidebar's heading
+    variable SideProse      ! its prose
+    variable SideI          ! scratch: index over the sections looking for one
+    variable VizRun         ! the dict the pane is sent: the run, the script, the words, the path
+    variable RecordSource   ! the open buffer, handed to the plugin as the script to run
+    variable RecordTrace     ! what that run collected, as the trace document's text
+    variable RecordVerdict   ! what the recording amounts to — visits and windows, or why there is none
+    variable AppPage         ! the page this script's `@app` attribute names, if it has one
+    variable TraceText      ! the recording, as read — the `trace` field of that dict
+    variable SourceText     ! the script, as read — the `source` field of it
+    variable CurBlock      ! 0-based index into Sections arrays
+    variable BlockDirty    ! 1 if user edited the current block since last splice
+    variable SecCount      ! number of parsed sections
+    variable SecStart      ! array: 1-based opener line number
+    variable SecEnd        ! array: 1-based terminator line number
+    variable SecProse      ! array: prose text (one entry, joined by newline, !! prefix stripped)
+    variable SecCode       ! array: code text (joined by newline, verbatim)
+    variable SecHash       ! array: stored @hash, or empty
+    variable SecVerified   ! array: stored @verified, or empty
+    variable SecHashState  ! array: fresh / stale / no-baseline / no-code
+    variable SecVerifyState ! array: verified-fresh / verified-stale / unverified / verified-no-code
+    variable Found         ! 1 if the search term was found in section I
+    variable FoundPane     ! `code` or `doc` — pane that holds the match
+    variable SearchTerm    ! the text being searched for (survives RenderBlock/RenderToc, which reuse Tmp)
+
+!   -- Parser scratch (rebuilt every parse) --
+    variable Lines         ! source split on newline
+    variable LineCount
+    variable Line
+    variable Kind          ! `TERM`, `DOC`, `META`, `CODE`
+    variable LContent      ! body of a DOC/META line
+    variable MetaKey
+    variable MetaValue
+    variable Pos
+    variable Tmp
+    variable Tip              ! a sidebar row's tooltip, decided with its colour
+    variable InSection
+    variable SecHasCode
+    variable SecStartTmp
+    variable SecCodeTmp
+    variable SecProseTmp
+    variable SecHashTmp
+    variable SecVerifiedTmp
+    variable CurHash
+    variable HashState
+    variable VerifyState
+    variable I
+    variable Source        ! whole source text being parsed
+    variable Outside       ! array: text between sections (length SecCount + 1)
+    variable OutsideTmp    ! accumulator for the current outside chunk
+    variable ProseSrc      ! scratch: prose text being split into lines
+    variable PCount        ! scratch: count of prose lines
+    variable PJ            ! scratch: index over prose lines
+    variable PL            ! scratch: one prose line
+    variable BlkText       ! scratch: assembled section text
+    variable NewProse      ! scratch: edited prose pulled from BlocksDocPane
+    variable NewCode       ! scratch: edited code pulled from BlocksCodePane
+    variable OldProse      ! scratch: previously stored prose for this section
+    variable OldCode       ! scratch: previously stored code for this section
+
+!   -- Blocks: TOC + draggable divider --
+    div BlocksToc          ! left sidebar listing all blocks
+    div BlocksDivider      ! draggable splitter between code and doc panes
+    div TocRow             ! one row per block in the TOC
+    span TocLabel          ! the clickable label inside each TocRow
+    variable PickPos       ! pick coords at mousedown on divider
+    variable DragPos       ! drag coords during mousemove
+    variable PickX
+    variable DragX
+    variable CodeWidthAtPick
+    variable NewWidth
+    variable StoredWidth
+    variable FinalWidth
+    variable FirstLine     ! first prose line of a block (for TOC label)
+    variable From          ! first line of a block, for the review-signal test
+    variable To            ! and its last line
+    variable BlockAfter    ! index of the block after this one, which bounds it
+    variable FromCheck     ! the two bounds moved out by one, so both tests can be positive
+    variable ToCheck
+    variable FlagCount     ! lines the plugin says nothing enters, over all blocks
+    variable FlagLine      ! array: those lines
+    variable K             ! walk index over the records, and over the flagged lines
+    variable MarkRecord    ! one model record, as the walk reaches it
+    variable MarkCount     ! how many records the plugin returned
+    variable MarkLine      ! one flagged line, as the walk reaches it
+    variable MarkRest      ! scratch: the record after `line=`
+    variable MarkSpace     ! scratch: where its number ends
+    variable MarkDigits    ! scratch: the number itself
+    variable EditorPath    ! the current tab's path, handed to the plugin as its target
+    variable Model         ! array: what the plugin returned
+    variable NL
+    variable J
+!! @hash 821fc25a
+!! @verified b3977d8a
+!!!
+!! The UI is described by a DOM element 'asedit-ui',
+!! a <pre> element that contains all the DOM elements that go to make up the editor.
+!! These are formatted using Webson, a JSON representation of any number of DOM elements,
+!! which is rendered into an existing element using the 'render' command
+!! 'body' without a capital, is the HTML <body> element
+!! 'Body', where the first letter is a capital, is a variable that is attached to the page body
+!! so that other elements - in this case those represented by the Webson -  can be added to it.
+!   -- Build UI --
+    attach Body to body
+    attach UIPre to `asedit-ui`
+    put the content of UIPre into UIWebson
+    render UIWebson in Body
+    attach TabBar to `se-tabbar`
+    attach ContentEditor to `se-textarea`
+    attach StatusSpan to `se-status`
+    attach OpenBtn to `se-open`
+    attach FindBtn to `se-findbtn`
+    attach PlusBtn to `se-plusbtn`
+    attach Overlay to `se-overlay`
+    attach Scroller to `se-scroller`
+    attach CloseBtn to `se-closebtn`
+    attach BlocksBtn to `se-blocksbtn`
+    attach GraphBtn to `se-graphbtn`
+    attach RecordBtn to `se-recordbtn`
+    attach LaunchBtn to `se-launchbtn`
+    attach GraphArea to `se-graph-area`
+    attach GraphGrip to `se-graph-grip`
+    attach GraphSide to `se-graph-side`
+    attach EditorArea to `se-editor-area`
+    attach BlocksArea to `se-blocks-area`
+    attach BlocksTitle to `se-blocks-title`
+    attach BlocksPrev to `se-blocks-prev`
+    attach BlocksNext to `se-blocks-next`
+    attach BlocksBadge to `se-blocks-badge`
+    attach BlocksVerify to `se-blocks-verify`
+    attach BlocksVerifyAll to `se-blocks-verify-all`
+    attach BlocksCodePane to `se-blocks-code`
+    attach BlocksDocPane to `se-blocks-doc`
+    attach BlocksToc to `se-blocks-toc`
+    attach BlocksDivider to `se-blocks-divider`
+!! @hash 414ea5b9
+!! @verified c52f8b76
+!!!
+!! Some general initialisation
+!   -- CodeMirror --
+    codemirror attach to ContentEditor
+
+    put 0 into TabCount
+    put 0 into ActiveTab
+    put `` into CurrentPath
+!! @hash 3a601096
+!! @verified 3a601096
+!!!
+!! Language detection
+!! The command 'language xx' switches the system to the given language (fr, de, it etc.)
+!! and defaults to 'en'. All of the language-specific strings are then defined for each language.
+!   -- Detect language and set strings for each supported language --
+    div LangDiv
+    div VizSrcDiv
+    div SideSrcDiv
+    put `en` into Lang
+    attach LangDiv to `editor-lang` or go to SetStrings
+    put the text of LangDiv into Lang
+    replace ` ` with `` in Lang
+    replace newline with `` in Lang
+    if Lang is empty put `en` into Lang
+
+SetStrings:
+    if Lang is `it`
+    begin
+        put `Apri` into StrOpen
+        put `Cerca` into StrFind
+        put `Chiudi` into StrClose
+        put `Salvato` into StrSaved
+        put `Salvataggio fallito` into StrSaveFailed
+        put `Ricaricato` into StrReloaded
+        put `Modifica esterna rilevata` into StrExtChange
+        put `Impossibile connettersi al server` into StrNoConnect
+        put `Salva come (nome file senza .allspeak):` into StrSaveAs
+        put `(cartella vuota)` into StrEmpty
+        put `.. (livello superiore)` into StrUpLevel
+        put `/ (radice progetto)` into StrRoot
+        put `L'editor è stato aggiornato. Riavviare?` into StrUpdated
+        put `Riavvia il server manualmente.` into StrRestart
+        put `vaisub` into StrFlowCall
+        put `vai` into StrFlowJump
+        put `ritorna` into StrFlowReturn
+    end
+    else if Lang is `fr`
+    begin
+        put `Ouvrir` into StrOpen
+        put `Rechercher` into StrFind
+        put `Fermer` into StrClose
+        put `Enregistré` into StrSaved
+        put `Échec de l'enregistrement` into StrSaveFailed
+        put `Rechargé` into StrReloaded
+        put `Modification externe détectée` into StrExtChange
+        put `Impossible de se connecter au serveur` into StrNoConnect
+        put `Enregistrer sous (nom de fichier sans .allspeak) :` into StrSaveAs
+        put `(dossier vide)` into StrEmpty
+        put `.. (niveau supérieur)` into StrUpLevel
+        put `/ (racine du projet)` into StrRoot
+        put `L'éditeur a été mis à jour. Redémarrer ?` into StrUpdated
+        put `Veuillez redémarrer le serveur manuellement.` into StrRestart
+        put `vasous` into StrFlowCall
+        put `va` into StrFlowJump
+        put `retourne` into StrFlowReturn
+    end
+    else if Lang is `de`
+    begin
+        put `Öffnen` into StrOpen
+        put `Suchen` into StrFind
+        put `Schließen` into StrClose
+        put `Gespeichert` into StrSaved
+        put `Speichern fehlgeschlagen` into StrSaveFailed
+        put `Neu geladen` into StrReloaded
+        put `Externe Änderung erkannt` into StrExtChange
+        put `Verbindung zum Server nicht möglich` into StrNoConnect
+        put `Speichern unter (Dateiname ohne .allspeak):` into StrSaveAs
+        put `(leerer Ordner)` into StrEmpty
+        put `.. (Ebene höher)` into StrUpLevel
+        put `/ (Projektstamm)` into StrRoot
+        put `Der Editor wurde aktualisiert. Neu starten?` into StrUpdated
+        put `Bitte den Server manuell neu starten.` into StrRestart
+        put `gosub` into StrFlowCall
+        put `gehe` into StrFlowJump
+        put `retourniere` into StrFlowReturn
+    end
+    else
+    begin
+        put `Open` into StrOpen
+        put `Find` into StrFind
+        put `Close` into StrClose
+        put `Saved` into StrSaved
+        put `Save failed` into StrSaveFailed
+        put `Reloaded` into StrReloaded
+        put `External change detected` into StrExtChange
+        put `Cannot connect to server` into StrNoConnect
+        put `Save as (filename without .allspeak):` into StrSaveAs
+        put `(empty directory)` into StrEmpty
+        put `.. (up one level)` into StrUpLevel
+        put `/ (project root)` into StrRoot
+        put `asedit has been updated. Restart to apply changes?` into StrUpdated
+        put `Please restart the server manually.` into StrRestart
+        put `gosub` into StrFlowCall
+        put `go` into StrFlowJump
+        put `return` into StrFlowReturn
+    end
+    set the content of OpenBtn to StrOpen
+    set the content of FindBtn to StrFind
+    set the content of CloseBtn to StrClose
+!! @hash 1ef8e8d5
+!! @verified 3ec54b89
+!!!
+!! The editor checks on startup and periodically for updates to itself.
+!! (explain)
+!! then 
+!   -- Check for updates --
+    rest get VersionResult from `/version` or go VersionDone
+    if VersionResult is `updated`
+    begin
+        if confirm StrUpdated
+        begin
+            rest get VersionResult from `/restart` or begin
+                alert StrRestart
+                go VersionDone
+            end
+            wait 3 seconds
+            location the location
+
+!			 Is this alternative valid?
+!            rest get VersionResult from `/restart`
+!            on failure alert StrRestart
+!           	else
+!            begin
+!            	wait 3 seconds
+!            	location the location
+!            end
+        end
+    end
+VersionDone:
+!! @hash 96465c41
+!! @verified 96465c41
+!!!
+!! Set up click handlers for the various editor functions.
+!! Blocks-mode handlers (toggle, navigate, mark verified) live alongside
+!! the existing flat-mode handlers. The pane editor textareas have
+!! keyboard input handlers wired in EnterBlocks so we can stop watching
+!! them when the pane is hidden.
+!   -- Handlers --
+    on click OpenBtn go to ShowBrowser
+    on click PlusBtn go to NewFile
+    on click FindBtn go to DoFind
+    on click BlocksBtn go to ToggleBlocks
+    on click GraphBtn go to ToggleGraph
+    on click RecordBtn go to RecordRun
+    on click LaunchBtn go to LaunchApp
+    on click BlocksPrev go to PrevBlock
+    on click BlocksNext go to NextBlock
+    on click BlocksVerify go to MarkVerified
+    on click BlocksVerifyAll go to MarkAllVerified
+
+    on pick BlocksDivider
+    begin
+        ! Two splitters and one document-level drag, so the flag says which of them was taken hold of —
+        ! the drag and the drop then know which they are moving without having to ask the pointer.
+        put 0 into GripPicked
+        put the pick position into PickPos
+        put property `x` of PickPos into PickX
+        put the width of BlocksCodePane into CodeWidthAtPick
+    end
+    on pick GraphGrip
+    begin
+        put 1 into GripPicked
+        put the pick position into PickPos
+        put property `x` of PickPos into PickX
+        put the width of GraphSide into GripWidthAtPick
+    end
+    on drag
+    begin
+        put the drag position into DragPos
+        ! **The Graph grip, which is the one drag that belongs to Graph mode.** It moves the sidebar's
+        ! *left* edge, so a pointer travelling left makes the panel wider — the opposite sense to the
+        ! Blocks splitter, whose right edge the pointer carries. The clamps are a floor and a ceiling: at
+        ! the floor the prose has no width left to be read in, and at the ceiling the drawing is the thing
+        ! being squeezed, which is the pane's whole purpose. The ceiling is the panel's own width less a
+        ! floor for the picture, so a narrow window cannot let the sidebar eat the run.
+        if GripPicked is 1
+        begin
+            put property `x` of DragPos into DragX
+            take DragX from PickX giving NewWidth
+            ! **The width kept at the pick is added *to* the travel, and the destination is the travel.**
+            ! Written the other way round — `add NewWidth to GripWidthAtPick` — this compiles and runs, and
+            ! is wrong twice over: the sum lands in the width kept at the pick, so the travel is left as it
+            ! was and every drag clamps, and the starting width grows by the travel on *every* pointer move,
+            ! so a drag that went on long enough would accelerate. The two idioms differ by which operand is
+            ! the destination, and both look reasonable; the harness's grip checks exist for this line.
+            add GripWidthAtPick to NewWidth
+            put 700 into GripMost
+            put the width of GraphArea into Tmp
+            take 320 from Tmp
+            if Tmp is less than GripMost put Tmp into GripMost
+            if GripMost is less than 200 put 200 into GripMost
+            if NewWidth is less than 200 put 200 into NewWidth
+            if NewWidth is greater than GripMost put GripMost into NewWidth
+            set style `flex` of GraphSide to `0 0 ` cat NewWidth cat `px`
+            return
+        end
+        ! A drag in Graph mode belongs to the picture, and the pane's own handler is registered on the
+        ! document too — so this one has nothing to do while that pane is up, and says so by doing
+        ! nothing rather than by asking the pane whether it wants it.
+        if GraphMode is 0
+        begin
+            put property `x` of DragPos into DragX
+            put DragX into NewWidth
+            take PickX from NewWidth
+            add CodeWidthAtPick to NewWidth
+            if NewWidth is less than 100 put 100 into NewWidth
+            set style `flex` of BlocksCodePane to `0 0 ` cat NewWidth cat `px`
+        end
+    end
+    on drop
+    begin
+        ! **The grip answers first**, because it is the one that can be held while Graph mode is up — the
+        ! Blocks splitter's own guard below refuses to do anything there and would otherwise swallow this
+        ! drop, losing the width the reader just chose.
+        !
+        ! Nothing is redrawn on the way out, and that is deliberate rather than an omission: the pane
+        ! measures its own box on every gesture (`VizPixelScale` is called from the pick), so the picture
+        ! needs no telling that its box has changed, and a redraw here would re-fit the drawing under the
+        ! reader's hand for nothing.
+        if GripPicked is 1
+        begin
+            put 0 into GripPicked
+            put the width of GraphSide into FinalWidth
+            put FinalWidth into storage as `asedit-graph-side-width`
+            return
+        end
+        if GraphMode is 1 return
+        put the width of BlocksCodePane into FinalWidth
+        put FinalWidth into storage as `asedit-blocks-code-width`
+    end
+
+    put 0 into BlocksMode
+    put 0 into GraphMode
+    put 0 into BlockDirty
+!! @hash 3efa1530
+!! @verified aeba3967
+!!!
+!! One `on message`, registered here rather than with the code it runs.
+!!
+!! **A handler is registered by *executing* the line, and this file stops in the block below.** Everything after `fork to AutoSave` is a subroutine, so a registration written beside its own handler at the end of the file would never run: the pane's report would arrive at a program with no handler and be dropped in silence. The rule that falls out of it is worth keeping — in this editor a handler goes where the flow reaches it, and only its *body* may live at the end.
+!!
+!! It is named here with its body for that reason: the handler is `SideMarkLine`, in the Graph sidebar section, and the two are one thing split by the shape of the file rather than by design.
+on message go to SideMarkLine
+!! @hash f327f0fa
+!! @verified f327f0fa
+!!!
+!! While editor is running it periodically saves changes made by the user
+!! and updates the display to show updates made externally.
+!! This avoids the need for any Save mechanism.
+!   -- Start background loops --
+    fork to AutoSave
+    fork to PollFile
+    stop
+!! @hash f86feb98
+!! @verified f86feb98
+!!!
+!! Every half-second, changes to the content are saved.
+!!
+!! TabSaved is an array of tab contents. If its content differs from that currently held in the editor, the current content is saved to the file and TabSaved is updated.
+!   -- Auto-save loop --
+AutoSave:
+    wait 500 millis
+    if TabCount is 0
+    begin
+        fork to AutoSave
+        stop
+    end
+    codemirror get content of ContentEditor into Content
+    index TabSaved to ActiveTab
+    if Content is not TabSaved
+    begin
+        index TabPath to ActiveTab
+        if TabPath is empty
+        begin
+            if Content is empty
+            begin
+                fork to AutoSave
+                stop
+            end
+            put prompt StrSaveAs into File
+            if File is empty
+            begin
+                fork to AutoSave
+                stop
+            end
+            put File cat `.allspeak` into File
+            ! Save into the currently browsed directory
+            if CurrentPath is not empty
+                put CurrentPath cat `/` cat File into File
+            index TabPath to ActiveTab
+            put File into TabPath
+            index TabName to ActiveTab
+            put File into TabName
+            gosub to RebuildTabBar
+        end
+        rest post Content to `/write/` cat TabPath or go SaveFailed
+        index TabSaved to ActiveTab
+        put Content into TabSaved
+        set the content of StatusSpan to StrSaved
+        fork to ClearStatus
+    end
+    fork to AutoSave
+    stop
+
+SaveFailed:
+    set the content of StatusSpan to StrSaveFailed
+    fork to ClearStatus
+    fork to AutoSave
+    stop
+!! @hash 63538f67
+!! @verified 63538f67
+!!!
+!! Every 3 seconds, the current file is re-read into FileContent.
+!!
+!! If this differs from what is currently held in TabSaved for this tab, the editor content is updated and a message is displayed briefly.
+!   -- External change polling --
+PollFile:
+    wait 3 seconds
+    if TabCount is 0
+    begin
+        fork to PollFile
+        stop
+    end
+    ! A mode that owns the screen must not have its content reloaded underneath it. In Blocks mode the
+    ! in-memory Sections array is the source of truth and a silent reload would clobber the user's pane
+    ! edits; in Graph mode the poll replaced the editor's content every three seconds while the graph was
+    ! up, which is when the drawing was seen to be overwritten. Either way, skip until the pane is left.
+    if BlocksMode is 1 or GraphMode is 1 go to PollNext
+    index TabPath to ActiveTab
+    if TabPath is empty go to PollNext
+    rest get FileContent from `/read/` cat TabPath or go PollNext
+    ! Formatted as it is read, exactly as the loader formats it. Without this the poll compares a
+    ! one-line file on disk against the formatted text in the tab, sees a difference on every pass,
+    ! and reloads the file over the formatted text every three seconds — which is what "it formats
+    ! it, then after a couple of seconds reverts to a one-liner" turned out to be. Like has to be
+    ! compared with like for the poll to settle.
+    if TabPath ends with `.json`
+    begin
+        put FileContent into JsonText
+        gosub to FormatJson
+        put JsonText into FileContent
+    end
+    codemirror get content of ContentEditor into Content
+    index TabSaved to ActiveTab
+    if FileContent is not TabSaved
+    begin
+        if Content is TabSaved
+        begin
+            ! Editor is clean -- silently reload
+            put FileContent into TabSaved
+            codemirror set content of ContentEditor to FileContent
+            set the content of StatusSpan to StrReloaded
+            fork to ClearStatus
+        end
+        else
+        begin
+            set the content of StatusSpan to StrExtChange
+        end
+    end
+PollNext:
+    fork to PollFile
+    stop
+!! @hash bbd67e70
+!! @verified bbd67e70
+!!!
+!! File browser overlay behind the Open button: lists the current directory, navigates into folders and back to the project root, and hands the chosen file to the tab-management section to open.
+!   -- File browser with directory navigation --
+ShowBrowser:
+    ! Opening a tab while Blocks mode is up leaves the panes out of sync with
+    ! the active tab's source; switch back to flat mode first.
+    if BlocksMode is 1 gosub to DoExitBlocks
+    rest get FileList from `/list/` cat CurrentPath or go BrowserError
+    put the json count of FileList into FileCount
+    set the elements of FileRow to FileCount
+    set the elements of FileName to FileCount
+    set the content of Scroller to ``
+
+    ! Show current path at top
+    create FileRow in Scroller
+    set the style of FileRow to `padding:4px 8px;font-size:0.85em;color:#666;border-bottom:1px solid #ddd`
+    if CurrentPath is empty
+        set the content of FileRow to StrRoot
+    else
+        set the content of FileRow to `/` cat CurrentPath
+
+    ! Show "back" row if inside a subdirectory
+    if CurrentPath is not empty
+    begin
+        create FileRow in Scroller
+        set the style of FileRow to `padding:4px 8px;cursor:pointer;background:#f0f0ff`
+        set the content of FileRow to StrUpLevel
+        on click FileRow go to GoUp
+    end
+
+    if FileCount is 0
+    begin
+        create FileRow in Scroller
+        set the style of FileRow to `padding:4px 8px;color:#999`
+        set the content of FileRow to StrEmpty
+    end
+
+    put 0 into N
+    while N is less than FileCount
+    begin
+        put element N of FileList into Item
+        put property `name` of Item into EntryName
+        put property `type` of Item into EntryType
+        index FileRow to N
+        create FileRow in Scroller
+        set the style of FileRow to `padding:3px 8px;cursor:pointer`
+        index FileName to N
+        create FileName in FileRow
+        if EntryType is `dir`
+        begin
+            set the style of FileName to `display:block;padding:3px 0;cursor:pointer;font-weight:bold`
+            set the content of FileName to `📁 ` cat EntryName
+        end
+        else
+        begin
+            set the style of FileName to `display:block;padding:3px 0;cursor:pointer`
+            set the content of FileName to EntryName
+        end
+        on click FileName go to SelectEntry
+        add 1 to N
+    end
+    on click CloseBtn go to CloseBrowser
+    set style `display` of Overlay to `block`
+    stop
+
+GoUp:
+    put the position of the last `/` in CurrentPath into N
+    if N is less than 0
+        put `` into CurrentPath
+    else
+        put left N of CurrentPath into CurrentPath
+    go to ShowBrowser
+
+BrowserError:
+    set the content of StatusSpan to StrNoConnect
+    fork to ClearStatus
+    stop
+
+!   -- Entry selected in browser --
+SelectEntry:
+    put the index of FileName into N
+    put element N of FileList into Item
+    put property `name` of Item into EntryName
+    put property `type` of Item into EntryType
+    if EntryType is `dir`
+    begin
+        ! Navigate into directory
+        if CurrentPath is empty
+            put EntryName into CurrentPath
+        else
+            put CurrentPath cat `/` cat EntryName into CurrentPath
+        go to ShowBrowser
+    end
+    ! Build full relative path and open file
+    if CurrentPath is empty
+        put EntryName into TabItem
+    else
+        put CurrentPath cat `/` cat EntryName into TabItem
+    set style `display` of Overlay to `none`
+    put EntryName into File
+    go to OpenFile
+
+CloseBrowser:
+    set style `display` of Overlay to `none`
+    stop
+!! @hash ac5d5c01
+!! @verified ac5d5c01
+!!!
+!! This section is tab management; creating a new tab, opening a file, selecting a tab and closing a tab.
+!! Activating a tab leaves Blocks mode first. A tab is a different file, and Blocks mode belongs to the file you were reading — so switching tabs, and opening a file, both land in the flat editor rather than refusing to move until you leave the mode by hand.
+!! **A tab remembers where the flat editor was standing** — the caret's line and the viewport's scroll offset — and puts both back on return, whether the reader left by the tab bar, the Blocks button or the Graph one. Two values rather than one because they are independent: scrolling must not move the insertion point, and coming back must not carry the view to the caret, which is the jump a video editor teaches you to distrust. `codemirror` carries a command for each half and each half only — `cursor to line` does not scroll and `view to` does not move the caret — and the scroll one refreshes the editor on the way, which a CodeMirror hidden by a mode switch needs.
+!   Make room for one more tab: the count up by one and every per-tab array grown to match. **In one
+!   place, and that is the point of it.** There are two ways to open a tab — the + button and the file
+!   browser — and each used to grow the arrays itself, so an array added for one of them is a tab that
+!   fails in the other. That is not hypothetical: the caret and view records added for the tab
+!   restoration above went into `NewFile` only, and opening a *file* then died with "Array index 1 is
+!   out of range for 'TabCursor'" the moment a second tab existed with no slot to hold it.
+!   `CloseTab` shifts the value-carrying arrays back down when a tab goes — the element ones are rebuilt
+!   from the count instead — so it is the other place that has to know this list, and there are only two.
+!
+!   **The new slot is cleared, not assumed empty.** Growing an array does not shorten it, so a slot
+!   vacated when a tab was closed keeps whatever it held — and the two records below are only ever
+!   *read*, so a stale caret and scroll would be put back on a tab that has never been anywhere. The
+!   other arrays are written by their callers straight afterwards, which is why they never showed it.
+!   Empty is also what `TabRestore` wants: it asks whether a value is *numeric*, so a cleared slot is
+!   a tab with nowhere to restore to, which is the honest answer for one that has never been left.
+TabGrow:
+    add 1 to TabCount
+    set the elements of TabPath to TabCount
+    set the elements of TabName to TabCount
+    set the elements of TabSaved to TabCount
+    set the elements of TabCursor to TabCount
+    set the elements of TabView to TabCount
+    set the elements of TabBtn to TabCount
+    set the elements of TabLabel to TabCount
+    set the elements of TabClose to TabCount
+    ! `TabCount - 1`, because an index is counted from zero and the count is not: the slot just made is
+    ! the last one, not the next one. (`Tmp` rather than `N`, which the callers are holding the new
+    ! tab's index in.)
+    put TabCount into Tmp
+    subtract 1 from Tmp
+    index TabCursor to Tmp
+    put `` into TabCursor
+    index TabView to Tmp
+    put `` into TabView
+    return
+
+!   -- New empty tab --
+NewFile:
+    put TabCount into N
+    gosub to TabGrow
+    index TabPath to N
+    put `` into TabPath
+    index TabName to N
+    put `new` into TabName
+    index TabSaved to N
+    put `` into TabSaved
+    put N into ActiveTab
+    go to ActivateTab
+
+!   -- Open a file (TabItem=relative path, File=display name) --
+OpenFile:
+    ! Check if already open in a tab
+    put 0 into N
+    while N is less than TabCount
+    begin
+        index TabPath to N
+        if TabPath is TabItem
+        begin
+            put N into ActiveTab
+            go to ActivateTab
+        end
+        add 1 to N
+    end
+    ! Not open -- load from server and create a new tab
+    rest get Content from `/read/` cat TabItem or go BrowserError
+    if TabItem ends with `.json`
+    begin
+        put Content into JsonText
+        gosub to FormatJson
+        put JsonText into Content
+    end
+    gosub to TabGrow
+    index TabPath to N
+    put TabItem into TabPath
+    index TabName to N
+    put File into TabName
+    index TabSaved to N
+    put Content into TabSaved
+    put N into ActiveTab
+    go to ActivateTab
+
+!   -- A JSON file arrives minified as often as not, and one line of it is unreadable --
+FormatJson:
+    ! Only a file that is *one line* is reformatted. A file already laid out, at whatever indent its
+    ! author chose, is left exactly as it is — the complaint is that one line of JSON is unreadable,
+    ! not that somebody's formatting is wrong, and normalising it would rewrite their file the first
+    ! time they saved. `json split` divides on newline by default, so the test costs two statements
+    ! and needs no new vocabulary.
+    json split JsonText into JsonLines
+    if the json count of JsonLines is greater than 1 return
+    ! The formatted text is what the tab records as its own, so opening a file does not mark it
+    ! modified — and because the poll formats the file it reads in just the same way, the two agree
+    ! and the tab settles rather than reloading itself every three seconds. Malformed JSON is left
+    ! as it is: a file that will not parse is the one you most want to look at, so the error is
+    ! caught rather than reported. The runtime's own formatter does the work — `json format` is
+    ! JSON.stringify with a two-space indent, the same indent the Python runtime writes on save.
+    json format JsonText or go FormatJsonEnd
+FormatJsonEnd:
+    return
+
+!   -- Switch to an existing tab --
+SwitchTab:
+    put the index of TabLabel into ActiveTab
+    go to ActivateTab
+
+!   -- Close a tab --
+CloseTab:
+    put the index of TabClose into M
+    ! Shift elements above M down by one
+    put M into N
+    add 1 to N
+    while N is less than TabCount
+    begin
+        index TabPath to N
+        put TabPath into File
+        subtract 1 from N
+        index TabPath to N
+        put File into TabPath
+        add 1 to N
+        index TabName to N
+        put TabName into File
+        subtract 1 from N
+        index TabName to N
+        put File into TabName
+        add 1 to N
+        index TabSaved to N
+        put TabSaved into FileContent
+        subtract 1 from N
+        index TabSaved to N
+        put FileContent into TabSaved
+        add 1 to N
+        index TabCursor to N
+        put TabCursor into Tmp
+        subtract 1 from N
+        index TabCursor to N
+        put Tmp into TabCursor
+        add 1 to N
+        index TabView to N
+        put TabView into Tmp
+        subtract 1 from N
+        index TabView to N
+        put Tmp into TabView
+        add 1 to N
+        add 1 to N
+    end
+    subtract 1 from TabCount
+    if TabCount is 0
+    begin
+        put 0 into ActiveTab
+        codemirror set content of ContentEditor to ``
+        set the content of TabBar to ``
+        stop
+    end
+    ! Adjust ActiveTab if it was after the closed tab
+    if ActiveTab is greater than M subtract 1 from ActiveTab
+    ! Clamp ActiveTab to valid range
+    put TabCount into FileCount
+    subtract 1 from FileCount
+    if ActiveTab is greater than FileCount
+    begin
+        put FileCount into ActiveTab
+    end
+    go to ActivateTab
+
+!   Where the flat editor is standing, remembered per tab and put back on return. The caret and the
+!   view are kept apart on purpose: `codemirror cursor to line` does not scroll and
+!   `codemirror view to` does not move the caret, so a revisit restores both without one dragging
+!   the other. Restoring the caret *and then* the view is the order that matters — the view is the
+!   one that has to end up exact, and setting the caret cannot disturb it.
+TabRemember:
+    if TabCount is 0 return
+    index TabCursor to ActiveTab
+    codemirror get cursor of ContentEditor into TabCursor
+    index TabView to ActiveTab
+    codemirror view of ContentEditor into TabView
+    return
+
+TabRestore:
+    if TabCount is 0 return
+    ! `is numeric` and not `is not empty`: a tab that has never been left has an untouched slot, and
+    ! zero is a perfectly good caret line and scroll offset — so the test has to be about the kind of
+    ! value, not about whether there is one.
+    index TabCursor to ActiveTab
+    if TabCursor is numeric codemirror cursor to line TabCursor in ContentEditor
+    index TabView to ActiveTab
+    if TabView is numeric codemirror view to TabView in ContentEditor
+    return
+
+ActivateTab:
+    gosub to DoExitPanes
+    gosub to TabRemember
+    index TabSaved to ActiveTab
+    codemirror set content of ContentEditor to TabSaved
+    gosub to TabRestore
+    gosub to RebuildTabBar
+    stop
+!! @hash e6bbb6c8
+!! @verified e6bbb6c8
+!!!
+!! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
+RebuildTabBar:
+!   -- Rebuild tab bar --
+    set the content of TabBar to ``
+    put 0 into N
+    while N is less than TabCount
+    begin
+        index TabBtn to N
+        create TabBtn in TabBar
+        if N is ActiveTab
+        begin
+            set the style of TabBtn to `display:flex;align-items:center;gap:4px;padding:4px 10px;cursor:pointer;background:#555;color:white;border-bottom:2px solid lightgreen`
+        end
+        else
+        begin
+            set the style of TabBtn to `display:flex;align-items:center;gap:4px;padding:4px 10px;cursor:pointer;background:#3a3a3a;color:#aaa`
+        end
+        index TabLabel to N
+        create TabLabel in TabBtn
+        index TabName to N
+        set the text of TabLabel to TabName
+        on click TabLabel go to SwitchTab
+        index TabClose to N
+        create TabClose in TabBtn
+        set attribute `src` of TabClose to `https://allspeak.ai/icon/stop.png`
+        set the style of TabClose to `width:12px;height:12px;opacity:0.6;cursor:pointer`
+        on click TabClose go to CloseTab
+        add 1 to N
+    end
+    return
+!! @hash 1347598c
+!! @verified 1347598c
+!!!
+!! Here are some utility functions.
+!! DoFind searches in flat mode via CodeMirror's find dialog; in Blocks mode it jumps to the next block whose code or prose contains the text selected in either pane (wrapping around), highlighting the match so repeated presses walk through the hits.
+!   -- Find --
+DoFind:
+    if BlocksMode is 1 go to FindInBlocks
+    codemirror find in ContentEditor
+    stop
+
+FindInBlocks:
+    ! Blocks-mode find: walk the sections after the current one (wrapping)
+    ! for the term selected in either pane and jump to the first hit.
+    put the selected text into SearchTerm
+    if SearchTerm is empty
+    begin
+        set the content of StatusSpan to `Select text in a pane to search blocks`
+        fork to ClearStatus
+        stop
+    end
+    put CurBlock into I
+    add 1 to I
+    while I is not CurBlock
+    begin
+        put I modulo SecCount into I
+        if I is CurBlock go to FindNotFound
+        gosub to BlockContains
+        if Found is 1 go to FindMatch
+        add 1 to I
+    end
+FindNotFound:
+    set the content of StatusSpan to `No other block contains ` cat SearchTerm
+    fork to ClearStatus
+    stop
+FindMatch:
+    put I into CurBlock
+    gosub to RenderBlock
+    gosub to SelectOccurrence
+    put CurBlock into I
+    add 1 to I
+    set the content of StatusSpan to `Found in block ` cat I cat ` of ` cat SecCount
+    fork to ClearStatus
+    stop
+
+BlockContains:
+    ! Search section I's code then prose for the term (SearchTerm); sets Found and FoundPane.
+    put 0 into Found
+    index SecCode to I
+    put the position of SearchTerm in SecCode into Pos
+    if Pos is not less than 0
+    begin
+        put 1 into Found
+        put `code` into FoundPane
+        return
+    end
+    index SecProse to I
+    put the position of SearchTerm in SecProse into Pos
+    if Pos is not less than 0
+    begin
+        put 1 into Found
+        put `doc` into FoundPane
+    end
+    return
+
+SelectOccurrence:
+    ! Highlight the first occurrence of the term (SearchTerm) in the pane that matched.
+    if FoundPane is `code`
+    begin
+        index SecCode to CurBlock
+        put the position of SearchTerm in SecCode into Pos
+        if Pos is not less than 0
+        begin
+            put Pos into N
+            put the length of SearchTerm into M
+            add N to M
+            set the selection of BlocksCodePane from N to M
+        end
+    end
+    else
+    begin
+        index SecProse to CurBlock
+        put the position of SearchTerm in SecProse into Pos
+        if Pos is not less than 0
+        begin
+            put Pos into N
+            put the length of SearchTerm into M
+            add N to M
+            set the selection of BlocksDocPane from N to M
+        end
+    end
+    return
+
+!   -- Utilities --
+ClearStatus:
+    wait 3 seconds
+    set the content of StatusSpan to ``
+    stop
+!! @hash 74b13222
+!! @verified 74b13222
+!!!
+!! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.
+!!
+!! Same classifier logic as tools/asdoc-check.allspeak — the spec is one source of truth even though the code is duplicated here for the editor's in-process use.
+ParseSource:
+    put `` into AppPage
+    put 0 into SecCount
+    put 0 into InSection
+    put `` into Source
+    codemirror get content of ContentEditor into Source
+    put Source into Lines
+    split Lines
+    put the elements of Lines into LineCount
+    set the elements of Outside to 1
+    index Outside to 0
+    put `` into Outside
+    put `` into OutsideTmp
+    put 0 into N
+    while N is less than LineCount
+    begin
+        index Lines to N
+        put Lines into Line
+        gosub to Classify
+        if InSection is 0 gosub to OutsideDispatch
+        else gosub to InsideDispatch
+        add 1 to N
+    end
+    if InSection is 1
+    begin
+        ! Unclosed section — close synthetically so user can still see it.
+        gosub to CloseSection
+    end
+    ! Save trailing outside chunk; need to grow Outside one past the last
+    ! per-section index allocated by OpenSection.
+    put SecCount into Tmp
+    add 1 to Tmp
+    set the elements of Outside to Tmp
+    index Outside to SecCount
+    put OutsideTmp into Outside
+
+    !   -- Review signals --
+    ! What the parse cannot see for itself: blocks nothing enters. The viz plugin compiles
+    ! the same source and reports it. Nothing here raises an error — a buffer mid-edit
+    ! frequently will not compile, which is the editor's ordinary condition, and the plugin
+    ! simply reports fewer records. With no flags the TOC renders exactly as it did before.
+    put 0 into FlagCount
+    index TabPath to ActiveTab
+    put TabPath into EditorPath
+    model the script in EditorPath as Source giving Model
+    put the elements of Model into MarkCount
+    put 0 into K
+    while K is less than MarkCount
+    begin
+        index Model to K
+        put Model into MarkRecord
+        if MarkRecord starts with `anchor | reachable=no` gosub to NoteMarker
+        add 1 to K
+    end
+
+    ! A script the plugin cannot compile yields no anchors and so no flags — which used to
+    ! look exactly like a clean file. The plugin reports why in a `problem` record, so say it:
+    ! a reviewer's first question about an empty picture is whether there was anything to draw.
+    ! The record carries the runtime's own wording, so it is already in the reader's language.
+    put 0 into K
+    while K is less than MarkCount
+    begin
+        index Model to K
+        put Model into MarkRecord
+        if MarkRecord starts with `problem |` gosub to NoteProblem
+        add 1 to K
+    end
+
+    ! **The attributes the program carries — the real spelling.** The plugin reads them off the compiled
+    ! program, which is the only place they can be read correctly: the tokeniser is what knows an `@` inside a
+    ! literal from an attribute, so a reader scanning the buffer's text would be a second, worse implementation
+    ! of that rule. A file-level attribute like `@app parser.html` is a line of its own, and its record carries
+    ! the line it is on, so a tool that wants to point at it can.
+    put 0 into K
+    while K is less than MarkCount
+    begin
+        index Model to K
+        put Model into MarkRecord
+        if MarkRecord starts with `attr | ` gosub to NoteAttribute
+        add 1 to K
+    end
+    return
+
+!   One attribute, as the model reports it: `attr | line=N | <text>`.
+!   The text is the language's to carry and a tool's to read — the runtime never splits a key from a value — so
+!   the split below is the tool's, on the record's own separator, which the text cannot contain.
+NoteAttribute:
+    split MarkRecord on ` | `
+    if the elements of MarkRecord is less than 3 return
+    index MarkRecord to 2
+    put MarkRecord into LContent
+    gosub to SplitMeta
+    return
+
+OutsideDispatch:
+    if Kind is `DOC` gosub to OpenSection
+    else if Kind is `META` gosub to OpenSection
+    else
+    begin
+        if OutsideTmp is empty put Line into OutsideTmp
+        else put OutsideTmp cat newline cat Line into OutsideTmp
+    end
+    return
+
+InsideDispatch:
+    if Kind is `TERM` gosub to CloseSection
+    else if Kind is `META` gosub to RecordMeta
+    else if Kind is `DOC` gosub to AppendProse
+    else if Kind is `CODE` gosub to AppendCode
+    return
+
+!   Classify the current line as code/comment or documentation
+Classify:
+    put `CODE` into Kind
+    if Line is `!!!`
+    begin
+        put `TERM` into Kind
+        return
+    end
+    if Line is `!!`
+    begin
+        put `DOC` into Kind
+        put `` into LContent
+        return
+    end
+    if Line starts with `!! ` or Line starts with `!!` cat tab
+    begin
+        put `DOC` into Kind
+        put from 3 of Line into LContent
+        gosub to MaybeMeta
+        return
+    end
+    return
+
+!   Deal with @ (META)
+MaybeMeta:
+    if LContent starts with `@`
+    begin
+        put `META` into Kind
+        put from 1 of LContent into LContent
+        gosub to SplitMeta
+    end
+    return
+
+!   A key and the rest of it, from an attribute's text.
+!
+!   **The one reading of an attribute's text, shared by both places attributes arrive.** A `@`-line inside a
+!   `!!` doc block is the analyser's metadata and never reaches the compiler; an attribute in the script itself
+!   is carried into the program and comes back through the model. They are the same thing to a reader — a key,
+!   a space, and the rest — so they are split in one place rather than two, and a tool vocabulary read here
+!   reads the same either way.
+!
+!   The spelling `!! @app` is accepted and is not the real thing: the doc-block form says nothing to the
+!   compiler, so a page named there launches a page that the *program* does not know about. Prefer `@app`.
+SplitMeta:
+    put the position of ` ` in LContent into Pos
+    if Pos is less than 0
+    begin
+        put LContent into MetaKey
+        put `` into MetaValue
+    end
+    else
+    begin
+        put left Pos of LContent into MetaKey
+        add 1 to Pos
+        put from Pos of LContent into MetaValue
+    end
+    if MetaKey is `app` put MetaValue into AppPage
+    return
+
+OpenSection:
+    ! Finalize the outside chunk that ended with the previous line.
+    put SecCount into Tmp
+    add 1 to Tmp
+    set the elements of Outside to Tmp
+    index Outside to SecCount
+    put OutsideTmp into Outside
+    put `` into OutsideTmp
+    put N into SecStartTmp
+    add 1 to SecStartTmp
+    put 1 into InSection
+    put `` into SecProseTmp
+    put `` into SecCodeTmp
+    put `` into SecHashTmp
+    put `` into SecVerifiedTmp
+    put 0 into SecHasCode
+    if Kind is `META` gosub to RecordMeta
+    if Kind is `DOC` gosub to AppendProse
+    return
+
+RecordMeta:
+    if MetaKey is `hash` put MetaValue into SecHashTmp
+    if MetaKey is `verified` put MetaValue into SecVerifiedTmp
+    return
+
+AppendProse:
+    if SecProseTmp is empty put LContent into SecProseTmp
+    else put SecProseTmp cat newline cat LContent into SecProseTmp
+    return
+
+AppendCode:
+    if SecCodeTmp is empty put Line into SecCodeTmp
+    else put SecCodeTmp cat newline cat Line into SecCodeTmp
+    if Line is not `` put 1 into SecHasCode
+    return
+
+CloseSection:
+    ! Compute hash + states.
+    if SecHasCode is 0 gosub to ScoreNoCode
+    else gosub to ScoreWithCode
+    ! Grow all the per-section arrays by one and store this section.
+    put SecCount into I
+    add 1 to SecCount
+    set the elements of SecStart to SecCount
+    set the elements of SecEnd to SecCount
+    set the elements of SecProse to SecCount
+    set the elements of SecCode to SecCount
+    set the elements of SecHash to SecCount
+    set the elements of SecVerified to SecCount
+    set the elements of SecHashState to SecCount
+    set the elements of SecVerifyState to SecCount
+    index SecStart to I
+    put SecStartTmp into SecStart
+    index SecEnd to I
+    put N into SecEnd
+    add 1 to SecEnd
+    index SecProse to I
+    put SecProseTmp into SecProse
+    index SecCode to I
+    put SecCodeTmp into SecCode
+    index SecHash to I
+    put CurHash into SecHash    ! store current hash as the live one (not stale-stored)
+    index SecVerified to I
+    put SecVerifiedTmp into SecVerified
+    index SecHashState to I
+    put HashState into SecHashState
+    index SecVerifyState to I
+    put VerifyState into SecVerifyState
+    put 0 into InSection
+    put `` into OutsideTmp
+    return
+
+ScoreNoCode:
+    put `` into CurHash
+    put `no-code` into HashState
+    if SecVerifiedTmp is empty put `unverified` into VerifyState
+    else put `verified-no-code` into VerifyState
+    return
+
+ScoreWithCode:
+    put hash SecCodeTmp into Tmp
+    put left 8 of Tmp into CurHash
+    if SecHashTmp is empty put `no-baseline` into HashState
+    else if SecHashTmp is CurHash put `fresh` into HashState
+    else put `stale` into HashState
+    if SecVerifiedTmp is empty put `unverified` into VerifyState
+    else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
+    else put `verified-stale` into VerifyState
+    return
+!! @hash d37980ab
+!! @verified fab5b751
+!!!
+!! Blocks view.
+!! ToggleBlocks switches between flat and Blocks panes.
+!! EnterBlocks parses the current source, opens the block containing the flat editor's cursor line (so the pane lands where you were working), and scrolls the TOC to that block.
+!! ExitBlocks flushes pending edits, reveals the flat pane again, and scrolls it to the start of the block just viewed; the work is in DoExitBlocks so ShowBrowser can call it as a subroutine before opening a tab.
+!! RenderBlock paints the textareas and the toolbar badge for the current section.
+!! UpdateBadge derives badge text/colour from the section's hash and verify states.
+ToggleBlocks:
+    if BlocksMode is 0 go to EnterBlocks
+    go to ExitBlocks
+
+!   Enter Blocks mode
+!   **At most one mode is on, and `DoExitPanes` is where that is said.** Every entry point turns the
+!   others off through it rather than each naming the ones it happens to know about — which is how
+!   this one came to miss the Graph pane: it was written before Graph existed, and nothing pointed at
+!   the assumption. The omission had two faces, and Graham found both by the one path that showed it,
+!   Graph then Blocks: the Graph button still read `Edit`, so two buttons offered to leave a pane
+!   neither of which was on, and `VizHost` was never hidden, so the graph sat under the Blocks pane.
+EnterBlocks:
+    gosub to DoExitPanes
+    gosub to ParseSource
+    if SecCount is 0
+    begin
+        set the content of StatusSpan to `No doc blocks in this file`
+        fork to ClearStatus
+        stop
+    end
+    ! Open the block containing the flat editor's cursor: the last section
+    ! whose opener line is at or above the cursor's line, so a cursor in the
+    ! gap between two blocks lands on the block above. Falls back to block 0
+    ! when the cursor is above the first section.
+    codemirror get cursor of ContentEditor into Tmp
+    add 1 to Tmp
+    put 0 into CurBlock
+    put 0 into I
+    while I is less than SecCount
+    begin
+        index SecStart to I
+        if SecStart is not greater than Tmp put I into CurBlock
+        add 1 to I
+    end
+    put 1 into BlocksMode
+    ! The toggle button now leaves Blocks mode, so relabel it.
+    set the content of BlocksBtn to `Edit`
+    set style `display` of EditorArea to `none`
+    set style `display` of BlocksArea to `flex`
+    ! Restore divider position from previous session if persisted.
+    get StoredWidth from storage as `asedit-blocks-code-width`
+    if StoredWidth is `null` put 0 into StoredWidth
+    if StoredWidth is `undefined` put 0 into StoredWidth
+    if StoredWidth is empty put 0 into StoredWidth
+    if StoredWidth is greater than 100
+        set style `flex` of BlocksCodePane to `0 0 ` cat StoredWidth cat `px`
+    gosub to RenderToc
+    ! Reveal the current block's row in the TOC sidebar.
+    index TocRow to CurBlock
+    scroll TocRow into view
+    gosub to RenderBlock
+    stop
+
+!   Exit Blocks mode
+ExitBlocks:
+    gosub to DoExitBlocks
+    stop
+
+!   Exit Blocks mode (callable as a subroutine -- e.g. from ShowBrowser)
+DoExitBlocks:
+    gosub to FlushBlock
+    ! Re-parse so SecStart reflects any line shifts from the flush rebuild.
+    gosub to ParseSource
+    put 0 into BlocksMode
+    ! Back in flat mode the toggle button re-enters Blocks mode.
+    set the content of BlocksBtn to `Blocks`
+    set style `display` of BlocksArea to `none`
+    set style `display` of EditorArea to `block`
+    ! Scroll the flat editor so the start of the block just viewed is visible.
+    if SecCount is greater than 0
+    begin
+        ! Guard against a stale CurBlock (e.g. tab switched while in Blocks mode).
+        if CurBlock is not less than SecCount
+        begin
+            put SecCount into Tmp
+            take 1 from Tmp
+            put Tmp into CurBlock
+        end
+        index SecStart to CurBlock
+        put SecStart into Tmp
+        take 1 from Tmp
+        codemirror scroll to line Tmp in ContentEditor
+    end
+    ! Remembered here rather than on the way *in*, because leaving is what moves the editor: the
+    ! scroll above is deliberate and puts the block's start at the top, and that is where the reader
+    ! then is. Every way out of Blocks passes through this subroutine — the button, a tab switch, and
+    ! the way into Graph — so one save here covers all of them, and the pair of values is consistent
+    ! whichever way the reader came back.
+    gosub to TabRemember
+    return
+
+NextBlock:
+    put SecCount into Tmp
+    take 2 from Tmp
+    if CurBlock is greater than Tmp stop
+    gosub to FlushBlock
+    add 1 to CurBlock
+    gosub to RenderBlock
+    stop
+
+PrevBlock:
+    if CurBlock is less than 1 stop
+    gosub to FlushBlock
+    take 1 from CurBlock
+    gosub to RenderBlock
+    stop
+
+RenderBlock:
+    index SecProse to CurBlock
+    set the content of BlocksDocPane to SecProse
+    index SecCode to CurBlock
+    set the content of BlocksCodePane to SecCode
+    gosub to UpdateBadge
+    gosub to RenderToc
+    return
+
+UpdateBadge:
+    put CurBlock into I
+    add 1 to I
+    set the content of BlocksTitle to `Block ` cat I cat ` of ` cat SecCount
+    index SecVerifyState to CurBlock
+    put SecVerifyState into VerifyState
+    index SecHashState to CurBlock
+    put SecHashState into HashState
+    if VerifyState is `verified-fresh`
+    begin
+        set the content of BlocksBadge to `verified · fresh`
+        set style `background` of BlocksBadge to `#2e7d32`
+    end
+    else if VerifyState is `verified-stale`
+    begin
+        set the content of BlocksBadge to `verified · stale`
+        set style `background` of BlocksBadge to `#f9a825`
+    end
+    else if HashState is `no-code`
+    begin
+        set the content of BlocksBadge to `no code`
+        set style `background` of BlocksBadge to `#666`
+    end
+    else
+    begin
+        set the content of BlocksBadge to `unverified`
+        set style `background` of BlocksBadge to `#666`
+    end
+    return
+!! @hash 4464102e
+!! @verified 4464102e
+!!!
+!! Blocks save.
+!! FlushBlock pushes the current pane edits back into the
+!! per-section arrays (recomputing the section's hash if its code changed)
+!! and rebuilds the full source by walking Outside + Section + Outside +
+!! ... etc. The new source is written to ContentEditor (CodeMirror), which
+!! the existing AutoSave loop persists to disk on its next iteration.
+!! No-op if neither pane changed.
+!!
+FlushBlock:
+    if BlocksMode is 0 return
+    put the text of BlocksDocPane into NewProse
+    put the text of BlocksCodePane into NewCode
+    index SecProse to CurBlock
+    put SecProse into OldProse
+    index SecCode to CurBlock
+    put SecCode into OldCode
+    if NewProse is OldProse and NewCode is OldCode return
+    index SecProse to CurBlock
+    put NewProse into SecProse
+    index SecCode to CurBlock
+    put NewCode into SecCode
+    ! Recompute hash and states for the edited block.
+    put NewCode into SecCodeTmp
+    put NewProse into SecProseTmp
+    put 0 into SecHasCode
+    if NewCode is not empty put 1 into SecHasCode
+    index SecVerified to CurBlock
+    put SecVerified into SecVerifiedTmp
+    index SecHash to CurBlock
+    put SecHash into SecHashTmp
+    if SecHasCode is 0 gosub to ScoreNoCode
+    else gosub to ScoreWithCode
+    index SecHash to CurBlock
+    put CurHash into SecHash
+    index SecHashState to CurBlock
+    put HashState into SecHashState
+    index SecVerifyState to CurBlock
+    put VerifyState into SecVerifyState
+    gosub to RebuildSource
+    codemirror set content of ContentEditor to Source
+    gosub to UpdateBadge
+    set the content of StatusSpan to `Block flushed`
+    fork to ClearStatus
+    return
+
+RebuildSource:
+    index Outside to 0
+    put Outside into Source
+    put 0 into I
+    while I is less than SecCount
+    begin
+        gosub to BuildSectionText
+        put Source cat BlkText into Source
+        add 1 to I
+        index Outside to I
+        put Source cat newline cat Outside into Source
+    end
+    return
+
+BuildSectionText:
+    ! Reads I; writes BlkText with section I's reassembled lines.
+    put `` into BlkText
+    index SecProse to I
+    put SecProse into Tmp
+    if Tmp is not empty
+    begin
+        put Tmp into ProseSrc
+        split ProseSrc
+        put the elements of ProseSrc into PCount
+        put 0 into PJ
+        while PJ is less than PCount
+        begin
+            index ProseSrc to PJ
+            put ProseSrc into PL
+            if PL is empty put BlkText cat `!!` cat newline into BlkText
+            else put BlkText cat `!! ` cat PL cat newline into BlkText
+            add 1 to PJ
+        end
+    end
+    index SecCode to I
+    put SecCode into Tmp
+    if Tmp is not empty put BlkText cat Tmp cat newline into BlkText
+    index SecHash to I
+    put SecHash into Tmp
+    if Tmp is not empty put BlkText cat `!! @hash ` cat Tmp cat newline into BlkText
+    index SecVerified to I
+    put SecVerified into Tmp
+    if Tmp is not empty put BlkText cat `!! @verified ` cat Tmp cat newline into BlkText
+    put BlkText cat `!!!` into BlkText
+    return
+!! @hash d3dbcc0b
+!! @verified d3dbcc0b
+!!!
+!! Mark verified — writes the current code's hash into the section's
+!! "@verified" slot, then flushes so the file picks it up. The badge turns
+!! green on the next render.
+!! MarkAllVerified does the same for every code-bearing section in one pass.
+!! It is a bulk, self-attestation action, so it asks for confirmation first —
+!! a single misclick would otherwise wipe the file's granular verification record.
+MarkVerified:
+    if BlocksMode is 0 stop
+    gosub to FlushBlock      ! ensure SecHash reflects current code first
+    index SecHash to CurBlock
+    put SecHash into SecHashTmp
+    if SecHashTmp is empty stop    ! no-code section, nothing to verify
+    index SecVerified to CurBlock
+    put SecHashTmp into SecVerified
+    put `verified-fresh` into Tmp
+    index SecVerifyState to CurBlock
+    put Tmp into SecVerifyState
+    gosub to RebuildSource
+    codemirror set content of ContentEditor to Source
+    gosub to UpdateBadge
+    set the content of StatusSpan to `Marked verified`
+    fork to ClearStatus
+    stop
+
+MarkAllVerified:
+    if BlocksMode is 0 stop
+    gosub to FlushBlock      ! ensure the current block's hash is current too
+    ! Count the code-bearing sections; only those can carry a @verified mark.
+    put 0 into N
+    put 0 into I
+    while I is less than SecCount
+    begin
+        index SecHash to I
+        if SecHash is not empty add 1 to N
+        add 1 to I
+    end
+    if N is 0 stop
+    if N is 1 put `Mark 1 block as verified?` into Tmp
+    else put `Mark all ` cat N cat ` blocks as verified?` into Tmp
+    if confirm Tmp
+    begin
+        put 0 into I
+        while I is less than SecCount
+        begin
+            index SecHash to I
+            if SecHash is not empty
+            begin
+                index SecVerified to I
+                put SecHash into SecVerified
+                index SecVerifyState to I
+                put `verified-fresh` into SecVerifyState
+            end
+            add 1 to I
+        end
+        gosub to RebuildSource
+        codemirror set content of ContentEditor to Source
+        gosub to RenderBlock
+        if N is 1 put `Marked 1 block verified` into Tmp
+        else put `Marked ` cat N cat ` blocks verified` into Tmp
+        set the content of StatusSpan to Tmp
+        fork to ClearStatus
+    end
+    stop
+!! @hash b0f5bf9f
+!! @verified b0f5bf9f
+!!!
+!! Take the line out of `anchor | reachable=no | kind=label | line=NN | ...`, so a block
+!! can be told whether it is one nothing enters. The anchor record is the documented shape, which is why its line can be read positionally — a finding's line lives in prose and cannot.
+NoteMarker:
+    put the position of `line=` in MarkRecord into Pos
+    add 5 to Pos
+    put from Pos of MarkRecord into MarkRest
+    put the position of ` ` in MarkRest into MarkSpace
+    if MarkSpace is less than 0 put MarkRest into MarkDigits
+    else put left MarkSpace of MarkRest into MarkDigits
+    ! The line number is read out of a record, so it arrives as text. Comparing text with the
+    ! numeric block bounds does not coerce here, so the whole range test silently fails — the
+    ! same reason `add 0 to` is used for numbers read from strings elsewhere in this codebase.
+    add 0 to MarkDigits
+    ! Grow the array first, then write the new last element: sizing to the current count and
+    ! indexing it would ask for element 0 of an empty list on the first flag. This is the same
+    ! order the editor's own CloseSection uses, for the same reason.
+    put FlagCount into I
+    add 1 to FlagCount
+    set the elements of FlagLine to FlagCount
+    index FlagLine to I
+    put MarkDigits into FlagLine
+    return
+!! @hash e3dfc5f8
+!! @verified e3dfc5f8
+!!!
+!! Say, in the status line, why the analysis could not run. The plugin reports a script it could not compile as a `problem` record, and without this the result is indistinguishable from a file with nothing wrong in it.
+NoteProblem:
+    put the position of `| does not compile` in MarkRecord into Pos
+    if Pos is less than 0 put MarkRecord into MarkRest
+    else
+    begin
+        add 13 to Pos
+        put from Pos of MarkRecord into MarkRest
+    end
+    set the content of StatusSpan to MarkRest
+    return
+!! @hash 09c88156
+!! @verified 09c88156
+!!!
+!! Decide whether one block's line range holds a flagged line. The bounds are widened by one so that both tests can be positive: `is not less than` is a form the editor avoids elsewhere.
+BlockFlagged:
+    put 0 into Found
+    put From into FromCheck
+    subtract 1 from FromCheck
+    put To into ToCheck
+    add 1 to ToCheck
+    put 0 into K
+    while K is less than FlagCount
+    begin
+        index FlagLine to K
+        put FlagLine into MarkLine
+        if MarkLine is greater than FromCheck and MarkLine is less than ToCheck put 1 into Found
+        add 1 to K
+    end
+    return
+!! @hash b832c0aa
+!! @verified b832c0aa
+!!!
+!! Blocks TOC. Renders one row per parsed section in the BlocksToc
+!! sidebar, highlighting the current block. Each row's label is the
+!! first prose line of its section, truncated. Clicking a row flushes
+!! any pending edit and jumps to that block.
+!! Rows are shaded dark by verification state — green = verified, amber = stale, grey = unverified — so the blue current row stands out at a glance.
+RenderToc:
+    set the content of BlocksToc to ``
+    set the elements of TocRow to SecCount
+    set the elements of TocLabel to SecCount
+    put 0 into J
+    while J is less than SecCount
+    begin
+        index TocRow to J
+        create TocRow in BlocksToc
+        ! Colour and tooltip are decided together, so a row can never carry a colour without
+        ! saying what it means. The tooltips are the legend: a reviewer should be able to read
+        ! every state off the sidebar without being told them anywhere else.
+        put `padding:4px 10px;cursor:pointer` into Tmp
+        put `Not yet verified` into Tip
+        if J is CurBlock
+        begin
+            put Tmp cat `;background:#1e88e5;color:white` into Tmp
+            put `You are reading this block` into Tip
+        end
+        else
+        begin
+            index SecVerifyState to J
+            put SecVerifyState into VerifyState
+            if VerifyState is `verified-fresh`
+            begin
+                put Tmp cat `;background:#1b5e20` into Tmp
+                put `Verified: the prose and the code still agree` into Tip
+            end
+            else if VerifyState is `verified-stale`
+            begin
+                put Tmp cat `;background:#a26d18` into Tmp
+                put `Verified once, but the code has changed since — worth a look` into Tip
+            end
+            else put Tmp cat `;background:#3f3f3f` into Tmp
+        end
+        set the style of TocRow to Tmp
+        set attribute `title` of TocRow to Tip
+        index SecProse to J
+        put SecProse into ProseSrc
+        put the position of newline in ProseSrc into NL
+        if NL is less than 0 put ProseSrc into FirstLine
+        else put left NL of ProseSrc into FirstLine
+        put J into Tmp
+        add 1 to Tmp
+        put Tmp cat `. ` cat FirstLine into FirstLine
+
+        ! Does anything enter this block? The row's own colour already carries the
+        ! verification state, so the flag goes on the label and the two signals stay on
+        ! separate channels.
+        index SecStart to J
+        put SecStart into From
+        put J into BlockAfter
+        add 1 to BlockAfter
+        if BlockAfter is less than SecCount
+        begin
+            index SecStart to BlockAfter
+            put SecStart into To
+            subtract 1 from To
+        end
+        else put 1000000 into To
+        gosub to BlockFlagged
+
+
+        index TocLabel to J
+        create TocLabel in TocRow
+        set the content of TocLabel to FirstLine
+        ! A block nothing enters gets a solid background rather than only a struck label: it is
+        ! unmissable at a glance, and a reviewer should not have to read every row to find the one
+        ! that is unreachable. The trade is that such a row shows this instead of its verification
+        ! colour, which is the right way round — an orphaned block is the more urgent fact.
+        if Found is 1
+        begin
+            set the style of TocRow to `background:#b71c1c;color:white`
+            set attribute `title` of TocRow to `Orphaned: nothing enters this block, so none of its code can run`
+        end
+        if Found is 1 set the style of TocLabel to `text-decoration:line-through;opacity:0.55`
+        on click TocLabel go to JumpToBlock
+        add 1 to J
+    end
+    return
+
+JumpToBlock:
+    put the index of TocLabel into Tmp
+    if Tmp is CurBlock stop
+    gosub to FlushBlock
+    put Tmp into CurBlock
+    gosub to RenderBlock
+    stop
+!! @hash 56b2a0d3
+!! @verified 56b2a0d3
+!!!
+!! Graph mode: a third view — the run drawn, not the script.
+!!
+!! Blocks mode reads the script's *shape*; this reads what a *run* did. Those are different questions asked of the same file, which is why it is a third pane rather than another setting on either existing one: a code review asks what the code is made of, and a run review asks where the flow went.
+!!
+!! **The recording is not made here.** It is a file beside the script — `<script>.viz.json`, which the runtime writes with `--trace=` — so a run captured on remote hardware arrives with the project however the project travels, and reviewing a script never has to execute it. This pane reads that file and draws it, nothing more.
+!!
+!! **The drawing and its sidebar are two modules, each loaded on demand.** They are half of this editor by size between them and none of it is needed until somebody looks at a run, so one is `asedit-graph.allspeak` and the other `asedit-side.allspeak`: each fetched, compiled and run on the first click on Graph, and messaged from then on. The split is by *what each is about* rather than by size alone — the pane is the picture and owns the gestures, the sidebar is the reading aid and owns its tabs — so either can grow without the other's file growing with it, and the two are given **different elements** to attach to, which is what keeps the layout out of both of them. Two consequences are worth knowing. This file names no `svg` vocabulary any more — that left with the pane, and the pane is what needs the plugin, which the page still loads because the pane is compiled when it is fetched. And `various/plotview.allspeak` is gone: the module file *is* the view, so there is one copy of the drawing rather than a section kept verbatim beside the harness's own copy of the same code. The harness cuts the view out of the module at its header, so what it tests is still what ships.
+!!
+!! **What crosses is a dict each way, and only when a run is opened.** This section fetches the recording and the script — it is the one that knows which tab is open — and sends the pane their text, the three localised flow words, and the path the recording was expected at. The sidebar is sent the same run, because a doc block is prose about a *line* and the click is what names the line. **And one thing comes back**: a click on a mark is reported here as the line it names, and this file looks that line up in the doc-block model it already holds and shows the result in the sidebar. The editor is the hub in both directions rather than the pane knowing that the sidebar exists, which is what keeps either of them replaceable. The wait, and the message about a recording that is not there, go on the status line, which the pane attached for itself. The gestures never cross at all, and leaving is one more message each, because a module cannot see that it has been taken off the screen.
+!!
+!! **The plumbing is one sentence.** Markers decide what is recorded, and a script without them has nothing to show; rather than explain that in the pane, the message names the file it looked for, because that is the one thing a reader needs in order to produce one.
+!!
+!! **Leaving is automatic when a tab changes.** A mode owns the screen, so opening or switching to a file drops back to the flat editor rather than loading the new script into a pane nobody can see — which is what happened the first time this pane was used, and what Blocks has always done. The rule lives in `ActivateTab`, so every path that shows a file obeys it.
+ToggleGraph:
+    if GraphMode is 0 go to EnterGraph
+    gosub to DoExitGraph
+    ! Back to the flat editor exactly where it was left — the caret *and* the view, which is what the
+    ! pane remembering its own state now means for this side too. It is the same pair a tab switch
+    ! restores, through the same two subroutines, so there is one answer to "where was I" rather than
+    ! one per way of leaving.
+    !
+    ! This is the only path out of Graph mode that restores: the other is a tab change, which is a
+    ! different file and starts wherever its own record says.
+    gosub to TabRestore
+    stop
+
+!   Entering shows the pane and hands this tab's run to it. Loading the pane first, because the
+!   first visit is the one that fetches and compiles it — the editor is already showing an empty
+!   pane by then, so the wait is visible as a pane rather than as a dead button.
+!   Leaving Blocks mode first is deliberate: the panes are alternatives, not layers.
+EnterGraph:
+    gosub to DoExitPanes
+    put 1 into GraphMode
+    set the content of GraphBtn to `Edit`
+    set style `display` of EditorArea to `none`
+    set style `display` of BlocksArea to `none`
+    set style `display` of GraphArea to `flex`
+    ! The sidebar's width, from the last session that had one. Restored here, before the pane is fetched,
+    ! so the drawing is fitted to the box it will actually be drawn in — a re-fit a moment later would
+    ! move the picture under the reader's eye for no reason it could see.
+    get SideStored from storage as `asedit-graph-side-width`
+    if SideStored is `null` put 0 into SideStored
+    if SideStored is `undefined` put 0 into SideStored
+    if SideStored is empty put 0 into SideStored
+    if SideStored is greater than 200 set style `flex` of GraphSide to `0 0 ` cat SideStored cat `px`
+    ! Where the flat editor was standing, so leaving puts it back there. Read before the editor is
+    ! hidden: a hidden editor still answers, but reading it while it is up is the honest order.
+    gosub to TabRemember
+    gosub to LoadModules
+    ! **The section model is built for this file before the sidebar can be asked about a line.** This file
+    ! parses its own buffer in Blocks mode and only there, so a reader who opens a run without ever having
+    ! opened Blocks would otherwise have no sections at all — or worse, the ones left behind by the last
+    ! file that *was* blocked. It is done here, before the fetch, because the fetch is what puts the pane
+    ! on screen: after it there is a window in which a mark could be clicked against a stale model.
+    gosub to ParseSource
+    gosub to FetchRunText
+    gosub to SendRunToViz
+    gosub to SendRunToSide
+    stop
+
+!   The two files the run is made of, read and defaulted before either is fetched.
+!
+!   **Both reads point their failure clause at the send, and that is what makes this work.** `rest get`
+!   compiles its failure clause — `or` and `on failure` alike — as a clause that ends the thread, so a
+!   clause that merely set a default would leave the pane waiting for a message that never came: the
+!   recording is optional, but the *send* is not. Defaulting both to empty first and jumping to the
+!   send on failure means the pane is told either way, and an empty recording is what makes it name the
+!   file it looked for.
+!
+!   The recording is read first because a recording that will not answer is the failure worth naming;
+!   the script is the picture's background, and it is a different file.
+FetchRunText:
+    put `` into TraceText
+    put `` into SourceText
+    index TabPath to ActiveTab
+    put TabPath cat `.viz.json` into TracePath
+    rest get TraceText from `/read/` cat TracePath or go VizSendTheRun
+    rest get SourceText from `/read/` cat TabPath or go VizSendTheRun
+VizSendTheRun:
+    return
+
+!   Both modules: each fetched, compiled and run once, and messaged from then on.
+!
+!   **`run` compiles the *text*, not a path**, which is why the fetch comes first — and it is a
+!   fetch of a file beside this page, so a project that has the editor has both as well.
+!   `release parent` inside each module is what makes its `run` return: by the time it does, that
+!   module is attached, its handlers are registered and it is listening.
+LoadModules:
+    if VizLoaded is 0 gosub to LoadVizModule
+    if SideLoaded is 0 gosub to LoadSideModule
+    return
+
+LoadVizModule:
+    ! **This directory first, the served copy second, and that order is the page's.** The editor is a file a
+    ! project can be *given* — a pack used to carry one — and a copy of a thing that moves is a copy that goes
+    ! stale: a project could run an old editor beside a current runtime and plugin, and only found out when the
+    ! editor refused to compile its own source. A pack carries none now, so this falls through to the released
+    ! one and cannot be stale; a working tree carries its own, and an edit to the pane is visible in it.
+    put `` into VizSrc
+    ! **The page's element first, then this directory.** A project cannot *fetch* the pane from the site — the
+    ! site answers `access-control-allow-origin: *` for `.js` and `.css` but not for `.allspeak` — so the page
+    ! hands it over in an element instead, the same channel the language comes through. A working tree has no
+    ! such element and reads the pane beside it, which is what makes an edit to the pane visible there.
+    attach VizSrcDiv to `editor-graph` or go VizModuleLocal
+    put the text of VizSrcDiv into VizSrc
+    if VizSrc is not empty go to VizModuleHere
+VizModuleLocal:
+    rest get VizSrc from `asedit-graph.allspeak?v=` cat now or go VizModuleHosted
+    ! **A `<` means the server sent a page, not a module.** A dev server that answers an unknown path with its
+    ! own page does it with `200` and a type guessed from the extension, so the body is the only thing that
+    ! says whether the file arrived — and a page is treated as a miss, so the next place gets its turn. Without
+    ! this, a mis-serving server takes the editor down with one syntax error per asset and names no cause.
+    if VizSrc starts with `<` put `` into VizSrc
+    if VizSrc is empty go to VizModuleHosted
+VizModuleHere:
+    if VizSrc is empty go to VizLoadFailed
+    run VizSrc as VizModule
+    put 1 into VizLoaded
+    return
+
+VizModuleHosted:
+    rest get VizSrc from `https://allspeak.ai/dist/asedit-graph.allspeak?v=` cat now or go VizLoadFailed
+    if VizSrc starts with `<` go to VizLoadFailed
+    go to VizModuleHere
+
+!   **The sidebar is not the pane, so it is loaded leniently.** Without it the picture still works —
+!   it is a reading aid beside a drawing — so a page that has one file and not the other says so on
+!   the status line and carries on, rather than dropping out of Graph mode over the half of the pane
+!   that is optional. The pane is the opposite case: with no pane there is nothing to look at, so a
+!   page without it leaves the mode entirely.
+!
+!   The default-then-read is `FetchRunText`'s pattern and for its reason: a failure clause ends the
+!   thread, so it has to point at the continuation rather than merely set a value. An empty source
+!   must not reach `run`, which would try to compile nothing.
+LoadSideModule:
+    ! The same two places as the pane, for the same reason and in the same order.
+    put `` into SideSrc
+    attach SideSrcDiv to `editor-side` or go SideModuleLocal
+    put the text of SideSrcDiv into SideSrc
+    if SideSrc is not empty go to SideModuleHere
+SideModuleLocal:
+    rest get SideSrc from `asedit-side.allspeak?v=` cat now or go SideModuleHosted
+    if SideSrc starts with `<` put `` into SideSrc
+    if SideSrc is empty go to SideModuleHosted
+SideModuleHere:
+    if SideSrc is empty go to SideLoadFailed
+    run SideSrc as SideModule
+    put 1 into SideLoaded
+    return
+
+SideModuleHosted:
+    rest get SideSrc from `https://allspeak.ai/dist/asedit-side.allspeak?v=` cat now or go SideLoadFailed
+    if SideSrc starts with `<` go to SideLoadFailed
+    go to SideModuleHere
+
+SideLoadFailed:
+    ! **Not cleared after three seconds, unlike every other message here.** A module that will not load is
+    ! a fault in the page rather than news about the work, and the reader needs it to still be there when
+    ! they look up from the pointer — which is exactly what went wrong the first time this path was hit:
+    ! the sidebar was not beside the editor, the line flashed and went, and the only symptom was that
+    ! nothing happened when a mark was clicked.
+    set the content of StatusSpan to `The Graph sidebar could not be loaded`
+    log `sidebar: could not fetch ` cat `asedit-side.allspeak` cat ` — is it beside the editor?`
+    return
+
+!   A page served without the pane beside it, which is the one way this can fail. Said on the status
+!   line and rectified in the same breath: the editor goes back to the flat view rather than leaving
+!   a pane up that nothing will ever draw in.
+VizLoadFailed:
+    set the content of StatusSpan to `The Graph pane could not be loaded`
+    fork to ClearStatus
+    gosub to DoExitGraph
+    stop
+
+!   The run, as one dict — the whole of the interface in this direction. Built here rather than
+!   filled in place because the pane reads its fields by name, so a field added on one side is
+!   visible on the other.
+!
+!   **The `GraphMode` guard is not belt and braces.** Both fetches above hand control back to the event
+!   loop, so the reader can leave the pane — or switch to another file — while this is still waiting
+!   for the recording. Sending `open` then would leave the pane answering a pointer it no longer has,
+!   with the editor in flat mode and nothing left to send it the close.
+SendRunToViz:
+    if GraphMode is 0 return
+    put `{}` into VizRun
+    set property `open` of VizRun to 1
+    set property `trace` of VizRun to TraceText
+    set property `source` of VizRun to SourceText
+    set property `path` of VizRun to TracePath
+    set property `call` of VizRun to StrFlowCall
+    set property `jump` of VizRun to StrFlowJump
+    set property `return` of VizRun to StrFlowReturn
+    send VizRun to VizModule
+    return
+
+!   Leaving puts the flat editor back and relabels the button, so the pane's state is legible from
+!   the button alone. The pane is told it is off screen — the only thing about it this side can know
+!   and it cannot — because its gestures are registered on the pane *and* on the document, and a drag
+!   anywhere in the editor would otherwise be offered to a picture nobody is looking at.
+DoExitGraph:
+    put 0 into GraphMode
+    ! The grip's flag goes with the mode. It is cleared on every drop, so this is only belt and braces —
+    ! but a press that ended outside the window leaves it set, and the next drag in the flat editor would
+    ! otherwise be offered to a splitter nobody can see.
+    put 0 into GripPicked
+    set the content of GraphBtn to `Graph`
+    set style `display` of GraphArea to `none`
+    set style `display` of EditorArea to `block`
+    if VizLoaded is 1 gosub to TellVizClosed
+    if SideLoaded is 1 gosub to TellSideClosed
+    return
+
+TellVizClosed:
+    put `{}` into VizRun
+    set property `open` of VizRun to 0
+    send VizRun to VizModule
+    return
+
+!   Turn off every mode there is. The panes are alternatives, not layers, so each one's entry point
+!   has to turn the others off before turning itself on — and the list of "the others" belongs in one
+!   place, or the next pane added is missed by whichever entrant was written before it existed. That
+!   is exactly what happened to `EnterBlocks` and the Graph pane, and it showed as the Graph button
+!   still reading `Edit` (two buttons offering to leave a pane neither of which was on) with the
+!   graph left lying under the Blocks pane.
+!
+!   Called by `EnterBlocks`, `EnterGraph` and `ActivateTab`. A fourth pane means changing this and
+!   nothing else.
+DoExitPanes:
+    if BlocksMode is 1 gosub to DoExitBlocks
+    if GraphMode is 1 gosub to DoExitGraph
+    return
+!! @hash ecd231d6
+!! @verified 5964c053
+!!!
+!! The sidebar: what the pane reports back, and what the sidebar is shown.
+!!
+!! **The pane cannot look a line up, and this file already can.** A doc block is prose about a *line*; the click names the line; and the model that knows which block holds it is the one Blocks mode is built from. So the click travels here rather than the model travelling there — which is also why the editor, and not the pane, knows that a sidebar exists at all.
+!!
+!! **`on message` is this file's first inbound message.** Everything else here is driven by the reader clicking one of the editor's own buttons; this is the one path that arrives from another program, and it arrives on the pane's pick. **The registration itself is not here** — a handler runs only if its line is executed, this file stops before this block, and the registration is in its own block above, where the flow reaches it.
+!!
+!! **The line is looked up rather than the block searched for.** `SecStart` and `SecEnd` already bound every section, so "which block holds line N" is a walk over them. A line in *no* block is an answer too, and the sidebar is told so rather than being left showing the last block it had. **And the model is built on the way in**, by the same `ParseSource` Blocks mode uses, because it used to be built *only* there: a reader who opened a run without ever opening Blocks had no sections at all — or, worse, the ones left behind by the last file that was blocked, which is the kind of stale answer that reads as a working panel.
+SideMarkLine:
+    if GraphMode is 0 stop
+    ! **The report arrives as a dict, so its line is read as a property and never converted.** Two things
+    ! are being avoided here, and both were live faults in the first cut: `put the message into SideSel`
+    ! leaves a dict in a variable the look-up does arithmetic on, and `add 0 to` it throws rather than
+    ! coercing; and the other tempting spelling, `the value of the message`, is `parseInt` of its argument
+    ! — which on a dict is *0 for every click*, so the panel faithfully reported that line 0 is in no doc
+    ! block. The one honest spelling is the property, because the property is what the pane set.
+    put the message into SideIn
+    put property `line` of SideIn into SideSel
+    ! The mark's own figures, which are the pane's to count and this file's only to pass on. They are read
+    ! here rather than in `SendBlockToSide` because they belong to the *click* and not to the block: a line
+    ! in no doc block still has a visit number, and the status bar shows it either way.
+    put property `visit` of SideIn into SideVisit
+    put property `total` of SideIn into SideTotal
+    ! Captured values, if the script asked for any. An absent property reads as nothing at all, so a press on
+    ! a mark with no `@show` beside it leaves this empty and the sidebar prints only the line and the visit.
+    put property `values` of SideIn into SideValues
+    gosub to SideFindBlock
+    gosub to SendBlockToSide
+    stop
+
+SideFindBlock:
+    ! A line lies in at most one block, so the walk stops at the first it finds. The bounds are the
+    ! block's own two documented lines — its opener and its terminator — and the code the click landed
+    ! on is between them, which is why both tests are inclusive.
+    !
+    ! The heading is the block's first prose line, numbered as the Blocks view numbers it, because that
+    ! number is how a reader gets from the sidebar back to the same block in the other pane.
+    put 0 into SideFound
+    put `` into SideTitle
+    put `` into SideProse
+    put 0 into SideI
+    while SideI is less than SecCount
+    begin
+        index SecStart to SideI
+        put SecStart into From
+        index SecEnd to SideI
+        put SecEnd into To
+        if SideSel is not less than From and SideSel is not greater than To
+        begin
+            put 1 into SideFound
+            index SecProse to SideI
+            put SecProse into SideProse
+            put the position of newline in SideProse into NL
+            if NL is less than 0 put SideProse into SideTitle
+            else put left NL of SideProse into SideTitle
+            put SideI into Tmp
+            add 1 to Tmp
+            put Tmp cat `. ` cat SideTitle into SideTitle
+        end
+        add 1 to SideI
+    end
+    return
+
+SendBlockToSide:
+    if SideLoaded is 0
+    begin
+        log `sidebar: not loaded, so the block for line ` cat SideSel cat ` has nowhere to go`
+        return
+    end
+    log `sidebar: line ` cat SideSel cat ` visit ` cat SideVisit cat ` of ` cat SideTotal cat ` found=` cat SideFound cat ` title=` cat SideTitle
+    put `{}` into SideMsg
+    set property `kind` of SideMsg to `block`
+    set property `line` of SideMsg to SideSel
+    set property `visit` of SideMsg to SideVisit
+    set property `total` of SideMsg to SideTotal
+    if SideValues is not empty set property `values` of SideMsg to SideValues
+    set property `found` of SideMsg to SideFound
+    set property `title` of SideMsg to SideTitle
+    set property `prose` of SideMsg to SideProse
+    send SideMsg to SideModule
+    return
+
+!   The run itself, sent beside the pane's own copy of it, because the sidebar is told about a run
+!   whether or not a mark is ever clicked — and a new run has to clear whatever block the last one
+!   was showing, which is why this carries nothing but the script's name.
+SendRunToSide:
+    if SideLoaded is 0 return
+    put `{}` into SideMsg
+    set property `kind` of SideMsg to `run`
+    set property `open` of SideMsg to 1
+    set property `path` of SideMsg to TracePath
+    send SideMsg to SideModule
+    return
+
+TellSideClosed:
+    put `{}` into SideMsg
+    set property `kind` of SideMsg to `run`
+    set property `open` of SideMsg to 0
+    send SideMsg to SideModule
+    return
+!! @hash 0c4a0949
+!! @verified c33ecd04
+!!!
+
+!! Recording a run, from the button.
+!!
+!! **This is the trigger, and the pane's empty state is its argument.** A pane that says *"no recording beside this script"* names a file and leaves the reader to produce one at a console; this makes it instead — the buffer is already here, and so is the plugin, which the page loads for the pane's sake.
+!!
+!! **The recording is written beside the script, not handed straight to the pane**, and that is the pane's own decision rather than a convenience: `<script>.viz.json` is a file, so a run captured here travels with the project and can be read again without running anything. It is written through the `/write/` route a tab already uses, so nothing needs a new channel.
+!!
+!! **A run that waits is recorded as far as its first wait, and says so.** `wait` hands the rest of the program to a timer, so a capture made inside a call cannot follow it; the flag the command answers with is what the status line reports, rather than a slice being passed off as a whole run. Following one through is a different shape — the caller being *told* when the run ends — and it is recorded in TODO.md.
+!!
+!! **And a script that names an app is opened rather than run.** `@app parser.html` means the script is driven by its own page, so running it here could only ever fail — its markers are reached by a *person* clicking, not by the script starting. Record opens that page, arms it from outside and saves the recording when the window closes; the block below that is the script path, unchanged. The two acts are one button because the script already says which is right.
+!!
+!! **The status line says what the recording *is*, not just that one was made.** A document holding nothing but its header is still a valid document, so a button reading only the trace reports a run that died on its first statement as a success — and the two ways a recording comes back empty are worth telling apart, because one is a script this runtime cannot compile and the other is a script that stopped. So the plugin answers with a sentence — `12 visits in 1 window`, or `could not run: I don't understand 'dictionary' at line 46` — and it is shown as it stands.
+!!
+!! **And a guard is armed, with the recorder's own defaults.** A script handed to the editor by a tool is not to be trusted with the editor's responsiveness: a busy loop and a never-returning wait both end here, and the recording says which.
+RecordRun:
+    if TabCount is 0 stop
+    index TabPath to ActiveTab
+    put TabPath into EditorPath
+    ! A buffer that has never been saved has nowhere to put a recording, and the pane's message names the file it
+    ! would look for — so say the same thing here rather than record beside a name that is not there.
+    if EditorPath is empty
+    begin
+        set the content of StatusSpan to `Save this script first: a recording goes beside it`
+        fork to ClearStatus
+        stop
+    end
+    codemirror get content of ContentEditor into RecordSource
+    put EditorPath cat `.viz.json` into TracePath
+    ! **One button, two acts, and the script says which is right.** A script that names an app runs *as* an app —
+    ! driven by its own page, clicked by a person — so it cannot be run here: the editor opens it instead and arms
+    ! it from outside, and the recording is written when that window closes. Anything else is a script, and Record
+    ! runs it here as it always has. The parse is what knows the difference, and it is the same parse the Blocks
+    ! view uses, so `@app parser.html` means the same thing on both sides of the editor.
+    gosub to ParseSource
+    if AppPage is not empty
+    begin
+        record the app at AppPage to TracePath
+        set the content of StatusSpan to `Recording ` cat AppPage cat ` — close its window and the recording is saved to ` cat TracePath
+        stop
+    end
+    record the script in EditorPath as RecordSource giving RecordTrace reporting RecordVerdict
+    ! An empty trace is how a run that never got started comes back — a script this runtime cannot compile, most
+    ! often — and the verdict is the reason, in the runtime's own words. It names the word and the line, which is
+    ! what tells a reader that this is not the runtime the script was written for.
+    if RecordTrace is empty
+    begin
+        set the content of StatusSpan to `Could not record this script — ` cat RecordVerdict
+        fork to ClearStatus
+        stop
+    end
+    rest post RecordTrace to `/write/` cat TracePath or go RecordFailed
+    set the content of StatusSpan to `Recorded ` cat TracePath cat ` — ` cat RecordVerdict
+    fork to ClearStatus
+    ! The pane, if it is up, is drawing whatever recording was there before this one.
+    if GraphMode is 1 gosub to SendRunToViz
+    stop
+
+RecordFailed:
+    set the content of StatusSpan to `Could not record this script`
+    fork to ClearStatus
+    stop
+!! @hash 88d3e846
+!! @verified 00000000
+!!!
+
+!! Opening the project's app, from the editor.
+!!
+!! **The app is a page, and a page the editor can already reach: its own.** `@app parser.html` names it relative to where the editor is served from — the project root — so no path has to be assembled, no server route is added, and the page resolves against the editor's own location. It opens in a window of its own, which is the point: the app runs exactly as it does when you open it by hand, with its own layout, its own DOM and its own `rest get`s, unconstrained by the editor's.
+!!
+!! **Nothing about the app changes, and that is deliberate.** `parser.html` fetches its script and runs it; the editor does not run it, poke it, or wrap it. That is what keeps this half simple, and it is also what makes the *next* half — recording a launched app — a separate problem: the recorder has to be armed before the app's own `viz start` line runs, which means the app page carrying a bootstrap or the editor injecting one before its scripts run. Launching needs neither.
+!!
+!! **A script that names no app says so** rather than the button doing nothing, because "nothing happened" is the one report a reader cannot act on. The message names the spelling, says it goes on a line of its own, and says it is not a comment — the three things a reader needs and the three the first version got wrong: it pointed at a doc block, which is where the *analyser's* `@hash` and `@verified` live and where an attribute never reaches the compiler.
+LaunchApp:
+    if TabCount is 0 stop
+    ! The parse is what reads the attributes, and the buffer may have changed since the last one — so read it now
+    ! rather than trusting `AppPage` to be current. It is the same walk the Blocks view uses, and it clears
+    ! `AppPage` first, so an attribute that has just been deleted cannot go on launching a page.
+    gosub to ParseSource
+    if AppPage is empty
+    begin
+        ! **The message says where, and that is the whole of its job.** It used to say "to a doc block", which is
+        ! where an attribute must *not* go: a `@`-line inside a `!!` block is the analyser's metadata and never
+        ! reaches the compiler, so a reader who followed that advice would have written something the program
+        ! cannot see. Graham asked which it was, which is the message failing at the one moment it exists for.
+        set the content of StatusSpan to `No app named: add '@app <page>' on a line of its own — a script attribute, not a comment`
+        fork to ClearStatus
+        stop
+    end
+    location new AppPage
+    set the content of StatusSpan to `Opened ` cat AppPage
+    fork to ClearStatus
+    stop
+!! @hash 0faead49
+!! @verified 00000000
+!!!

@@ -78,4 +78,4 @@ Triggered manually via `workflow_dispatch` on `.github/workflows/deploy.yml`. Th
 
 The local script does both implicitly so there's nothing extra to remember.
 
-Edits to `server.allspeak`, `edit.html`, `.code-version`, `asedit.allspeak`, `asedit.json` are picked up directly by both paths' `cp` step — no separate sync needed for those.
+The deploy's own `cp` step is what publishes the tooling: `server.allspeak` and `edit.html` at `/code/` (the CLI fetches the one, the server the other), the editor's four files beside the payload at `/dist/`, and the five checks at `/code/tools/`. No separate sync is needed for those — but both deploy paths carry that list, so keep them in step.
