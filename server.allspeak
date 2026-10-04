@@ -14,7 +14,8 @@
 !     GET  /list          →  returns entries in the root directory
 !     GET  /read/<file>   →  returns contents of <file>
 !     POST /write/<file>  →  writes request body to <file>; returns OK
-!     GET  /version       →  checks for updates from the repo; returns OK or updated
+!     GET  /version       →  compares this process's script with the published one;
+!                            returns OK or updated
 !     GET  /restart       →  restarts the server process
 !     GET  /<file>        →  serves static files (HTML, JS, CSS, JSON, ECS);
 !                            404 when there is no such file
@@ -32,8 +33,9 @@
     variable MimeType
     variable FileLoaded
     variable RepoBase
-    variable RemoteVersion
-    variable LocalVersion
+    variable RemoteServer
+    variable LocalServer
+    variable LocalServerPath
     server Files
 
     put `https://allspeak.ai/code/` into RepoBase
@@ -64,11 +66,14 @@
         increment ArgIndex
     end
 
-    ! Ensure .code-version exists
-    if file BaseDir cat `/.code-version` does not exist
-    begin
-        save `0` to BaseDir cat `/.code-version`
-    end
+    ! **No `.code-version`, and no self-update.** This script used to keep itself current: it compared a
+    ! `code-version` number in the project with the published one and downloaded itself when they differed.
+    ! Every project therefore held a copy of the server, the number was a number nobody remembered to bump,
+    ! and — because *any* difference fetched — a copy ahead of the publish was dragged backwards (measured
+    ! 2026-10-04: `3` local against `2` published replaced the script and reset the file). None of that is
+    ! needed now: the CLI fetches this script when a project has none, so what a project runs is the
+    ! published one. A project that *does* keep a `server.allspeak` has asked for that copy, and it is not
+    ! this script's business to replace it.
 
     start Files on port Port
 
@@ -76,49 +81,14 @@
     print `Serving files from ` cat BaseDir
     print `Press Ctrl+C to stop`
 
-    ! Check for updates at startup
-    ! **`on failure`, not `or`.** Both spellings run the same action on failure, but an
-    ! `or` clause then *ends the thread* — so an unreachable repo would have stopped the
-    ! server before it registered its request handler, and the dev server would have been
-    ! useless offline. `on failure` recovers and carries on, leaving RemoteVersion empty so
-    ! the update block below is skipped.
-    get RemoteVersion from url RepoBase cat `code-version`
-        on failure
-        begin
-            print `Warning: could not check for updates`
-        end
-    if RemoteVersion is not empty
-    begin
-        replace ` ` with `` in RemoteVersion
-        replace newline with `` in RemoteVersion
-        load LocalVersion from BaseDir cat `/.code-version`
-            on failure
-            begin
-                put `0` into LocalVersion
-            end
-        replace ` ` with `` in LocalVersion
-        replace newline with `` in LocalVersion
-        ! **Only a *greater* published number is an update, and the comparison is numeric.** Any difference
-        ! used to fetch, which meant a copy that was *ahead* of the deploy was dragged back to the published
-        ! number, its `server.allspeak` overwritten by the older one — **and the repo is such a copy**: the
-        ! number is authored here, so a server started in the repo undid the bump that was supposed to reach
-        ! the projects. Measured 2026-10-04: `3` local against `2` published logged `Updating from version 3
-        ! to 2`, replaced the script and reset the file. `the value of` is what compares `9` and `10` as
-        ! numbers rather than as text, and a non-numeric answer (a page in place of the file) simply fails
-        ! this test, so nobody is asked to trust the response.
-        if the value of RemoteVersion is greater than the value of LocalVersion
-        begin
-            print `Updating from version ` cat LocalVersion cat ` to ` cat RemoteVersion
-            ! **The server script is the only file a project keeps a copy of.** The editor and its two
-            ! modules travel in the page's payload (`dist/asedit.js`, built by ./build-allspeak), so a
-            ! copy of them in a project directory does nothing but shadow the deployed one — and the page
-            ! prefers this directory to the payload, so a stale copy was the editor a project ran. That is
-            ! what the download lines here used to write. Nothing else needs fetching.
-            download RepoBase cat `server.allspeak` to BaseDir cat `/server.allspeak`
-            save RemoteVersion to BaseDir cat `/.code-version`
-            print `Update complete`
-        end
-    end
+    ! **There is nothing to check for updates, and this is why.** This script used to keep itself current:
+    ! it compared a `code-version` number in the project with the published one and downloaded itself when
+    ! they differed. Every project therefore held a copy of the server, the number was a number nobody
+    ! remembered to bump, and — because *any* difference fetched — a copy ahead of the publish was dragged
+    ! backwards (measured 2026-10-04: `3` local against `2` published replaced the script and reset the
+    ! file). None of that is needed any more: the CLI fetches this script when a project has none, so the
+    ! file a project runs is the published one and `.code-version` is gone. A project that *does* keep a
+    ! `server.allspeak` has asked for that copy, and it is not this script's business to replace it.
 
     on Files request
     begin
@@ -126,25 +96,32 @@
 
         if FullPath is `/version`
         begin
-            get RemoteVersion from url RepoBase cat `code-version` or begin
+            ! **Content, not a number.** The editor asks this at startup and offers a restart when the answer
+            ! is `updated`. It used to compare a `code-version` number in the project with the published one,
+            ! which needed that number to be in the project and a hand to bump it. What it compares now is
+            ! the thing actually being asked: is the *published* server script the one this process is
+            ! running? The running copy is a project's own `server.allspeak` when there is one, and the CLI's
+            ! fetched copy otherwise. No number, nothing to remember to bump, and a true answer either way.
+            get RemoteServer from url RepoBase cat `server.allspeak` or begin
                 return `error` to Files with status 500
             end
-            replace ` ` with `` in RemoteVersion
-            replace newline with `` in RemoteVersion
-            load LocalVersion from BaseDir cat `/.code-version` or begin
-                put `0` into LocalVersion
+            put BaseDir cat `/server.allspeak` into LocalServerPath
+            if file LocalServerPath does not exist
+                put `~/.cache/allspeak/server.allspeak` into LocalServerPath
+            load LocalServer from LocalServerPath or begin
+                return `OK` to Files
             end
-            replace ` ` with `` in LocalVersion
-            replace newline with `` in LocalVersion
-            if RemoteVersion is LocalVersion
+            if RemoteServer is LocalServer
                 return `OK` to Files
             else
                 return `updated` to Files
         end
         else if FullPath is `/restart`
         begin
+            ! The extension is optional, and a project no longer needs a copy of this script for the
+            ! command below to work — which is what makes this the way to pick up a newly published one.
             print `Restart requested`
-            system background `sleep 2 && allspeak server.allspeak ` cat Port
+            system background `sleep 2 && allspeak server ` cat Port
             return `OK` to Files
             exit
         end

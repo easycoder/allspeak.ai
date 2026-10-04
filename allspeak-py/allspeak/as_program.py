@@ -94,7 +94,7 @@ class Program:
 				self.argv = parts[1:]
 				self.debugging = False
 
-			f = open(self.scriptName, 'r')
+			f = open(resolveDevServerName(self.scriptName), 'r')
 			source = f.read()
 			f.close()
 		queue = deque()
@@ -887,6 +887,73 @@ def resolveScriptPath(name):
 	if os.path.exists(name + '.as') and not os.path.exists(name + '.allspeak'):
 		return name + '.as'
 	return name + '.allspeak'
+
+# **The dev server is published, not shipped.** A project used to keep its own
+# `server.allspeak`, which meant every project ran a snapshot of the server — and the
+# snapshot went stale silently, because nothing in a project knows the repository has
+# moved on. The version file that was meant to fix that (`.code-version`) could not: it
+# was a number nobody updated, and the update route that read it fetched on *any*
+# difference, so a copy ahead of the publish was dragged backwards instead. So the file
+# is fetched when it is needed and not otherwise:
+#
+#   * `allspeak server <port>` resolves the name `server` to `server.allspeak` as it
+#     always did — the extension stays optional — and if there is no such file here, the
+#     CLI fetches the published one and runs that. The port and `-t` arguments are
+#     arguments to whichever file is run, so nothing about the command changes.
+#   * A local `server.allspeak` still wins, untouched: a project that wants to pin or
+#     change its server keeps the file and this function never looks past it.
+#   * The fetched copy is kept in a cache outside the project (~/.cache/allspeak), so
+#     only the first start needs the network: later starts use it when the fetch fails.
+#
+# `requests` is already a dependency, so the fetch needs nothing new. The write goes to
+# a temporary file and is renamed into place, so an interrupted fetch cannot leave a
+# half-written script that the next start would happily run.
+DEV_SERVER_URL = 'https://allspeak.ai/code/server.allspeak'
+DEV_SERVER_NAME = 'server.allspeak'
+
+def devServerCachePath():
+	return os.path.join(os.path.expanduser('~'), '.cache', 'allspeak', DEV_SERVER_NAME)
+
+def fetchDevServer(url=DEV_SERVER_URL, cache=None):
+	"""Return a path to the dev server script, fetching it if this machine can.
+
+	A local copy is never consulted here — the caller does that, and only calls this
+	when the name resolved to nothing. Returns None when there is neither a fetch nor a
+	cached copy; the caller says so and stops.
+	"""
+	if cache is None:
+		cache = devServerCachePath()
+	try:
+		import requests
+		response = requests.get(url, timeout=15)
+		response.raise_for_status()
+		body = response.text
+	except Exception as error:
+		if os.path.exists(cache):
+			when = time.strftime('%Y-%m-%d %H:%M', time.localtime(os.path.getmtime(cache)))
+			print(f'Could not reach {url} ({error.__class__.__name__}) — '
+				f'using the copy fetched on {when}.')
+			return cache
+		print(f'No dev server: {url} is unreachable and no copy has been fetched on this '
+			f'machine yet. The first `allspeak server` needs the network once; after that '
+			f'the copy in {os.path.dirname(cache)} is used when the network is away.')
+		return None
+	os.makedirs(os.path.dirname(cache), exist_ok=True)
+	partial = cache + '.part'
+	with open(partial, 'w') as f:
+		f.write(body)
+	os.replace(partial, cache)
+	print(f'Fetched the dev server from {url} ({len(body)} bytes)')
+	return cache
+
+def resolveDevServerName(name):
+	"""`server` with no `server.allspeak` beside it means the published one."""
+	if os.path.exists(name) or os.path.basename(name) != DEV_SERVER_NAME:
+		return name
+	fetched = fetchDevServer()
+	if fetched is None:
+		sys.exit(2)
+	return fetched
 
 # Extract and display the info text from a script file
 def showScriptInfo(name):
