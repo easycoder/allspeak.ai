@@ -2,9 +2,11 @@
 # build-starters: rebuild deploy/allspeak-<lang>.zip from starter/<lang>/.
 #
 # Each starter zip bundles the language-specific bootstrap files
-# (CLAUDE.md, AGENTS.md, server.allspeak, edit.html) with the shared editor
-# (asedit.allspeak, asedit-graph.allspeak, asedit-side.allspeak, asedit.json) and the
-# doc-block analyser and the recorder's own check all at the zip root.
+# (CLAUDE.md, AGENTS.md) with the shared server and editor
+# (server.allspeak, edit.html, asedit.allspeak, asedit-graph.allspeak, asedit-side.allspeak,
+# asedit.json) and the doc-block analyser and the recorder's own check all at the zip root.
+# **`server.allspeak` and `edit.html` come from the repo root, not from a starter directory** —
+# see the note at the copy below.
 #
 # **The Graph pane and its sidebar are two files and both travel.** They are separate modules because
 # each is bulky and the editor needs neither until a run is opened; a project that has one and not the
@@ -24,8 +26,8 @@
 set -eu
 cd "$(dirname "$0")"
 
-if [ ! -f asedit.allspeak ] || [ ! -f asedit.json ]; then
-    echo "Error: asedit.allspeak / asedit.json not found in repo root." >&2
+if [ ! -f asedit.allspeak ] || [ ! -f asedit.json ] || [ ! -f server.allspeak ] || [ ! -f edit.html ]; then
+    echo "Error: asedit.allspeak / asedit.json / server.allspeak / edit.html not found in repo root." >&2
     exit 1
 fi
 
@@ -54,9 +56,7 @@ built=0
 for dir in starter/*/; do
     lang=$(basename "$dir")
     missing=
-    for f in CLAUDE.md server.allspeak; do
-        [ -f "$dir$f" ] || missing="$missing $f"
-    done
+    [ -f "$dir"CLAUDE.md ] || missing="$missing CLAUDE.md"
     if [ -n "$missing" ]; then
         echo "  skip: starter/$lang missing:$missing"
         continue
@@ -64,7 +64,12 @@ for dir in starter/*/; do
 
     work="$STAGE/$lang"
     mkdir -p "$work"
-    cp -p "$dir"CLAUDE.md "$dir"server.allspeak "$work/"
+    cp -p "$dir"CLAUDE.md "$work/"
+    # **The server script is the root's, not a starter copy.** Four copies of a file are four things to
+    # keep in step, and these had already drifted: all four still held the version from 1 October while the
+    # root's had moved on — so every pack, and every project made from one, ran a server two revisions old
+    # without any way to tell. It is language-neutral, which is why one copy can serve every pack.
+    cp -p server.allspeak "$work/"
     # **The page is generated from the one in the repo root, not copied from a starter.** Four copies of a page
     # are four things to keep in step and they had already drifted — `starter/en/edit.html` was an older page
     # than the other three. Two things differ in a pack, and both are substitutions here: which language the

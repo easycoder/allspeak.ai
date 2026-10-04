@@ -745,7 +745,7 @@ SHP1:
 SHP2:
 	put Step into storage as `.step`
     put BasePath cat `/code/` cat Step cat `.allspeak` into Item
-    rest get Fragment from Item or put empty into storage as `.step`
+    rest get Fragment from Item on failure put empty into storage as `.step`
     put property Step of Pages into Page
     if property `prev` of Page is empty set style `visibility` of Back to `hidden`
     else set style `visibility` of Back to `visible`

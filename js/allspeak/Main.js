@@ -412,6 +412,7 @@ const AllSpeak = {
 		compiler.domain = this.domain;
 		compiler.imports = imports;
 		compiler.continue = false;
+		compiler.failureContinues = false;
 		const program = compiler.compile(tokens);
 		//    console.log('Program: ' + JSON.stringify(program, null, 2));
 		this.compiling = false;

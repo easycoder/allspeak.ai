@@ -150,9 +150,10 @@
     attach CancelReplyButton to `cancel-reply-button`
     attach ReplyMessage to `reply-message`
 
-    ! Get Credentials from server
+    ! Get Credentials from server. **The first attempt is `on failure`** — a second try
+    ! is a recovery, not a bail, and only the last one gives up.
     variable Credentials
-    rest get Credentials from `../credentials` or rest get Credentials from `../credentials.php`
+    rest get Credentials from `../credentials` on failure rest get Credentials from `../credentials.php`
         or go to AbandonShip
 !    log Credentials
     put element `broker` of Credentials into Broker

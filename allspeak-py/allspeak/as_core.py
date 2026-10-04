@@ -49,9 +49,17 @@ class Core(Handler):
     def processOr(self, command, orHere):
         self.add(command)
         # Accept either 'or' (terse) or 'on failure' (explicit recovery clause).
-        # Both attach a recovery handler that runs on failure and continues.
+        # **The two spellings differ in what happens after the action runs**,
+        # and that is the whole reason to have both: 'or' recovers and then
+        # ends the thread, 'on failure' recovers and carries on with the next
+        # statement. The trailing 'stop' below is what makes that difference.
+        # Without it the action ran and the thread walked on into the next
+        # statement under either spelling — which is how `server.allspeak`'s
+        # `return 'Not found' ... 404` came to be overwritten by the next
+        # `return`, and the last response set was the one that got sent.
         peek = language.reverse_word(self.peek())
         matched = False
+        continues = False
         if peek == 'or':
             self.nextToken()
             matched = True
@@ -61,6 +69,7 @@ class Core(Handler):
             if language.reverse_word(self.peek()) == 'failure':
                 self.nextToken()  # consume 'failure'
                 matched = True
+                continues = True
             else:
                 self.compiler.index = mark
         if not matched:
@@ -78,6 +87,15 @@ class Core(Handler):
         # Process the handler body
         self.getCommandAt(orHere)['or'] = self.getCodeSize()
         self.compileOne()
+        if not continues:
+            # 'or' — the failure ends the thread once the action has run. The
+            # skip above is fixed up past this, so only the failure path reaches it.
+            stop = {}
+            stop['lino'] = command['lino']
+            stop['domain'] = 'core'
+            stop['keyword'] = 'stop'
+            stop['debug'] = False
+            self.add(stop)
         # Fixup the skip
         self.getCommandAt(skip)['goto'] = self.getCodeSize()
 

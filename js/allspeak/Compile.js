@@ -218,14 +218,18 @@ const AllSpeak_Compiler = {
 	},
 
 	// Consume an error-recovery clause introducer, accepting either the
-	// terse 'or' form or the explicit 'on failure' form. Both attach a
-	// recovery handler that runs on failure and continues execution after.
+	// terse 'or' form or the explicit 'on failure' form. The two exist to
+	// differ in what happens *after* the action runs — 'or' recovers and
+	// ends the thread, 'on failure' recovers and carries on with the next
+	// statement — so the form is recorded here and completeHandler(), which
+	// compiles the tail, is the one place that decides.
 	// Returns true iff a clause was found and consumed; advances the index
 	// past the introducer in that case. Caller is then expected to record
 	// the onError PC and call completeHandler().
 	consumeFailureClause: function() {
 		if (this.isWord(`or`)) {
 			this.next();
+			this.failureContinues = false;
 			return true;
 		}
 		if (this.isWord(`on`)) {
@@ -233,6 +237,7 @@ const AllSpeak_Compiler = {
 			this.next();
 			if (this.isWord(`failure`)) {
 				this.next();
+				this.failureContinues = true;
 				return true;
 			}
 			this.rewindTo(mark);
@@ -252,15 +257,20 @@ const AllSpeak_Compiler = {
 		});
 		// Add the action
 		this.compileOne();
-		// If `continue` is set
-		if (this.continue) {
+		// Whether the thread carries on after the action is the whole
+		// difference between the two clause forms: 'on failure' continues,
+		// 'or' ends the thread. A written `continue` inside an 'or' clause
+		// overrides that — it is the script saying the failure was survivable.
+		const continues = this.continue || this.failureContinues;
+		this.continue = false;
+		this.failureContinues = false;
+		if (continues) {
 			this.addCommand({
 				domain: `core`,
 				keyword: `goto`,
 				lino,
 				goto: this.getPc() + 1
 			});
-			this.continue = false;
 		}
 		// else add a 'stop'
 		else {

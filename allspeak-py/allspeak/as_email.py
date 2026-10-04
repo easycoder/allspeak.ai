@@ -15,8 +15,11 @@ class Email(Handler):
 
     def processOr(self, command, orHere):
         self.add(command)
+        # Same rule as as_core's processOr: 'or' recovers and ends the thread,
+        # 'on failure' recovers and carries on. See the note there.
         peek = language.reverse_word(self.peek())
         matched = False
+        continues = False
         if peek == 'or':
             self.nextToken()
             matched = True
@@ -26,6 +29,7 @@ class Email(Handler):
             if language.reverse_word(self.peek()) == 'failure':
                 self.nextToken()
                 matched = True
+                continues = True
             else:
                 self.compiler.index = mark
         if not matched:
@@ -41,6 +45,13 @@ class Email(Handler):
         self.add(cmd)
         self.getCommandAt(orHere)['or'] = self.getCodeSize()
         self.compileOne()
+        if not continues:
+            stop = {}
+            stop['lino'] = command['lino']
+            stop['domain'] = 'core'
+            stop['keyword'] = 'stop'
+            stop['debug'] = False
+            self.add(stop)
         self.getCommandAt(skip)['goto'] = self.getCodeSize()
 
     #############################################################################

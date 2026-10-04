@@ -87,9 +87,10 @@
         exit
     end
 
-    ! Check for a newer version
+    ! Check for a newer version. **`on failure`, not `or`** — the warning is meant to
+    ! be survivable, and an `or` clause now ends the thread after its action runs.
     get RemoteVersion from url `https://raw.githubusercontent.com/allspeak/chat/main/chat/chat-version`
-        or print `Warning: could not check for updates`
+        on failure print `Warning: could not check for updates`
     if RemoteVersion is not empty
     begin
         replace ` ` with `` in RemoteVersion
