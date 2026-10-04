@@ -98,7 +98,15 @@
             end
         replace ` ` with `` in LocalVersion
         replace newline with `` in LocalVersion
-        if RemoteVersion is not LocalVersion
+        ! **Only a *greater* published number is an update, and the comparison is numeric.** Any difference
+        ! used to fetch, which meant a copy that was *ahead* of the deploy was dragged back to the published
+        ! number, its `server.allspeak` overwritten by the older one — **and the repo is such a copy**: the
+        ! number is authored here, so a server started in the repo undid the bump that was supposed to reach
+        ! the projects. Measured 2026-10-04: `3` local against `2` published logged `Updating from version 3
+        ! to 2`, replaced the script and reset the file. `the value of` is what compares `9` and `10` as
+        ! numbers rather than as text, and a non-numeric answer (a page in place of the file) simply fails
+        ! this test, so nobody is asked to trust the response.
+        if the value of RemoteVersion is greater than the value of LocalVersion
         begin
             print `Updating from version ` cat LocalVersion cat ` to ` cat RemoteVersion
             ! **The server script is the only file a project keeps a copy of.** The editor and its two
