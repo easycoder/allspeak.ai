@@ -67,20 +67,25 @@
 
 	const editors = ['asedit.json', 'asedit.allspeak'];
 	const editorText = {};
-	let fromThisDirectory = true;
+	let fromThisDirectory = !editorHome;
 	for (const name of editors) {
 		let text = null;
-		// **This directory first, and only from here: the site cannot be *fetched* at all**, which is the whole
-		// reason the payload exists. A working tree therefore reads the editor it is editing, and a project —
-		// which has no copy — takes the one that came with the payload.
-		try {
-			const got = await fetch(editorLocal + name + '?v=' + Date.now());
-			if (got.ok) {
-				const body = await got.text();
-				// A page served in place of a file starts with `<`; so does nothing the editor is made of.
-				if (!/^\s*</.test(body)) text = body;
-			}
-		} catch (err) { /* not beside us */ }
+		// **A working tree reads the editor it is editing; a pack never looks beside itself**, and the two
+		// are told apart by `#editor-home`. The site cannot be *fetched* at all, which is the whole reason
+		// the payload exists — so in a pack the editor can only come from the payload, and asking this
+		// directory anyway was two 404s on every load *and* a second chance for a stale copy of the editor
+		// to win over the deployed one. A project built from an older pack still carries such a copy, so
+		// not asking is what stops it from being the editor that runs.
+		if (!editorHome) {
+			try {
+				const got = await fetch(editorLocal + name + '?v=' + Date.now());
+				if (got.ok) {
+					const body = await got.text();
+					// A page served in place of a file starts with `<`; so does nothing the editor is made of.
+					if (!/^\s*</.test(body)) text = body;
+				}
+			} catch (err) { /* not beside us */ }
+		}
 		if (text === null && parts && parts[name]) {
 			text = parts[name];
 			fromThisDirectory = false;
@@ -109,12 +114,13 @@
 	// the only place that knows which of the two copies is the editor's home.
 	document.getElementById('allspeak-script').textContent = editorText['asedit.allspeak'];
 
-	// The runtime and its plugins: the working tree's build first, the deployed one as a fallback.
+	// The runtime and its plugins, in a working tree: its own build first, the deployed one as a fallback.
 	//
-	// Both matter. Without the fallback a local editor is broken, and without the local attempt a
+	// Both matter there. Without the fallback a local editor is broken, and without the local attempt a
 	// change to the runtime or a plugin cannot be seen at all until it is deployed — which is not a
 	// hypothetical: the editor needs the svg plugin to compile its own Graph pane, and while this
-	// list named no svg plugin, asedit failed to compile with "I don't understand 'svg'".
+	// list named no svg plugin, asedit failed to compile with "I don't understand 'svg'". A pack is
+	// not offered that choice — see the note at `candidates` below.
 	// **A base is only usable if it *serves* the file, and a status code does not say so.** A dev server that
 	// answers every unknown path with its own page returns `200 application/javascript` for a missing bundle —
 	// the type guessed from the extension — and the browser then fails with `Unexpected token '<'`, one error
@@ -127,8 +133,15 @@
 	};
 	const local = 'deploy/dist/';                 // where build-allspeak puts it, as served
 	const deployed = 'https://allspeak.ai/dist/'; // where it lands once deploy-sync has run
+	// **Which bases to try follows from `#editor-home`, exactly as the payload's does.** A working tree
+	// has a build of its own beside it and must be able to run it, so it asks that first and the site
+	// second. A pack has no build — asking `deploy/dist/` there is a 404 on every single load — so it
+	// asks the base it was handed, and the site only in case that base has the payload but not the
+	// runtime. Either way the site is last and always serves a script, so this can only ever remove a
+	// base that was going to break the page.
+	const candidates = [...new Set(editorHome ? [editorHome, deployed] : [local, deployed])];
 	const bases = [];
-	for (const base of [local, deployed]) {
+	for (const base of candidates) {
 		let text = null;
 		try {
 			const got = await fetch(base + 'allspeak-min.js?v=' + t);
@@ -138,7 +151,8 @@
 			bases.push(base);
 		} else {
 			console.warn('asedit: ' + (base || 'this directory') + ' did not serve the runtime as a script, ' +
-				'so it is not used — a server that answers a missing file with a page looks like this');
+				'so it is not used — either it has no build there, or the server answered a missing file ' +
+				'with a page of its own instead of a 404');
 		}
 	}
 	const bundles = ['allspeak-min.js', 'plugins/asviz.js', 'plugins/svg.js', 
