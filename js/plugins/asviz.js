@@ -21,9 +21,18 @@
 //         run a script of the caller's choosing under a recorder, and hand back the recording
 //     record this run
 //         arm a recorder for the program that calls this — what a button in an *already running app*
-//         needs, since nothing outside a live program can attach a recorder to it
+//         needs, since nothing outside a live program can attach a recorder to it. A script carrying
+//         `@viz start` does not need it: the plugin arms such a script itself, before the run
 //     save the recording to <path>
-//         collect what the recorder has and write it beside the script, through the page's /write/
+//         name the trace file, and write what has already been stopped into it. Naming is the job that
+//         matters, and it can be done before the first `viz start`: a stop flushes into the named file
+//         and the recording carries on
+//
+// **`viz start` and `viz stop` are a segment's two ends.** A start begins one — arming a recorder if the
+// script has none, which is how a script records itself with no host in the picture — a stop ends it and
+// flushes it into the named trace file, and a second start opens the next one. So a file holds any number
+// of segments end to end, each window keeping its own index and times, and the tab that recorded them can
+// be closed afterwards. The one loss the design accepts: a start whose segment never stops is not written.
 //
 // All three arm the guard with the recorder's own defaults: a script handed over by a tool, or one
 // arming its own recording, is not to be trusted with the caller's responsiveness. And the recorder
@@ -341,26 +350,29 @@ const AllSpeak_Viz = {
 			// the reader's habit rather than part of the name, and joining it as it stands would ask the server
 			// for `/write//report.json`.
 			const path = String(program.getValue(command.path)).replace(/^\/+/, ``);
+			// **Naming the file is the job, and it is done whether or not anything is armed.** A script names
+			// its trace before the first `viz start` — that is the natural place, and by then nothing has
+			// armed the recorder, because arming is what `viz start` does.
+			program.vizTracePath = path;
 			const recorder = program.vizRecorder;
 			if (!recorder) {
-				vizLog(`viz: nothing to save — 'record this run' has not been run`);
+				// Nothing armed yet, so there is nothing to flush: this is the other half of the job, making
+				// the file so that a reader — the pane, a person — can see a recording is intended.
+				AllSpeak_Viz.appendTrace(path, [], true)
+					.then(() => vizLog(`viz: ${path} created — nothing is armed yet, so it holds no windows`))
+					.catch(err => vizLog(`viz: could not write ${path}: ${err}`));
 				return command.pc + 1;
 			}
-			const parked = recorder.parked === true;
-			const windows = recorder.finishedWindows();
-			recorder.finish();
-			program.vizRecorder = null;
-			const document = AllSpeak_Viz.traceDocument(path, windows);
-			const verdict = AllSpeak_Viz.verdict(windows, recorder.stopped || null, parked);
-			fetch(`/write/` + path, { method: `POST`, body: JSON.stringify(document) })
-				.then(response => {
-					vizLog(response && response.ok
-						? `viz: recording saved to ${path} — ${verdict}`
-						: `viz: could not write ${path} — ${verdict}`);
-				})
-				.catch(err => {
-					vizLog(`viz: could not write ${path}: ${err} — ${verdict}`);
-				});
+			// **Naming the file is the job; the recording carries on.** `viz stop` is what writes, one segment
+			// per pair, so this command's part is to say *where* — before the first stop needs to know — and to
+			// write what is already closed, which is also how the file comes to exist so that a reader (the
+			// pane, a person) can see a recording is intended.
+			//
+			// What it deliberately no longer does is end the recording. Unarming here would mean a second `viz
+			// start` recorded nothing, and a file that accumulates segments needs the recorder to outlive the
+			// segments.
+			program.vizTracePath = path;
+			recorder.flushTo(program, true);
 			return command.pc + 1;
 		}
 	},
@@ -1470,6 +1482,48 @@ const AllSpeak_Viz = {
 	}
 };
 
+// **A script that says `@viz start` records itself, and this is what makes that true.**
+//
+// `@viz start` is an *attribute*: inert text the tokeniser lifts out of the line and attaches to the statement
+// below it. Nothing in the runtime looks at an attribute — the recorder reads the markers as the commands go
+// by, which is what lets a run with a recorder match one without — and with no recorder there is nothing to
+// read them, so a script that meant to record itself would simply not. The arming therefore has to happen
+// before the run starts, and the plugin is the only thing placed to do it: it knows the marker vocabulary and
+// it knows the recorder.
+//
+// **Only a script with a marker is armed.** Arming everything would put the guard on every script in the page
+// — a cap after two seconds of work, on scripts that never asked to be recorded. A marker is the ask.
+//
+// A program a host has already armed is left alone, which is what keeps `record this run`, the editor and the
+// command-line hosts in charge when they are the ones asking.
+const vizArmWhenMarked = function (program) {
+	if (!program || program.vizRecorder) return;
+	const commands = program.length || 0;
+	for (let pc = 0; pc < commands; pc++) {
+		const command = program[pc];
+		if (vizMarkerOf(command, command && command.attr) !== `start`) continue;
+		program.vizRecorder = new AllSpeak_Viz_Recorder(VIZ_DEFAULT_BUDGET_NS, VIZ_DEFAULT_CEILING_NS);
+		// The guard's defaults, not a host's: the script asked, and the recorder's own bounds are what a
+		// script-driven recording gets. The line is logged because "recorded nothing" and "never armed" are
+		// different faults that look identical from the outside.
+		vizLog(`viz: this script records itself — a marker at line ${command.lino + 1} armed it`);
+		return;
+	}
+};
+
+// Wrapped once, at load. `AllSpeak_Run` is a global lexical like this file's own namespace, so a plugin can
+// see it; the wrap is idempotent in case a page loads the plugin twice.
+if (typeof AllSpeak_Run !== `undefined` && AllSpeak_Run && typeof AllSpeak_Run.run === `function`
+	&& !AllSpeak_Run.run.__vizArmed) {
+	const vizRun = AllSpeak_Run.run;
+	const wrapped = function (program) {
+		vizArmWhenMarked(program);
+		return vizRun.apply(this, arguments);
+	};
+	wrapped.__vizArmed = true;
+	AllSpeak_Run.run = wrapped;
+}
+
 AllSpeak.domain.viz = AllSpeak_Viz;
 
 // The analyser's section model, as `tools/asdoc-check.py --json` writes it. Absent or
@@ -1604,7 +1658,12 @@ const vizValueText = function (program, name) {
 const AllSpeak_Viz_Recorder = function (budget, ceiling) {
 	this.windows = [];
 	this.current = null;
-	this.sealed = false;        // a `once` window has been recorded; further starts ignored
+	// How many of `windows` have been written to the trace file. The file is a concatenation of segments, so
+	// a second `viz stop` in one run adds only what came after the last write — see `flushTo`.
+	this.flushed = 0;
+	// The program this recorder was armed for, remembered so the flush at the end of a run has something to
+	// read the trace path from. Set on the first command that ticks past.
+	this.program = null;
 	// The guard, off unless a host asks for it. See the constants above for what the two bounds are
 	// for; a `null` means that half is not guarding anything.
 	this.budget = typeof budget === `number` ? budget : null;
@@ -1719,10 +1778,12 @@ AllSpeak_Viz_Recorder.prototype = {
 	},
 
 	arm: function (program, command, pc) {
-		// `once` records one window and nothing more until the recording is cleared: with a
-		// start and a stop inside a subroutine, every call would otherwise open and close its
-		// own window, which is what `every` is for.
-		if (command.mode === `once` && (this.sealed || this.current !== null)) return;
+		// `once` records one window at a time: with a start and a stop inside a subroutine, every call
+		// would otherwise open and close its own window, which is what `every` is for. What `once` no
+		// longer means is once per *run* — a second start, after the first segment has been stopped,
+		// opens the next segment. That is how one file comes to hold a run's segments in order, and it
+		// is what lets an app record a second go without being reloaded.
+		if (command.mode === `once` && this.current !== null) return;
 		if (this.current !== null) this.stop();          // `every`: latest window wins
 		const labels = this.labelsOf(program);
 		let blockEnd = program.length;
@@ -1760,16 +1821,65 @@ AllSpeak_Viz_Recorder.prototype = {
 	stop: function () {
 		if (this.current === null) return;
 		this.current.t1 = vizClock();
-		if (this.current.mode === `once`) this.sealed = true;
 		this.windows.push(this.current);
 		this.current = null;
+	},
+
+	// **The flush: take the windows closed since the last write, and add them to the trace file.**
+	//
+	// Two things make this an append rather than a write, and both are load-bearing. The spec's `tid` is
+	// "the window index, 1-based, in the order the windows were recorded", so a second segment continues the
+	// numbering rather than restarting it — one file, any number of segments, in the order they happened. And
+	// the file is *read* before it is written, because a page that reloaded has a fresh recorder holding
+	// nothing: without the read, the first segment after a reload would replace the file instead of adding to
+	// it. `flushed` is what stops a second stop in one run from writing the first stop's window twice.
+	//
+	// Which file is `program.vizTracePath`, named by `save the recording to <path>` — the one command that has
+	// always known a trace by name, and the only thing a self-recording script has to say about where its
+	// recording goes. A script that never names one gets no file and a line saying so, rather than a recording
+	// that goes quietly nowhere.
+	flushTo: function (program, create) {
+		const path = program && program.vizTracePath;
+		if (!path) {
+			vizLog(`viz: recorded, but nothing written — 'save the recording to <path>' names the trace file`);
+			return;
+		}
+		const from = this.flushed;
+		const fresh = this.windows.slice(from);
+		if (fresh.length === 0 && create !== true) return;
+		// **Claimed now, not when the write lands.** A second stop arrives long before the first write's
+		// promise has settled, and a watermark advanced in a callback would still read 0 at that moment — so
+		// the same segment would be written twice. Measured 2026-10-04: a two-segment run wrote the second
+		// segment again from `finish()` at the end, because `flushed` had not caught up.
+		this.flushed = this.windows.length;
+		// The verdict is the *recording's*, not the segment's: it is the one line that says whether what is in
+		// the file is a whole run or a slice of one, and it is the only witness a host without a `/write/` —
+		// a command-line tool — can offer, so it is written whether the write succeeds or not.
+		const verdict = AllSpeak_Viz.verdict(this.windows, this.stopped || null, this.parked === true);
+		AllSpeak_Viz.appendTrace(path, fresh, create === true).then(written => {
+			this.flushed = Math.max(this.flushed, from + written);
+			vizLog(`viz: ${written} window(s) added to ${path} — the recording holds ${verdict}`);
+		}).catch(err => {
+			// Handed back, not lost: the next flush sends the segment again. `min` rather than an assignment
+			// because a later flush has already claimed a higher watermark, and a failure must not drag that
+			// back past a segment that did get written. A re-sent window is a duplicate a reader can see; a
+			// dropped one is a hole nobody can.
+			this.flushed = Math.min(this.flushed, from);
+			vizLog(`viz: could not write ${path}: ${err} — the recording holds ${verdict}`);
+		});
 	},
 
 	// Close a window left open when the program ended. The end of a window that never saw its
 	// stop is the end of the *run*, not the moment some tool next looks at the recorder —
 	// otherwise the report and the trace file disagree about how long it lasted.
+	//
+	// The flush belongs here as well as at the marker, because a run can end with a segment open — the
+	// deliberate "watch until the end" case — and a host that ends a run is asking for everything it
+	// recorded. Silent when no path has been named, which is every tool that takes the trace back as text
+	// instead of writing it: `record the script … giving <path>` is that caller.
 	finish: function () {
 		this.stop();
+		if (this.program && this.program.vizTracePath) this.flushTo(this.program);
 	},
 
 	// The windows worth reporting: the stopped ones, plus a window still open when the run
@@ -1828,6 +1938,9 @@ AllSpeak_Viz_Recorder.prototype = {
 
 	tick: function (program, pc) {
 		const command = program[pc];
+		// The program, remembered for the flush. `finish()` is called by a host that has the program to
+		// hand, but a recording that ends by itself — the last segment of an app's run — has only this.
+		this.program = program;
 		// **Whether the run has just handed control to a timer**, which is what a `wait` does: the command
 		// returns without advancing the pc, the run loop breaks, and `AllSpeak_Run.run` comes back to its
 		// caller with the program still to continue. Nothing else records that fact — a program parked on a
@@ -1841,6 +1954,21 @@ AllSpeak_Viz_Recorder.prototype = {
 		const attr = command && command.attr ? String(command.attr) : ``;
 		const marker = vizMarkerOf(command, attr);
 		if (marker === `start`) this.arm(program, command, pc);
+		// **Both markers are read here, above the anchor test below — and the `stop` used not to be.**
+		// `window.anchors[pc]` is set for a label or a loop line, and a marker line is neither: an
+		// attribute-only line compiles to the attribute entry's command, and `viz stop` compiles to the
+		// marker's own. So the early return below fired for every `@viz stop` in every script, the window was
+		// never closed by it, and what actually closed a window was `finish()` at the end of the run — one
+		// window per run, whatever the markers said. Measured 2026-10-04: a script with two start/stop pairs
+		// called `flushTo` once, with both windows already in it.
+		if (marker === `stop`) {
+			this.stop();
+			// **The flush is what makes this a segment rather than a window.** The design it serves: `viz
+			// start` begins a segment, `viz stop` ends it and writes it into the trace file, and a second
+			// start opens the next one — so the file holds any number of segments, end to end, in the order
+			// they happened, and the tab that recorded them can be closed afterwards.
+			this.flushTo(program);
+		}
 		const window = this.current;
 		if (!window || pc >= window.counts.length) return;
 		window.counts[pc]++;
@@ -1865,7 +1993,6 @@ AllSpeak_Viz_Recorder.prototype = {
 		}
 		window.visits.push({ pc: pc, steps: window.steps, at: vizClock() });
 		this.capture(program, attr, window);
-		if (marker === `stop`) this.stop();
 	},
 
 	// **`@show Total, Row` — the values worth watching, taken as the recorder passes.**
@@ -1972,10 +2099,14 @@ const vizClock = function () {
 // arrival named. The intervals tile the window without overlapping, so their durations sum to
 // the window's span — the property that makes the height of a row mean something, and one that
 // tools/check-trace.py checks.
-const vizTraceDocument = function (script, windows) {
+// `firstTid` is where this document's window numbering starts. A fresh recording starts at 1; a segment being
+// added to a file that already holds windows starts at the next free index, which is what keeps one file's
+// windows in the order they were recorded — the spec's `tid`, continued rather than restarted.
+const vizTraceDocument = function (script, windows, firstTid) {
 	const events = [{ name: `process_name`, ph: `M`, pid: 1, args: { name: script } }];
+	const base = typeof firstTid === `number` && firstTid > 0 ? firstTid : 1;
 	windows.forEach(function (window, index) {
-		const tid = index + 1;
+		const tid = base + index;
 		const visits = window.visits;
 		const last = visits.length > 0 ? visits[visits.length - 1].at : window.t0;
 		const end = window.t1 || last;
@@ -2132,11 +2263,62 @@ const vizTraceRecords = function (path, covered, seq, top) {
 	return out;
 };
 
+// **Add a segment to the trace file at `path`.** The file is read first, so a page that reloaded *adds* to a
+// recording rather than replacing it, and the segment's window numbering continues from the windows already
+// there. Resolves with the number of windows written, which is what the caller advances its `flushed`
+// watermark by — so a write that failed is retried by the next flush instead of being lost.
+//
+// Writes are serialised per path. Two stops in one run would otherwise read the same file and the second
+// would write a document that never saw the first: a segment lost to a race, with nothing on screen to show
+// for it. The queue is per path rather than global because two different recordings have no quarrel.
+const vizWriting = {};
+
+const vizAppendTrace = function (path, windows, create) {
+	const after = vizWriting[path] || Promise.resolve();
+	const next = after.catch(function () { return null; }).then(function () {
+		return vizTraceHandover(path, windows, create);
+	});
+	vizWriting[path] = next.catch(function () { return null; });
+	return next;
+};
+
+const vizTraceHandover = async function (path, windows, create) {
+	let events = [];
+	try {
+		const response = await fetch(`/read/` + path);
+		if (response && response.ok) {
+			const text = await response.text();
+			// An empty body is what the dev server answers for a path it does not hold, so "not JSON" is the
+			// ordinary no-file-yet case rather than a fault. The bare-array form of the format is valid too.
+			const document = text ? JSON.parse(text) : null;
+			if (Array.isArray(document)) events = document;
+			else if (document && Array.isArray(document.traceEvents)) events = document.traceEvents;
+		}
+	} catch (err) {
+		events = [];
+	}
+	// One `thread_name` per window, so counting them counts the windows already in the file.
+	const recorded = events.filter(function (event) { return event && event.name === `thread_name`; }).length;
+	const added = vizTraceDocument(path, windows, recorded + 1).traceEvents;
+	// The process name is the document's, not the segment's: restating it per segment would put a second
+	// process into a trace that has one.
+	const segment = recorded > 0
+		? added.filter(function (event) { return event.name !== `process_name`; })
+		: added;
+	const body = JSON.stringify({ traceEvents: events.concat(segment) }, null, 2);
+	const response = await fetch(`/write/` + path, { method: `POST`, body });
+	if (!response || !response.ok) {
+		throw new Error(`could not write ${path}`);
+	}
+	return windows.length;
+};
+
 // The host's entry points: the recorder to attach, the writer to turn its windows into a trace
 // document, and the report that says what the recording holds. Nothing in the runtime reaches for
 // these — `Run` tests `program.vizRecorder` and nothing else — so an instrumented script still
 // runs with no plugin loaded at all.
 AllSpeak_Viz.Recorder = AllSpeak_Viz_Recorder;
+AllSpeak_Viz.appendTrace = vizAppendTrace;
 // **The guard's defaults, published so a host does not restate them.** A run started from the editor arms
 // the recorder with these; the command-line hosts arm it with nothing, because a recording made by hand at a
 // terminal is that person's own business and a bounded one would misreport what the program did.

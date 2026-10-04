@@ -177,6 +177,12 @@ const SLOTS = write(`slots`, [
 // something somebody can look at. Both are exercised here with the host's own recorder switched off, because a
 // host that armed one would be recorded already and the call would — rightly — decline.
 //
+// **The script records itself, and it names its own file.** No `record this run` and no host recorder: the
+// only thing that arms anything here is the script's own `@viz start`, which is the point of the check. The
+// path is named *before* the first marker, because naming it is what `save the recording to <path>` now does —
+// and two start/stop pairs rather than one, because the second segment is what proves a recording can go on
+// after its first `viz stop` and land in the same file.
+//
 // **Only the JS host is asked, and the reason is the same one as the json check above**: the Python flavour has
 // no `record this run` yet, so this half of the trigger is JS for now. Mirrored next, not pretended.
 const SELFARM = write(`selfarm`, [
@@ -184,7 +190,7 @@ const SELFARM = write(`selfarm`, [
 	`    variable N`,
 	`    variable Total`,
 	`Main:`,
-	`    record this run`,
+	`    save the recording to \`selfarm.json\``,
 	`    @viz start`,
 	`    put 0 into N`,
 	`    put 0 into Total`,
@@ -194,7 +200,15 @@ const SELFARM = write(`selfarm`, [
 	`        add N to Total @show Total`,
 	`    end`,
 	`    @viz stop`,
-	`    save the recording to \`selfarm.json\``,
+	`    @viz start`,
+	`    put 0 into N`,
+	`    put 0 into Total`,
+	`    while N is less than 3 @show N, Total`,
+	`    begin`,
+	`        add 1 to N`,
+	`        add N to Total @show Total`,
+	`    end`,
+	`    @viz stop`,
 	`    stop`,
 ]);
 
@@ -252,14 +266,26 @@ check(JSON.stringify(jsSlots) === JSON.stringify([`2`, `1`, `1`, `3`, `1`, `9`])
 console.log(`  ..    not asserted for Python: 'the json keys of' is JS vocabulary and 'dictionary' is Python's`);
 
 const selfArm = logged(`js`, SELFARM, [`--no-recorder`]);
-check(selfArm.some(l => /recording this run/.test(l)),
-	`a script can arm a recorder for its own run, which is what a button in a running app needs `
-	+ `(${JSON.stringify(selfArm.filter(l => /recording this run/.test(l)))})`);
-check(selfArm.some(l => /4 visits in 1 window/.test(l)),
-	`and saving it reports what was collected, so an empty recording cannot pass as a working one `
-	+ `(${JSON.stringify(selfArm.filter(l => /visits in/.test(l)))})`);
-console.log(`  ..    the write itself is not asserted here: a relative '/write/' URL has no base in a host, so `
-	+ `the verdict is the witness, and the POST is what a page does`);
+// The witness for the arm is the arming line itself: with `--no-recorder` the host armed nothing, so this can
+// only pass because the script's own `@viz start` did. Written deliberately rather than inferred from a
+// recording, because "recorded nothing" and "never armed" are different faults that look alike.
+check(selfArm.some(l => /this script records itself/.test(l)),
+	`a script arms a recorder with its own '@viz start', with no host and no 'record this run' — which is `
+	+ `what an app needs if it is to record a run nobody is watching `
+	+ `(${JSON.stringify(selfArm.filter(l => /records itself/.test(l)))})`);
+// The flush is witnessed by the *verdict* rather than by the write, and deliberately on both branches: the
+// line carries "the recording holds …" whether the write succeeded or failed, so a host with no page behind
+// it still says what was collected. An empty recording cannot pass as a working one.
+check(selfArm.some(l => /the recording holds 4 visits in 1 window/.test(l)),
+	`and ending a segment flushes it, reporting what was collected `
+	+ `(${JSON.stringify(selfArm.filter(l => /holds/.test(l)))})`);
+check(selfArm.some(l => /the recording holds 8 visits in 2 windows/.test(l)),
+	`a second start/stop pair after the first segment is written opens a second segment — the first is not `
+	+ `written twice and not lost, which is what a file of segments means `
+	+ `(${JSON.stringify(selfArm.filter(l => /holds/.test(l)))})`);
+console.log(`  ..    the write itself is not asserted here, and cannot be: a relative '/read/' or '/write/' URL `
+	+ `has no base in a host, which is why the verdict rides on the failure line too. The read-merge-write is `
+	+ `what a page does, and the pane's own check is where that belongs.`);
 
 // The captured values, in visit order, as `name=value` strings — the shape both runtimes are compared in.
 const readings = trace => trace.anchors

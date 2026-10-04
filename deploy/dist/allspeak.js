@@ -366,7 +366,9 @@ const AllSpeak_Core = {
 		},
 
 		// The whole point of keeping the marker in core: running it does nothing at all.
-		// The recorder, when one is attached, watches the commands go by and does the work.
+		// The recorder, when one is attached, watches the commands go by and does the work — and
+		// arming that recorder is the visualiser's business, because it is the visualiser that
+		// reads the markers. See `vizArmWhenMarked` in `js/plugins/asviz.js`.
 		run: program => program.pc + 1
 	},
 

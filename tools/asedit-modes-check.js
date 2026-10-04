@@ -758,14 +758,20 @@ check(!!posted && /"cat":\s*"window"/.test(posted.body),
 	`and what it wrote is a recording of that run rather than an empty document `
 	+ `(${posted ? posted.body.length : 0} bytes)`);
 // **And the recording is reported for what it *is*, not just as a write that happened.** The buffer is a loop
-// of five over one mark line, and the count is exact and in the pane's own unit: eight visits is what that run
+// of five over one mark line, and the count is exact and in the pane's own unit: seven visits is what that run
 // does, five of them through the marked line.
+//
+// **It was eight until 2026-10-04, and the difference is a fixed faulty reading rather than a change of
+// unit.** `@viz stop` never closed its window — the handler sat below the recorder's early return for a
+// command that is not an anchor, and a marker line never is one — so a window ran on past its own stop until
+// `finish()` closed it at the end of the run, and the recording carried one visit that happened after the
+// marker. Seven is the window measured from its start to its stop.
 //
 // **This is asserted on the verdict rather than on the status line, and that is not a shortcut.** The status
 // line has three writers — this, the auto-save ("Saved"), and the pane when it fetches a run — and any of them
 // can land between the button's press and the next line of a check, so a check reading it is a race dressed as
 // an assertion. The verdict is what the status line is *built from*, so it is the same fact without the race.
-check(/\b8 visits in 1 window\b/.test(String(valueOf(`RecordVerdict`))),
+check(/\b7 visits in 1 window\b/.test(String(valueOf(`RecordVerdict`))),
 	`and what the recording amounted to is reported rather than only that a file was written `
 	+ `(verdict ${JSON.stringify(String(valueOf(`RecordVerdict`)))})`);
 check(!!AllSpeak.scripts[`ASEditor`] && AllSpeak.scripts[`ASEditor`] === program,

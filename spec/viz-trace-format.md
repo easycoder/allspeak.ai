@@ -33,6 +33,12 @@ writers emit the object so `displayTimeUnit` and provenance can travel with the 
 Timestamps (`ts`) and durations (`dur`) are **integer microseconds**, as the format requires.
 The recorder measures nanoseconds, so writers divide by 1000 and truncate.
 
+**A document may be added to as a recording goes on.** `viz start`/`viz stop` delimit a segment, and each
+stop writes its segment into the trace file — so one file holds a run's segments, and then the segments of
+the next run, in the order they happened, as a single recording. The window index (`tid`, below) continues
+across the segments rather than restarting, which is what keeps them in that order for a reader; a writer
+that adds a segment reads the document first and numbers its windows from the count already there.
+
 `ts` is a reading of a monotonic clock — the Python recorder uses `perf_counter_ns`, which on
 Linux counts from boot — so its absolute value means nothing and only differences do. Two runs
 of the same script will not agree on those differences either: they are elapsed time, and include

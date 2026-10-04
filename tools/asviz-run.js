@@ -207,7 +207,10 @@ const runTarget = function (target) {
 		// recorder is already published for the report, and `finishedWindows` stamps an open
 		// window as of whenever it is next read — so without this a failed run would report a
 		// duration covering however long the host spent in between.
-		program.vizRecorder.finish();
+		//
+		// Guarded, because a run can now end with no recorder at all: `--no-recorder` leaves the
+		// arming to the script, and a script need not have a marker in it.
+		if (program.vizRecorder) program.vizRecorder.finish();
 	}
 	return program.vizRecorder;
 };

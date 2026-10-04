@@ -222,11 +222,21 @@
             ! body and the MIME guessed from the name that was asked for — and a page then
             ! executed that body as JavaScript. The flag is what makes exactly one answer.
             put `yes` into FileLoaded
-            load Content from BaseDir cat `/` cat FilePath
-                on failure
-                begin
-                    put `no` into FileLoaded
-                end
+            ! **Ask whether the file is there before trying to read it.** `load … on failure` prints a line for
+            ! every failure, and in a project a missing page is the *ordinary* case — a project has no
+            ! `edit.html`, and the branch below serves the deployed one — so every page load printed
+            ! `Exception "Unable to read from …/edit.html": Running the "or" clause` and read as a fault. A file
+            ! that exists and cannot be read is still caught, by the clause that remains.
+            if file BaseDir cat `/` cat FilePath does not exist
+                put `no` into FileLoaded
+            else
+            begin
+                load Content from BaseDir cat `/` cat FilePath
+                    on failure
+                    begin
+                        put `no` into FileLoaded
+                    end
+            end
             if FileLoaded is `yes`
                 return Content to Files with type MimeType
             else if FilePath is `edit.html`
@@ -243,11 +253,16 @@
                 ! English. Everything else in the page is already language-neutral.
                 put `en` into Lang
                 put empty into InitText
-                load InitText from BaseDir cat `/.allspeak-init`
-                    on failure
-                    begin
-                        put empty into InitText
-                    end
+                ! The same courtesy as the file above: a project with no manifest yet is an ordinary state — a
+                ! pack ships one, an older project has none — and the answer is English.
+                if file BaseDir cat `/.allspeak-init` exists
+                begin
+                    load InitText from BaseDir cat `/.allspeak-init`
+                        on failure
+                        begin
+                            put empty into InitText
+                        end
+                end
                 if InitText is not empty
                 begin
                     ! `field 1 ... delimited by` is the text *after* the marker (measured: the
