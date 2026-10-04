@@ -464,11 +464,20 @@ const AllSpeak_Viz = {
 				`add the plugin to the app's page`);
 			return;
 		}
+		// **Once per window.** The editor polls while the app comes up, and this file declares its names with
+		// top-level `const` — so a second injection is not a harmless re-load but a SyntaxError, one per tick
+		// (`Identifier 'VIZ_DEFAULT_LIMIT' has already been declared`). Measured 2026-10-04: the guard that was
+		// meant to stop the repeat tested `win.AllSpeak_Viz`, a window property this file did not set, so it
+		// re-injected on every tick and the app's window accumulated the errors. The marker is the plugin's own,
+		// so it does not depend on that property existing.
+		if (win.__asvizInjected) return;
+		win.__asvizInjected = true;
 		try {
 			const tag = win.document.createElement(`script`);
 			tag.src = url;
 			win.document.head.appendChild(tag);
 		} catch (err) {
+			win.__asvizInjected = false;   // a genuine failure can be tried again
 			vizLog(`viz: could not load the visualiser into the app: ${err}`);
 		}
 	},
@@ -2109,3 +2118,18 @@ AllSpeak_Viz.DEFAULT_CEILING_NS = VIZ_DEFAULT_CEILING_NS;
 AllSpeak_Viz.traceDocument = vizTraceDocument;
 AllSpeak_Viz.traceRecords = vizTraceRecords;
 AllSpeak_Viz.transferKind = vizTransferKind;
+
+// **Advertise the namespace as a property of the window, not only as a top-level `const`.**
+//
+// A classic script's top-level `const` lives in the global *lexical* scope: other scripts on the same page
+// can see it, but it is not a property of `window`. So `win.AllSpeak_Viz` is `undefined` when the editor
+// looks at an app's window — which is how it decides whether the visualiser is already there, and how it
+// reaches `win.AllSpeak_Viz.Recorder` to arm the app's programs. Both failed silently: the check never
+// passed, so the plugin was injected again on every poll, and the arming line would have raised inside its
+// own `try` and been logged as "could not arm a program in the app".
+//
+// The runtime bundle has always done this for itself — the minified `allspeak.js` ends with
+// `window.AllSpeak=AllSpeak` — and that is the only reason the injection loop's `win.AllSpeak` liveness test
+// ever passed. Measured 2026-10-04 in node: a top-level `const` in a classic script is not a property of
+// window, a top-level `var` is, an explicit assignment is.
+window.AllSpeak_Viz = AllSpeak_Viz;
