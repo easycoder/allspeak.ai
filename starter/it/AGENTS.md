@@ -165,7 +165,9 @@ Questa directory contiene `AGENTS.md` — questo file. Leggilo ora per comprende
 
 6. **Di' all'utente che i file del progetto sono pronti e dove vederli.**
 
-   Il server AllSpeak è già in esecuzione — l'utente l'ha avviato con `allspeak server` prima di lanciare te. **Non** tentare di avviare o riavviare il server da solo. Sta già servendo i file in un altro terminale.
+   Il server AllSpeak è già in esecuzione — l'utente l'ha avviato con `allspeak server` prima di lanciare te. **Non** tentare di avviare o riavviare il server da solo. Sta già servendo i file in un altro terminale. In questa directory non c'è volutamente alcun `server.allspeak`: il comando `allspeak` recupera quello corrente.
+
+   Se *non* è in esecuzione e `allspeak server` si lamenta che manca `server.allspeak`, il comando `allspeak` è precedente a questo progetto: `pip install -U allspeak-ai`, poi avvialo di nuovo.
 
    Dopo aver creato i file del progetto, di' all'utente:
 

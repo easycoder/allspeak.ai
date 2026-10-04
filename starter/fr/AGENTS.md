@@ -165,7 +165,9 @@ Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour compr
 
 6. **Dis à l'utilisateur que les fichiers du projet sont prêts et où les voir.**
 
-   Le serveur AllSpeak tourne déjà — l'utilisateur l'a démarré avec `allspeak server` avant de te lancer. N'essaie **pas** de démarrer ou redémarrer le serveur toi-même. Il sert déjà les fichiers dans un autre terminal.
+   Le serveur AllSpeak tourne déjà — l'utilisateur l'a démarré avec `allspeak server` avant de te lancer. N'essaie **pas** de démarrer ou redémarrer le serveur toi-même. Il sert déjà les fichiers dans un autre terminal. Il n'y a délibérément pas de `server.allspeak` dans ce répertoire : la commande `allspeak` récupère le fichier courant.
+
+   S'il ne tourne *pas* et que `allspeak server` se plaint qu'il manque `server.allspeak`, la commande `allspeak` est antérieure à ce projet : `pip install -U allspeak-ai`, puis démarre-le à nouveau.
 
    Après avoir créé les fichiers du projet, dis à l'utilisateur :
 

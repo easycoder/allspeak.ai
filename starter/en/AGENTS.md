@@ -165,7 +165,9 @@ This directory contains `AGENTS.md` — this file. Read it now to understand the
 
 6. **Tell the user the project files are ready and where to view them.**
 
-   The AllSpeak server is already running — the user started it with `allspeak server` before launching you. Do NOT attempt to start or restart the server yourself. It is already serving files in another terminal.
+   The AllSpeak server is already running — the user started it with `allspeak server` before launching you. Do NOT attempt to start or restart the server yourself. It is already serving files in another terminal. There is deliberately no `server.allspeak` in this directory: the `allspeak` command fetches the current one.
+
+   If it is *not* running and `allspeak server` complains that `server.allspeak` is missing, the `allspeak` command predates this project: `pip install -U allspeak-ai`, then start it again.
 
    After creating the project files, tell the user:
 
