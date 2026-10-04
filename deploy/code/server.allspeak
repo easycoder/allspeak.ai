@@ -44,6 +44,10 @@
     variable LangTag
     variable LangDiv
     variable HomeDiv
+    variable GraphText
+    variable SideText
+    variable GraphDiv
+    variable SideDiv
     variable Page
     server Files
 
@@ -284,6 +288,41 @@
                 replace `<html lang="en">` with LangTag in Page
                 replace `id="editor-lang" style="display:none">en<` with LangDiv in Page
                 replace `id="editor-home" style="display:none"></div>` with HomeDiv in Page
+                ! **The pane's two sources travel inside the page, and the server is what fetches them.**
+                !
+                ! The editor has a companion module for the Graph pane and a second for its sidebar, and a
+                ! project's own directory no longer carries them — a pack ships three files, not twelve. The
+                ! editor tries to fetch them from the site and cannot: the site answers
+                ! `access-control-allow-origin: *` for `.js` and `.css` and, measured again today, for `.json`
+                ! — which is how the editor's own payload and UI arrive — but *not* for `.allspeak`. The
+                ! browser refuses that read, the editor swallows the refusal, and the Graph pane comes up
+                ! empty with nothing drawn and no error to explain it. Measured 2026-10-04 against Graham's
+                ! own project: an empty Graph screen, a clean console, and this as the cause.
+                !
+                ! So the page hands them over in the two elements it already declares, exactly as it hands
+                ! over the language and the dist base. A server-side fetch is not the browser's, so the
+                ! missing header does not matter here. Empty on failure, which leaves the editor's own
+                ! fallback to try and fail as it did before — no worse than not trying.
+                get GraphText from url DistBase cat `asedit-graph.allspeak`
+                    on failure
+                    begin
+                        put empty into GraphText
+                    end
+                get SideText from url DistBase cat `asedit-side.allspeak`
+                    on failure
+                    begin
+                        put empty into SideText
+                    end
+                if GraphText is not empty
+                begin
+                    put `id="editor-graph" style="display:none">` cat GraphText cat `</pre>` into GraphDiv
+                    replace `id="editor-graph" style="display:none"></pre>` with GraphDiv in Page
+                end
+                if SideText is not empty
+                begin
+                    put `id="editor-side" style="display:none">` cat SideText cat `</pre>` into SideDiv
+                    replace `id="editor-side" style="display:none"></pre>` with SideDiv in Page
+                end
                 return Page to Files with type `text/html`
             end
             else
