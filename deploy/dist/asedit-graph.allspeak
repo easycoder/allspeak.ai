@@ -79,7 +79,7 @@
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 06bab40f
+!! @hash 10f33ffc
 !! @verified 10f33ffc
 !!!
 !! The boundary: one message in, and the module parks until the next one.
@@ -123,8 +123,8 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 
-!! @hash fdfb5b3b
-!! @verified 1d924ebf
+!! @hash 5b1f9f95
+!! @verified 5b1f9f95
 !!!
 !! The module's one message: take the run, or stand down.
 !!
@@ -513,7 +513,7 @@ Draw:
         put property `traceEvents` of VizParsed into VizEvents
     end
 !! @hash 1ae42b87
-!! @verified 625a1848
+!! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
 !!
@@ -2054,7 +2054,7 @@ VizRuleAdd:
 
 VizSourceMeasure:
 !! @hash dc725895
-!! @verified 14f5b57b
+!! @verified dc725895
 !!!
 !! And a doc block is not drawn in it.
 !!
@@ -2374,7 +2374,7 @@ VizSourcePicture:
     set attribute `href` of VizGlyphs to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="` cat VizGlyphWidth cat `" height="` cat VizGlyphHeight cat `">` cat VizGlyphBody cat `</svg>`
     return
 !! @hash 78dcffaf
-!! @verified 055f01b9
+!! @verified 78dcffaf
 !!!
 !! The mappings: the one place a line's y and a step's x are worked out.
 !!

@@ -205,7 +205,7 @@
     variable NL
     variable J
 !! @hash 90e6973b
-!! @verified b3977d8a
+!! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -248,7 +248,7 @@
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
 !! @hash 414ea5b9
-!! @verified c52f8b76
+!! @verified 414ea5b9
 !!!
 !! Some general initialisation
 !   -- CodeMirror --
@@ -369,7 +369,7 @@ SetStrings:
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
 !! @hash 3f450398
-!! @verified 3ec54b89
+!! @verified 3f450398
 !!!
 !! The editor checks on startup and periodically for updates to itself.
 !! (explain)
@@ -504,7 +504,7 @@ VersionDone:
     put 0 into GraphMode
     put 0 into BlockDirty
 !! @hash 3efa1530
-!! @verified aeba3967
+!! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
 !!
@@ -1337,7 +1337,7 @@ ScoreWithCode:
     else put `verified-stale` into VerifyState
     return
 !! @hash d37980ab
-!! @verified fab5b751
+!! @verified d37980ab
 !!!
 !! Blocks view.
 !! ToggleBlocks switches between flat and Blocks panes.
@@ -2038,7 +2038,7 @@ DoExitPanes:
     if GraphMode is 1 gosub to DoExitGraph
     return
 !! @hash ecd231d6
-!! @verified 5964c053
+!! @verified ecd231d6
 !!!
 !! The sidebar: what the pane reports back, and what the sidebar is shown.
 !!
@@ -2140,9 +2140,8 @@ TellSideClosed:
     send SideMsg to SideModule
     return
 !! @hash 0c4a0949
-!! @verified c33ecd04
+!! @verified 0c4a0949
 !!!
-
 !! Recording a run, from the button.
 !!
 !! **This is the trigger, and the pane's empty state is its argument.** A pane that says *"no recording beside this script"* names a file and leaves the reader to produce one at a console; this makes it instead — the buffer is already here, and so is the plugin, which the page loads for the pane's sake.
@@ -2212,9 +2211,8 @@ RecordFailed:
     fork to ClearStatus
     stop
 !! @hash df567fa6
-!! @verified 00000000
+!! @verified df567fa6
 !!!
-
 !! Opening the project's app, from the editor.
 !!
 !! **The app is a page, and a page the editor can already reach: its own.** `@app parser.html` names it relative to where the editor is served from — the project root — so no path has to be assembled, no server route is added, and the page resolves against the editor's own location. It opens in a window of its own, which is the point: the app runs exactly as it does when you open it by hand, with its own layout, its own DOM and its own `rest get`s, unconstrained by the editor's.
@@ -2243,5 +2241,5 @@ LaunchApp:
     fork to ClearStatus
     stop
 !! @hash 0faead49
-!! @verified 00000000
+!! @verified 0faead49
 !!!

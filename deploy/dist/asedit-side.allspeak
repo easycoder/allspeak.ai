@@ -54,7 +54,7 @@
     release parent
     stop
 !! @hash b6b4b753
-!! @verified f7e2634f
+!! @verified b6b4b753
 !!!
 !! Building the panel, once, and the tabs as the one pool of elements they are.
 !!
@@ -229,7 +229,7 @@ SideStatusDraw:
     set the content of SideStatus to SideStatusText
     return
 !! @hash 591e92f4
-!! @verified a41ba8ee
+!! @verified 591e92f4
 !!!
 !! The boundary: one message in, and the module parks until the next one.
 !!
@@ -275,5 +275,5 @@ SideBlockArrived:
 SideClosed:
     stop
 !! @hash cd2f39fb
-!! @verified 1d560b77
+!! @verified cd2f39fb
 !!!
