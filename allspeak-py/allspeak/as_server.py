@@ -79,13 +79,28 @@ class ECServer(ECObject):
                 bottle_response.content_type = self.response_content_type
             return self.response_value or ''
 
-        t = threading.Thread(
-            target=run,
-            kwargs={'app': self.app, 'host': '0.0.0.0', 'port': self.port, 'quiet': True, 'handler_class': QuietWSGIRequestHandler},
-            daemon=True,
-        )
+        # **A server that cannot bind must not look like a server.** The bind happens in this thread, so the
+        # `OSError` was printed by the thread and nothing else — while `program.servers` still held this
+        # object, and that list is what keeps the process alive. So `allspeak server <port>` on a port an
+        # older instance already held sat there looking healthy with nothing listening, and Ctrl+C on *that*
+        # one left the old one serving: stray `allspeak server` processes, one more per attempt. Measured
+        # 2026-10-04 with Graham, after he reported exactly that pile-up. Saying so and standing down is the
+        # whole fix: with this server out of the list there is nothing left to keep the process alive.
+        def serve():
+            print(f'Server started on port {self.port}')
+            try:
+                run(app=self.app, host='0.0.0.0', port=self.port, quiet=True, handler_class=QuietWSGIRequestHandler)
+            except OSError as error:
+                print(f'Could not start the server on port {self.port}: {error}')
+                print('Is another `allspeak server` already using that port? '
+                      '`pgrep -af "allspeak server"` names the ones that are; `kill <pid>` stops one.')
+                try:
+                    self.program.servers.remove(self)
+                except ValueError:
+                    pass
+
+        t = threading.Thread(target=serve, daemon=True)
         t.start()
-        print(f'Server started on port {self.port}')
 
     def getMethod(self):
         return self.current_request['method'] if self.current_request else ''
