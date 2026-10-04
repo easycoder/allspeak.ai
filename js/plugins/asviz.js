@@ -378,13 +378,30 @@ const AllSpeak_Viz = {
 		if (!win) return false;
 		const plugin = AllSpeak_Viz.pluginUrl();
 		let armed = false;
+		// **The recording is carried out of the app while it is still alive.** A window's objects belong to
+		// that window, and a closed one has nothing left to read — so asking it *then* can only ever answer
+		// "the window is gone". Measured 2026-10-04 with Graham: clicking Record, letting the app run, then
+		// closing its window saved nothing, and that is why. So every tick after the arming copies out
+		// whatever the app has finished, into *this* window's realm, and the close only writes what has
+		// already been carried across. The last good copy is what stands if the window disappears without a
+		// close being seen (a crash, a navigation away).
+		let carried = null;
 		const timer = setInterval(function () {
 			if (win.closed) {
 				clearInterval(timer);
-				AllSpeak_Viz.collectApp(win, path);
+				AllSpeak_Viz.writeAppTrace(path, carried);
 				return;
 			}
-			if (armed) return;
+			if (armed) {
+				const fresh = AllSpeak_Viz.gatherApp(win);
+				if (fresh.gone) {
+					clearInterval(timer);
+					AllSpeak_Viz.writeAppTrace(path, carried);
+					return;
+				}
+				carried = fresh;
+				return;
+			}
 			let alive = false;
 			try { alive = !!win.AllSpeak; } catch (err) { alive = false; }   // cross-origin throws, not false
 			if (!alive) return;
@@ -415,8 +432,12 @@ const AllSpeak_Viz = {
 		return true;
 	},
 
-	// Collect from an app whose window has closed, and write it where the pane will find it.
-	collectApp: function (win, path) {
+	// What the app has finished so far, **copied into this window's realm**. The copy is the whole point: the
+	// windows — and any values in them — belong to the app, and stop being readable the moment it closes.
+	// JSON is how a value crosses a realm intact: it reads properties and hands back plain data, all of it
+	// ours afterwards. `gone` says the app can no longer be asked at all, which the caller must treat as "keep
+	// what you already have", never as "there was nothing" — the empty answer a destroyed realm gives.
+	gatherApp: function (win) {
 		let windows = [];
 		let stopped = null;
 		let parked = false;
@@ -429,16 +450,22 @@ const AllSpeak_Viz = {
 				stopped = stopped || recorder.stopped || null;
 				windows = windows.concat(recorder.finishedWindows());
 			}
+			return { windows: JSON.parse(JSON.stringify(windows)), stopped, parked, gone: false };
 		} catch (err) {
-			vizLog(`viz: the app's window is gone — nothing to collect (${err})`);
-			return;
+			return { windows: [], stopped: null, parked: false, gone: true };
 		}
-		if (windows.length === 0) {
+	},
+
+	// Write a recording gathered from an app. `carried` is what `gatherApp` brought across while the window
+	// was still there; nothing in it means the app reached no marker while it was armed, which is worth
+	// saying out loud rather than writing an empty file.
+	writeAppTrace: function (path, carried) {
+		if (!carried || carried.windows.length === 0) {
 			vizLog(`viz: nothing recorded — the app reached no marker while it was armed`);
 			return;
 		}
-		const document = AllSpeak_Viz.traceDocument(path, windows);
-		const verdict = AllSpeak_Viz.verdict(windows, stopped, parked);
+		const document = AllSpeak_Viz.traceDocument(path, carried.windows);
+		const verdict = AllSpeak_Viz.verdict(carried.windows, carried.stopped, carried.parked);
 		fetch(`/write/` + path, { method: `POST`, body: JSON.stringify(document) })
 			.then(response => {
 				vizLog(response && response.ok
