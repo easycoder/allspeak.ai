@@ -179,6 +179,25 @@ The reason to prefer a log over a dialog box is not that it is cheap — it is t
 
 Be liberal with them, and cheerful about intrusive ones — they are not permanent. Remove each one once the question it was asked has an answer, and have each line name its own subject (`records: 8  flags: 1`) so the copy still makes sense on its own.
 
+## Traps worth knowing before editing
+
+Standing knowledge rather than next steps, which is why they live here and not in `TODO*.md`. Every one of these has cost real time in this project.
+
+- **`or` on a `rest get` stops the thread.** The rest of the section is abandoned; use `on failure` to continue.
+- **A status code does not mean the file arrived.** The dev server answers an unknown path with `200`, the editor's own page, and the MIME guessed from the extension — so a fetch checks its body for a leading `<`.
+- **A variable must be declared before the statement that *writes* it**, not merely before the section that reads it: the compiler is single-pass. A declaration below the point where a handler is *registered* is not there yet.
+- **A duplicate declaration is an error.**
+- **`index X to N` selects a *slot*; `item N of X` reads from inside a JSON array.** `put V into item N of X` is not a valid target.
+- **`cat`'s right-hand side is the whole rest of the expression.** `left 1 of X cat '.' cat right 3 of X` parses as `left 1 of (X cat '.' cat right 3 of X)`. Build it in steps.
+- **A number that arrived as text stays text, and text compares lexically** — `9` is not less than `10`. Convert with `the value of`, or `add 0 to` when it is already in a variable.
+- **A handler is registered by executing the line.** An `on message` written after the `stop` that ends a script's linear flow is never registered, and a check that calls the handler by name will not notice.
+- **`svg` is the one element type the plugin registers without the `dom` extra**, so `the width of` will not compile for it — the pane maps the pointer from the panel's corner instead.
+- **CORS on allspeak.ai is by file type:** `.js` and `.css` carry it, `.allspeak` does not, which is why the editor reaches a project as a script (`dist/asedit.js`) rather than a fetch.
+- **Never redirect stderr on a check whose stderr is its verdict.**
+- **A check on a boundary must carry what the boundary carries** — the JSON string, the registered handler — and set up what the real path sets up. Two green harnesses have sat over browser faults for want of this.
+- **A value computed before the pass that measures it silently uses the previous draw's number.** The first render looks right and every later one does not.
+- **Measure a visual fault from a screenshot before reading the code**, and check the instrument's own constants first.
+
 ## Commit Style
 
 When no specific message is given, use a date-time stamp in `YYMMDDHHMM` form (e.g. `2605101119`, `2605082123`) — same format as the version string. Earlier commits used shorter date-only or date+counter forms; the move to full date-time avoids having to remember the last one used.
@@ -207,7 +226,7 @@ This project keeps a per-session log under `conversation/`, for the human's refe
 
 Use `date +%H:%M` if you need the time. Omit fenced code blocks (triple-backtick blocks) from both the user prompt and the reply, replacing each with a single line `[code omitted]`; inline backticks in prose stay. Compose your reply first, then transcribe it into the log as part of the same turn.
 
-**The working state lives in `TODO.md`.** Its `## Where things stand` section says what is done, what is next and in what order, and the traps worth knowing before editing. A new session should read it first: that is the handover, whereas this log is a record for you.
+**The working state lives in `TODO.md`.** It is the handover: what is done, what is next and in what order, what is waiting on a decision, and two notes that source files cite by name. A new session should read it first — that is the handover, whereas this log is a record for you. **The detail is in `TODO-viz.md` (the visualiser and editor), `TODO-language.md` (the language, runtimes and packs) and `TODO-site.md` (the website and the writing)**; `TODO.md` says which to open. The dated reasoning behind each is in `git log -p -- TODO.md`, not in the files. Standing traps are in `## Traps worth knowing before editing` above.
 
 **Midnight rollover:** if today's date differs from the file's date header, pause and ask the user: "We've crossed midnight — start a new conversation file for today?" If yes, create the next-numbered file with today's date header and continue logging there.
 

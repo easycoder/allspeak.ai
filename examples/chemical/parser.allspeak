@@ -203,7 +203,7 @@
 !!
 !! Input: `Formula`, holding the formula as typed.
 MeasureFormula:
-    if FormulaIndex is 1 viz start
+    if FormulaIndex is 0 viz start
     put Formula into Original
     gosub ExpandGroups
     if not IsValid return
@@ -212,7 +212,7 @@ MeasureFormula:
     gosub ComputeMass
     viz stop
     return
-!! @hash 8d8fe6ab
+!! @hash 6bedc61e
 !! @verified 8d8fe6ab
 !!!
 !! ExpandGroups: spell every bracketed group out in full, leaving a bracket-free formula in `Expanded`.

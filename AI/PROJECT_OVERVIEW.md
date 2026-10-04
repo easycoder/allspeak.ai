@@ -21,7 +21,7 @@ Forked from [EasyCoder](https://github.com/easycoder/easycoder.github.io) on 202
 | Worked examples | `codex/<lang>/code/step*.allspeak`, `codex/codex.allspeak` |
 | How does it hang together? | `AI/ARCHITECTURE.md` |
 | How do I build and deploy? | `BUILD.md` |
-| What is broken / open? | `language-pack-issues.md`, `TODO.md` |
+| What is broken / open? | `language-pack-issues.md`, `TODO.md` (the handover, which points at `TODO-viz.md`, `TODO-language.md` and `TODO-site.md`) |
 
 ## Main design choices
 - **One runtime, many front-ends.** Source tokens are resolved through a language pack to a canonical vocabulary before any domain compiler sees them, so a French script and an English script compile to the same program and run on the same engine.
