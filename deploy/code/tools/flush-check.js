@@ -81,6 +81,14 @@ const segment = recorder => {
 };
 
 const settle = () => new Promise(resolve => setTimeout(resolve, 20));
+
+// The same three steps as `segment`, for a program other than the shared one.
+const segment2 = (recorder, withProgram) => {
+	recorder.arm(withProgram, { mode: `once`, lino: 5 }, 0);
+	recorder.tick(withProgram, 0);
+	recorder.tick(withProgram, 1);
+	recorder.stop();
+};
 const read = () => {
 	const document = JSON.parse(files[TRACE]);
 	const windows = document.traceEvents.filter(e => e.name === `thread_name`);
@@ -131,6 +139,26 @@ const read = () => {
 	await settle();
 	check(read() .windows === 3 && calls.filter(c => c.startsWith(`/read/`)).length === reads,
 		`a flush with nothing new writes nothing at all (${JSON.stringify(read())})`);
+
+	// 6. **The editor's Record names the file, and the script can override it.** An app opened and armed from
+	//    outside is told where to write while it is being armed — which is what makes the line in the script
+	//    unnecessary for the common case. A script that names one of its own still wins.
+	const hostProgram = { length: 2, programStack: [], 0: {}, 1: {} };
+	const hostRecorder = new AllSpeak_Viz.Recorder(null, null);
+	segment2(hostRecorder, hostProgram);
+	AllSpeak_Viz.tracePath = `host-chosen.viz.json`;
+	await hostRecorder.flushTo(hostProgram, true);
+	await settle();
+	check(!!files[`host-chosen.viz.json`],
+		`a recording goes to the file the host named, with no path in the script at all `
+		+ `(${Object.keys(files).filter(f => f.startsWith(`host-chosen`)).length})`);
+	const ownProgram = { length: 2, programStack: [], vizTracePath: `script-chosen.viz.json`, 0: {}, 1: {} };
+	const ownRecorder = new AllSpeak_Viz.Recorder(null, null);
+	segment2(ownRecorder, ownProgram);
+	await ownRecorder.flushTo(ownProgram, true);
+	await settle();
+	check(!!files[`script-chosen.viz.json`],
+		`and a script that names a file of its own overrides the host (${Object.keys(files).includes(`script-chosen.viz.json`)})`);
 
 	console.log(failures === 0
 		? `flush-check: all checks passed`

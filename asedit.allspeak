@@ -2168,7 +2168,15 @@ RecordRun:
     if AppPage is not empty
     begin
         record the app at AppPage to TracePath
-        set the content of StatusSpan to `Recording ` cat AppPage cat ` — close its window and the recording is saved to ` cat TracePath
+        ! **What this line may claim, and no more.** The plugin opens the app and arms it in the ticks that
+        ! follow, so at this moment nothing is armed yet and nothing has been written — and the message used to
+        ! say "Recording ... — close its window and the recording is saved to ...", which is a promise the
+        ! editor cannot keep: it printed that sentence whether or not a window was opened at all, and Graham
+        ! followed it for a while with nothing recording. What *is* true here is that the app is being opened
+        ! and that the recording goes to that file as the app runs; a failure is the plugin's to report, in the
+        ! console, where it says which of the two things went wrong.
+        set the content of StatusSpan to `Opening ` cat AppPage cat ` — it writes its recording to ` cat TracePath cat ` as it runs`
+        stop
         stop
     end
     record the script in EditorPath as RecordSource giving RecordTrace reporting RecordVerdict

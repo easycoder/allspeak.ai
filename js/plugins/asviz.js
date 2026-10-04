@@ -60,6 +60,11 @@ const AllSpeak_Viz = {
 	// The script the framework is currently looking at, and the text to analyse.
 	target: ``,
 	sources: {},
+	// **Where a recording goes when the script has not said.** An app opened and armed from outside — by the
+	// editor's Record — is told which file to write while it is being armed, so the common case needs no line
+	// in the script at all. A script that names a file of its own wins; see `flushTo`, which reads the
+	// program's path first. Not to be confused with `target`, which says what to *look at*.
+	tracePath: null,
 	// Non-empty when a target could not be compiled. The host clears this before
 	// each target and can use it to set an exit code.
 	problems: [],
@@ -389,31 +394,22 @@ const AllSpeak_Viz = {
 		const win = window.open(url, `_blank`);
 		if (!win) return false;
 		const plugin = AllSpeak_Viz.pluginUrl();
+		let told = false;
 		let armed = false;
-		// **The recording is carried out of the app while it is still alive.** A window's objects belong to
-		// that window, and a closed one has nothing left to read — so asking it *then* can only ever answer
-		// "the window is gone". Measured 2026-10-04 with Graham: clicking Record, letting the app run, then
-		// closing its window saved nothing, and that is why. So every tick after the arming copies out
-		// whatever the app has finished, into *this* window's realm, and the close only writes what has
-		// already been carried across. The last good copy is what stands if the window disappears without a
-		// close being seen (a crash, a navigation away).
-		let carried = null;
+		// **Record opens the app, tells it where to write, and arms it; the app writes the file.**
+		//
+		// It used to write on the window's close, from a copy gathered tick by tick — and Graham chose to drop
+		// that on 2026-10-04, because an app now flushes its own segments as they end and a second writer would
+		// replace an accumulated recording with the editor's snapshot of it. What the editor contributes is the
+		// *path*: the one thing the app cannot work out for itself, since Record is what chose it from the
+		// script's name.
 		const timer = setInterval(function () {
 			if (win.closed) {
 				clearInterval(timer);
-				AllSpeak_Viz.writeAppTrace(path, carried);
+				vizLog(`viz: the app's window closed — its recording is in ${path}`);
 				return;
 			}
-			if (armed) {
-				const fresh = AllSpeak_Viz.gatherApp(win);
-				if (fresh.gone) {
-					clearInterval(timer);
-					AllSpeak_Viz.writeAppTrace(path, carried);
-					return;
-				}
-				carried = fresh;
-				return;
-			}
+			if (armed) return;
 			let alive = false;
 			try { alive = !!win.AllSpeak; } catch (err) { alive = false; }   // cross-origin throws, not false
 			if (!alive) return;
@@ -425,67 +421,45 @@ const AllSpeak_Viz = {
 				AllSpeak_Viz.injectPlugin(win, plugin);
 				return;
 			}
+			if (!told) {
+				// **Told before anything is armed, and before the app can reach a marker.** A segment that ends
+				// with no path is not lost — the flush holds its watermark back — but it is not written either,
+				// so the earlier this lands the better.
+				win.AllSpeak_Viz.tracePath = path;
+				told = true;
+			}
 			let count = 0;
+			let recording = 0;
 			const scripts = win.AllSpeak.scripts || {};
 			for (const name of Object.keys(scripts)) {
 				const target = scripts[name];
-				if (!target || target.vizRecorder) continue;    // the app's own `record this run` wins
+				if (!target) continue;
+				// A program already carrying a recorder is a script recording itself: `@viz start` armed it, or
+				// its own `record this run` did. It is being recorded, and the editor leaves it alone — which is
+				// the case the arming loop must not mistake for "nothing here to do".
+				if (target.vizRecorder) { recording++; continue; }
 				try {
 					target.vizRecorder = new win.AllSpeak_Viz.Recorder(
 						VIZ_DEFAULT_BUDGET_NS, VIZ_DEFAULT_CEILING_NS);
 					count++;
+					recording++;
 				} catch (err) {
 					vizLog(`viz: could not arm a program in the app: ${err}`);
 				}
 			}
+			// **Only now stop trying.** The first version set this flag whether or not anything had been armed,
+			// so an app that had not yet registered the program its script was about to run — one parked on a
+			// `rest get`, as every app of Graham's is — was never armed at all: the console said
+			// `0 program(s) armed` while the editor's status line claimed the opposite. Measured 2026-10-04.
+			if (recording === 0) return;
 			armed = true;
-			vizLog(`viz: recording the app — ${count} program(s) armed; close its window to save ${path}`);
+			vizLog(`viz: recording the app — ${count} program(s) armed here, ${recording} being recorded; `
+				+ `the recording is written to ${path} as it runs`);
 		}, 200);
 		return true;
 	},
 
-	// What the app has finished so far, **copied into this window's realm**. The copy is the whole point: the
-	// windows — and any values in them — belong to the app, and stop being readable the moment it closes.
-	// JSON is how a value crosses a realm intact: it reads properties and hands back plain data, all of it
-	// ours afterwards. `gone` says the app can no longer be asked at all, which the caller must treat as "keep
-	// what you already have", never as "there was nothing" — the empty answer a destroyed realm gives.
-	gatherApp: function (win) {
-		let windows = [];
-		let stopped = null;
-		let parked = false;
-		try {
-			const scripts = win.AllSpeak.scripts || {};
-			for (const name of Object.keys(scripts)) {
-				const recorder = scripts[name] && scripts[name].vizRecorder;
-				if (!recorder) continue;
-				parked = parked || recorder.parked === true;
-				stopped = stopped || recorder.stopped || null;
-				windows = windows.concat(recorder.finishedWindows());
-			}
-			return { windows: JSON.parse(JSON.stringify(windows)), stopped, parked, gone: false };
-		} catch (err) {
-			return { windows: [], stopped: null, parked: false, gone: true };
-		}
-	},
 
-	// Write a recording gathered from an app. `carried` is what `gatherApp` brought across while the window
-	// was still there; nothing in it means the app reached no marker while it was armed, which is worth
-	// saying out loud rather than writing an empty file.
-	writeAppTrace: function (path, carried) {
-		if (!carried || carried.windows.length === 0) {
-			vizLog(`viz: nothing recorded — the app reached no marker while it was armed`);
-			return;
-		}
-		const document = AllSpeak_Viz.traceDocument(path, carried.windows);
-		const verdict = AllSpeak_Viz.verdict(carried.windows, carried.stopped, carried.parked);
-		fetch(`/write/` + path, { method: `POST`, body: JSON.stringify(document) })
-			.then(response => {
-				vizLog(response && response.ok
-					? `viz: the app's recording is saved to ${path} — ${verdict}`
-					: `viz: could not write ${path} — ${verdict}`);
-			})
-			.catch(err => vizLog(`viz: could not write ${path}: ${err} — ${verdict}`));
-	},
 
 	// This plugin's own URL, so it can be put into a window that does not have it.
 	pluginUrl: function () {
@@ -1839,9 +1813,13 @@ AllSpeak_Viz_Recorder.prototype = {
 	// recording goes. A script that never names one gets no file and a line saying so, rather than a recording
 	// that goes quietly nowhere.
 	flushTo: function (program, create) {
-		const path = program && program.vizTracePath;
+		// The script's own name for the file wins, then whatever a host set while arming this app; with
+		// neither, nothing is written and the console names both things that would have supplied one. The
+		// host's path is why a script opened by the editor's Record needs no line of its own.
+		const path = (program && program.vizTracePath) || AllSpeak_Viz.tracePath;
 		if (!path) {
-			vizLog(`viz: recorded, but nothing written — 'save the recording to <path>' names the trace file`);
+			vizLog(`viz: recorded, but nothing written — 'save the recording to <path>' names the trace file, `
+				+ `and a host can name one instead`);
 			return;
 		}
 		const from = this.flushed;
