@@ -3,7 +3,7 @@
 import importlib
 import math
 
-__version__ = "2610031512"
+__version__ = "2610041444"
 
 from .as_classes import *
 from .as_compiler import *

@@ -16,7 +16,8 @@
 !     POST /write/<file>  →  writes request body to <file>; returns OK
 !     GET  /version       →  checks for updates from the repo; returns OK or updated
 !     GET  /restart       →  restarts the server process
-!     GET  /<file>        →  serves static files (HTML, JS, CSS, JSON, ECS)
+!     GET  /<file>        →  serves static files (HTML, JS, CSS, JSON, ECS);
+!                            404 when there is no such file
 
     script CodeServer
 
@@ -29,6 +30,7 @@
     variable FileList
     variable Port
     variable MimeType
+    variable FileLoaded
     variable RepoBase
     variable RemoteVersion
     variable LocalVersion
@@ -75,30 +77,36 @@
     print `Press Ctrl+C to stop`
 
     ! Check for updates at startup
-    get RemoteVersion from url RepoBase cat `code-version` or begin
-        print `Warning: could not check for updates`
-    end
+    ! **`on failure`, not `or`.** Both spellings run the same action on failure, but an
+    ! `or` clause then *ends the thread* — so an unreachable repo would have stopped the
+    ! server before it registered its request handler, and the dev server would have been
+    ! useless offline. `on failure` recovers and carries on, leaving RemoteVersion empty so
+    ! the update block below is skipped.
+    get RemoteVersion from url RepoBase cat `code-version`
+        on failure
+        begin
+            print `Warning: could not check for updates`
+        end
     if RemoteVersion is not empty
     begin
         replace ` ` with `` in RemoteVersion
         replace newline with `` in RemoteVersion
-        load LocalVersion from BaseDir cat `/.code-version` or begin
-            put `0` into LocalVersion
-        end
+        load LocalVersion from BaseDir cat `/.code-version`
+            on failure
+            begin
+                put `0` into LocalVersion
+            end
         replace ` ` with `` in LocalVersion
         replace newline with `` in LocalVersion
         if RemoteVersion is not LocalVersion
         begin
             print `Updating from version ` cat LocalVersion cat ` to ` cat RemoteVersion
+            ! **The server script is the only file a project keeps a copy of.** The editor and its two
+            ! modules travel in the page's payload (`dist/asedit.js`, built by ./build-allspeak), so a
+            ! copy of them in a project directory does nothing but shadow the deployed one — and the page
+            ! prefers this directory to the payload, so a stale copy was the editor a project ran. That is
+            ! what the download lines here used to write. Nothing else needs fetching.
             download RepoBase cat `server.allspeak` to BaseDir cat `/server.allspeak`
-            download RepoBase cat `asedit.json` to BaseDir cat `/asedit.json`
-            download RepoBase cat `asedit.allspeak` to BaseDir cat `/asedit.allspeak`
-            ! The Graph pane and its sidebar are companion modules now, fetched by the editor when the
-            ! pane is first opened — so they travel with the editor, and a project that updates the
-            ! editor gets the pair that matches it. Both are listed: a project that fetched only one
-            ! would have a pane it can draw and a sidebar that never loads.
-            download RepoBase cat `asedit-graph.allspeak` to BaseDir cat `/asedit-graph.allspeak`
-            download RepoBase cat `asedit-side.allspeak` to BaseDir cat `/asedit-side.allspeak`
             save RemoteVersion to BaseDir cat `/.code-version`
             print `Update complete`
         end
@@ -190,10 +198,24 @@
             else if FilePath ends with `.js` put `application/javascript` into MimeType
             else if FilePath ends with `.css` put `text/css` into MimeType
             else put `text/plain` into MimeType
-            load Content from BaseDir cat `/` cat FilePath or begin
+            ! **One response, decided once, and a real 404 when the file is not there.** This
+            ! used to be `load Content from ... or begin return 'Not found' ... 404 end` and then
+            ! `return Content to Files` — which read as "404 if the load fails", but an `or`
+            ! clause whose action is a `return` does not end the section, so the thread carried on
+            ! into the `return Content` below. `Content` still held whatever was read last, so a
+            ! request for a file that is not there was answered `200` with the previous response's
+            ! body and the MIME guessed from the name that was asked for — and a page then
+            ! executed that body as JavaScript. The flag is what makes exactly one answer.
+            put `yes` into FileLoaded
+            load Content from BaseDir cat `/` cat FilePath
+                on failure
+                begin
+                    put `no` into FileLoaded
+                end
+            if FileLoaded is `yes`
+                return Content to Files with type MimeType
+            else
                 return `Not found` to Files with status 404
-            end
-            return Content to Files with type MimeType
         end
     end
 
