@@ -49,6 +49,8 @@ fine
 
 Aggiungi `binary` per i payload non testuali (immagini, archivi). La grammatica completa e gli esempi per parola chiave vivono in `allspeak-py/doc/core/keywords/{system,download,browse}.md`.
 
+**Il testo recuperato è UTF-8.** Ciò che `get … from url` mette in una variabile e ciò che `download` scrive vengono decodificati come UTF-8, qualunque charset dichiari la risposta — e quando non ne dichiara nessuno, un normale server web che serve `text/html` verrebbe altrimenti letto come latin-1 dal default abituale di HTTP, raddoppiando ogni lettera accentata e ogni lineetta. Una pagina in un'altra codifica non è lo scopo: recuperala in `binary` e convertila in uno script.
+
 ## Quando non esistono
 
 Nel runtime browser JS, `system`, `download` e `browse` non sono definiti. Il sandbox del browser li rende o impossibili (`system`) o ridondanti (`browse` — uno script può navigare tramite `window.location` o aprire tramite `window.open`, e `download` si può fare con `rest ottieni`). Non scrivere codice che usa queste parole chiave se potrebbe dover girare anche nel browser; tienile negli script chiaramente lato Python, come `server.allspeak` e le utility CLI.

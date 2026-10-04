@@ -45,6 +45,23 @@ class Core(Handler):
                 script_path = (Path.cwd() / script_path).resolve()
             path = script_path.parent / path
         return path.resolve()
+
+    # **Fetched text is UTF-8, in both runtimes, whatever the response header says.**
+    #
+    # `response.text` is not that. It decodes with the charset the response declares, and for `text/*`
+    # with no charset at all — which is how a plain web server serves its own pages, the site included —
+    # it is told (RFC 2616) to assume ISO-8859-1. A UTF-8 page therefore arrives mangled: every em dash
+    # and every accented letter doubles (`—` became `â€"`), because the bytes were reinterpreted as
+    # latin-1 and then written back out as UTF-8. Measured 2026-10-04 on
+    # https://allspeak.ai/code/edit.html, which serves `content-type: text/html` with no charset: requests
+    # reported `.encoding == 'ISO-8859-1'` and `.apparent_encoding == 'utf-8'`. For a project whose whole
+    # point is French, Italian and German, that is every accent.
+    #
+    # The JS twin never had this: `fetch().text()` decodes UTF-8 whatever the header says. So this is the
+    # JS rule, not a new one, and `r_download` below already applies it chunk by chunk — which is where
+    # `binary` downloads are handled separately, so an image still travels as bytes.
+    def fetchedText(self, response):
+        return response.content.decode('utf-8', errors='replace')
     
     def processOr(self, command, orHere):
         self.add(command)
@@ -737,7 +754,7 @@ class Core(Handler):
                 return command['or']
             else:
                 RuntimeError(self.program, self.program.errorMessage)
-        retval.setContent(response.text) # type: ignore
+        retval.setContent(self.fetchedText(response))
         self.program.putSymbolValue(target, retval)
         return self.nextPC()
 
@@ -1352,7 +1369,7 @@ class Core(Handler):
         url = self.textify(command['url'])
         try:
             response = requests.post(url, value, timeout=5)
-            retval.setContent(response.text) # type: ignore
+            retval.setContent(self.fetchedText(response))
             if response.status_code >= 400:
                 errorCode = response.status_code
                 errorReason = response.reason

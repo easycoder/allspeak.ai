@@ -9,7 +9,7 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 | `js/allspeak/*.js` (runtime, plugins, language packs) | `./build-allspeak` |
 | `js/allspeak/LanguagePack_*.js` | `./build-allspeak` **and** `./sync-language-packs` |
 | `starter/<lang>/*` (the agent instructions, and nothing else) | `./build-starters` — a pack is three files: `AGENTS.md`, `CLAUDE.md` and `.allspeak-init` |
-| a tool an agent uses (`tools/asdoc-check.py` / `plotview-check.js` / `viz-align-measure.py` / `guard-check.js` / `capture-check.js`) | `./build-starters` (it fails if one has gone missing) **and deploy** — the deploy publishes them at `/code/tools/`, which is where a project fetches one from. They are not shipped in a pack |
+| a tool an agent uses (`tools/asdoc-check.py` / `plotview-check.js` / `viz-align-measure.py` / `guard-check.js` / `capture-check.js` / `encoding-check.js`) | `./build-starters` (it fails if one has gone missing) **and deploy** — the deploy publishes them at `/code/tools/`, which is where a project fetches one from. They are not shipped in a pack |
 | `server.allspeak`, on its way to projects | **deploy** — `allspeak server <port>` fetches `https://allspeak.ai/code/server.allspeak` at every start when the directory has none, so a deploy puts a change in front of every project at once. No version file, no bump, nothing to remember. A project's own `server.allspeak`, if it keeps one, is used instead and never replaced |
 | `edit.html` | **deploy** — the dev server fetches the deployed page for any project that has none of its own, and fills in that project's language from its `.allspeak-init` |
 | `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
@@ -20,7 +20,9 @@ Editing either of the two `asedit` files needs no build — what it needs is a c
 `node tools/asedit-check.js asedit-side.allspeak`, `node tools/asedit-modes-check.js` (which runs the editor,
 drives both modules' load and the pane's report to the sidebar), `node tools/plotview-check.js <trace>`
 (which drives the drawing, cutting the view out of the module) and `node tools/guard-check.js` (which drives
-both run hosts on two deliberately bad scripts, to prove the recorder's guard still guards).
+both run hosts on two deliberately bad scripts, to prove the recorder's guard still guards) and
+`node tools/encoding-check.js` (which serves a page the awkward way — `text/html`, no charset — and
+insists the text the Python runtime fetched arrives exactly, accents and all).
 
 **After editing `js/plugins/asviz.js` or `js/allspeak/Run.js`**: `./build-allspeak` (they are in the bundle and
 the copied plugins), and `node tools/guard-check.js` — the recorder's guard lives in the plugin and the

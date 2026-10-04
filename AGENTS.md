@@ -196,6 +196,7 @@ Standing knowledge rather than next steps, which is why they live here and not i
 - **Never redirect stderr on a check whose stderr is its verdict.**
 - **A check on a boundary must carry what the boundary carries** — the JSON string, the registered handler — and set up what the real path sets up. Two green harnesses have sat over browser faults for want of this.
 - **A value computed before the pass that measures it silently uses the previous draw's number.** The first render looks right and every later one does not.
+- **An HTTP client's default charset is latin-1, not UTF-8.** `response.text` decodes a `text/*` response with the charset it declares and, with none declared — which is how a plain web server serves its own pages — assumes ISO-8859-1, so a UTF-8 page arrives with every accent and em dash doubled (`—` → `â€"`). The Python runtime's URL fetches now decode UTF-8 explicitly, like the browser's `fetch().text()` always did; `tools/encoding-check.js` holds that, and asserts its own premise (a response with no charset) before it asserts anything about the runtime.
 - **Measure a visual fault from a screenshot before reading the code**, and check the instrument's own constants first.
 
 ## Commit Style

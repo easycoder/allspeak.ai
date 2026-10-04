@@ -29,7 +29,7 @@ jobs:
           # needs from https://allspeak.ai/code/tools/. Kept in step with ./deploy-allspeak.
           cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json deploy/dist/
           mkdir -p deploy/code/tools
-          cp -p tools/plotview-check.js tools/guard-check.js tools/capture-check.js deploy/code/tools/
+          cp -p tools/plotview-check.js tools/guard-check.js tools/capture-check.js tools/encoding-check.js deploy/code/tools/
 # **The Python ones are published as `.py.txt` because the site *executes* `.py`.** Measured 2026-10-04:
 # `/code/tools/asdoc-check.py` answered `500 Internal Server Error` (the file is run, not served), while the
 # three `.js` files came back as text. The extension is only in the URL: the instructions tell an agent to
