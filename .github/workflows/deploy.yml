@@ -29,7 +29,7 @@ jobs:
           # needs from https://allspeak.ai/code/tools/. Kept in step with ./deploy-allspeak.
           cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json deploy/dist/
           mkdir -p deploy/code/tools
-          cp -p tools/plotview-check.js tools/guard-check.js tools/capture-check.js tools/encoding-check.js deploy/code/tools/
+          cp -p tools/plotview-check.js tools/guard-check.js tools/capture-check.js tools/encoding-check.js tools/flush-check.js deploy/code/tools/
 # **The Python tools are published with no `py` in the name at all, because the site *executes* one.**
 # Measured 2026-10-04: `/code/tools/asdoc-check.py` answered `500` (run, not served) — and so did
 # `asdoc-check.py.txt`, because the handler matches `.py` *anywhere* in the name. `.txt` alone is served as

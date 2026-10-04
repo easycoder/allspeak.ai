@@ -136,6 +136,8 @@ What is still open here:
 - **The editor's Record does not create the trace file.** Graham's shape has it doing that so the tab can see a recording is intended; the script's own `save the recording to <path>` creates it today, which covers the app case. Needs a decision on whether Record also POSTs an empty document.
 - **The reference chapter on recording a run** — `learn/*/reference/` still has none, and the vocabulary has now changed shape twice.
 - **The framework's report line lies under `--no-recorder`**: `viz.allspeak` prints `windows recorded: 0` for a script that armed itself, because it counts the *host's* recorder.
+- **`tools/capture-check.js` is published and needs this repo's sources, without saying so.** It spawns `tools/asviz-run.js`, which a pack does not carry, so from a pack it fails with a missing-file stack trace rather than the sentence `tools/flush-check.js` now prints (added when `flush-check.js` was published, 2026-10-04). The same fix, one tool over.
+- **`flush-check.js` is published but not named in any pack's `AGENTS.md`**, so a project's agent will not know it exists. The four checks the packs name are unchanged.
 - **The read-merge-write is proven against a stubbed page, not a real one.** `tools/flush-check.js` drives the plugin with an in-memory `/read/` and `/write/`; a real browser run is the remaining evidence, and it is the one Graham can give.
 - **The editor's app-arming path (`watchApp`, the injection, the carry) is now redundant for a self-recording app** — it stays for `record the script …`, and nothing has been removed. Deciding whether to retire it wants the browser run above first.
 - Written up in `various/record-and-launch.md`.
