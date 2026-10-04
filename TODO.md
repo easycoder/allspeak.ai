@@ -14,6 +14,10 @@
 
 ---
 
+## What changed most recently
+
+**The recording lifecycle changed shape on 2026-10-04 (`23a9b30`):** `@viz start` arms a recording, `@viz stop` ends a *segment* and writes it into the file `save the recording to <path>` names, and one file accumulates segments as a single recording. It also fixed a real bug — `@viz stop` had never closed its window. The outstanding evidence is a real browser run, and the editor's Record creating the trace file is the next piece; both are in `TODO-viz.md`, and the reasoning is in `various/record-and-launch.md`.
+
 ## Where things stand
 
 **The visualiser is the live work.** It is in the editor and working: a Graph pane over a recorded run, with the whole file as rows, a wheel-and-drag window over it, per-axis zoom, a caption and status line, marks and rules and heat, recorded flow lines, and a sidebar whose Docs tab shows the block prose for a clicked mark with `line N   visit V of T`. A run can be recorded from the editor's **Record** button, and a script naming an app can be **Launched** from it.
