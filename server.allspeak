@@ -313,15 +313,18 @@
                     begin
                         put empty into SideText
                     end
+                ! A `<textarea>` rather than a `<pre>`, because the text inside a textarea is text and cannot be
+                ! read as markup: the pane has 25 `<` in it, and markup-shaped content would be mangled here and
+                ! escaped on the way back out.
                 if GraphText is not empty
                 begin
-                    put `id="editor-graph" style="display:none">` cat GraphText cat `</pre>` into GraphDiv
-                    replace `id="editor-graph" style="display:none"></pre>` with GraphDiv in Page
+                    put `id="editor-graph" style="display:none">` cat GraphText cat `</textarea>` into GraphDiv
+                    replace `id="editor-graph" style="display:none"></textarea>` with GraphDiv in Page
                 end
                 if SideText is not empty
                 begin
-                    put `id="editor-side" style="display:none">` cat SideText cat `</pre>` into SideDiv
-                    replace `id="editor-side" style="display:none"></pre>` with SideDiv in Page
+                    put `id="editor-side" style="display:none">` cat SideText cat `</textarea>` into SideDiv
+                    replace `id="editor-side" style="display:none"></textarea>` with SideDiv in Page
                 end
                 return Page to Files with type `text/html`
             end

@@ -18,8 +18,8 @@
 <div id="editor-home" style="display:none"></div>
 <!-- The pane and the sidebar, when they came with the payload rather than from beside this page. Empty in a
      working tree, and the editor reads them through the same `attach ... to` as the two above. -->
-<pre id="editor-graph" style="display:none"></pre>
-<pre id="editor-side" style="display:none"></pre>
+<textarea id="editor-graph" style="display:none"></textarea>
+<textarea id="editor-side" style="display:none"></textarea>
 <pre id="asedit-ui" style="display:none"></pre>
 <pre id="allspeak-script" style="display:none"></pre>
 
@@ -104,7 +104,11 @@
 	if (!fromThisDirectory && parts) {
 		for (const [id, name] of [['editor-graph', 'asedit-graph.allspeak'], ['editor-side', 'asedit-side.allspeak']]) {
 			const holder = document.getElementById(id);
-			if (holder && parts[name]) holder.textContent = parts[name];
+			// **`value`, not `textContent`.** The holder is a `<textarea>`, and the editor reads this back with
+			// `the text of` — which is the element's `value` for a textarea. Text content would be *markup*:
+			// the pane is a script with 25 `<` in it, and a `<pre>` read through `innerHTML` hands back the
+			// escaped form, which is not the module. A textarea's `value` is the text and nothing else.
+			if (holder && parts[name]) holder.value = parts[name];
 		}
 	}
 	document.getElementById('asedit-ui').textContent = editorText['asedit.json'];

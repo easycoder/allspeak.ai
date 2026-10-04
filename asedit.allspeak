@@ -265,8 +265,14 @@
 !! and defaults to 'en'. All of the language-specific strings are then defined for each language.
 !   -- Detect language and set strings for each supported language --
     div LangDiv
-    div VizSrcDiv
-    div SideSrcDiv
+    ! **Textareas, and the reason is in how `the text of` reads an element.** The branches switch on the
+    ! *symbol's* type: a `div` reads `innerHTML` with every newline removed, which turns a 2,700-line module
+    ! into one line — and its first line is a `!!` comment, which then comments out the lot. Measured
+    ! 2026-10-04: the pane compiled as `1 lines (0 tokens)` and nothing was ever drawn. A `pre` would keep the
+    ! newlines but hands back *escaped* markup, and the module has 25 `<` in it. A textarea's `value` is the
+    ! text and only the text.
+    textarea VizSrcDiv
+    textarea SideSrcDiv
     put `en` into Lang
     attach LangDiv to `editor-lang` or go to SetStrings
     put the text of LangDiv into Lang
@@ -362,7 +368,7 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash 777ca8e8
+!! @hash 3f450398
 !! @verified 3ec54b89
 !!!
 !! The editor checks on startup and periodically for updates to itself.
