@@ -140,7 +140,27 @@ const read = () => {
 	check(read() .windows === 3 && calls.filter(c => c.startsWith(`/read/`)).length === reads,
 		`a flush with nothing new writes nothing at all (${JSON.stringify(read())})`);
 
-	// 6. **The editor's Record names the file, and the script can override it.** An app opened and armed from
+	// 6. **A file created empty first — which `save the recording to <path>` does — must not end up stating the
+	//    process twice.** The empty document has a `process_name` and no windows, so a test based on the window
+	//    count called it "nothing here yet" and the first real segment restated the process. Measured
+	//    2026-10-04 on Graham's own recording.
+	const created = new AllSpeak_Viz.Recorder(null, null);
+	const emptyProgram = { length: 1, programStack: [], vizTracePath: `stated-once.viz.json`, 0: {} };
+	await created.flushTo(emptyProgram, true);
+	await settle();
+	const afterCreate = JSON.parse(files[`stated-once.viz.json`]).traceEvents
+		.filter(e => e.name === `process_name`).length;
+	const firstSegment = new AllSpeak_Viz.Recorder(null, null);
+	segment2(firstSegment, emptyProgram);
+	await firstSegment.flushTo(emptyProgram);
+	await settle();
+	const processes = JSON.parse(files[`stated-once.viz.json`]).traceEvents
+		.filter(e => e.name === `process_name`).length;
+	check(afterCreate === 1 && processes === 1,
+		`a file created empty and then added to states one process, not two `
+		+ `(${afterCreate} after the create, ${processes} after the first segment)`);
+
+	// 7. **The editor's Record names the file, and the script can override it.** An app opened and armed from
 	//    outside is told where to write while it is being armed — which is what makes the line in the script
 	//    unnecessary for the common case. A script that names one of its own still wins.
 	const hostProgram = { length: 2, programStack: [], 0: {}, 1: {} };

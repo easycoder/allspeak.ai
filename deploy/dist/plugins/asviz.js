@@ -2278,9 +2278,13 @@ const vizTraceHandover = async function (path, windows, create) {
 	// One `thread_name` per window, so counting them counts the windows already in the file.
 	const recorded = events.filter(function (event) { return event && event.name === `thread_name`; }).length;
 	const added = vizTraceDocument(path, windows, recorded + 1).traceEvents;
-	// The process name is the document's, not the segment's: restating it per segment would put a second
-	// process into a trace that has one.
-	const segment = recorded > 0
+	// **The document's process is stated once, and the test for that is `process_name`, not the window count.**
+	// A file created by `save the recording to <path>` — which writes an empty document, a process and no
+	// windows — has no `thread_name` at all, so a window count of zero said "nothing here yet" and the first
+	// real segment restated the process. Measured 2026-10-04 on Graham's own recording: two `process_name`
+	// events in one document. Counting the process events is what actually answers "has this been stated".
+	const stated = events.some(function (event) { return event && event.name === `process_name`; });
+	const segment = stated
 		? added.filter(function (event) { return event.name !== `process_name`; })
 		: added;
 	const body = JSON.stringify({ traceEvents: events.concat(segment) }, null, 2);

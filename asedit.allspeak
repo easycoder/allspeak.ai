@@ -50,6 +50,7 @@
     variable StrClose
     variable StrSaved
     variable StrSaveFailed
+    variable StrRecording
     variable StrReloaded
     variable StrExtChange
     variable StrNoConnect
@@ -203,7 +204,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 821fc25a
+!! @hash 90e6973b
 !! @verified b3977d8a
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -281,6 +282,7 @@ SetStrings:
         put `Chiudi` into StrClose
         put `Salvato` into StrSaved
         put `Salvataggio fallito` into StrSaveFailed
+        put `Registrazione dell'app` into StrRecording
         put `Ricaricato` into StrReloaded
         put `Modifica esterna rilevata` into StrExtChange
         put `Impossibile connettersi al server` into StrNoConnect
@@ -301,6 +303,7 @@ SetStrings:
         put `Fermer` into StrClose
         put `Enregistré` into StrSaved
         put `Échec de l'enregistrement` into StrSaveFailed
+        put `Enregistrement de l'app` into StrRecording
         put `Rechargé` into StrReloaded
         put `Modification externe détectée` into StrExtChange
         put `Impossible de se connecter au serveur` into StrNoConnect
@@ -321,6 +324,7 @@ SetStrings:
         put `Schließen` into StrClose
         put `Gespeichert` into StrSaved
         put `Speichern fehlgeschlagen` into StrSaveFailed
+        put `Aufzeichnung der App` into StrRecording
         put `Neu geladen` into StrReloaded
         put `Externe Änderung erkannt` into StrExtChange
         put `Verbindung zum Server nicht möglich` into StrNoConnect
@@ -341,6 +345,7 @@ SetStrings:
         put `Close` into StrClose
         put `Saved` into StrSaved
         put `Save failed` into StrSaveFailed
+        put `Recording the app` into StrRecording
         put `Reloaded` into StrReloaded
         put `External change detected` into StrExtChange
         put `Cannot connect to server` into StrNoConnect
@@ -357,7 +362,7 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash 1ef8e8d5
+!! @hash 777ca8e8
 !! @verified 3ec54b89
 !!!
 !! The editor checks on startup and periodically for updates to itself.
@@ -2168,14 +2173,14 @@ RecordRun:
     if AppPage is not empty
     begin
         record the app at AppPage to TracePath
-        ! **What this line may claim, and no more.** The plugin opens the app and arms it in the ticks that
-        ! follow, so at this moment nothing is armed yet and nothing has been written — and the message used to
-        ! say "Recording ... — close its window and the recording is saved to ...", which is a promise the
-        ! editor cannot keep: it printed that sentence whether or not a window was opened at all, and Graham
-        ! followed it for a while with nothing recording. What *is* true here is that the app is being opened
-        ! and that the recording goes to that file as the app runs; a failure is the plugin's to report, in the
-        ! console, where it says which of the two things went wrong.
-        set the content of StatusSpan to `Opening ` cat AppPage cat ` — it writes its recording to ` cat TracePath cat ` as it runs`
+        ! **Short, true, and out of the way in three seconds.** The message names no path: the pane does, when
+        ! it reads the recording, and the toolbar is not the place for a filename. It used to say "Recording
+        ! ... — close its window and the recording is saved to ...", which was both a promise the editor cannot
+        ! keep (it printed whether or not a window opened) and the longest thing in the toolbar — Graham's two
+        ! objections, in one line. A failure is the plugin's to report, in the console, where it names which of
+        ! the two things went wrong.
+        set the content of StatusSpan to StrRecording
+        fork to ClearStatus
         stop
         stop
     end
@@ -2200,7 +2205,7 @@ RecordFailed:
     set the content of StatusSpan to `Could not record this script`
     fork to ClearStatus
     stop
-!! @hash 88d3e846
+!! @hash df567fa6
 !! @verified 00000000
 !!!
 
