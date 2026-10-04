@@ -49,6 +49,8 @@ fin
 
 Ajoute `binary` pour les charges utiles non textuelles (images, archives). La grammaire complète et des exemples par mot-clé se trouvent dans `allspeak-py/doc/core/keywords/{system,download,browse}.md`.
 
+**Le texte récupéré est en UTF-8.** Ce que `get … from url` place dans une variable et ce que `download` écrit sont tous deux décodés en UTF-8, quel que soit le jeu de caractères déclaré par la réponse — et lorsqu'elle n'en déclare aucun, un serveur web ordinaire servant du `text/html` serait sinon lu en latin-1 par le défaut habituel de HTTP, ce qui double chaque lettre accentuée et chaque tiret cadratin. Une page dans un autre encodage n'est pas ce à quoi cela sert : récupère-la en `binary` et convertis-la dans un script.
+
 ## Quand elles n'existent pas
 
 Dans le runtime navigateur JS, `system`, `download` et `browse` ne sont pas définis. Le bac à sable du navigateur les rend soit impossibles (`system`) soit redondantes (`browse` — un script peut naviguer via `window.location` ou ouvrir via `window.open`, et `download` peut se faire avec `rest obtiens`). N'écris pas de code qui utilise ces mots-clés s'il doit aussi tourner dans le navigateur ; garde-les dans les scripts clairement côté Python, comme `server.allspeak` et les utilitaires CLI.

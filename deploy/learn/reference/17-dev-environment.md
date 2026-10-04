@@ -49,6 +49,8 @@ end
 
 Add `binary` for non-text payloads (images, archives). The full grammar and per-keyword examples live in `allspeak-py/doc/core/keywords/{system,download,browse}.md`.
 
+**Fetched text is UTF-8.** What `get … from url` puts in a variable and what `download` writes are both decoded as UTF-8, whatever charset the response declares — and when it declares none, a plain web server serving `text/html` would otherwise be read as latin-1 by the usual HTTP default, which doubles every accented letter and every em dash. A page in another encoding is not what this is for: fetch it `binary` and convert it in a script.
+
 ## When these don't exist
 
 In the JS browser runtime, `system`, `download`, and `browse` are not defined. The browser sandbox makes them either impossible (`system`) or redundant (`browse` — a script can navigate via `window.location` or open via `window.open`, and `download` can be done with `rest get`). Don't write code that uses these keywords if it might also need to run in the browser; keep them in scripts that are clearly Python-side, such as `server.allspeak` and CLI utilities.
