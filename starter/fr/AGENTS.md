@@ -61,10 +61,10 @@ Exemple :
 
 Ajoute des blocs de doc **au fur et à mesure que tu écris** — pas après. La prose t'oblige à énoncer l'intention en langage clair, ce qui fait ressortir les erreurs (un bloc de doc qui dit « crée 9 cases » alors que le code en crée 1 rend l'écart évident avant même qu'on l'exécute). Voir `learn/reference/16-doc-blocks.md` pour la convention complète.
 
-Après toute modification de code, récupère l'analyseur et exécute-le. Les outils sont *publiés* plutôt que livrés, pour qu'un projet ne conserve jamais une copie devenue obsolète — récupère celui dont tu as besoin dans ton propre répertoire de travail, pas dans le projet  (le `.py.txt` vient du fait que le site *exécute* les fichiers `.py` au lieu de les servir — enregistre-le sous `asdoc-check.py`):
+Après toute modification de code, récupère l'analyseur et exécute-le. Les outils sont *publiés* plutôt que livrés, pour qu'un projet ne conserve jamais une copie devenue obsolète — récupère celui dont tu as besoin dans ton propre répertoire de travail, pas dans le projet  (le `.txt` vient du fait que le site *exécute* les fichiers `.py` au lieu de les servir — enregistre-le sous `asdoc-check.py`):
 
 ```
-curl -fsS https://allspeak.ai/code/tools/asdoc-check.py.txt -o /tmp/asdoc-check.py
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.txt -o /tmp/asdoc-check.py
 python3 /tmp/asdoc-check.py --write <fichier>
 ```
 

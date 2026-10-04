@@ -61,10 +61,10 @@ Example:
 
 Add doc blocks **as you write** — not after. The prose forces you to state intent in plain language, which surfaces mistakes (a doc block saying "creates 9 cells" while the code creates 1 makes the mismatch obvious before you ever run it). See `learn/reference/16-doc-blocks.md` for the full convention.
 
-After any code edit, fetch the analyser and run it. The checks are *published* rather than shipped, so that a project never holds a copy that has gone stale — fetch the one you need into your own scratch directory, not into the project (the `.py.txt` is because the site runs `.py` files rather than serving them — save it as `asdoc-check.py`):
+After any code edit, fetch the analyser and run it. The checks are *published* rather than shipped, so that a project never holds a copy that has gone stale — fetch the one you need into your own scratch directory, not into the project (the `.txt` is because the site runs `.py` files rather than serving them — save it as `asdoc-check.py`):
 
 ```
-curl -fsS https://allspeak.ai/code/tools/asdoc-check.py.txt -o /tmp/asdoc-check.py
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.txt -o /tmp/asdoc-check.py
 python3 /tmp/asdoc-check.py --write <file>
 ```
 

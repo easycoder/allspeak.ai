@@ -54,12 +54,13 @@ cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json deploy
 # one published set serves every project. `build-starters` checks that all five exist before a pack is built.
 mkdir -p deploy/code/tools
 cp -p tools/plotview-check.js tools/guard-check.js tools/capture-check.js tools/encoding-check.js deploy/code/tools/
-# **The Python ones are published as `.py.txt` because the site *executes* `.py`.** Measured 2026-10-04:
-# `/code/tools/asdoc-check.py` answered `500 Internal Server Error` (the file is run, not served), while the
-# three `.js` files came back as text. The extension is only in the URL: the instructions tell an agent to
-# save it as `asdoc-check.py`.
-cp -p tools/asdoc-check.py deploy/code/tools/asdoc-check.py.txt
-cp -p tools/viz-align-measure.py deploy/code/tools/viz-align-measure.py.txt
+# **The Python tools are published with no `py` in the name at all, because the site *executes* one.**
+# Measured 2026-10-04: `/code/tools/asdoc-check.py` answered `500` (run, not served) — and so did
+# `asdoc-check.py.txt`, because the handler matches `.py` *anywhere* in the name. `.txt` alone is served as
+# text (`/robots.txt` proves it). The name lives only in the URL: the instructions tell an agent to save it
+# as `asdoc-check.py`.
+cp -p tools/asdoc-check.py deploy/code/tools/asdoc-check.txt
+cp -p tools/viz-align-measure.py deploy/code/tools/viz-align-measure.txt
 
 echo "==> 4/6 build-starters"
 ./build-starters

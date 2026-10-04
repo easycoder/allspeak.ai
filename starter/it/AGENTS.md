@@ -61,10 +61,10 @@ Esempio:
 
 Aggiungi i blocchi di doc **mentre scrivi** — non dopo. La prosa ti costringe a dichiarare l'intento in linguaggio chiaro, il che fa emergere gli errori (un blocco di doc che dice «crea 9 celle» mentre il codice ne crea 1 rende evidente la discrepanza prima ancora di eseguirlo). Vedi `learn/reference/16-doc-blocks.md` per la convenzione completa.
 
-Dopo ogni modifica al codice, recupera l'analizzatore ed eseguilo. Gli strumenti sono *pubblicati* invece che forniti, così un progetto non conserva mai una copia diventata obsoleta — recupera quello che ti serve nella tua directory di lavoro, non nel progetto (il `.py.txt` dipende dal fatto che il sito *esegue* i file `.py` invece di servirli — salvalo come `asdoc-check.py`):
+Dopo ogni modifica al codice, recupera l'analizzatore ed eseguilo. Gli strumenti sono *pubblicati* invece che forniti, così un progetto non conserva mai una copia diventata obsoleta — recupera quello che ti serve nella tua directory di lavoro, non nel progetto (il `.txt` dipende dal fatto che il sito *esegue* i file `.py` invece di servirli — salvalo come `asdoc-check.py`):
 
 ```
-curl -fsS https://allspeak.ai/code/tools/asdoc-check.py.txt -o /tmp/asdoc-check.py
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.txt -o /tmp/asdoc-check.py
 python3 /tmp/asdoc-check.py --write <file>
 ```
 

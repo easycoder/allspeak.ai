@@ -61,10 +61,10 @@ Beispiel:
 
 Fügen Sie Doc-Blöcke **beim Schreiben** hinzu — nicht danach. Die Prosa zwingt Sie, die Absicht in klarer Sprache zu formulieren, was Fehler aufdeckt (ein Doc-Block, der „erstellt 9 Zellen" sagt, während der Code 1 erstellt, macht die Diskrepanz offensichtlich, bevor Sie ihn überhaupt ausführen). Die vollständige Konvention steht in `learn/reference/16-doc-blocks.md`.
 
-Führen Sie nach jeder Codeänderung den Analysator aus — holen Sie ihn zuerst (die Werkzeuge werden *veröffentlicht* statt mitgeliefert, damit ein Projekt nie eine veraltete Kopie behält; holen Sie das benötigte in Ihr eigenes Arbeitsverzeichnis, nicht in das Projekt (das `.py.txt` kommt daher, dass der Server `.py`-Dateien *ausführt* statt sie auszuliefern — speichern Sie sie als `asdoc-check.py`)):
+Führen Sie nach jeder Codeänderung den Analysator aus — holen Sie ihn zuerst (die Werkzeuge werden *veröffentlicht* statt mitgeliefert, damit ein Projekt nie eine veraltete Kopie behält; holen Sie das benötigte in Ihr eigenes Arbeitsverzeichnis, nicht in das Projekt (das `.txt` kommt daher, dass der Server `.py`-Dateien *ausführt* statt sie auszuliefern — speichern Sie sie als `asdoc-check.py`)):
 
 ```
-curl -fsS https://allspeak.ai/code/tools/asdoc-check.py.txt -o /tmp/asdoc-check.py
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.txt -o /tmp/asdoc-check.py
 python3 /tmp/asdoc-check.py --write <datei>
 ```
 
