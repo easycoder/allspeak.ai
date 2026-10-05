@@ -18,6 +18,19 @@ The IR this reads is the *Python* runtime's, which is not the same as the JS
 runtime's — labels are real commands here rather than bare symbol entries, `lino`
 is 0-based, and the two runtimes have different vocabularies. So a script is
 analysed as the runtime you analyse it with sees it.
+
+The trigger — the vocabulary a *script* uses, as against the host contract above:
+
+    record the script [in <path>] [as <source>] giving <variable> [reporting <verdict>]
+        run a script of the caller's choosing under a recorder, and hand back the recording
+
+**Which runtime a script is for is the script's own declaration** — `@py` or `@js` on a
+line of its own, with `@js` the default — and `record` is the reader: handing this runtime
+a `@js` script is refused in a sentence rather than in a compile error about a word the
+author did write. The marker is read off the token stream, before anything is compiled,
+because a script handed to the wrong runtime is exactly the one that will not compile.
+The other two shapes on the JS side, `record this run` and `save the recording to <path>`
+— the pair a *running app* needs to record itself — are not implemented here yet.
 """
 
 from allspeak import (ECValue, ECVariable, FatalError, Handler, RuntimeError,
@@ -26,6 +39,7 @@ from allspeak import (ECValue, ECVariable, FatalError, Handler, RuntimeError,
 import contextlib
 import io
 import json
+import sys
 import time
 
 
@@ -47,6 +61,56 @@ def _attrKey(text):
     whole = str(text or '')
     gap = whole.find(' ')
     return whole if gap < 0 else whole[:gap]
+
+
+# **Which runtime a script is for, which nothing else in the language records.** The two implementations are
+# near-identical languages with different vocabularies, and until now a script said which it was only by failing
+# to compile in the other one — `I don't understand 'dictionary' at line 46`, which names the word and the line
+# but answers a question nobody asked. `@py` and `@js` are the script's own answer: a file-level attribute on a
+# line of its own, which is exactly the case the language reference names for one ("what the script is"), so
+# there is no new syntax and no word in any pack.
+#
+# **The default is `@js`.** An unmarked script is a JavaScript one, which is the choice Graham made on
+# 2026-10-05 — so a Python script has to say so, and a tool choosing a runtime (`record`, below) can refuse
+# rather than guess. Kept in step with `VIZ_FLAVOUR_*` in `js/plugins/asviz.js`, value for value and sentence
+# for sentence.
+FLAVOUR_JS = 'js'
+FLAVOUR_PY = 'py'
+
+
+def flavourOf(tokens):
+    """The flavour a source declares, read off the *token stream* rather than off the text.
+
+    The tokeniser is the only thing that knows an `@` inside a literal, or inside a `!!` doc block, from an
+    attribute, so a reader scanning lines would be a second, worse implementation of that rule — the same
+    argument the editor's own attribute walk makes. The marker is an attribute-only line, which is a token
+    carrying `attr`, so no compile is needed to find it — and that matters, because the script this is asked
+    about is precisely the one that will not compile here.
+
+    Answers `(flavour, marked)`, because both facts come from the same scan and a caller needs both: which
+    flavour, and whether the script *said* so — the two refusals read differently, and a reader told the
+    default is at work has one fewer thing to wonder about.
+    """
+    for token in tokens or []:
+        attr = getattr(token, 'attr', None)
+        key = _attrKey(attr) if attr else ''
+        if key in (FLAVOUR_JS, FLAVOUR_PY):
+            return key, True
+    return FLAVOUR_JS, False
+
+
+def flavourRefusal(flavour, marked):
+    """The sentence a runtime says when it is handed the other flavour's script.
+
+    It names the marker, what the marker means, and which runtime is refusing — the three things a reader
+    needs, and the reason a refusal beats the compile error it replaces: `I don't understand 'dictionary' at
+    line 46` is true and unhelpful, because the script is not broken, it is simply not this runtime's.
+    """
+    name = '@py' if flavour == FLAVOUR_PY else '@js'
+    runtime = 'Python' if flavour == FLAVOUR_PY else 'JavaScript'
+    tail = '' if marked else ' (the default when there is no marker)'
+    return (f'this script is {name}{tail} — a script for the {runtime} runtime, '
+            f'and this is the Python runtime')
 
 
 def _valueText(program, name):
@@ -170,6 +234,13 @@ class Recorder:
         self.lastCommand = None
         self.started = None
         self.stopped = None     # 'work' or 'wall' when a guard ended the run
+        # **Whether the run has just handed control to a timer**, which is what a `wait` does: the command
+        # returns without advancing the pc, the run loop breaks, and the flush comes back to its caller with
+        # the program still to continue. Nothing else records that fact — a program parked on a timer looks
+        # exactly like one that has stopped — so the recorder notes it as it passes, and a recording made
+        # inside a call can say that it ends there rather than pass a slice off as a whole run. The JS
+        # recorder carries the same field, set from the same keyword list the guard uses.
+        self.parked = False
 
     def anchorsOf(self, program):
         """The pcs worth timestamping: labels, loop tests, events, and the markers.
@@ -298,6 +369,13 @@ class Recorder:
         # runs as an ordinary script when no recorder is attached, and the recorder only
         # has to notice the commands as they pass.
         command = program.code[pc] if pc < len(program.code) else None
+        # **Whether the run has just handed control to a timer**, noted as the command goes past. A command
+        # that waits returns without advancing the pc, so the run loop breaks and the caller gets control back
+        # with the program still to continue — and nothing else records that, because a program parked on a
+        # timer is registered exactly like one that has ended. The verdict reads it, which is how a recording
+        # can say it ends at the run's first wait rather than pass a slice off as the whole run.
+        self.parked = bool(command is not None
+                           and command.get('keyword') in WAITING_KEYWORDS)
         if self.account(program, command):
             return False        # the guard ended the run; the runtime breaks on this
         # **Where attributes stop being inert.** They arrive in the program and nothing else looks at them,
@@ -473,6 +551,49 @@ class Viz(Handler):
         self.add(command)
         return True
 
+    # record the script [in <path>] [as <source>] giving <variable> [reporting <verdict>]
+    #
+    # **The trigger: run a script of the caller's choosing under a recorder, and hand back the recording.**
+    # `model` answers "what is this script made of?" without running it; this answers "what does it do?", which
+    # is why it is the one shape in this plugin that executes the target. The recorder's guard is armed with the
+    # recorder's own defaults rather than by the caller, because a script handed over by a tool is not to be
+    # trusted with the tool's responsiveness — the same bargain the JavaScript plugin's `record` makes.
+    #
+    # `reporting <verdict>` is the second output, and it is the one a person reads: the recording's own sentence
+    # about itself — `12 visits in 1 window`, or why there is nothing. It is separate from the trace because the
+    # trace is for a viewer and the verdict is for the status line.
+    def k_record(self, command):
+        # `record this run` is the JavaScript plugin's other shape — a script arming a recorder for *itself*,
+        # which is what a running app needs. Python has no equivalent yet, and a named refusal beats the
+        # grammar error a reader would otherwise get, which names the word `giving` and not the cause.
+        if language_word(self.peek()) == 'this':
+            FatalError(self.compiler,
+                       "viz 'record this run': the Python runtime cannot arm its own recording yet — "
+                       "this shape is the JavaScript plugin's")
+        if language_word(self.peek()) == 'the':
+            self.nextToken()
+        if language_word(self.peek()) == 'script':
+            self.nextToken()
+        if language_word(self.peek()) == 'in':
+            self.nextToken()
+            command['path'] = self.nextValue()
+        # `as <source>` is for a caller holding the text itself — an editor with an unsaved buffer is the case
+        # that matters — so nothing has to be written out and read back just to be run.
+        if language_word(self.peek()) == 'as':
+            self.nextToken()
+            command['text'] = self.nextValue()
+        if language_word(self.peek()) != 'giving':
+            FatalError(self.compiler,
+                       "viz 'record': expected "
+                       "'record the script [in <path>] [as <source>] giving <variable> [reporting <verdict>]'")
+        self.nextToken()
+        command['target'] = self.nextToken()
+        if language_word(self.peek()) == 'reporting':
+            self.nextToken()
+            command['verdict'] = self.nextToken()
+        self.add(command)
+        return True
+
     # ------------------------------------------------------------------ markers
 
     # viz start [on <label>] [once|every]   |   viz stop [on <label>]
@@ -486,11 +607,36 @@ class Viz(Handler):
 
     def r_model(self, command):
         path = self.textify(command['path']) if 'path' in command else VizState.target
+        text = self.sourceText(command, path)
+        if text is None:
+            return self.nextPC()
+
+        records = self.model(path, text)
+        self.setRecords(command['target'], records)
+        return self.nextPC()
+
+    def r_record(self, command):
+        path = self.textify(command['path']) if 'path' in command else VizState.target
+        text = self.sourceText(command, path)
+        if text is None:
+            return self.nextPC()
+
+        trace, verdict = recordSource(path, text)
+        self.putText(command['target'], trace)
+        if 'verdict' in command:
+            self.putText(command['verdict'], verdict)
+        return self.nextPC()
+
+    def sourceText(self, command, path):
+        """The text of the script a command names — supplied by the caller, or read from the path.
+
+        Shared by `model` and `record`, which differ in what they *do* with a source rather than in how they get
+        one. `as <source>` is the supplied case, and it is the one an editor with an unsaved buffer needs.
+        """
         if path is None:
             RuntimeError(self.program,
                          "viz: no target — the host must set as_viz.VizState.target")
-            return self.nextPC()
-
+            return None
         if 'text' in command:
             VizState.sources[path] = self.textify(command['text'])
         text = VizState.sources.get(path)
@@ -500,11 +646,12 @@ class Viz(Handler):
                     text = f.read()
             except (IOError, OSError) as e:
                 RuntimeError(self.program, f'viz: cannot read {path}: {e}')
-                return self.nextPC()
+                return None
+        return text
 
-        records = self.model(path, text)
-        self.setRecords(command['target'], records)
-        return self.nextPC()
+    def putText(self, name, text):
+        """Put a string into a variable, as `put … into …` would."""
+        self.putSymbolValue(self.getVariable(name), ECValue(type=str, content=text))
 
     # ----------------------------------------------------------------- the trace
 
@@ -1218,6 +1365,19 @@ class Viz(Handler):
             out.append(f'note | reachability is approximate: {dynamic} computed jump(s) '
                        'or returns')
 
+        # **The attributes the program carries, one record each, with the line they sit on.** They are the one
+        # thing a script can say to a tool that the language itself has no use for, and a reader of this model
+        # is such a tool — the editor reads `@app` this way, and a marker like `@py` arrives by the same walk.
+        # They are read from the *compiled* program rather than from the source text because the tokeniser is
+        # what knows an `@` inside a literal, or inside a `!!` doc block, from an attribute: a reader scanning
+        # the text itself would be a second, worse implementation of that rule. The same record the JavaScript
+        # plugin's model writes, because one framework reads both; the line is 1-based in each, off a 1-based
+        # `lino` there and a 0-based one here.
+        for element in code:
+            if element is None or not element.get('attr'):
+                continue
+            out.append(f"attr | line={element.get('lino', 0) + 1} | {element['attr']}")
+
         # The census of block shapes. A label can appear in more than one entry or exit
         # bucket, so these count labels carrying that shape, not a partition of them.
         def tally(kind, token):
@@ -1418,6 +1578,155 @@ def traceDocument(script, windows):
 
 def traceRecordsFor(handler, path, covered=None):
     return handler.traceRecords(path, covered)
+
+
+# ------------------------------------------------------------- the trigger
+
+def verdict(windows, stopped, parked):
+    """**What a recording amounts to, in one line, for a caller to say out loud.**
+
+    The three things worth knowing, in the order they matter: what stopped the run, what was collected, and
+    whether the run was parked on a timer when the call returned — the last of which is why a recording can be
+    a slice of a run rather than the whole of it. Visits are the pane's own unit (`line N visit V of T`), so
+    the number a status line shows is the number the pane's sidebar shows. It is the same sentence the
+    JavaScript plugin's `verdict` builds, because a caller may be reading either — the whole point of the trace
+    format is that the two runtimes' recordings are laid against each other.
+    """
+    if stopped:
+        return 'stopped: ' + stopped
+    visits = sum(len(window['visits']) for window in windows)
+    if not windows:
+        return 'nothing recorded: the run finished without reaching a marker'
+    line = '1 visit' if visits == 1 else f'{visits:,} visits'
+    line += ' in 1 window' if len(windows) == 1 else f' in {len(windows)} windows'
+    if parked:
+        line += ', and the run waits there — the recording ends at its first wait'
+    return line
+
+
+class _Said:
+    """A stdout that passes through *and* keeps its tail, so a failure can be quoted.
+
+    A recorded run's own output is the run's, and swallowing it would be a silent change to what recording a
+    script does — so this writes through. But the Python runtime announces a runtime error by *printing* and
+    calling `sys.exit()`, so the sentence the caller needs is on stdout and nowhere else. Hence a stream that
+    does both, which is the counterpart of the JavaScript plugin catching the error the runtime threw.
+    """
+
+    def __init__(self, stream, keep=40):
+        self.stream = stream
+        self.keep = keep
+        self.tail = []
+
+    def write(self, text):
+        self.stream.write(text)
+        self.tail.append(text)
+        if len(self.tail) > self.keep:
+            del self.tail[0]
+        return len(text)
+
+    def flush(self):
+        self.stream.flush()
+
+
+def tokensOf(path, lines):
+    """The token stream of a source, without compiling it.
+
+    **The flavour marker has to be read before the compile, and this is why.** A script handed to the wrong
+    runtime is precisely the script that will not compile there, so a marker read off the *program* could never
+    be read: the compile's own error arrives first. The token stream is enough — the marker is an
+    attribute-only line — and tokenising is all this pass does.
+    """
+    from allspeak import Program
+    from allspeak import as_program
+
+    saved_queue = as_program.queue
+    saved_pack = language.pack
+    try:
+        probe = (Program(path, testMode=True) if lines is None
+                 else Program(path, testMode=True, source='\n'.join(lines) + '\n', name=path))
+        probe.tokenise(probe.script)
+        return list(probe.script.tokens)
+    finally:
+        as_program.queue = saved_queue
+        if saved_pack is not None and language.pack is not saved_pack:
+            language.init(saved_pack)
+
+
+def recordSource(path, text):
+    """Run a script under a recorder, inside the runtime that is already running, and say what it collected.
+
+    Answers `(trace-json, verdict)` — the recording as text for a viewer, and the one line about it that a
+    caller can put on a status line. `AllSpeak_Viz.record` is the same function on the other side, and the two
+    are deliberately the same shape: the trace format is a contract, so a recording made here is meant to be
+    laid against one made there.
+
+    **The flavour is asked first, and before anything is compiled.** A script for the JavaScript runtime is
+    exactly the script that would fail here in a way that says nothing about the real problem — `I don't
+    understand 'dictionary' at line 46` names a word the author did write, in a script that is not broken. The
+    refusal says what is actually true instead.
+
+    **The run is synchronous and nested**, which is the one unusual thing here: the caller is a running
+    program, so the target is stepped with its own `flush` loop while the caller waits. A `wait` in the target
+    hands the rest of it to a timer, so the call returns parked — and the verdict says so rather than passing a
+    slice off as a whole run. The guard is armed with the recorder's own defaults, so a runaway is bounded.
+    """
+    from allspeak import as_program
+
+    lines = text.split('\n')
+    if lines and lines[-1] == '':
+        lines.pop()
+
+    tokens = tokensOf(path, lines)
+    flavour, marked = flavourOf(tokens)
+    if flavour != FLAVOUR_PY:
+        why = flavourRefusal(flavour, marked)
+        VizState.problems.append(why)
+        return '', 'could not run: ' + why
+
+    target, problem = compileOnly(path, lines)
+    if target is None:
+        VizState.problems.append(problem)
+        return '', 'could not run: ' + problem
+
+    # In test mode a script that ends naturally or exits prints its test summary; a recording is not a test
+    # run, and the summary would land in the middle of the caller's own output.
+    target.summaryPrinted = True
+    recorder = Recorder(budget=DEFAULT_BUDGET_NS, ceiling=DEFAULT_CEILING_NS)
+    target.recorder = recorder
+
+    saved_queue = as_program.queue
+    stopped = None
+    said = _Said(sys.stdout)
+    try:
+        with contextlib.redirect_stdout(said):
+            target.running = True
+            target.flush(0)
+    except SystemExit:
+        # The Python runtime reports a runtime error by printing it and exiting, so the refusal is in what was
+        # said on the way out. The JavaScript plugin gets the same fact as a thrown error it catches.
+        stopped = _lastWords(said.tail)
+    finally:
+        as_program.queue = saved_queue
+
+    parked = recorder.parked
+    windows = recorder.finishedWindows()
+    recorder.finish()
+    return json.dumps(traceDocument(path, windows)), verdict(windows, stopped, parked)
+
+
+def _lastWords(tail):
+    """The one line worth quoting from what a failing run printed.
+
+    The Python runtime prints a heading and then its message, so the line after `-> ` is the sentence — the same
+    reading `compileFailure` makes of a compile error. Falling back to the first non-empty line keeps a run that
+    failed some other way from quoting nothing at all.
+    """
+    lines = [line.strip() for text in tail for line in text.splitlines() if line.strip()]
+    for line in reversed(lines):
+        if line.startswith('-> '):
+            return line[3:]
+    return lines[0] if lines else 'the run failed, and said nothing this could quote'
 
 
 def parseSections(text):

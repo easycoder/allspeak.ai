@@ -222,12 +222,26 @@ const framework = fs.readFileSync(path.join(root, `viz.allspeak`), `utf8`);
 let failures = 0;
 const firstLine = (err) => String((err && err.message) || err).split(`\n`)[0];
 
+// **Every named target is registered before any of them runs.** A script can now ask for another one by name —
+// `record the script in <path> giving …` — and it finds the source where a host put it, so the host has to put
+// it there first. Registering a target as it comes up was near enough while nothing could look ahead; it fails
+// the moment one target names another, and it fails with `no source registered`, which reads as a fault in the
+// script rather than as the host's ordering.
+for (const target of targets) {
+	if (!fs.existsSync(resolve(target))) continue;
+	AllSpeak_Viz.sources[target] = fs.readFileSync(resolve(target), `utf8`);
+	AllSpeak_Viz.sections[target] = sectionsFor(resolve(target));
+}
+
 for (const target of targets) {
 	if (!fs.existsSync(resolve(target))) {
 		process.stderr.write(`asviz-run: no such file: ${target}\n`);
 		failures++;
 		continue;
 	}
+	// The one target the framework is *looking at*, and the list of things that went wrong on this pass.
+	AllSpeak_Viz.target = target;
+	AllSpeak_Viz.problems = [];
 	if (wantsRun) {
 		process.stderr.write(`asviz-run: running ${target}\n`);
 		// A target that will not run is still worth analysing: the model is built from a
@@ -256,11 +270,6 @@ for (const target of targets) {
 				`(${document.traceEvents.length} events, ${windows.length} window(s))\n`);
 		}
 	}
-
-	AllSpeak_Viz.target = target;
-	AllSpeak_Viz.sources[target] = fs.readFileSync(resolve(target), `utf8`);
-	AllSpeak_Viz.sections[target] = sectionsFor(resolve(target));
-	AllSpeak_Viz.problems = [];
 
 	// Compile the framework ourselves rather than via AllSpeak.start: start() is
 	// once-only and routes errors through reportError, which is built for a page

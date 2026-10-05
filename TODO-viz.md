@@ -119,8 +119,23 @@ Two numbers for his eye: the fill is `#d6d6d6`, which against the page is 12.36:
 ### The three routes for capturing a run, unchanged
 
 1. **The editor records** (JS, in the editor's own page) — **built**. `edit.html` already loads the runtime and `plugins/asviz.js`, so nothing new is fetched, no server change is needed, and it works from a pack. The trace is written to `<script>.viz.json` through the existing `POST /write/`. *Caveat to state, not hide:* the script runs **in the editor's page**, so it can scribble on the editor's DOM, and it is the JS runtime's run. The guard makes a runaway harmless; the DOM sharing is the reason to consider a throwaway iframe, at the cost of twenty lines of page JS.
-2. **The project's server records** (Python) — unbuilt. `server.allspeak` gains a route that runs the script under Python and writes `<script>.viz.json`. It needs the plugin beside the server (`use plugin Viz from ./as_viz.py`, so `as_viz.py` travels in the packs) and a route that calls the new command.
+2. **The project's server records** (Python) — **half built, 2026-10-05.** The command it needs now exists: `record the script [in <path>] [as <source>] giving <variable> [reporting <verdict>]` runs a script under a recorder *inside the Python runtime* and hands the recording back, so a route can call it and write the trace, and `@py` is how the script says it is the Python runtime's (below). What is still unbuilt is the route in `server.allspeak`, and it needs the plugin beside the server (`use plugin Viz from ./as_viz.py`, so `as_viz.py` travels in the packs — which no pack carries yet). **And the marker has made the caveat concrete rather than theoretical:** a route that runs *the script in the active tab* can only do so if the tab is a `@py` script, and today every script without a marker is a JavaScript one — so a route like this records `@py` scripts and refuses the rest in a sentence, which is the honest half of the feature.
 3. **The project records itself** — the most integrated and the least machinery for a JS project, and the one that answers a question the other two cannot: recording what an app *actually does*, rather than running the script instead of it.
+
+### The Python flavour's two remaining shapes, and one bug found with them (2026-10-05)
+
+`record the script … giving …` is now in both plugins, so **the trigger's halves are one apiece**: the Python side has the "run another script" half and the JS side has the pair `record this run` and `save the recording to <path>` that a *running app* needs. Mirroring those two into `as_viz.py` is the other direction, and it is the smaller job of the two — both are thin shells over machinery the plugin already has (`Recorder`, `guard`, `traceDocument`, `verdict`), and `@viz start` arming is the JS wrap of `AllSpeak_Run.run`, whose Python counterpart would be the same wrap of `Program.run`. `tools/asviz-run.py` already demonstrates the arm (`program.recorder = Recorder(...)`).
+
+**And the flavour marker is what makes the pair non-trivial to place.** `record this run` arms *the program that called it*, and `save the recording to <path>` needs a file path — neither needs the marker. But a Python app recording itself needs `use plugin Viz from …` in its script, and a *pack* does not carry `as_viz.py` — the same "the packs are CDN clients" boundary as `tools/`.
+
+**The bug: Python's `@viz stop` never closes its window, and it is the same bug JS fixed on 2026-10-04 (`23a9b30`).** In `as_viz.py`'s `Recorder.tick`, `if marker == 'stop': self.stop()` sits *below* `if pc not in window['anchors']: … return`, and an `@viz stop` line compiles to the attribute entry, which is never an anchor — so every attribute-form stop falls through the early return and what closes a window is `finish()` at the end of the run. It is invisible in a single-window recording, which is why it has survived; it shows up as **a visit count the two runtimes disagree about**, because JS closes the window *before* counting the marker and Python counts it:
+
+| script | Python | JS |
+|--|--|--|
+| `viz start` / `put` / `viz stop` | 2 visits | 1 visit |
+| `@viz start` / `gosub` / `@viz stop` | 1 visit | 2 visits |
+
+Found while writing `tools/capture-check.js`'s flavour assertions, and worked around there rather than fixed: **the check uses a window that opens *not* directly under a label**, where the two runtimes agree exactly (`4 visits in 1 window` either side). The fix is to move the stop handling above the anchor test, exactly as JS did — but it moves the visit counts the trace spec's "Where the two runtimes differ" section was written around, so it belongs with the `@viz start`/`@viz stop` segment work rather than with a parity patch.
 
 ---
 

@@ -32,6 +32,26 @@ Two consequences worth stating plainly, because both are easy to assume the othe
 - **An attribute is not a comment.** A comment (`!`) is for the person reading the source, and it is gone by the time the program exists. An attribute is *in* the program: a tool receives a compiled script and reads its attributes without the source in front of it.
 - **An attribute is not language.** The syntax is `@` in every language — [multilingual](multilingual.md) translation covers words, and `@` is not a word — so a tool written against one language's scripts reads an attribute in another's.
 
+## Which runtime a script is for
+
+AllSpeak has two implementations — one that runs in a browser, one that runs from the command line — and they are near-identical languages with different vocabularies. **A script says which of them it is for with `@py` or `@js` on a line of its own**, and **`@js` is the default**: an unmarked script is a JavaScript one.
+
+```as
+@py
+
+script Parser
+variable Total
+```
+
+This is the file-level attribute above, used for the case it was named for. Nothing in the language needs it — a runtime runs the script it is given, and both runtimes run an attributed script with no tool loaded — but a *tool* that has to choose a runtime cannot work it out any other way, and the alternative is the one thing worse than either answer: a script that says nothing, handed to the runtime that cannot run it, and reporting `I don't understand 'dictionary' at line 46` about a script that is not broken.
+
+So the marker is **read by whatever chooses a runtime**, and there is one such thing so far: the visualiser's `record the script …` command, which runs a script of the caller's choosing. Asking the *other* runtime for a script is refused in a sentence that names the marker and both runtimes, rather than in a compile error.
+
+Two things worth knowing:
+
+- **It is read from the source, before the script is compiled.** A script written for one runtime is exactly the script that will not compile in the other, so a marker read off the compiled program could never be reached. The tokeniser is what lifts an attribute out of a line, so no compile is needed to find one.
+- **It changes nothing about a run.** Rule 14 holds: the marker is carried into the program and the runtime ignores it, so the same script runs the same way with the marker deleted — it is simply no longer labelled.
+
 ## Where to put it
 
 **On the same line as the statement it belongs to.** The line is the unit: an attribute runs from its `@` to the end of the line, or to a `!` comment, whichever comes first.

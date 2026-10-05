@@ -184,7 +184,9 @@ const SLOTS = write(`slots`, [
 // after its first `viz stop` and land in the same file.
 //
 // **Only the JS host is asked, and the reason is the same one as the json check above**: the Python flavour has
-// no `record this run` yet, so this half of the trigger is JS for now. Mirrored next, not pretended.
+// no `record this run` yet, so *this* half of the trigger — the pair a running app needs to record itself — is
+// JS for now. Mirrored next, not pretended. The other half, `record the script … giving …`, is in both runtimes
+// as of 2026-10-05 and is checked further down, with the flavour marker it reads.
 const SELFARM = write(`selfarm`, [
 	`    script SelfArm`,
 	`    variable N`,
@@ -238,15 +240,21 @@ const drive = (host, script) => {
 
 // What a script logged, out of the host's output. The two hosts prefix a line differently
 // (`<time>:<script>:<line>->` in both), and the message is what follows the arrow.
-const logged = (host, script, extra = []) => {
+//
+// **`scripts` may be a list**, because one target can name another: a trigger script asks for the script it
+// records by name, and a host registers the sources it is given — so both have to be handed over. The list is
+// the JS host's own road to `AllSpeak_Viz.sources`, and the Python host reads the file without it; passing both
+// to both keeps the two hosts driven the same way.
+const logged = (host, scripts, extra = []) => {
 	const [cmd, args] = host === `py`
 		? [`python3`, [path.join(root, `tools/asviz-run.py`)]]
 		: [process.execPath, [path.join(root, `tools/asviz-run.js`)]];
+	const list = Array.isArray(scripts) ? scripts : [scripts];
 	// **`spawnSync`, not `execFileSync`, because a host logs on stderr** — an `execFileSync` returns stdout
 	// alone, so the first version of this check saw an empty list and reported the language wrong. This is the
 	// same instrument fault twice over (a `head -8` hid a probe's last line earlier the same day): what is
 	// being captured has to be checked before what it says is believed.
-	const run = spawnSync(cmd, [...args, `--run`, ...extra, script], { encoding: `utf8` });
+	const run = spawnSync(cmd, [...args, `--run`, ...extra, ...list], { encoding: `utf8` });
 	const output = String(run.stdout || ``) + String(run.stderr || ``);
 	// **Two kinds of line come back, and the first version of this knew only one.** A script's own `log` is
 	// printed as `<time>:<script>:<line>-><message>`; the *plugin's* lines — `viz: recording this run` — have no
@@ -286,6 +294,129 @@ check(selfArm.some(l => /the recording holds 8 visits in 2 windows/.test(l)),
 console.log(`  ..    the write itself is not asserted here, and cannot be: a relative '/read/' or '/write/' URL `
 	+ `has no base in a host, which is why the verdict rides on the failure line too. The read-merge-write is `
 	+ `what a page does, and the pane's own check is where that belongs.`);
+
+// ---- which runtime a script is for ------------------------------------------------------------
+//
+// **Nothing in the language recorded this until 2026-10-05, and that is what made the trigger one-sided.** A
+// script said which runtime it was for only by failing to compile in the other one — `I don't understand
+// 'dictionary' at line 46`, which names the word and the line but answers a question nobody asked. `@py` and
+// `@js` are the script's own answer, `@js` is the default, and `record the script …` is the reader. It asks
+// the *token stream*, before anything is compiled, because the script it has to refuse is exactly the one that
+// would not compile: a check on the program could never be reached.
+//
+// Two hosts, and the same three facts on each — the marker is carried into the program and reported by the
+// model, the other runtime's script is refused in a sentence, and the host's own flavour runs. The sentence is
+// asserted whole rather than by a substring: it is what a person reads on the editor's status line, and
+// "could not run: …" was the verdict of every other failure too.
+
+// The body the three marked scripts share. **One shape, deliberate:** a window that opens *not* directly under
+// a label, so that the two runtimes agree on what it collected. A label is a command in Python and a bare symbol
+// entry in JS, so a window opening right under one gives JS an extra arrival — the difference the trace spec
+// documents, and one that would otherwise hide the fact being asserted here. Measured 2026-10-05: `4 visits in
+// 1 window` either side.
+const FLAVOUR_BODY = [
+	`    variable N`,
+	`Main:`,
+	`    put 0 into N`,
+	`    @viz start`,
+	`    while N is less than 3`,
+	`    begin`,
+	`        add 1 to N`,
+	`    end`,
+	`    @viz stop`,
+	`    stop`,
+];
+
+const MARKED_PY = write(`marked-py`, [`    script MarkedPy`, `    @py`, ...FLAVOUR_BODY]);
+
+// `@js` written out, so that the two spellings of the same fact are both exercised — and the unmarked script
+// below is the third case, which is the default.
+const MARKED_JS = write(`marked-js`, [`    script MarkedJs`, `    @js`, ...FLAVOUR_BODY]);
+
+const UNMARKED = write(`unmarked`, [`    script Unmarked`, ...FLAVOUR_BODY]);
+
+// What each host should report for its own flavour's copy of that body.
+const FLAVOUR_VERDICT = `4 visits in 1 window`;
+
+// A trigger, per host: the command runs another script and says what it collected. The Python one loads the
+// plugin, because a Python script has to ask for it; the JS host loads every plugin it finds, which is what a
+// page does.
+const PY_PLUGIN = path.join(root, `allspeak-py`, `plugins`, `as_viz.py`);
+const trigger = (host, target, name) => write(name, host === `py`
+	? [
+		`    script PyTrigger`,
+		`    variable Trace`,
+		`    variable Verdict`,
+		`    use plugin Viz from ${PY_PLUGIN}`,
+		`Main:`,
+		`    record the script in \`${target}\` giving Trace reporting Verdict`,
+		`    log Verdict`,
+		`    stop`,
+	]
+	: [
+		`    script JsTrigger`,
+		`    variable Trace`,
+		`    variable Verdict`,
+		`Main:`,
+		`    record the script in \`${target}\` giving Trace reporting Verdict`,
+		`    log Verdict`,
+		`    stop`,
+	]);
+
+// The model's records, which is where the marker has to be visible: an attribute is *carried into the program*
+// precisely so a tool with no source in front of it can read it, and `attr | line=N | <text>` is how the model
+// reports every one. This is also how the editor reads `@app`, so the same walk sees the flavour for free.
+const modelOf = (host, script) => {
+	const [cmd, args] = host === `py`
+		? [`python3`, [path.join(root, `tools/asviz-run.py`)]]
+		: [process.execPath, [path.join(root, `tools/asviz-run.js`)]];
+	const run = spawnSync(cmd, [...args, script], { encoding: `utf8` });
+	return String(run.stdout || ``) + String(run.stderr || ``);
+};
+
+check(/attr \| line=2 \| py\b/.test(modelOf(`py`, MARKED_PY))
+	&& /attr \| line=2 \| py\b/.test(modelOf(`js`, MARKED_PY)),
+	`'@py' is carried into the program and the model reports it with its line, in both runtimes `
+	+ `(${JSON.stringify(modelOf(`py`, MARKED_PY).split(`\n`).filter(l => /^\s*attr \| /.test(l)))})`);
+check(/attr \| line=2 \| js\b/.test(modelOf(`py`, MARKED_JS)),
+	`and so is '@js', which is the same fact said the other way `
+	+ `(${JSON.stringify(modelOf(`py`, MARKED_JS).split(`\n`).filter(l => /^\s*attr \| /.test(l)))})`);
+
+// The refusals. Each host is handed the other flavour's script by a script, which is the one caller that can
+// be driven from a host with no editor in the picture.
+const pyRefuses = logged(`py`, [trigger(`py`, MARKED_JS, `py-at-js`), MARKED_JS]);
+check(pyRefuses.includes(`could not run: this script is @js — a script for the JavaScript runtime, `
+	+ `and this is the Python runtime`),
+	`the Python runtime refuses a script marked '@js' in a sentence that says why `
+	+ `(${JSON.stringify(pyRefuses.filter(l => /could not run/.test(l)))})`);
+
+const pyRefusesDefault = logged(`py`, [trigger(`py`, UNMARKED, `py-at-unmarked`), UNMARKED]);
+check(pyRefusesDefault.includes(`could not run: this script is @js (the default when there is no marker) — `
+	+ `a script for the JavaScript runtime, and this is the Python runtime`),
+	`and an unmarked script is refused the same way, having said so by *saying nothing* — which is what makes `
+	+ `'@js' a default rather than a guess (${JSON.stringify(pyRefusesDefault.filter(l => /could not run/.test(l)))})`);
+
+const jsRefuses = logged(`js`, [trigger(`js`, MARKED_PY, `js-at-py`), MARKED_PY]);
+check(jsRefuses.includes(`could not run: this script is @py — a script for the Python runtime, `
+	+ `and this is the JavaScript runtime`),
+	`and the JavaScript runtime refuses '@py' in the matching sentence, so the rule runs both ways `
+	+ `(${JSON.stringify(jsRefuses.filter(l => /could not run/.test(l)))})`);
+
+// And the other half: the refusal is not a blanket one. Each host runs its own flavour and says what it got —
+// the sentence above replaced `I don't understand 'dictionary' at line 46`, which is only reached when the
+// target happens to use a word this runtime lacks, and the two runtimes share enough vocabulary that a script
+// can be the wrong flavour and still compile.
+const pyRuns = logged(`py`, [trigger(`py`, MARKED_PY, `py-at-py`), MARKED_PY]);
+check(pyRuns.includes(FLAVOUR_VERDICT),
+	`the Python runtime runs a script marked '@py' and reports what it recorded `
+	+ `(${JSON.stringify(pyRuns.filter(l => /visits in/.test(l)))})`);
+
+const jsRuns = logged(`js`, [trigger(`js`, UNMARKED, `js-at-unmarked`), UNMARKED]);
+check(jsRuns.includes(FLAVOUR_VERDICT),
+	`and an unmarked script runs on the JavaScript runtime and records the same thing — which is what the `
+	+ `default means, and the two runtimes' verdicts are the same sentence `
+	+ `(${JSON.stringify(jsRuns.filter(l => /visits in/.test(l)))})`);
+
 
 // The captured values, in visit order, as `name=value` strings — the shape both runtimes are compared in.
 const readings = trace => trace.anchors

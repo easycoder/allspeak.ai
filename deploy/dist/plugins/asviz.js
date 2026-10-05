@@ -39,6 +39,11 @@
 // reads two attributes, so a script can say where a window opens and what is worth watching there —
 // `@viz start` / `@viz stop`, and `@show Total, Row`.
 //
+// **And which runtime the script is for**, which is `@js` or `@py` on a line of its own — `@js` is the default,
+// so a script for the Python runtime says so. It is what `record the script …` reads before it compiles
+// anything, so that handing one runtime the other's script is refused in a sentence rather than in a compile
+// error about a word the author did use.
+//
 // Output: newline-separated records of 'field=value' pairs joined by ' | '. The
 // kind is first, and `reachable` comes immediately after the word `anchor`, so the
 // framework can classify and filter with prefix tests and core vocabulary alone.
@@ -515,6 +520,18 @@ const AllSpeak_Viz = {
 		const lines = text.split(`\n`);
 		if (lines.length > 0 && lines[lines.length - 1] === ``) lines.pop();
 		const source = AllSpeak.tokeniseFile(lines);
+		// **The flavour is asked before the compile, and it has to be.** A script written for the Python
+		// runtime is exactly the script that will not compile here, so a check on the compiled program could
+		// never run: the compile's own error arrives first and says `I don't understand 'dictionary' at line
+		// 46`, which is true, unhelpful, and about a script that is not broken. The token stream is enough —
+		// the marker is an attribute-only line — so the refusal costs nothing and comes before the failure it
+		// explains.
+		const flavour = vizFlavourOf(source.tokens);
+		if (flavour.declared !== VIZ_FLAVOUR_JS) {
+			const why = vizFlavourRefusal(flavour.declared, flavour.marked);
+			AllSpeak_Viz.problems.push(why);
+			return { trace: ``, verdict: `could not run: ` + why };
+		}
 		// The name the script declares, stepped aside for the compile and handed back after it — see the
 		// note on the command for why the collision is expected rather than exceptional.
 		const declared = AllSpeak_Viz.declaredScript(source.tokens);
@@ -1258,9 +1275,16 @@ const AllSpeak_Viz = {
 		// the tokeniser is what knows an `@` inside a literal from an attribute — a reader scanning the text
 		// itself would be a second, worse implementation of that rule, and would misread a script that merely
 		// mentions `@` in a string.
+		//
+		// **`element.lino` is used as it stands, and it used to have a `+ 1` on it.** That was wrong and it
+		// went unnoticed because nothing reads this number: the editor's `@app` walk wants the key and the
+		// value, and the line is there for a tool that has to scroll to it. Every other record in this model
+		// prints a command's line as it stands, and so does the Python plugin's twin of this loop — measured
+		// 2026-10-05 against `cat -n`, where the JS model put `@show N` on line 3 of a script that has it on
+		// line 2. A marker a tool is expected to find is not worth a line it cannot trust.
 		for (const element of compiled) {
 			if (!element || !element.attr) continue;
-			out.push(`attr | line=${element.lino + 1} | ${element.attr}`);
+			out.push(`attr | line=${element.lino} | ${element.attr}`);
 		}
 		// The census of block shapes. A label can appear in more than one entry or
 		// exit bucket, so these are counts of labels carrying that shape, not a
@@ -1584,6 +1608,49 @@ const vizAttributeKey = function (text) {
 	const whole = String(text || ``);
 	const gap = whole.indexOf(` `);
 	return gap === -1 ? whole : whole.slice(0, gap);
+};
+
+// **Which runtime a script is for, which nothing else in the language records.** The two implementations are
+// near-identical languages with different vocabularies, and until now a script said which it was only by failing
+// to compile in the other one — `I don't understand 'dictionary' at line 46`, which names the word and the line
+// but answers a question nobody asked. `@py` and `@js` are the script's own answer: a file-level attribute on a
+// line of its own, which is exactly the case the language reference names for one ("what the script is"), so
+// there is no new syntax and no word in any pack.
+//
+// **The default is `@js`.** An unmarked script is a JavaScript one, which is the choice Graham made on
+// 2026-10-05 — so a Python script has to say so, and a tool choosing a runtime (below) can refuse rather than
+// guess.
+const VIZ_FLAVOUR_JS = `js`;
+const VIZ_FLAVOUR_PY = `py`;
+
+// The flavour a source declares, read off the *token stream* rather than off the text. The tokeniser is the only
+// thing that knows an `@` inside a literal or inside a `!!` doc block from an attribute, so a reader scanning
+// lines would be a second, worse implementation of that rule — the same argument the editor's own attribute walk
+// makes. The marker is an attribute-only line, which is a token carrying `attr`, so no compile is needed to find
+// it — and that matters, because the script this is asked about is precisely the one that will not compile here.
+//
+// Both facts a caller needs come back together, because they are the same scan: which flavour, and whether the
+// script *said* so — the two refusals read differently, and a reader told the default is at work has one fewer
+// thing to wonder about.
+const vizFlavourOf = function (tokens) {
+	for (const token of tokens || []) {
+		const key = token && token.attr ? vizAttributeKey(token.attr) : ``;
+		if (key === VIZ_FLAVOUR_PY || key === VIZ_FLAVOUR_JS) {
+			return { declared: key, marked: true };
+		}
+	}
+	return { declared: VIZ_FLAVOUR_JS, marked: false };
+};
+
+// The sentence a runtime says when it is handed the other flavour's script. It names the marker, what the marker
+// means, and which runtime is refusing — the three things a reader needs, and the reason a refusal beats the
+// compile error it replaces: `I don't understand 'dictionary' at line 46` is true and unhelpful, because the
+// script is not broken, it is simply not this runtime's.
+const vizFlavourRefusal = function (flavour, marked) {
+	const name = flavour === VIZ_FLAVOUR_PY ? `@py` : `@js`;
+	const runtime = flavour === VIZ_FLAVOUR_PY ? `Python` : `JavaScript`;
+	return `this script is ${name}${marked ? `` : ` (the default when there is no marker)`} — a script for `
+		+ `the ${runtime} runtime, and this is the JavaScript runtime`;
 };
 
 // Which marker a command is, from either spelling. The `viz` command is the language's own marker; `@viz start`
