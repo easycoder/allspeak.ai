@@ -120,6 +120,10 @@
     variable RecordTrace     ! what that run collected, as the trace document's text
     variable RecordVerdict   ! what the recording amounts to — visits and windows, or why there is none
     variable AppPage         ! the page this script's `@app` attribute names, if it has one
+    variable ProjectRuntime  ! the runtime the *project* is for, from `#editor-runtime` — the dev server fills it
+    variable TabFlavour      ! this tab's script: `py` or `js`. Resolved in the plugin's order — the script's own
+                             ! marker, then the project, then `js` — so both sides of the editor agree
+    variable RecordReply     ! what the server says after it ran a Python script and recorded the run
     variable TraceText      ! the recording, as read — the `trace` field of that dict
     variable SourceText     ! the script, as read — the `source` field of it
     variable CurBlock      ! 0-based index into Sections arrays
@@ -204,7 +208,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 90e6973b
+!! @hash 0c9208e3
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -265,6 +269,7 @@
 !! and defaults to 'en'. All of the language-specific strings are then defined for each language.
 !   -- Detect language and set strings for each supported language --
     div LangDiv
+    div RuntimeDiv           ! the hidden element the project's `runtime:` answer arrives in — see the startup
     ! **Textareas, and the reason is in how `the text of` reads an element.** The branches switch on the
     ! *symbol's* type: a `div` reads `innerHTML` with every newline removed, which turns a 2,700-line module
     ! into one line — and its first line is a `!!` comment, which then comments out the lot. Measured
@@ -279,7 +284,19 @@
     replace ` ` with `` in Lang
     replace newline with `` in Lang
     if Lang is empty put `en` into Lang
+    ! **Which runtime the project is for, when the page says so.** The dev server fills `#editor-runtime` from
+    ! the project's `.allspeak-init`, the same way it fills the language above — a browser cannot read a file, so
+    ! this element is how a project's declaration reaches one. Absent (a page opened from the site, or a project
+    ! that has not said) means `js`, which is the plugin's own default, and a value the plugin would not accept
+    ! is normalised away here so the two never disagree.
+    put `js` into ProjectRuntime
+    attach RuntimeDiv to `editor-runtime` or go to RuntimeReady
+    put the text of RuntimeDiv into ProjectRuntime
+    replace ` ` with `` in ProjectRuntime
+    replace newline with `` in ProjectRuntime
+    if ProjectRuntime is not `py` put `js` into ProjectRuntime
 
+RuntimeReady:
 SetStrings:
     if Lang is `it`
     begin
@@ -368,7 +385,7 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash 3f450398
+!! @hash f223e922
 !! @verified 3f450398
 !!!
 !! The editor checks on startup and periodically for updates to itself.
@@ -1079,6 +1096,9 @@ ClearStatus:
 !! Same classifier logic as tools/asdoc-check.allspeak — the spec is one source of truth even though the code is duplicated here for the editor's in-process use.
 ParseSource:
     put `` into AppPage
+    ! The flavour is re-resolved on every parse, for the same reason `AppPage` is cleared: a marker that has
+    ! just been deleted, or a `@py` that has just been added, must not go on deciding.
+    put `` into TabFlavour
     put 0 into SecCount
     put 0 into InSection
     put `` into Source
@@ -1245,6 +1265,12 @@ SplitMeta:
         put from Pos of LContent into MetaValue
     end
     if MetaKey is `app` put MetaValue into AppPage
+    ! **`@py` / `@js`, and the first one wins** — which is the rule the visualiser's plugin uses
+    ! (`vizFlavourOf` takes the first marker in the token stream), so a script is read the same way whichever
+    ! side of the editor asks. Left empty when the script says nothing, because that is not "JavaScript": it is
+    ! nothing, and the project answers next.
+    if MetaKey is `py` and TabFlavour is empty put `py` into TabFlavour
+    if MetaKey is `js` and TabFlavour is empty put `js` into TabFlavour
     return
 
 OpenSection:
@@ -1336,7 +1362,7 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash d37980ab
+!! @hash 2f716163
 !! @verified d37980ab
 !!!
 !! Blocks view.
@@ -2175,6 +2201,30 @@ RecordRun:
     ! runs it here as it always has. The parse is what knows the difference, and it is the same parse the Blocks
     ! view uses, so `@app parser.html` means the same thing on both sides of the editor.
     gosub to ParseSource
+    ! **The same resolution the plugin makes, in the same order**: the script's own marker, then the project,
+    ! then JavaScript. A tab whose script says nothing inherits `#editor-runtime`, which is what stops every
+    ! script in a Python project needing a marker of its own.
+    if TabFlavour is empty
+    begin
+        put ProjectRuntime into TabFlavour
+    end
+    ! **A script for the Python runtime is run by the project's server, and not here.** The editor is a page, so
+    ! it has the JavaScript runtime and nothing else — which is why Record refused a `@py` script before this.
+    ! The dev server has Python: `/record/<script>` runs it exactly as `allspeak <script>` would, puts what it
+    ! printed in `<script>-stdout.txt` beside it (a script's output is unpredictable and would drown the console
+    ! the server is also writing to) and the recording in `<script>.viz.json`, which is the file the pane
+    ! already looks for. The server composes the sentence, so the file's name and the verdict are named once.
+    if TabFlavour is `py`
+    begin
+        rest get RecordReply from `/record/` cat EditorPath or begin
+            set the content of StatusSpan to `Could not run ` cat EditorPath cat ` — the server did not answer`
+            fork to ClearStatus
+            stop
+        end
+        set the content of StatusSpan to RecordReply
+        fork to ClearStatus
+        stop
+    end
     if AppPage is not empty
     begin
         record the app at AppPage to TracePath
@@ -2210,7 +2260,7 @@ RecordFailed:
     set the content of StatusSpan to `Could not record this script`
     fork to ClearStatus
     stop
-!! @hash df567fa6
+!! @hash 71fa38d5
 !! @verified df567fa6
 !!!
 !! Opening the project's app, from the editor.

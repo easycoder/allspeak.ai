@@ -32,7 +32,7 @@ The detail behind `TODO.md`'s language row. Anything here that is settled says s
 
 ## Parity between the runtimes
 
-**What is already in step.** The trace is one contract (`spec/viz-trace-format.md`, Draft 2) and both write it — `js/plugins/asviz.js` (`VIZ_TRACE_VERSION = 2`) and `allspeak-py/plugins/as_viz.py` (`TRACE_VERSION = 2`). The marker syntax is core in both, and the shared framework `viz.allspeak` runs on both hosts. Measured by running both hosts on `tools/trace-run.allspeak`, the two reports agree except in the differences the spec documents — command counts 25 against 23, the `steps` axis, and a label followed immediately by a marker counting as two arrivals in Python and one in JS.
+**What is already in step.** The trace is one contract (`spec/viz-trace-format.md`, Draft 2) and both write it — `js/plugins/asviz.js` (`VIZ_TRACE_VERSION = 2`) and `allspeak-py/allspeak/plugins/as_viz.py` (`TRACE_VERSION = 2`). The marker syntax is core in both, and the shared framework `viz.allspeak` runs on both hosts. Measured by running both hosts on `tools/trace-run.allspeak`, the two reports agree except in the differences the spec documents — command counts 25 against 23, the `steps` axis, and a label followed immediately by a marker counting as two arrivals in Python and one in JS.
 
 **Two divergences the spec does not document, so they are open as a *decision*:**
 

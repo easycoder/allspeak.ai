@@ -7,6 +7,7 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 | You edited… | Run… |
 |---|---|
 | `js/allspeak/*.js` (runtime, plugins, language packs) | `./build-allspeak` |
+| `allspeak-py/**` (the Python runtime and its plugins) | nothing here — **release `allspeak-ai`**, then a deploy if a script on the other side calls it |
 | `js/allspeak/LanguagePack_*.js` | `./build-allspeak` **and** `./sync-language-packs` |
 | `starter/<lang>/*` (the agent instructions, and nothing else) | `./build-starters` — a pack is three files: `AGENTS.md`, `CLAUDE.md` and `.allspeak-init` |
 | a tool an agent uses (`tools/asdoc-check.py` / `plotview-check.js` / `viz-align-measure.py` / `guard-check.js` / `capture-check.js` / `encoding-check.js`) | `./build-starters` (it fails if one has gone missing) **and deploy** — the deploy publishes them at `/code/tools/`, which is where a project fetches one from. They are not shipped in a pack |
@@ -60,6 +61,21 @@ A project made from a pack carries its own code, `AGENTS.md`, `CLAUDE.md` and `.
 | the checks (`asdoc-check.py`, `plotview-check.js`, `viz-align-measure.py`, `guard-check.js`, `capture-check.js`) | fetched from `/code/tools/` by whoever wants one, into scratch space rather than the project |
 
 The point is that none of it can be stale without that being obvious: there is no copy to notice. A project that *wants* to pin one of them keeps a file of that name and it is used in preference — which is also how this repository runs its own server and its own page.
+
+### The Python runtime: a release, not a build
+
+**`apispeak-py/` is a pip package, and nothing in this repository publishes it.** The four scripts at the root
+are all JS-side or docs-side; a change under `allspeak-py/` reaches users only when `allspeak-ai` is released
+(flit, from `allspeak-py/pyproject.toml`) — and a project keeps running its installed copy until it is
+upgraded. Two consequences worth knowing:
+
+- **A feature that spans the two sides needs both.** `server.allspeak`'s `/record/` route shells out to
+  `allspeak --record=<trace>`, so a deploy without a release ships a route whose flag the project's installed
+  runtime does not have.
+- **The package is the `allspeak/` module and nothing beside it.** `plugins/` as a sibling of the module is
+  *not* shipped — which is why the visualiser's plugin lives at `allspeak-py/allspeak/plugins/as_viz.py`.
+  Verify what a wheel carries rather than assuming:
+  `python3 -c "import zipfile,glob;print([n for n in zipfile.ZipFile(max(glob.glob('allspeak-py/dist/*.whl'))).namelist() if 'as_viz' in n])"`
 
 ### `./deploy-sync`
 Mirrors `codex/`, `dist/`, and `resources/doc/` into the matching `deploy/` subdirectories so the committed `deploy/` tree matches the source tree. The GitHub deploy workflow rsyncs `deploy/` to the server **as-is**, so anything that lives under `deploy/codex/` or `deploy/resources/doc/` ships whatever was last committed there. Run + commit before deploying when you've changed those source dirs.

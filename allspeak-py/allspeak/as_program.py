@@ -54,7 +54,7 @@ def attribute_text(line, at):
 
 class Program:
 
-	def __init__(self, arg, testMode=False, source=None, name=None):
+	def __init__(self, arg, testMode=False, source=None, name=None, recordTo=None):
 		global queue
 		self.testMode = testMode
 		try:
@@ -137,6 +137,12 @@ class Program:
 		self.onMessagePC = 0
 		self.breakpoint = False
 		self.recorder = None        # the visualiser's recorder, when attached
+		# **`--record=<path>`: run this script and write what the run did to that file.** The flag is the CLI's
+		# answer to "run it as if I had typed it, and keep the recording" — the same act `record the script …`
+		# performs for a script that names another one, and what a project's dev server calls so that a script
+		# the *browser* cannot run can still be run and recorded from the editor. Nothing is armed without it,
+		# so `allspeak parser` behaves exactly as it always has.
+		self.recordTo = recordTo
 		# Test-runner state (see printTestSummary)
 		self.testExitCode = 0
 		self.summaryPrinted = False
@@ -193,6 +199,15 @@ class Program:
 					if name[-1] != ':' and not record['used']:
 						print(f'Variable "{name}" not used')
 				print(f'Run {self.name}')
+			if self.recordTo:
+				# The recorder's own defaults, as everywhere else a *tool* asks for a recording: a script
+				# handed over by a tool is not to be trusted with the tool's responsiveness, and the verdict
+				# says so when a bound ends the run. `DEFAULT_*` are the plugin's, and this is the one place
+				# the runtime names the plugin — deliberately: the markers are core and the *watching* is the
+				# visualiser's, and a recording is a visualiser feature the runtime is asked to perform.
+				from .plugins import as_viz
+				self.recorder = as_viz.Recorder(budget=as_viz.DEFAULT_BUDGET_NS,
+				                                ceiling=as_viz.DEFAULT_CEILING_NS)
 			self.run(0)
 		else:
 			self.compiler.showWarnings()
@@ -245,7 +260,34 @@ class Program:
 				# Ctrl+C: stop the loop; the interpreter exits (daemon
 				# threads such as the HTTP server die with the process).
 				pass
+			finally:
+				# **In a `finally`, because a script may end by exiting.** `exit`/`stop` at the top level takes
+				# the `pc == -1` branch in `flush`, which calls `sys.exit()` — so a write placed after the loop
+				# would never happen for exactly the scripts that end deliberately, which is most of them.
+				self.writeTrace()
 	
+	# Write what the run recorded, and say what it holds.
+	#
+	# **The verdict goes to stderr, and the script's own output does not.** That split is the caller's: a dev
+	# server redirects stdout into `<script>-stdout.txt` because a script's output is unpredictable and would
+	# swamp the console it shares with the server's own messages, and reads this one line back for a status
+	# line. So the file holds only what the script printed, and this holds only what the recording amounted to.
+	# A trace needs one writer and this is it: the recorder collects, and nothing writes until here.
+	def writeTrace(self):
+		if self.recorder is None or not self.recordTo:
+			return
+		from .plugins import as_viz
+		self.recorder.finish()
+		windows = self.recorder.finishedWindows()
+		try:
+			with open(self.recordTo, 'w', encoding='utf-8') as f:
+				json.dump(as_viz.traceDocument(self.scriptName, windows), f)
+		except (IOError, OSError) as e:
+			sys.stderr.write(f'viz: could not write {self.recordTo}: {e}\n')
+			return
+		sys.stderr.write('viz: ' + as_viz.verdict(windows, self.recorder.stopped,
+		                                          self.recorder.parked) + '\n')
+
 	# Use the graphics module
 	def useGraphics(self):
 		if self.graphics == None:
@@ -1032,6 +1074,17 @@ def Main():
 	args = sys.argv[1:]
 	if len(args) > 0 and args[0] == '--test':
 		sys.exit(runTestSuite(args[1:]))
+	# **`--record=<trace>`, and it comes before the script.** `allspeak --record=parser.viz.json parser H2O` runs
+	# the script exactly as `allspeak parser H2O` does and writes the recording to that file — the script's own
+	# arguments follow its name, so anything before it is this program's. The file is written even when the
+	# script ends by exiting, and the verdict goes to stderr (see `writeTrace`).
+	recordTo = None
+	if len(args) > 0 and args[0].startswith('--record='):
+		recordTo = args[0].split('=', 1)[1]
+		args = args[1:]
+		if not recordTo:
+			sys.stderr.write('allspeak: --record needs a path: --record=<file.json>\n')
+			sys.exit(2)
 	if len(args) > 0:
 		if args[0] == 'info':
 			if len(args) > 1:
@@ -1039,7 +1092,7 @@ def Main():
 			else:
 				listScripts()
 		else:
-			Program(' '.join(args)).start()
+			Program(' '.join(args), recordTo=recordTo).start()
 	else:
 		Program('-v')
 

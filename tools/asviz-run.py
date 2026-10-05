@@ -37,12 +37,12 @@ USAGE = """usage: asviz-run.py [--run|-r] [--trace=<file.json>] [--trace-pretty[
        --budget and --ceiling arm the recorder's guard, in milliseconds: the program's own
        work, and the wall clock of the whole run. Without them a recording is unbounded, which
        is what a run made by hand at a terminal wants and what a trigger from the editor must
-       not have. See the constants in plugins/as_viz.py.
+       not have. See the constants in allspeak/plugins/as_viz.py.
 """
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'allspeak-py'))
-sys.path.insert(0, os.path.join(ROOT, 'allspeak-py', 'plugins'))
+sys.path.insert(0, os.path.join(ROOT, 'allspeak-py', 'allspeak', 'plugins'))
 
 from allspeak import Program          # noqa: E402
 import as_viz                         # noqa: E402

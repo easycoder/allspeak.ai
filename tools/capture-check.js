@@ -366,7 +366,7 @@ const FLAVOUR_VERDICT = `4 visits in 1 window`;
 // A trigger, per host: the command runs another script and says what it collected. The Python one loads the
 // plugin, because a Python script has to ask for it; the JS host loads every plugin it finds, which is what a
 // page does.
-const PY_PLUGIN = path.join(root, `allspeak-py`, `plugins`, `as_viz.py`);
+const PY_PLUGIN = path.join(root, `allspeak-py`, `allspeak`, `plugins`, `as_viz.py`);
 const trigger = (host, target, name) => write(name, host === `py`
 	? [
 		`    script PyTrigger`,

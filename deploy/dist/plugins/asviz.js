@@ -1623,7 +1623,7 @@ const vizClockNs = function () {
 // code, the other is usually wrong code, and the person reviewing the script needs to know which.
 //
 // These are the Python recorder's defaults, in its own units: two seconds of work, twenty of wall clock, and
-// a gap cap of twenty milliseconds. Kept in step with `allspeak-py/plugins/as_viz.py`, value for value and
+// a gap cap of twenty milliseconds. Kept in step with `allspeak-py/allspeak/plugins/as_viz.py`, value for
 // reason for reason.
 const VIZ_DEFAULT_BUDGET_NS = 2000000000;
 const VIZ_DEFAULT_CEILING_NS = 20000000000;

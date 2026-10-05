@@ -86,6 +86,15 @@ const scriptElement = mk(`pre`);
 scriptElement.setAttribute(`id`, `allspeak-script`);
 scriptElement.innerText = fs.readFileSync(path.resolve(root, target), `utf8`);
 
+// **The page's answer to "which runtime is this project for".** `#editor-runtime` is how a project's
+// `.allspeak-init` `runtime:` reaches a browser — a browser cannot read a file — and the editor reads it beside
+// the language, with the same `or go` fallback. Created here before the runtime boots, because the editor's
+// *branch* cannot be reached without it: with the element absent the project is JavaScript, which is the other
+// half of the same check.
+const runtimeElement = mk(`div`);
+runtimeElement.setAttribute(`id`, `editor-runtime`);
+runtimeElement.innerHTML = `js`;
+
 const bodyElement = mk(`body`);
 const headElement = mk(`head`);
 
@@ -105,6 +114,11 @@ const store = {};
 const written = [];
 // Every recording it asked for, so a check can see which tab it was asking about.
 const served = [];
+// **Which script the editor asked the *server* to run, and record.** A `@py` script is not run in the page at
+// all, so the only evidence that the button did its job is the request — the same reason `written` exists for
+// the JS half and `openedPages` for the app half. Not called `recorded`: this file has one of those further
+// down, for what the plugin collects, and a name that collides silently is worse than a long one.
+const askedOfServer = [];
 global.localStorage = {
 	getItem: k => (k in store ? store[k] : null),
 	setItem: (k, v) => { store[String(k)] = String(v); },
@@ -198,7 +212,22 @@ global.fetch = (url, opts) => {
 			}
 			return null;
 		};
-		const m = /\/read\/(.*)$/.exec(url);
+		// **The Python half of Record.** A `@py` script is not run here: the editor asks the project's dev server,
+	// which runs it under Python and answers with a sentence naming the verdict and the file the output went to.
+	// The path asked for is recorded, because it is the whole of what the editor contributes.
+	//
+	// **It returns a *body*, like every other branch here, and not a response.** The first version returned
+	// `Promise.resolve({ok, status, text})` from inside this IIFE, which builds the body — so the stub wrapped a
+	// promise in a promise, `text()` handed the runtime a promise where it expects a string, and the editor took
+	// its `or` failure path while the *request* had plainly been made. A stub has to answer in the shape the
+	// other answers are in.
+	const rec = /\/record\/(.*)$/.exec(String(url));
+	if (rec) {
+		const script = decodeURIComponent(rec[1]);
+		askedOfServer.push(script);
+		return `41 visits in 1 window · output in ${script}-stdout.txt`;
+	}
+	const m = /\/read\/(.*)$/.exec(url);
 		if (m) return read(m[1]) !== null ? read(m[1]) : posted(m[1]);
 		// A static fetch is a plain path, with or without a directory part, plus the
 		// cache-busting query the editor appends.
@@ -838,6 +867,79 @@ const verdict = String(valueOf(`RecordVerdict`));
 check(written.length === 0 && /could not run/.test(verdict) && /dictionary/.test(verdict),
 	`a script this runtime cannot compile is refused with the runtime's own words, not a silent empty recording `
 	+ `(verdict ${JSON.stringify(verdict.slice(0, 80))}, ${written.length} write(s))`);
+
+// ---- and a script for the Python runtime is run by the project's server -------------------------
+//
+// **This is the branch the editor could not take until 2026-10-05.** The editor is a page, so it has the
+// JavaScript runtime and nothing else, and a script written for Python could only be *refused* — in a sentence,
+// once the flavour was known. Now the project's own dev server runs it: `/record/<script>` runs it exactly as
+// `allspeak <script>` would, and answers with the verdict and the name of the output file.
+//
+// **The script below carries no marker at all, and that is the point.** What is being checked is the *project's*
+// answer arriving through `#editor-runtime` — the half that had no check, and the half that keeps a Python
+// project's scripts marker-free. So the page says `py`, the buffer says nothing, and the request is the evidence.
+const PLAIN_FOR_PY = [
+	`    script NoMarkerAtAll`,
+	`    variable N`,
+	`Main:`,
+	`    viz start`,
+	`    put 0 into N`,
+	`    viz stop`,
+	`    stop`,
+].join(`\n`) + `\n`;
+
+// **`#editor-runtime` is read once, when the editor boots**, so these checks set the *variable* the element
+// feeds rather than the element itself: the editor's read is a startup path and the *branch* is what is under
+// test here. Written down because it is a real gap — nothing in this file asserts that a served page's element
+// reaches this variable, and the check that would (the page a dev server serves) is owed in `TODO-viz.md`.
+const setRuntime = flavour => {
+	const record = program.getSymbolRecord(`ProjectRuntime`);
+	const slot = record.value[record.index];
+	slot.content = flavour;
+	slot.type = `constant`;
+};
+setRuntime(`py`);
+scriptElement.innerText = PLAIN_FOR_PY;
+askedOfServer.length = 0;
+written.length = 0;
+run(`RecordRun`);
+check(askedOfServer.length === 1 && /\.allspeak$/.test(askedOfServer[0]) && written.length === 0,
+	`a project whose page says 'py' has its unmarked script run by the server, not in the page `
+	+ `(asked for ${JSON.stringify(askedOfServer)}, ${written.length} write(s))`);
+// **And the reply is awaited, because `rest get` continues on a later tick.** `run('RecordRun')` returns at the
+// request; the editor's `set the content of StatusSpan` happens after the response arrives.
+//
+// **What is asserted is the reply, not the status line, and that is deliberate.** The status line has three
+// writers — a transient action, the auto-save, and the pane when it fetches a run (TODO-viz names the same
+// three) — so by the time a check reads it the auto-save may have put `Saved` there instead. The reply is the
+// thing the button computed and handed to the line, so it is the stable evidence; a check on the line would be
+// a check on which writer went last.
+await waitFor(() => /-stdout\.txt/.test(String(valueOf(`RecordReply`))));
+check(/41 visits in 1 window/.test(String(valueOf(`RecordReply`)))
+	&& /-stdout\.txt/.test(String(valueOf(`RecordReply`))),
+	`and the reply says what the run amounted to and where its output is `
+	+ `(${JSON.stringify(String(valueOf(`RecordReply`)).slice(0, 70))})`);
+
+// **And the same buffer, in a project that says `js`, still runs here** — so the branch is the project's answer
+// and not a change to what Record does with every script.
+setRuntime(`js`);
+askedOfServer.length = 0;
+written.length = 0;
+run(`RecordRun`);
+check(askedOfServer.length === 0 && written.some(w => /\.viz\.json$/.test(w.url)),
+	`the same script in a project that says 'js' is run and recorded here as it always was `
+	+ `(asked the server ${askedOfServer.length} time(s), ${written.length} write(s))`);
+
+// **And a marker beats the project**, which is the rule both sides of the editor use: a `@py` script in a `js`
+// project goes to the server too. Without this the project's answer would be a default rather than an override.
+setRuntime(`js`);
+scriptElement.innerText = `    @py\n` + PLAIN_FOR_PY;
+askedOfServer.length = 0;
+written.length = 0;
+run(`RecordRun`);
+check(askedOfServer.length === 1 && written.length === 0,
+	`and a script marked '@py' goes to the server even in a project that says 'js' `
+	+ `(asked for ${JSON.stringify(askedOfServer)}, ${written.length} write(s))`);
 
 
 // ---- and Launch opens the page the script names ----------------------------------------------

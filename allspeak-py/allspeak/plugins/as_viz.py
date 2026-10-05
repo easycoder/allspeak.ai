@@ -8,7 +8,7 @@ serves both runtimes.
 
 Loaded from a script, as any plugin is:
 
-    use plugin Viz from `allspeak-py/plugins/as_viz.py`
+    use plugin Viz from `allspeak-py/allspeak/plugins/as_viz.py`
 
 Host contract (the counterpart of AllSpeak_Viz.target / .sources in JS):
 
