@@ -206,24 +206,56 @@ What is still open here:
 - **Measure the picture from a screenshot before reading the code.** Three passes were spent deriving a row pitch from eyeballed axis-label positions when a screenshot settled it; the instrument's own constants are checked first.
 - **A log beats a theory.** Both faults diagnosed by reading the runtime were wrong; both found by a log or a harness were right.
 
-## Performance of the draw — 2026-10-05
+## Performance of the draw — 2026-10-05, **measured, and the frame moved**
 
-Graham's run is 461KB and "takes a long time to draw"; his steer is "we need to defer as much as possible, let's
-look into what's possible". Facts established, none of them yet a measurement of the cost:
+**Measured** (Graham's own traces, one draw each, via `PLOTVIEW_ONEDRAW=1 node tools/plotview-check.js <trace>`
+— a mode added to the harness for this, because its usual run draws the picture ~50 times and a 472KB trace
+never finishes): `parser-main` 157KB → 362ms for two load-time draws; `parser` 472KB → 1590ms for two (best of
+three: 1817/1615/1590, so a shared machine is worth 15% either way and the pane's own `millis_per_kb` inherits
+that). **So one draw is ~0.8s — and that is not what makes it unusable.** What does is that **every pan and zoom runs a whole
+`Draw`**: `VizPan` → `VizRedraw` → `VizRequest` → `Draw`, which rebuilds rules, marks, flow and the source
+picture each time, the `viewBox` being the only window-independent part. `VizRequest` coalesces, so a drag gives
+about one and a half updates a second.
+
+**The fix is a split, not a rewrite**: `Draw` becomes "build the picture" (once per run) and "apply the window"
+(`viewBox` + axis labels + bars, all cheap). What forces the rebuild is the *window tests* that drop off-screen
+marks (`VizOutside`), rules (the `VizMinLine` loop) and source lines — delete them, let the nested `<svg>` clip
+as the module's own prose already says it does, and a pan costs a `viewBox` change.
+
+**What was done instead this turn**, because it is what Graham asked for: a corner readout — the estimate before
+the drawing, the cost after — in `asedit-graph.allspeak`. It **cannot tick**, and that is a consequence rather
+than a limitation to work around: the pane runs on the browser's thread, so the notice is read at all only because
+`VizBusyNotice` sets it on a `div` of the *panel* and then `wait 20 millis` (the runtime's `wait` is a
+`setTimeout` in `Browser.js`) hands the thread back for a frame — before the caller starts its clock. A ticking
+counter needs the sliced draw, i.e. the same work as the split above.
+
+**Two faults found by building it — one real, one mine.** The real one: the readout was first written *inside*
+`Draw`, and because a drawing returns to its caller at each yield, the caller's clock stopped before the work had
+started. It read 30ms for a 472KB trace and `DrawMillis` was never written. The clock now starts after the
+notice's `wait`, in the host. **My own: I concluded from that that a drawing is atomic, and it is not** — `Draw`
+gives the browser a turn every hundred marks on purpose ("without this the page's thread is held for the whole
+pass — tens of seconds on a big recording"). The 50-second wall clock that seemed to prove the compounding was my
+`PLOTVIEW_ONEDRAW` guard firing at a settled snapshot the harness's own escape had already distorted. A claim in
+this file's first draft, and the same one in `DIFF.md`, has been corrected. What stands from it: the notice is a
+`div` on the panel, and the whole readout is host-half.
+
+**The breathing is the hook for a ticking counter.** `Draw` already slices itself every hundred marks, so the
+machinery for a counter that updates during a drawing is there; the slice is simply too coarse (a hundred marks is
+tens of milliseconds on a big run) to count seconds with. If Graham wants the old `wait 1 millis`/counter, that is
+the loop to hang it on — but it is a change to the drawing, and the split above is the same work done properly.
+
+The rest of what was established earlier still stands:
 
 - **Already deferred**: `VizRequest` remembers a request arriving during a draw (so a burst of notches costs one
   draw more, landing on the latest); the window is a `viewBox`, so a pan should not rebuild the picture; and the
   pane measures its own draws into a `millis_per_kb` calibration, alerting above 5000ms.
 - **Not deferred**: everything inside one `Draw` — rules, marks, flow, source picture, labels, bars.
-- **The instrument is dead in the harness**: `tools/plotview-check.js` has no `rest` stub, so the pane's
-  `rest get` of `.viz-calibration.json` fails, `VizPredict` stands down and `VizRemember` never writes. **Put a
-  `rest` stub in first** — one `get` returning nothing and a `post` capturing the body — and the pane's own
-  number per trace falls out of every run. Everything below is guesswork until that exists.
-- Then: chunk the draw (frame first, marks after, the estimate covering the wait); draw marks at screen
-  resolution (at a fitted 461KB run the marks are a fraction of a unit apart and fourteen wide, so most of the
-  work is invisible overdraw — one per ~2 units with the hottest colour winning would cut it by an order of
-  magnitude); and **verify the "drawn once" claim** — a pan asks for a `Draw` through `VizRedraw`, and whether
-  `Draw` rebuilds the marks or only the window-dependent parts is worth measuring rather than reading.
+- **The pane's own calibration route is still dead in the harness** (`plotview-check.js` has no `rest` stub, so
+  `VizPredict` stands down and `VizRemember` never writes). Not needed for the numbers above — `PLOTVIEW_ONEDRAW`
+  times the load-time draws directly, and the view's own `DrawMillis` is written in the *host* half the harness
+  does not run — but worth the five lines if the estimate itself ever needs checking outside a browser.
+- Still open, and cheaper than the split: **draw marks at screen resolution** (at a fitted 472KB run the marks
+  are a fraction of a unit apart and fourteen wide, so most of that work is invisible overdraw).
 
 ## The window clips a row, so a dot's visit is not the line's total — 2026-10-05
 
@@ -244,3 +276,9 @@ view), or left as the recording's fact. Not changed — the evidence went first.
   pane's new line; the sidebar has no harness of its own.
 - **The pane's mark line is English-only** (`line ...   visit ... of ...`), as the sidebar's wording was before it
   moved — the editor's string table has the flow words but not these. It moved the gap rather than widening it.
+
+- **Half the corner readout is code the pane's harness never runs.** `VizBusyNotice` is called from `Draw`, which
+  `plotview-check` runs, so the notice is checked there; `VizBusyDone` is called from `VizDrawRun` in the module's
+  *host* half, above the harness's `viewStart` cut, and only `asedit-check` (which runs the module whole) compiles
+  it. What "drew in X.Y s" says is therefore unasserted — the whole-and-tenth assembly is the part worth a check,
+  since the language has no fractions and the obvious `DrawMillis / 1000` gives `0 s` for a 700ms drawing.

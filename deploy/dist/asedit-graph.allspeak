@@ -32,6 +32,17 @@
     variable TraceSize         ! bytes of the recording, which is what predicts the drawing time
     variable DrawStarted       ! `now` when the drawing began
     variable DrawMillis        ! how long it took
+    div VizBusy                ! the corner notice: a box on the panel, not a text in the picture — because the
+                               ! first drawing of a run is the one that needs it and the one with nothing on
+                               ! screen yet. See `VizBusyNotice`, which carries the whole reason.
+    variable VizBusyText       ! what the corner says while a drawing is under way, and after it
+    variable VizBusySecs       ! the drawing's own seconds, whole part
+    variable VizBusyTenths     ! ...and its tenths: the language has no fractions, and a corner that rounded
+                               ! a drawing of seven hundred milliseconds to `0 s` would be worse than none
+    variable VizEstimate       ! what the last drawing's rate says this one will cost, in seconds; 0 = no rate
+                               ! yet. Declared here with the host's own arithmetic rather than with the view's
+                               ! symbols because `VizPredictJudged` writes it and the compiler is single-pass:
+                               ! a declaration below that line is not there when the line runs.
     variable VizMillisPerKb    ! learned: milliseconds per kilobyte of recording, on this machine
     variable VizCalib
     variable VizCalibParsed
@@ -48,7 +59,7 @@
     ! because the handlers below are the first thing in the file to read it, and a variable has to be
     ! declared before the code that uses it.
     variable VizSlide          ! 0 the picture, 1 the lines bar, 2 the steps bar
-!! @hash a04b40d6
+!! @hash 5b887677
 !! @verified a04b40d6
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
@@ -104,9 +115,12 @@ VizDrawRun:
     ! Taking the notice as a *subroutine* keeps the naming and lets the draw carry on, so the empty state is
     ! drawn — the script plain, no arrivals — and `GraphNone` is still the one place that says why.
     if VizTrace is empty gosub to GraphNone
-    set the content of StatusSpan to `Drawing the recording - please wait`
     put the length of VizTrace into TraceSize
     gosub to VizPredict
+    ! Said, and given a frame to be painted in, *before* the clock starts — so the twenty milliseconds the
+    ! browser takes for that frame is neither charged to the drawing nor counted into the rate the pane
+    ! learns from it.
+    gosub to VizBusyNotice
     put now into DrawStarted
     gosub to VizRequest
     ! A request that had to wait is drawn after this entry has gone, so it is not timed here: timing it
@@ -114,6 +128,7 @@ VizDrawRun:
     ! feeds is only worth having if it is a draw's own time.
     if VizPending is 1 return
     subtract DrawStarted from now giving DrawMillis
+    gosub to VizBusyDone
     gosub to VizRemember
     fork to ClearStatus
     return
@@ -123,7 +138,7 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 
-!! @hash fdfb5b3b
+!! @hash 4442e3b0
 !! @verified 5b1f9f95
 !!!
 !! The module's one message: take the run, or stand down.
@@ -162,12 +177,16 @@ VizPredict:
     put json of VizCalib into VizCalibParsed
     put property `millis_per_kb` of VizCalibParsed into VizMillisPerKb
 VizPredictJudged:
+    put 0 into VizEstimate
     if VizMillisPerKb is 0 return
     ! Multiply before dividing: the rate is per kilobyte and the recording is counted in bytes.
     multiply TraceSize by VizMillisPerKb giving VizPredicted
     divide VizPredicted by 1024
     if VizPredicted is less than 5000 return
     divide VizPredicted by 1000
+    ! Kept for the corner as well as used in the sentence below: this is the ETA a reader is shown while the
+    ! picture is being built, and it is a measurement of the last drawing rather than a promise about this one.
+    put VizPredicted into VizEstimate
     ! Say where the number comes from. It is a measurement of the last drawing, not a promise, and
     ! a stale one is self-explanatory when the reader knows that — which matters, because a single
     ! slow run sets the rate and the next run corrects it.
@@ -177,6 +196,48 @@ VizPredictJudged:
 !   And remember what it actually cost, so the next prediction is a measurement rather than a guess.
 !   Overwritten rather than averaged: a machine's speed is not a thing to smooth, and the last
 !   measurement is the only evidence there is.
+!   What the corner says while a drawing is under way, and the `wait` that lets it be read at all.
+!
+!   **Two numbers, and only the first is a promise.** The estimate is the last drawing's own rate applied to
+!   this recording's size — a measurement, though a stale one on a machine that has changed — and it is said
+!   in seconds because that is the unit somebody waiting for something thinks in. When there is no rate yet
+!   the corner says only that a drawing is happening, which is still the one thing the reader cannot
+!   otherwise tell.
+!
+!   **The `wait` is not a delay: it is the whole of how the message is seen.** This script runs on the
+!   browser's own thread, so a corner set and then painted over by a second of drawing would never be read —
+!   `wait` hands the thread back for a frame first. Twenty milliseconds against a drawing that costs
+!   hundreds, and the clock is started after it so the wait is not charged to the rate the pane learns.
+VizBusyNotice:
+    create VizBusy in VizHost
+    set the style of VizBusy to `position:absolute;left:10px;top:8px;font:13px system-ui,sans-serif;color:#8a8a80`
+    put `Drawing the recording...` into VizBusyText
+    if VizEstimate is greater than 0 put `Drawing the recording - about ` cat VizEstimate cat ` seconds` into VizBusyText
+    set the content of VizBusy to VizBusyText
+    wait 20 millis
+    return
+
+!   And what it says when the drawing is done, which is the number the reader wanted in the first place.
+!
+!   **In seconds with a tenth, and assembled rather than divided**, because this is where the language's
+!   integer arithmetic shows: `0.7` is not reachable by dividing 700 by 1000, and `0 s` for a drawing of
+!   seven hundred milliseconds would be a worse answer than no corner at all. Whole part and tenth are taken
+!   separately and joined; the tenth is floored, so the number never claims more time than was spent.
+VizBusyDone:
+    if DrawMillis is less than 1
+    begin
+        set the content of VizBusy to ``
+        return
+    end
+    divide DrawMillis by 1000 giving VizBusySecs
+    multiply VizBusySecs by 1000 giving VizBusyTenths
+    take VizBusyTenths from DrawMillis giving VizBusyTenths
+    divide VizBusyTenths by 100 giving VizBusyTenths
+    put `drew in ` cat VizBusySecs into VizBusyText
+    put VizBusyText cat `.` cat VizBusyTenths into VizBusyText
+    set the content of VizBusy to VizBusyText cat ` s`
+    return
+
 VizRemember:
     if TraceSize is 0 or DrawMillis is less than 1 return
     multiply DrawMillis by 1024 giving VizPredicted
@@ -184,7 +245,7 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 3fce0448
+!! @hash 5908b48e
 !! @verified 3fce0448
 !!!
 !! The view itself: everything from here down is the drawing.
@@ -517,7 +578,7 @@ Draw:
         put json of VizTrace into VizParsed
         put property `traceEvents` of VizParsed into VizEvents
     end
-!! @hash 288a7130
+!! @hash ee7100d3
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -837,7 +898,7 @@ Draw:
     put 1 into VizReady
 
 VizBuilt:
-!! @hash c3ace25c
+!! @hash a986f984
 !! @verified 20bf4472
 !!!
 !! What a draw does, in order.
@@ -1230,7 +1291,7 @@ VizWindow:
     ! what tells them apart. Set here rather than on a press because a press leaves the picture alone:
     ! the row is fixed for the life of the drawing, and `VizSelect` only changes the words.
     move VizHitStatus to 60 728
-!! @hash 30d2ec43
+!! @hash acf4de73
 !! @verified 52b8170a
 !!!
 !! The axis is the picture's yardstick, and it is the same grid as the text.
@@ -2074,7 +2135,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash ceaa0ffb
+!! @hash 53f1442b
 !! @verified dc725895
 !!!
 !! And a doc block is not drawn in it.
