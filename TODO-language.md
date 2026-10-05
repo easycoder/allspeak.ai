@@ -220,3 +220,32 @@ one value out of many — so it belongs with `split` as a second feature rather 
 events, `join` it `as json into VizEvents`, and the pane's own loops read the range — no plugin call, no new
 boundary. The implementation is a small extension of what `json of` already does, since that already serialises
 the value the cursor stands on.
+
+## `join`: the implementation recon, so the next session resumes rather than rediscovers — 2026-10-05
+
+**The template is `split`, and it mirrors cleanly.** In `js/allspeak/Core.js` the `Split` domain entry has both
+halves: `compile` reads an optional target symbol, the value, an optional `on`/`by` and an optional
+`giving`/`into`, then `addCommand({domain: 'core', keyword: 'split', lino, item, on, target})`; `run` does
+`program.getValue(command.item).split(on)`, sets `targetRecord.elements` and fills `targetRecord.value[n]` with
+`{type: 'constant', …}` entries. In `allspeak-py/allspeak/as_core.py` the same pair is `k_split` (compile, using
+`nextIsSymbol`/`getSymbolRecord`/`add`) and `r_split` (run, using `getVariable`, `getSymbolValue`,
+`object.setElements`, `setIndex`, `setValue`).
+
+**`join` is those two halves with the direction reversed**: the compile half takes a *symbol* where `split` takes
+a *value*, and the run half **reads** `elements`/`value[n]` where `split` writes them. Everything else — the
+`as`/`with`/`into` modifiers, the target check (`is not a variable`), the lino — follows `Split` word for word.
+
+**The one thing to find before writing it: what a *list* value is.** `join … as json` must produce the same
+kind of value that `the json count of` and `the json keys of` already read — and those two are in neither
+`Core.js`, the English pack, nor any plugin under `js/plugins/`, which was the surprise. The likely reason is
+that the packs list **words**, not phrases: `json`, `keys`, `of` are separate entries and the grammar composes
+them, so a search for the phrase finds nothing. **Start there** — find the word entry and its handler, and make
+`join … as json` produce exactly that shape.
+
+That matters more than it sounds: my own reading of a json value went wrong an hour before this note was
+written (a *reader* and a *producer* disagreeing about what "json" means — see the section above). A `join` that
+produced a json *string* instead of a json *value* would be the same fault shipped as a feature.
+
+**Order of work, and why**: JavaScript first — it is what the Graph pane runs, and JS is this project's primary
+focus — then the packs (`./sync-language-packs` mirrors them into the Python JSONs; note that a pack word with no
+Python handler is a parity gap that wants stating, not hiding), then the Python twin, then the clip that uses it.
