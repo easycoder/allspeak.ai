@@ -876,12 +876,26 @@ run(`LaunchApp`);
 // The first version said "to a doc block" — the one place an attribute cannot go, since a `@`-line inside a `!!`
 // block is the analyser's metadata and never reaches the compiler. So the assertion is no longer "it complains":
 // it is that the complaint names the line and denies the comment.
+// **And the spelling has to be *there*, which is the part this check still did not ask for.** The message's
+// whole job is to show a reader the attribute to write, and it was written with a placeholder — `'@app <page>'` —
+// which `set the content of` parses as an HTML tag, so the reader got `add '@app ' on a line of its own`: the one
+// thing the sentence exists for, silently gone. This harness could not see it because its stub element stores
+// the string it is assigned instead of parsing it (a browser parses `innerHTML`), so the assertion is on what a
+// reader *gets*: `@app` and a **filename**, which is a token with a dot in it.
+//
+// **And the first version of this assertion was too loose, which is worth keeping.** `@app \S+` passed on the
+// broken form, because the quote after `@app ` is a non-space character — so it said nothing. The dotted token is
+// what distinguishes an example from a placeholder, and it fails on both `'@app '<page>'` (eaten) and on a
+// second placeholder written the same way.
+const launchMessage = String(contentOf(`se-status`));
 check(openedPages.length === 0
-	&& /No app named/.test(String(contentOf(`se-status`)))
-	&& /line of its own/.test(String(contentOf(`se-status`)))
-	&& /not a comment/.test(String(contentOf(`se-status`))),
-	`and a script with no '@app' is told so, and how to declare one, rather than the button doing nothing `
-	+ `(opened ${openedPages.length}, status ${JSON.stringify(String(contentOf(`se-status`)).slice(0, 46))})`);
+	&& /No app named/.test(launchMessage)
+	&& /line of its own/.test(launchMessage)
+	&& /not a comment/.test(launchMessage)
+	&& /@app \S*\.\S*/.test(launchMessage)
+	&& !/</.test(launchMessage),
+	`and a script with no '@app' is told so, how to declare one, and *what to write* — rather than the button `
+	+ `doing nothing (opened ${openedPages.length}, status ${JSON.stringify(launchMessage.slice(0, 46))})`);
 
 // ---- is returning to Graph the same recording, and does each tab keep its own? ----------------
 //

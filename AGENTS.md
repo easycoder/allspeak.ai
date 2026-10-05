@@ -197,6 +197,15 @@ Standing knowledge rather than next steps, which is why they live here and not i
 - **A check on a boundary must carry what the boundary carries** — the JSON string, the registered handler — and set up what the real path sets up. Two green harnesses have sat over browser faults for want of this.
 - **A value computed before the pass that measures it silently uses the previous draw's number.** The first render looks right and every later one does not.
 - **An HTTP client's default charset is latin-1, not UTF-8.** `response.text` decodes a `text/*` response with the charset it declares and, with none declared — which is how a plain web server serves its own pages — assumes ISO-8859-1, so a UTF-8 page arrives with every accent and em dash doubled (`—` → `â€"`). The Python runtime's URL fetches now decode UTF-8 explicitly, like the browser's `fetch().text()` always did; `tools/encoding-check.js` holds that, and asserts its own premise (a response with no charset) before it asserts anything about the runtime.
+- **`set the content of` writes `innerHTML`, so a message meant for a person must not carry markup.** The
+  Launch message told a reader the attribute to write as `add '@app <page>' on a line of its own`, and `<page>`
+  was parsed as an HTML tag and never rendered — so what appeared was `add '@app ' on a line of its own`: the
+  one thing the sentence exists for, silently gone. Measured 2026-10-05, from Graham's own status line. A
+  **placeholder in angle brackets wants a concrete example instead** (`@app mypage.html`), which reads better and
+  cannot be eaten. **And the check could not see it**: the harness's stub element stores the string it is
+  assigned while a browser parses it, so an assertion on such a message has to be on what a reader *gets* —
+  untested, the first version of the new assertion passed on the broken text (`@app \S+` matches `@app '`,
+  because a quote is not a space).
 - **`the text of` an element reads it by the *symbol's declared type*, not by the element's tag.** A `div` symbol takes `innerHTML.split('\n').join('')` — every newline removed — so a 2,700-line module read through one arrives as a *single line*, and if its first line is a `!!` doc comment the whole module comments itself out and compiles as `1 lines (0 tokens)`. A `pre` symbol keeps the newlines but returns *escaped* markup, because that branch reads `innerHTML`. A `textarea` symbol reads `value`, which is the text and nothing else — that is what carries a script from an element into `run`.
 - **The editor's Graph pane and its sidebar reach a project *inside the page*.** No pack carries `asedit-graph.allspeak`/`asedit-side.allspeak` any more, and the site's `.allspeak` carries no CORS, so the *dev server* fetches both and writes them into `#editor-graph`/`#editor-side`. Nothing filled those two elements until 2026-10-04: the pane came up empty, the console stayed clean, and resizing did nothing.
 - **`0 tokens` in a `Compiled …` line is a finding, not noise.** It cost a round on 2026-10-04: the editor's parse reporting an empty source was the whole clue to a blank Graph pane, and it was twice dismissed as startup chatter.

@@ -2232,7 +2232,12 @@ LaunchApp:
         ! where an attribute must *not* go: a `@`-line inside a `!!` block is the analyser's metadata and never
         ! reaches the compiler, so a reader who followed that advice would have written something the program
         ! cannot see. Graham asked which it was, which is the message failing at the one moment it exists for.
-        set the content of StatusSpan to `No app named: add '@app <page>' on a line of its own — a script attribute, not a comment`
+        ! **The example is a real filename, not `<page>`, and that is not a style choice.** `set the content of`
+        ! writes `innerHTML` (`Browser.js`), so a placeholder in angle brackets is parsed as an HTML tag and
+        ! never rendered: the reader saw `add '@app ' on a line of its own` — the spelling this sentence exists
+        ! to give them, gone. Measured 2026-10-05, from Graham's own status line, and the check below could not
+        ! see it because the harness's stub stores the string it is given rather than parsing it.
+        set the content of StatusSpan to `No app named: add '@app mypage.html' on a line of its own — a script attribute, not a comment`
         fork to ClearStatus
         stop
     end
@@ -2240,6 +2245,6 @@ LaunchApp:
     set the content of StatusSpan to `Opened ` cat AppPage
     fork to ClearStatus
     stop
-!! @hash 0faead49
+!! @hash def5bda2
 !! @verified 0faead49
 !!!
