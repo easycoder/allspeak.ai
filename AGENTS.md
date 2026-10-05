@@ -197,6 +197,15 @@ Standing knowledge rather than next steps, which is why they live here and not i
 - **A check on a boundary must carry what the boundary carries** — the JSON string, the registered handler — and set up what the real path sets up. Two green harnesses have sat over browser faults for want of this.
 - **A value computed before the pass that measures it silently uses the previous draw's number.** The first render looks right and every later one does not.
 - **An HTTP client's default charset is latin-1, not UTF-8.** `response.text` decodes a `text/*` response with the charset it declares and, with none declared — which is how a plain web server serves its own pages — assumes ISO-8859-1, so a UTF-8 page arrives with every accent and em dash doubled (`—` → `â€"`). The Python runtime's URL fetches now decode UTF-8 explicitly, like the browser's `fetch().text()` always did; `tools/encoding-check.js` holds that, and asserts its own premise (a response with no charset) before it asserts anything about the runtime.
+- **An `attr` record exists only for a program the runtime *compiled*, so a marker must be read from the
+  tokens.** The model reports the attributes it finds on the compiled program — so a script the runtime cannot
+  compile yields **none**, and a script carrying `@py` is by definition one the JavaScript runtime cannot
+  compile (`dictionary`, `list`). A tool that needs the marker, the editor included, must therefore be given it
+  from the *token stream*: the model reports `flavour | py | from=script` for exactly this reason. Measured
+  2026-10-05: `@py` on line 1 with `dictionary` at line 9 modelled to `commands=0` and no `attr` records at all,
+  so the editor's Record fell through to the project's answer and refused a script it had been built to run.
+  **The general shape: a reader that asks a compiled program about the source cannot see anything that stops it
+  compiling — and those are exactly the things a tool is usually asked about.**
 - **`set the content of` writes `innerHTML`, so a message meant for a person must not carry markup.** The
   Launch message told a reader the attribute to write as `add '@app <page>' on a line of its own`, and `<page>`
   was parsed as an HTML tag and never rendered — so what appeared was `add '@app ' on a line of its own`: the

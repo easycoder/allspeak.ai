@@ -124,9 +124,14 @@ Two numbers for his eye: the fill is `#d6d6d6`, which against the page is 12.36:
    redirected to `<script>-stdout.txt` and the trace written to `<script>.viz.json`, and answers with the verdict
    and the output file's name; and the editor's **Record** asks that route when the tab's script is for Python,
    instead of refusing it. Verified live (`41 visits in 1 window` from `examples/chemical/parser.allspeak`) and
-   asserted in `asedit-modes-check`. **What is owed**: the *page* the dev server serves carrying
-   `#editor-runtime` has no check — the editor sets the variable in the harness, so the read itself is unasserted
-   — which is the same owed check as the one above, with one more thing to look for. The guard bounds a recorded
+   asserted in `asedit-modes-check`. **Corrected 2026-10-05, and the correction is the interesting part**: the first version
+   resolved the flavour from the model's *attribute* records, which exist only for a program the runtime
+   compiled — so the marker was invisible for a script the JavaScript runtime cannot compile, which is every
+   script that needs one. The model now reports `flavour | py | from=script` from the **token stream**, and the
+   editor reads that. Found from Graham's own status line; the check had passed because its fixture was a script
+   the JS runtime *can* compile. **What is still owed**: the *dev server* filling `#editor-runtime` has no check
+   of its own — the harness now sets the element, so the plugin's read of it is exercised, but that a served page
+   carries it at all is the same owed check as the one above. The guard bounds a recorded
    run (2 s work / 20 s wall) where a console run is unbounded, which is Graham's call to change.
 
    Was: **half built, 2026-10-05.** The command it needs now exists: `record the script [in <path>] [as <source>] giving <variable> [reporting <verdict>]` runs a script under a recorder *inside the Python runtime* and hands the recording back, so a route can call it and write the trace, and `@py` is how the script says it is the Python runtime's (below). What is still unbuilt is the route in `server.allspeak`, and it needs the plugin beside the server (`use plugin Viz from ./as_viz.py`, so `as_viz.py` travels in the packs — which no pack carries yet). **And the marker has made the caveat concrete rather than theoretical:** a route that runs *the script in the active tab* can only do so if the tab is a `@py` script, and today every script without a marker is a JavaScript one — so a route like this records `@py` scripts and refuses the rest in a sentence, which is the honest half of the feature.

@@ -93,7 +93,9 @@ scriptElement.innerText = fs.readFileSync(path.resolve(root, target), `utf8`);
 // half of the same check.
 const runtimeElement = mk(`div`);
 runtimeElement.setAttribute(`id`, `editor-runtime`);
+// A browser gives a div's text in both fields; this stub keeps them apart, and the plugin reads `textContent`.
 runtimeElement.innerHTML = `js`;
+runtimeElement.textContent = `js`;
 
 const bodyElement = mk(`body`);
 const headElement = mk(`head`);
@@ -888,17 +890,13 @@ const PLAIN_FOR_PY = [
 	`    stop`,
 ].join(`\n`) + `\n`;
 
-// **`#editor-runtime` is read once, when the editor boots**, so these checks set the *variable* the element
-// feeds rather than the element itself: the editor's read is a startup path and the *branch* is what is under
-// test here. Written down because it is a real gap — nothing in this file asserts that a served page's element
-// reaches this variable, and the check that would (the page a dev server serves) is owed in `TODO-viz.md`.
-const setRuntime = flavour => {
-	const record = program.getSymbolRecord(`ProjectRuntime`);
-	const slot = record.value[record.index];
-	slot.content = flavour;
-	slot.type = `constant`;
-};
-setRuntime(`py`);
+// **The page element itself, and that is the point.** The editor no longer reads `#editor-runtime` — the
+// *plugin* does, when it models the script, and the model carries the answer as a `flavour |` record. So
+// setting the element here is what a dev server does with a project's `.allspeak-init`, and it reaches the
+// editor through the plugin exactly as it does in a project. That also closes the gap this file used to have:
+// the element was unread by anything the harness could reach.
+runtimeElement.innerHTML = `py`;
+runtimeElement.textContent = `py`;
 scriptElement.innerText = PLAIN_FOR_PY;
 askedOfServer.length = 0;
 written.length = 0;
@@ -922,7 +920,8 @@ check(/41 visits in 1 window/.test(String(valueOf(`RecordReply`)))
 
 // **And the same buffer, in a project that says `js`, still runs here** — so the branch is the project's answer
 // and not a change to what Record does with every script.
-setRuntime(`js`);
+runtimeElement.innerHTML = `js`;
+runtimeElement.textContent = `js`;
 askedOfServer.length = 0;
 written.length = 0;
 run(`RecordRun`);
@@ -932,8 +931,27 @@ check(askedOfServer.length === 0 && written.some(w => /\.viz\.json$/.test(w.url)
 
 // **And a marker beats the project**, which is the rule both sides of the editor use: a `@py` script in a `js`
 // project goes to the server too. Without this the project's answer would be a default rather than an override.
-setRuntime(`js`);
-scriptElement.innerText = `    @py\n` + PLAIN_FOR_PY;
+//
+// **The marker's script has to be one this runtime cannot compile, and the first version of this check was not
+// — which is how the fault it now guards got in.** It used `PLAIN_FOR_PY`, plain core vocabulary that the
+// JavaScript runtime compiles happily, so the model still carried an `attr | … | py` record and the editor's
+// resolution worked. The real case is the opposite by construction: a script carrying `@py` uses Python
+// vocabulary, so the model emits **no attribute records at all** (`commands=0`) and a reader that asks the
+// compiled program for the marker finds none exactly when the marker matters. Measured 2026-10-05, and it is
+// why the model reports the flavour itself, from the token stream. A check on this boundary has to carry what
+// the boundary carries.
+const PY_ONLY_BODY = [
+	`    script MarkerOnAPythonScript`,
+	`    variable Lookup`,
+	`Main:`,
+	`    dictionary Lookup`,
+	`    viz start`,
+	`    viz stop`,
+	`    stop`,
+].join(`\n`) + `\n`;
+runtimeElement.innerHTML = `js`;
+runtimeElement.textContent = `js`;
+scriptElement.innerText = `    @py\n` + PY_ONLY_BODY;
 askedOfServer.length = 0;
 written.length = 0;
 run(`RecordRun`);

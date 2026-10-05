@@ -120,9 +120,8 @@
     variable RecordTrace     ! what that run collected, as the trace document's text
     variable RecordVerdict   ! what the recording amounts to — visits and windows, or why there is none
     variable AppPage         ! the page this script's `@app` attribute names, if it has one
-    variable ProjectRuntime  ! the runtime the *project* is for, from `#editor-runtime` — the dev server fills it
-    variable TabFlavour      ! this tab's script: `py` or `js`. Resolved in the plugin's order — the script's own
-                             ! marker, then the project, then `js` — so both sides of the editor agree
+    variable TabFlavour      ! this tab's script: `py` or `js`, as the plugin resolved it — the script's own
+                             ! marker, then the project's `#editor-runtime`, then `js`
     variable RecordReply     ! what the server says after it ran a Python script and recorded the run
     variable TraceText      ! the recording, as read — the `trace` field of that dict
     variable SourceText     ! the script, as read — the `source` field of it
@@ -208,7 +207,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 0c9208e3
+!! @hash 649556b5
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -269,7 +268,6 @@
 !! and defaults to 'en'. All of the language-specific strings are then defined for each language.
 !   -- Detect language and set strings for each supported language --
     div LangDiv
-    div RuntimeDiv           ! the hidden element the project's `runtime:` answer arrives in — see the startup
     ! **Textareas, and the reason is in how `the text of` reads an element.** The branches switch on the
     ! *symbol's* type: a `div` reads `innerHTML` with every newline removed, which turns a 2,700-line module
     ! into one line — and its first line is a `!!` comment, which then comments out the lot. Measured
@@ -284,19 +282,7 @@
     replace ` ` with `` in Lang
     replace newline with `` in Lang
     if Lang is empty put `en` into Lang
-    ! **Which runtime the project is for, when the page says so.** The dev server fills `#editor-runtime` from
-    ! the project's `.allspeak-init`, the same way it fills the language above — a browser cannot read a file, so
-    ! this element is how a project's declaration reaches one. Absent (a page opened from the site, or a project
-    ! that has not said) means `js`, which is the plugin's own default, and a value the plugin would not accept
-    ! is normalised away here so the two never disagree.
-    put `js` into ProjectRuntime
-    attach RuntimeDiv to `editor-runtime` or go to RuntimeReady
-    put the text of RuntimeDiv into ProjectRuntime
-    replace ` ` with `` in ProjectRuntime
-    replace newline with `` in ProjectRuntime
-    if ProjectRuntime is not `py` put `js` into ProjectRuntime
 
-RuntimeReady:
 SetStrings:
     if Lang is `it`
     begin
@@ -385,7 +371,7 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash f223e922
+!! @hash 3f450398
 !! @verified 3f450398
 !!!
 !! The editor checks on startup and periodically for updates to itself.
@@ -1176,6 +1162,7 @@ ParseSource:
         index Model to K
         put Model into MarkRecord
         if MarkRecord starts with `attr | ` gosub to NoteAttribute
+        if MarkRecord starts with `flavour | ` gosub to NoteFlavour
         add 1 to K
     end
     return
@@ -1189,6 +1176,22 @@ NoteAttribute:
     index MarkRecord to 2
     put MarkRecord into LContent
     gosub to SplitMeta
+    return
+
+!   Which runtime this tab's script is for, and where that came from: `flavour | py | from=script`.
+!
+!   **Read from the model and not from the script's own attributes**, and that is the fault this replaced. An
+!   `attr` record is emitted only for a program the runtime *compiled* — and a script carrying `@py` is by
+!   definition one the JavaScript runtime cannot compile, because `dictionary` and `list` are Python's. So the
+!   marker was invisible to the editor exactly when it mattered: `parser.allspeak` with `@py` at the top and
+!   `dictionary` at line 43 modelled to `commands=0`, no `attr` records, `TabFlavour` fell through to the
+!   project's answer and Record refused a script it had been built to run. Reported by Graham, 2026-10-05.
+!   The plugin reports this from the *token stream*, so it is there whether the compile succeeded or not.
+NoteFlavour:
+    split MarkRecord on ` | `
+    if the elements of MarkRecord is less than 3 return
+    index MarkRecord to 1
+    put MarkRecord into TabFlavour
     return
 
 OutsideDispatch:
@@ -1265,12 +1268,6 @@ SplitMeta:
         put from Pos of LContent into MetaValue
     end
     if MetaKey is `app` put MetaValue into AppPage
-    ! **`@py` / `@js`, and the first one wins** — which is the rule the visualiser's plugin uses
-    ! (`vizFlavourOf` takes the first marker in the token stream), so a script is read the same way whichever
-    ! side of the editor asks. Left empty when the script says nothing, because that is not "JavaScript": it is
-    ! nothing, and the project answers next.
-    if MetaKey is `py` and TabFlavour is empty put `py` into TabFlavour
-    if MetaKey is `js` and TabFlavour is empty put `js` into TabFlavour
     return
 
 OpenSection:
@@ -1362,7 +1359,7 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash 2f716163
+!! @hash 5795434c
 !! @verified d37980ab
 !!!
 !! Blocks view.
@@ -2201,13 +2198,12 @@ RecordRun:
     ! runs it here as it always has. The parse is what knows the difference, and it is the same parse the Blocks
     ! view uses, so `@app parser.html` means the same thing on both sides of the editor.
     gosub to ParseSource
-    ! **The same resolution the plugin makes, in the same order**: the script's own marker, then the project,
-    ! then JavaScript. A tab whose script says nothing inherits `#editor-runtime`, which is what stops every
-    ! script in a Python project needing a marker of its own.
-    if TabFlavour is empty
-    begin
-        put ProjectRuntime into TabFlavour
-    end
+    ! **The flavour is the plugin's answer, not a second reading of the same facts.** The `flavour |` record
+    ! comes from the plugin's own resolution — the script's marker, then the project's `#editor-runtime`, then
+    ! `js` — so the editor and the thing that actually records cannot disagree. This file used to read
+    ! `#editor-runtime` itself and fall back to it when the tab said nothing: two implementations of one rule,
+    ! and the reason the marker's case was invisible here is that the *attributes* it used to be read from do
+    ! not exist on a script this runtime cannot compile. See `NoteFlavour`.
     ! **A script for the Python runtime is run by the project's server, and not here.** The editor is a page, so
     ! it has the JavaScript runtime and nothing else — which is why Record refused a `@py` script before this.
     ! The dev server has Python: `/record/<script>` runs it exactly as `allspeak <script>` would, puts what it
@@ -2260,7 +2256,7 @@ RecordFailed:
     set the content of StatusSpan to `Could not record this script`
     fork to ClearStatus
     stop
-!! @hash 71fa38d5
+!! @hash 08c20866
 !! @verified df567fa6
 !!!
 !! Opening the project's app, from the editor.

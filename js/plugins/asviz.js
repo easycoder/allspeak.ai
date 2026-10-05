@@ -1342,6 +1342,16 @@ const AllSpeak_Viz = {
 			if (!element || !element.attr) continue;
 			out.push(`attr | line=${element.lino} | ${element.attr}`);
 		}
+		// **Which runtime the script is for, and where that came from — and it is read from the *tokens*, not
+		// from the compiled program.** That distinction is the whole of this record. A script carrying `@py` is
+		// by definition one this runtime *cannot compile* — `dictionary` and `list` are Python's — so the loop
+		// above emits nothing for it, and a tool that asked the program for the marker would find none exactly
+		// when the marker mattered. Measured 2026-10-05: `@py` on line 1 with `dictionary` at line 9 gave
+		// `commands=0` and no `attr` records at all, and the editor's Record fell through to the project's answer
+		// and refused a script it was built to run. The tokeniser is the reader, so the marker is there whether
+		// the compile succeeded or not.
+		const flavour = vizFlavour(source.tokens, path);
+		out.push(`flavour | ${flavour.declared} | from=${flavour.origin}`);
 		// The census of block shapes. A label can appear in more than one entry or
 		// exit bucket, so these are counts of labels carrying that shape, not a
 		// partition of the label count.

@@ -1481,6 +1481,13 @@ class Viz(Handler):
                 continue
             out.append(f"attr | line={element.get('lino', 0) + 1} | {element['attr']}")
 
+        # **Which runtime the script is for, and where that came from — read from the *tokens*, not from the
+        # compiled program.** That distinction is the whole of this record. A script carrying `@py` is by
+        # definition one the JavaScript runtime cannot compile, so its attribute records are never emitted, and a
+        # tool asking the program for the marker finds none exactly when the marker matters. Measured 2026-10-05.
+        declared_flavour, flavour_origin = flavourFor(tokensOf(path, lines), path)
+        out.append(f'flavour | {declared_flavour} | from={flavour_origin}')
+
         # The census of block shapes. A label can appear in more than one entry or exit
         # bucket, so these count labels carrying that shape, not a partition of them.
         def tally(kind, token):
