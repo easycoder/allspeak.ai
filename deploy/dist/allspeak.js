@@ -12868,23 +12868,20 @@ const AllSpeak_Language = {
 
 	// Get a localized diagnostic message with placeholder substitution.
 	// e.g. diagnostic('unknownCommand', {token: 'xyz', line: 5})
+	//
+	// **The fallback is the English pack, not a table copied into this function.** It used to be a copy of the
+	// seven keys English carries, which meant every English message lived in two places that nothing kept in
+	// step — and a *new* message was written twice, so the copy was the thing most likely to drift. Now the
+	// English text has one home (`LanguagePack_en.js`), and a pack that is behind shows English rather than a
+	// key name. `./sync-language-packs` refuses a pack that is behind, so the fallback is a safety net rather
+	// than the normal path.
 	diagnostic: function(key, params) {
-		let msg;
-		if (this.pack && this.pack.diagnostics && this.pack.diagnostics[key]) {
-			msg = this.pack.diagnostics[key];
-		} else {
-			// Fallback English messages
-			const fallbacks = {
-				unknownCommand: `I don't understand '{token}' at line {line}.`,
-				undeclaredVariable: `Variable '{name}' has not been declared.`,
-				unexpectedToken: `Expected '{expected}' but got '{actual}' at line {line}.`,
-				divisionByZero: `Division by zero at line {line}.`,
-				indexOutOfRange: `Index {index} is out of range at line {line}.`,
-				moduleNotFound: `Module '{name}' not found.`,
-				syntaxError: `Syntax error at line {line}: {detail}.`
-			};
-			msg = fallbacks[key] || key;
+		const mine = this.pack && this.pack.diagnostics;
+		let msg = (mine && mine[key]) || null;
+		if (!msg && typeof AllSpeak_LanguagePack_en !== `undefined` && AllSpeak_LanguagePack_en.diagnostics) {
+			msg = AllSpeak_LanguagePack_en.diagnostics[key] || null;
 		}
+		if (!msg) msg = key;
 		if (params) {
 			for (const p in params) {
 				msg = msg.replace(`{${p}}`, params[p]);
@@ -13957,7 +13954,33 @@ var AllSpeak_LanguagePack_en = {
     "divisionByZero": "Division by zero at line {line}.",
     "indexOutOfRange": "Index {index} is out of range at line {line}.",
     "moduleNotFound": "Module '{name}' not found.",
-    "syntaxError": "Syntax error at line {line}: {detail}."
+    "syntaxError": "Syntax error at line {line}: {detail}.",
+    "vizCouldNotRun": "could not run: {reason}",
+    "vizFlavourRefused": "this script is for the {runtime} runtime — {origin} — and this is the {mine} runtime",
+    "vizFlavourScript": "{marker}",
+    "vizFlavourProject": "unmarked, and the project's .allspeak-init says {marker}",
+    "vizFlavourDefault": "unmarked, and nothing else says, so {marker} is the default",
+    "vizVerdictStopped": "stopped: {reason}",
+    "vizVerdictEmpty": "nothing recorded: the run finished without reaching a marker",
+    "vizVerdictOneOne": "1 visit in 1 window",
+    "vizVerdictManyOne": "{visits} visits in 1 window",
+    "vizVerdictOneMany": "1 visit in {windows} windows",
+    "vizVerdictManyMany": "{visits} visits in {windows} windows",
+    "vizVerdictParked": ", and the run waits there — the recording ends at its first wait",
+    "vizNoSelfArm": "'record this run' is the JavaScript plugin's — the Python runtime cannot arm its own recording yet",
+    "vizCannotRead": "cannot read {path}: {error}",
+    "vizConsolePopup": "could not open {url} — a popup blocker, or no window to open into",
+    "vizConsoleArmed": "a recording is already armed — 'record this run' left it alone, and 'save the recording to <path>' writes it",
+    "vizConsoleThisRun": "recording this run — the next 'viz start' opens the window",
+    "vizConsoleCreated": "{path} created — nothing is armed yet, so it holds no windows",
+    "vizConsoleWriteFailed": "could not write {path}: {error}",
+    "vizConsoleAppClosed": "the app's window closed — its recording is in {path}",
+    "vizConsoleApp": "recording the app — {armed} program(s) armed here, {recording} being recorded; the recording is written to {path} as it runs",
+    "vizConsoleNoVisualiser": "the app has no visualiser and this page cannot find its own copy of it — add the plugin to the app's page",
+    "vizConsoleSelfArmed": "this script records itself — a marker at line {line} armed it",
+    "vizConsoleNothingWritten": "recorded, but nothing written — 'save the recording to <path>' names the trace file, and a host can name one instead",
+    "vizConsoleAdded": "{written} window(s) added to {path} — the recording holds {verdict}",
+    "vizConsoleAddedFailed": "could not write {path}: {error} — the recording holds {verdict}"
   },
   "words": {
     "and": "and",

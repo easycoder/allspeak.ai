@@ -9,6 +9,28 @@ Mirrors the JS Language.js module.
 import json
 import os
 
+# The English diagnostics, read once. **They live in the English pack and nowhere else** — see
+# `Language.diagnostic`, whose fallback used to be a second copy of them inside the class. A module-level cache
+# rather than a class attribute because it is a fact about the *files*, not about whichever pack is active.
+_english_diagnostics = None
+
+
+def _english():
+    """The English pack's `diagnostics`, or an empty table when it cannot be read."""
+    global _english_diagnostics
+    if _english_diagnostics is None:
+        _english_diagnostics = {}
+        for lang_dir in (os.path.join(os.path.dirname(__file__), 'languages'),):
+            path = os.path.join(lang_dir, 'en.json')
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    _english_diagnostics = json.load(f).get('diagnostics', {})
+                break
+            except (IOError, OSError, ValueError):
+                continue
+    return _english_diagnostics
+
+
 class Language:
 
     def __init__(self):
@@ -149,21 +171,20 @@ class Language:
         return self._keyword_index.get(keyword, [])
 
     def diagnostic(self, key, params=None):
-        """Get a localized diagnostic message with placeholder substitution."""
-        fallbacks = {
-            'unknownCommand': "I don't understand '{token}' at line {line}.",
-            'undeclaredVariable': "Variable '{name}' has not been declared.",
-            'unexpectedToken': "Expected '{expected}' but got '{actual}' at line {line}.",
-            'divisionByZero': "Division by zero at line {line}.",
-            'indexOutOfRange': "Index {index} is out of range at line {line}.",
-            'moduleNotFound': "Module '{name}' not found.",
-            'syntaxError': "Syntax error at line {line}: {detail}.",
-        }
+        """Get a localized diagnostic message with placeholder substitution.
+
+        **The fallback is the English pack, not a table copied into this function.** It used to be a copy of the
+        seven keys English carries, which meant every English message lived in two places that nothing kept in
+        step — and a *new* message was written twice, so the copy was the thing most likely to drift. Now the
+        English text has one home (`LanguagePack_en.js`, mirrored to `languages/en.json` by
+        `./sync-language-packs`, which refuses a pack that is behind), so the fallback is a safety net rather
+        than the normal path. An unmatched key comes back as itself: loud, and not a silent English leak.
+        """
         msg = None
         if self.pack and 'diagnostics' in self.pack:
             msg = self.pack['diagnostics'].get(key)
         if not msg:
-            msg = fallbacks.get(key, key)
+            msg = _english().get(key) or key
         if params:
             for k, v in params.items():
                 msg = msg.replace(f'{{{k}}}', str(v))

@@ -82,6 +82,19 @@ def _attrKey(text):
 FLAVOUR_JS = 'js'
 FLAVOUR_PY = 'py'
 
+
+def say(key, params=None):
+    """**Every word this plugin says to a person comes through here**, so the text lives in a language pack and
+    a new language translates it in one file rather than by grepping the plugin: `diagnostics` in
+    `js/allspeak/LanguagePack_<lang>.js`, mirrored to `allspeak-py/allspeak/languages/<lang>.json` by
+    `./sync-language-packs`, which refuses a pack that is behind. Nothing here is English — the fallback is the
+    English pack, one copy of the words, and the key itself when even that is missing.
+
+    Unguarded, unlike the JavaScript half: this module is imported by the runtime, so `language` is always the
+    singleton, whereas a host can load the JavaScript plugin without a runtime at all.
+    """
+    return language.diagnostic(key, params)
+
 # Where the answer came from — the script, the project, or nothing at all, which means JavaScript. A refusal
 # carries this, because a reader told "this is a Python script" goes looking for `@py` and will not find one
 # when it was the project that said so.
@@ -188,17 +201,20 @@ def flavourRefusal(flavour, origin):
     'dictionary' at line 46` is true and unhelpful, because the script is not broken, it is simply not this
     runtime's. The origin matters because a reader told "this is a Python script" will go looking for `@py` and
     not find one when it was the project that said so.
+
+    `Python` and `JavaScript` are the *runtimes'* names — proper nouns, not words in a human language — so every
+    pack is handed them and none of them translates them.
     """
-    name = '@py' if flavour == FLAVOUR_PY else '@js'
     runtime = 'Python' if flavour == FLAVOUR_PY else 'JavaScript'
-    if origin == ORIGIN_SCRIPT:
-        where = name
-    elif origin == ORIGIN_PROJECT:
-        where = f"unmarked, and the project's .allspeak-init says {name}"
-    else:
-        where = f'unmarked, and nothing else says, so {name} is the default'
-    return (f'this script is for the {runtime} runtime — {where} — '
-            f'and this is the Python runtime')
+    mine = 'JavaScript' if flavour == FLAVOUR_PY else 'Python'
+    marker = '@py' if flavour == FLAVOUR_PY else '@js'
+    origin_key = {ORIGIN_SCRIPT: 'vizFlavourScript',
+                  ORIGIN_PROJECT: 'vizFlavourProject'}.get(origin, 'vizFlavourDefault')
+    return say('vizFlavourRefused', {
+        'runtime': runtime,
+        'mine': mine,
+        'marker': marker,
+        'origin': say(origin_key, {'marker': marker})})
 
 
 def _valueText(program, name):
@@ -656,8 +672,7 @@ class Viz(Handler):
         # grammar error a reader would otherwise get, which names the word `giving` and not the cause.
         if language_word(self.peek()) == 'this':
             FatalError(self.compiler,
-                       "viz 'record this run': the Python runtime cannot arm its own recording yet — "
-                       "this shape is the JavaScript plugin's")
+                       "viz " + say('vizNoSelfArm'))
         if language_word(self.peek()) == 'the':
             self.nextToken()
         if language_word(self.peek()) == 'script':
@@ -733,7 +748,7 @@ class Viz(Handler):
                 with open(path, 'r', encoding='utf-8') as f:
                     text = f.read()
             except (IOError, OSError) as e:
-                RuntimeError(self.program, f'viz: cannot read {path}: {e}')
+                RuntimeError(self.program, f"viz: " + say('vizCannotRead', {'path': path, 'error': e}))
                 return None
         return text
 
@@ -1681,14 +1696,19 @@ def verdict(windows, stopped, parked):
     format is that the two runtimes' recordings are laid against each other.
     """
     if stopped:
-        return 'stopped: ' + stopped
-    visits = sum(len(window['visits']) for window in windows)
+        return say('vizVerdictStopped', {'reason': stopped})
     if not windows:
-        return 'nothing recorded: the run finished without reaching a marker'
-    line = '1 visit' if visits == 1 else f'{visits:,} visits'
-    line += ' in 1 window' if len(windows) == 1 else f' in {len(windows)} windows'
+        return say('vizVerdictEmpty')
+    visits = sum(len(window['visits']) for window in windows)
+    # **Four keys, not two fragments glued together**, because the two counts vary independently — one visit in
+    # two windows is real — and a language that joins them differently would get English word order back. The
+    # limit to state rather than hide: a language with more than two plural forms needs a rule this does not
+    # have, so the four cover the two-form languages the packs ship.
+    key = ('vizVerdict' + ('One' if visits == 1 else 'Many')
+           + ('One' if len(windows) == 1 else 'Many'))
+    line = say(key, {'visits': f'{visits:,}', 'windows': len(windows)})
     if parked:
-        line += ', and the run waits there — the recording ends at its first wait'
+        line += say('vizVerdictParked')
     return line
 
 
@@ -1770,12 +1790,12 @@ def recordSource(path, text):
     if flavour != FLAVOUR_PY:
         why = flavourRefusal(flavour, origin)
         VizState.problems.append(why)
-        return '', 'could not run: ' + why
+        return '', say('vizCouldNotRun', {'reason': why})
 
     target, problem = compileOnly(path, lines)
     if target is None:
         VizState.problems.append(problem)
-        return '', 'could not run: ' + problem
+        return '', say('vizCouldNotRun', {'reason': problem})
 
     # In test mode a script that ends naturally or exits prints its test summary; a recording is not a test
     # run, and the summary would land in the middle of the caller's own output.
@@ -1783,6 +1803,12 @@ def recordSource(path, text):
     recorder = Recorder(budget=DEFAULT_BUDGET_NS, ceiling=DEFAULT_CEILING_NS)
     target.recorder = recorder
 
+    # **The language pack is global state, and a recorded script switches it.** `language français` at the top of
+    # the target is the ordinary case for a project that is not English, and the switch outlives the recording —
+    # so everything compiled afterwards is compiled in that language. `compileOnly` guards the *compile* for
+    # this reason; nothing guarded the run, which is the half that actually executes the directive. Restored in
+    # the `finally` below, so a runtime error restores it too.
+    saved_pack = language.pack
     saved_queue = as_program.queue
     stopped = None
     said = _Said(sys.stdout)
@@ -1796,6 +1822,8 @@ def recordSource(path, text):
         stopped = _lastWords(said.tail)
     finally:
         as_program.queue = saved_queue
+        if saved_pack is not None and language.pack is not saved_pack:
+            language.init(saved_pack)
 
     parked = recorder.parked
     windows = recorder.finishedWindows()

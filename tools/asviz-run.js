@@ -180,39 +180,53 @@ if (tracePath && !wantsRun) {
 // middle of the model records. Redirected rather than discarded, because a bare `print` is how
 // a probe reports what a value turned out to be.
 const runTarget = function (target) {
-	const text = fs.readFileSync(resolve(target), `utf8`);
-	const source = AllSpeak.tokeniseFile(text.split(`\n`));
-	const program = AllSpeak.compileScript(source, null, null, null);
-	delete AllSpeak.scripts[program.script];
-	program.script = AllSpeak.scriptIndex++;
-	AllSpeak.scripts[program.script] = program;
-	// Attached by the host rather than asked for by the script, because collecting data is
-	// not something a script should have to say. Given to the plugin under the path it was
-	// asked for, so the report can say what the run collected — the counterpart of the Python
-	// host's `VizState.trace[program.scriptName] = program.recorder`.
-	// The guard, off unless the command line asked for it: a recording made by hand at a terminal is that
-	// person's own business, and a bounded one would misreport what the program did.
-	if (!noRecorder) {
-		program.vizRecorder = new AllSpeak_Viz.Recorder(guard.budget, guard.ceiling);
-	}
-	AllSpeak_Viz.trace[target] = program.vizRecorder;
-	const out = console.log;
-	console.log = (...args) => { process.stderr.write(args.join(` `) + `\n`); };
+	// **The pack is saved before anything else, and restored whatever happens.** `language français` at the top
+	// of a target switches the pack *while compiling*, so a save taken after the compile would save the French
+	// pack as if it were the host's own and restore nothing — and a compile that *fails* leaves it switched just
+	// as surely, which is why the restore wraps the compile as well as the run. Measured 2026-10-05: without it
+	// the framework was compiled in French afterwards and `viz.allspeak` refused with `I don't understand 'put'`
+	// at a line of a file the caller never mentioned.
+	const savedPack = AllSpeak_Language.pack;
 	try {
-		program.running = true;
-		AllSpeak_Run.run(program, 0);
+		const text = fs.readFileSync(resolve(target), `utf8`);
+		const source = AllSpeak.tokeniseFile(text.split(`\n`));
+		const program = AllSpeak.compileScript(source, null, null, null);
+		delete AllSpeak.scripts[program.script];
+		program.script = AllSpeak.scriptIndex++;
+		AllSpeak.scripts[program.script] = program;
+		// Attached by the host rather than asked for by the script, because collecting data is
+		// not something a script should have to say. Given to the plugin under the path it was
+		// asked for, so the report can say what the run collected — the counterpart of the Python
+		// host's `VizState.trace[program.scriptName] = program.recorder`.
+		// The guard, off unless the command line asked for it: a recording made by hand at a terminal is that
+		// person's own business, and a bounded one would misreport what the program did.
+		if (!noRecorder) {
+			program.vizRecorder = new AllSpeak_Viz.Recorder(guard.budget, guard.ceiling);
+		}
+		AllSpeak_Viz.trace[target] = program.vizRecorder;
+		const out = console.log;
+		console.log = (...args) => { process.stderr.write(args.join(` `) + `\n`); };
+		try {
+			program.running = true;
+			AllSpeak_Run.run(program, 0);
+		} finally {
+			console.log = out;
+			// A window still open ends when the *run* ends, including a run that failed: the
+			// recorder is already published for the report, and `finishedWindows` stamps an open
+			// window as of whenever it is next read — so without this a failed run would report a
+			// duration covering however long the host spent in between.
+			//
+			// Guarded, because a run can now end with no recorder at all: `--no-recorder` leaves the
+			// arming to the script, and a script need not have a marker in it.
+			if (program.vizRecorder) program.vizRecorder.finish();
+		}
+		return program.vizRecorder;
 	} finally {
-		console.log = out;
-		// A window still open ends when the *run* ends, including a run that failed: the
-		// recorder is already published for the report, and `finishedWindows` stamps an open
-		// window as of whenever it is next read — so without this a failed run would report a
-		// duration covering however long the host spent in between.
-		//
-		// Guarded, because a run can now end with no recorder at all: `--no-recorder` leaves the
-		// arming to the script, and a script need not have a marker in it.
-		if (program.vizRecorder) program.vizRecorder.finish();
+		if (savedPack && AllSpeak_Language.pack !== savedPack) {
+			AllSpeak_Language.init(savedPack);
+			if (AllSpeak_Viz.clearCompileCaches) AllSpeak_Viz.clearCompileCaches();
+		}
 	}
-	return program.vizRecorder;
 };
 
 const framework = fs.readFileSync(path.join(root, `viz.allspeak`), `utf8`);

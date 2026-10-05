@@ -74,7 +74,14 @@ def runTarget(target, budget=None, ceiling=None):
     the data cannot be collected without the work being done, so the tool is meant to be
     used with care rather than fenced in.
     """
+    from allspeak import language as _language
     program = Program(target, testMode=True)
+    # **Captured after the `Program` exists, and before `start()` compiles.** Two edges, and both bite: a save
+    # taken *before* the `Program` is `None` when this process has not loaded a pack yet (the constructor loads
+    # English when none is), so the restore is skipped; a save taken *after* `start()` has already saved the
+    # target's own French as if it were the host's. `language français` at the top of a target switches the pack
+    # while compiling, so the only safe moment is between the two.
+    saved_pack = _language.pack
     program.summaryPrinted = True
     # The markers are core syntax now, so the target needs no plugin domain to compile.
     # The recorder is the facility that makes a run a *recording*: it watches the markers
@@ -84,9 +91,14 @@ def runTarget(target, budget=None, ceiling=None):
     # person's own business, and a bounded one would misreport what the program did.
     program.recorder = Recorder(budget=budget, ceiling=ceiling)
     VizState.trace[program.scriptName] = program.recorder
+    # **A target that declares its own language must not take the host with it.** `language français` at the top
+    # of a script is the ordinary case for a project that is not English, and the pack is global state — so
+    # without this the *framework* is compiled in French afterwards, and `viz.allspeak` is English.
     try:
         program.start()
     finally:
+        if saved_pack is not None and _language.pack is not saved_pack:
+            _language.init(saved_pack)
         # A window still open ends when the *run* ends, including a run that failed: the
         # recorder is already published for the report, and `finishedWindows` stamps an open
         # window as of whenever it is next read — so without this a failed run would report a

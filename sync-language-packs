@@ -22,7 +22,7 @@ JSON_DIR = os.path.join(REPO_ROOT, 'allspeak-py', 'allspeak', 'languages')
 
 def extract_pack(js_path):
     """Pull the JS object literal out of a LanguagePack_<lang>.js file."""
-    with open(js_path) as f:
+    with open(js_path, encoding='utf-8') as f:
         text = f.read()
     m = re.search(r'=\s*(\{[\s\S]*\})\s*;?\s*$', text)
     if not m:
@@ -30,9 +30,70 @@ def extract_pack(js_path):
     return json.loads(m.group(1))
 
 
+def placeholder_set(text):
+    """The `{names}` a message uses, whichever order they appear in."""
+    return set(re.findall(r'\{(\w+)\}', text))
+
+
+def check_packs(packs):
+    """Refuse a pack that is behind English, and a message whose placeholders do not match.
+
+    **This is the guard that makes a new language a small job rather than a hunt.** A pack missing a key is not
+    an error at run time — `Language.diagnostic` falls back to the English text — which is exactly why nothing
+    would tell you: a language could be added, ship half-translated, and read as English in the places nobody
+    looked. The mirror of the same hazard is a key that *English* has dropped, which would sit in the other
+    packs unread for ever.
+
+    The placeholder half is the subtler one: a translation that drops `{line}` or mistypes `{marker}` renders a
+    sentence with a hole in it or with the placeholder still showing, and no test would notice because the
+    sentence is still a sentence. So the *shapes* must match, key by key, in every language.
+    """
+    problems = []
+    english = packs.get('en')
+    if english is None:
+        problems.append('there is no English pack, which is every other pack\'s fallback')
+        return problems
+    for section in ('diagnostics',):
+        want = set(english.get(section, {}))
+        for lang, pack in sorted(packs.items()):
+            if lang == 'en':
+                continue
+            have = set(pack.get(section, {}))
+            for key in sorted(want - have):
+                problems.append(f'{lang}: {section} is missing "{key}" from English')
+            for key in sorted(have - want):
+                problems.append(f'{lang}: {section} has "{key}", which English does not')
+        for lang, pack in sorted(packs.items()):
+            for key, text in (pack.get(section) or {}).items():
+                mine = placeholder_set(text)
+                theirs = placeholder_set(english.get(section, {}).get(key, ''))
+                if key in want and mine != theirs:
+                    problems.append(
+                        f'{lang}: "{key}" uses {sorted(mine) or "no placeholders"}, '
+                        f'English uses {sorted(theirs) or "none"}')
+    return problems
+
+
 def main():
     if not os.path.isdir(JSON_DIR):
         raise SystemExit(f'Output directory not found: {JSON_DIR}')
+
+    # Read every pack first, so a pack that is behind is refused *before* anything is written: a half-synced
+    # pair of trees is harder to reason about than either state.
+    packs = {}
+    for fname in sorted(os.listdir(JS_DIR)):
+        m = re.match(r'^LanguagePack_(\w+)\.js$', fname)
+        if m:
+            packs[m.group(1)] = extract_pack(os.path.join(JS_DIR, fname))
+
+    problems = check_packs(packs)
+    if problems:
+        print('The language packs disagree with English:')
+        for line in problems:
+            print('  ' + line)
+        print('\nNothing was written. A new language must translate every `diagnostics` key — see')
+        print('learn/reference/15-multilingual.md — and the English pack is the one that defines the set.')
+        return 1
 
     synced = 0
     for fname in sorted(os.listdir(JS_DIR)):
@@ -42,7 +103,7 @@ def main():
         lang = m.group(1)
         js_path = os.path.join(JS_DIR, fname)
         json_path = os.path.join(JSON_DIR, f'{lang}.json')
-        data = extract_pack(js_path)
+        data = packs[lang]
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
             f.write('\n')
@@ -50,7 +111,8 @@ def main():
         synced += 1
 
     print(f'Done. {synced} language pack(s) synced.')
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

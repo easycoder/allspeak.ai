@@ -137,7 +137,7 @@ const AllSpeak_Viz = {
 			const text = AllSpeak_Viz.sources[path];
 			if (typeof text !== `string`) {
 				program.runtimeError(command.lino,
-					`viz: no source registered for '${path}' — the host must set ` +
+					`no source registered for '${path}' — the host must set ` +
 					`AllSpeak_Viz.sources['${path}']`);
 				return command.pc + 1;
 			}
@@ -279,7 +279,7 @@ const AllSpeak_Viz = {
 				if (!AllSpeak_Viz.watchApp(url, path)) {
 					// A blocked popup is the one failure worth naming: nothing else about this can be diagnosed
 					// from the script, and every browser does it silently when the click was not close enough.
-					vizLog(`viz: could not open ${url} — a popup blocker, or no window to open into`);
+					vizLog(vizSay(`vizConsolePopup`, { url: url }));
 				}
 				return command.pc + 1;
 			}
@@ -289,13 +289,12 @@ const AllSpeak_Viz = {
 				// app has no say in it — so the recorder's own defaults apply, exactly as they do to a script
 				// handed over by a tool.
 				if (program.vizRecorder && !program.vizRecorder.stopped) {
-					vizLog(`viz: a recording is already armed — 'record this run' left it alone, and ` +
-						`'save the recording to <path>' writes it`);
+					vizLog(vizSay(`vizConsoleArmed`));
 					return command.pc + 1;
 				}
 				program.vizRecorder = new AllSpeak_Viz_Recorder(VIZ_DEFAULT_BUDGET_NS,
 					VIZ_DEFAULT_CEILING_NS);
-				vizLog(`viz: recording this run — the next 'viz start' opens the window`);
+				vizLog(vizSay(`vizConsoleThisRun`));
 				return command.pc + 1;
 			}
 			const path = command.path ? program.getValue(command.path) : AllSpeak_Viz.target;
@@ -307,7 +306,7 @@ const AllSpeak_Viz = {
 			const text = AllSpeak_Viz.sources[path];
 			if (typeof text !== `string`) {
 				program.runtimeError(command.lino,
-					`viz: no source registered for '${path}' — the host must set ` +
+					`no source registered for '${path}' — the host must set ` +
 					`AllSpeak_Viz.sources['${path}']`);
 				return command.pc + 1;
 			}
@@ -374,8 +373,8 @@ const AllSpeak_Viz = {
 				// Nothing armed yet, so there is nothing to flush: this is the other half of the job, making
 				// the file so that a reader — the pane, a person — can see a recording is intended.
 				AllSpeak_Viz.appendTrace(path, [], true)
-					.then(() => vizLog(`viz: ${path} created — nothing is armed yet, so it holds no windows`))
-					.catch(err => vizLog(`viz: could not write ${path}: ${err}`));
+					.then(() => vizLog(vizSay(`vizConsoleCreated`, { path: path })))
+					.catch(err => vizLog(vizSay(`vizConsoleWriteFailed`, { path: path, error: err })));
 				return command.pc + 1;
 			}
 			// **Naming the file is the job; the recording carries on.** `viz stop` is what writes, one segment
@@ -416,7 +415,7 @@ const AllSpeak_Viz = {
 		const timer = setInterval(function () {
 			if (win.closed) {
 				clearInterval(timer);
-				vizLog(`viz: the app's window closed — its recording is in ${path}`);
+				vizLog(vizSay(`vizConsoleAppClosed`, { path: path }));
 				return;
 			}
 			if (armed) return;
@@ -454,7 +453,10 @@ const AllSpeak_Viz = {
 					count++;
 					recording++;
 				} catch (err) {
-					vizLog(`viz: could not arm a program in the app: ${err}`);
+					// **Left in English, and so are the two others below.** This one says the *host* did not wire the
+					// plugin up, and its reader is whoever wrote that host — a developer's sentence, in a
+					// language no pack can know. What a person using the editor or the tool reads is above.
+					vizLog(`could not arm a program in the app: ${err}`);
 				}
 			}
 			// **Only now stop trying.** The first version set this flag whether or not anything had been armed,
@@ -463,8 +465,7 @@ const AllSpeak_Viz = {
 			// `0 program(s) armed` while the editor's status line claimed the opposite. Measured 2026-10-04.
 			if (recording === 0) return;
 			armed = true;
-			vizLog(`viz: recording the app — ${count} program(s) armed here, ${recording} being recorded; `
-				+ `the recording is written to ${path} as it runs`);
+			vizLog(vizSay(`vizConsoleApp`, { armed: count, recording: recording, path: path }));
 		}, 200);
 		return true;
 	},
@@ -483,8 +484,7 @@ const AllSpeak_Viz = {
 
 	injectPlugin: function (win, url) {
 		if (!url) {
-			vizLog(`viz: the app has no visualiser and this page cannot find its own copy of it — ` +
-				`add the plugin to the app's page`);
+			vizLog(vizSay(`vizConsoleNoVisualiser`));
 			return;
 		}
 		// **Once per window.** The editor polls while the app comes up, and this file declares its names with
@@ -501,7 +501,7 @@ const AllSpeak_Viz = {
 			win.document.head.appendChild(tag);
 		} catch (err) {
 			win.__asvizInjected = false;   // a genuine failure can be tried again
-			vizLog(`viz: could not load the visualiser into the app: ${err}`);
+			vizLog(`could not load the visualiser into the app: ${err}`);
 		}
 	},
 
@@ -551,6 +551,17 @@ const AllSpeak_Viz = {
 		const lines = text.split(`\n`);
 		if (lines.length > 0 && lines[lines.length - 1] === ``) lines.pop();
 		const source = AllSpeak.tokeniseFile(lines);
+		// **The language pack is global state, and a recorded script switches it.** `language français` at the
+		// top of the target is the ordinary case for a project that is not English, and the switch outlives the
+		// recording — so everything compiled *afterwards* is compiled in that language: the editor's own Graph
+		// pane and sidebar modules, and a host's framework. All English, all refuse to compile, and the failure
+		// lands nowhere near its cause. `model` has guarded this since it was written for exactly the same
+		// reason; `record` did not, and it is the one path where the target is *run* rather than compiled.
+		//
+		// Measured 2026-10-05, through `tools/asviz-run.js`: the recording itself came back correct and in
+		// French, and then the host's framework compile failed with `I don't understand 'put'` at line 30 of
+		// `viz.allspeak`. Restored in a `finally`, so a refusal and a runtime error restore it too.
+		const savedPack = AllSpeak_Language.pack;
 		// **The flavour is asked before the compile, and it has to be.** A script written for the Python
 		// runtime is exactly the script that will not compile here, so a check on the compiled program could
 		// never run: the compile's own error arrives first and says `I don't understand 'dictionary' at line
@@ -561,8 +572,14 @@ const AllSpeak_Viz = {
 		if (flavour.declared !== VIZ_FLAVOUR_JS) {
 			const why = vizFlavourRefusal(flavour.declared, flavour.origin);
 			AllSpeak_Viz.problems.push(why);
-			return { trace: ``, verdict: `could not run: ` + why };
+			return { trace: ``, verdict: vizSay(`vizCouldNotRun`, { reason: why }) };
 		}
+		const restorePack = function () {
+			if (savedPack && AllSpeak_Language.pack !== savedPack) {
+				AllSpeak_Language.init(savedPack);
+				AllSpeak_Viz.clearCompileCaches();
+			}
+		};
 		// The name the script declares, stepped aside for the compile and handed back after it — see the
 		// note on the command for why the collision is expected rather than exceptional.
 		const declared = AllSpeak_Viz.declaredScript(source.tokens);
@@ -578,7 +595,8 @@ const AllSpeak_Viz = {
 			// it is how a caller learns that this runtime is not the one the script was written for.
 			const why = AllSpeak_Viz.reasonFor(err);
 			AllSpeak_Viz.problems.push(why);
-			return { trace: ``, verdict: `could not run: ` + why };
+			restorePack();
+			return { trace: ``, verdict: vizSay(`vizCouldNotRun`, { reason: why }) };
 		}
 		// **The recording is a run of its own, so it gets a name of its own.** Two programs under one name is
 		// what the registry refuses, and the caller may be the program holding the name the script declares —
@@ -608,6 +626,7 @@ const AllSpeak_Viz = {
 		const windows = recorder.finishedWindows();
 		recorder.finish();
 		delete AllSpeak.scripts[program.script];
+		restorePack();
 		return {
 			trace: JSON.stringify(AllSpeak_Viz.traceDocument(path, windows)),
 			verdict: AllSpeak_Viz.verdict(windows, stopped, parked)
@@ -624,16 +643,22 @@ const AllSpeak_Viz = {
 	// parked on a timer when the call returned — the last of which is why a recording can be a slice of a run
 	// rather than the whole of it. Visits are the pane's own unit (`line N visit V of T`), so the number on the
 	// status line is the number in the pane's sidebar.
+	//
+	// **The count sentence is four keys rather than two fragments glued together**, because the two counts vary
+	// independently — one visit in two windows is real — and a language that joins them differently would get
+	// English word order back, which is the one thing putting these in packs is for. The limit to state rather
+	// than hide: a language with more than two plural forms needs a rule this does not have, so the four keys
+	// cover the two-form languages the packs ship. The grouping on a large count follows the *browser's* locale,
+	// which is the one part of the sentence a pack cannot reach.
 	verdict: function (windows, stopped, parked) {
-		if (stopped) return `stopped: ` + stopped;
+		if (stopped) return vizSay(`vizVerdictStopped`, { reason: stopped });
 		let visits = 0;
 		for (let n = 0; n < windows.length; n++) visits += windows[n].visits.length;
-		if (windows.length === 0) {
-			return `nothing recorded: the run finished without reaching a marker`;
-		}
-		let line = visits === 1 ? `1 visit` : visits.toLocaleString() + ` visits`;
-		line += windows.length === 1 ? ` in 1 window` : ` in ${windows.length} windows`;
-		if (parked) line += `, and the run waits there — the recording ends at its first wait`;
+		if (windows.length === 0) return vizSay(`vizVerdictEmpty`);
+		const key = `vizVerdict` + (visits === 1 ? `One` : `Many`)
+			+ (windows.length === 1 ? `One` : `Many`);
+		let line = vizSay(key, { visits: visits.toLocaleString(), windows: windows.length });
+		if (parked) line += vizSay(`vizVerdictParked`);
 		return line;
 	},
 
@@ -1535,7 +1560,7 @@ const vizArmWhenMarked = function (program) {
 		// The guard's defaults, not a host's: the script asked, and the recorder's own bounds are what a
 		// script-driven recording gets. The line is logged because "recorded nothing" and "never armed" are
 		// different faults that look identical from the outside.
-		vizLog(`viz: this script records itself — a marker at line ${command.lino + 1} armed it`);
+		vizLog(vizSay(`vizConsoleSelfArmed`, { line: command.lino + 1 }));
 		return;
 	}
 };
@@ -1627,7 +1652,24 @@ const VIZ_WAITING_KEYWORDS = [`wait`, `every`, `release`, `input`, `download`, `
 // indistinguishable from one that worked until somebody says which. `console` is absent in some hosts, so this
 // checks rather than assuming.
 const vizLog = function (message) {
-	if (typeof console !== `undefined` && console.log) console.log(message);
+	if (typeof console !== `undefined` && console.log) console.log(`viz: ` + message);
+};
+
+// **Every word this plugin says to a person comes through here**, so the text lives in a language pack and a new
+// language translates it in one file rather than by grepping the plugin: `diagnostics` in
+// `js/allspeak/LanguagePack_<lang>.js`, mirrored to the Python side by `./sync-language-packs`, which refuses a
+// pack that is behind. Nothing here is English — the *fallback* is the English pack, one copy of the words, and
+// the key itself when even that is missing.
+//
+// Guarded, unlike this file's use of `AllSpeak_Language.word`, because a host that drives the plugin alone — a
+// check, a scratch page — need not have loaded the runtime at all, and a message is the worst place to throw.
+const vizSay = function (key, params) {
+	try {
+		if (typeof AllSpeak_Language !== `undefined` && AllSpeak_Language.diagnostic) {
+			return AllSpeak_Language.diagnostic(key, params);
+		}
+	} catch (err) { /* no runtime loaded: the key is at least identifiable */ }
+	return key;
 };
 
 const VIZ_ATTR_MARKER = `viz`;
@@ -1709,12 +1751,19 @@ const vizFlavour = function (tokens, path) {
 // unhelpful, because the script is not broken, it is simply not this runtime's. The origin matters because a
 // reader told "this is a Python script" will go looking for `@py` and not find one when the project said it.
 const vizFlavourRefusal = function (flavour, origin) {
+	// `Python` and `JavaScript` are the *runtimes'* names — proper nouns, not words in a human language — so
+	// every pack is handed them and none of them translates them.
 	const runtime = flavour === VIZ_FLAVOUR_PY ? `Python` : `JavaScript`;
-	const name = flavour === VIZ_FLAVOUR_PY ? `@py` : `@js`;
-	const where = origin === VIZ_ORIGIN_SCRIPT ? name
-		: (origin === VIZ_ORIGIN_PROJECT ? `unmarked, and the project's .allspeak-init says ${name}`
-			: `unmarked, and nothing else says, so ${name} is the default`);
-	return `this script is for the ${runtime} runtime — ${where} — and this is the JavaScript runtime`;
+	const mine = flavour === VIZ_FLAVOUR_PY ? `JavaScript` : `Python`;
+	const marker = flavour === VIZ_FLAVOUR_PY ? `@py` : `@js`;
+	const key = origin === VIZ_ORIGIN_SCRIPT ? `vizFlavourScript`
+		: (origin === VIZ_ORIGIN_PROJECT ? `vizFlavourProject` : `vizFlavourDefault`);
+	return vizSay(`vizFlavourRefused`, {
+		runtime: runtime,
+		mine: mine,
+		marker: marker,
+		origin: vizSay(key, { marker: marker })
+	});
 };
 
 // Which marker a command is, from either spelling. The `viz` command is the language's own marker; `@viz start`
@@ -1949,8 +1998,7 @@ AllSpeak_Viz_Recorder.prototype = {
 		// host's path is why a script opened by the editor's Record needs no line of its own.
 		const path = (program && program.vizTracePath) || AllSpeak_Viz.tracePath;
 		if (!path) {
-			vizLog(`viz: recorded, but nothing written — 'save the recording to <path>' names the trace file, `
-				+ `and a host can name one instead`);
+			vizLog(vizSay(`vizConsoleNothingWritten`));
 			return;
 		}
 		const from = this.flushed;
@@ -1967,14 +2015,14 @@ AllSpeak_Viz_Recorder.prototype = {
 		const verdict = AllSpeak_Viz.verdict(this.windows, this.stopped || null, this.parked === true);
 		AllSpeak_Viz.appendTrace(path, fresh, create === true).then(written => {
 			this.flushed = Math.max(this.flushed, from + written);
-			vizLog(`viz: ${written} window(s) added to ${path} — the recording holds ${verdict}`);
+			vizLog(vizSay(`vizConsoleAdded`, { written: written, path: path, verdict: verdict }));
 		}).catch(err => {
 			// Handed back, not lost: the next flush sends the segment again. `min` rather than an assignment
 			// because a later flush has already claimed a higher watermark, and a failure must not drag that
 			// back past a segment that did get written. A re-sent window is a duplicate a reader can see; a
 			// dropped one is a hole nobody can.
 			this.flushed = Math.min(this.flushed, from);
-			vizLog(`viz: could not write ${path}: ${err} — the recording holds ${verdict}`);
+			vizLog(vizSay(`vizConsoleAddedFailed`, { path: path, error: err, verdict: verdict }));
 		});
 	},
 

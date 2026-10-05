@@ -108,23 +108,20 @@ const AllSpeak_Language = {
 
 	// Get a localized diagnostic message with placeholder substitution.
 	// e.g. diagnostic('unknownCommand', {token: 'xyz', line: 5})
+	//
+	// **The fallback is the English pack, not a table copied into this function.** It used to be a copy of the
+	// seven keys English carries, which meant every English message lived in two places that nothing kept in
+	// step — and a *new* message was written twice, so the copy was the thing most likely to drift. Now the
+	// English text has one home (`LanguagePack_en.js`), and a pack that is behind shows English rather than a
+	// key name. `./sync-language-packs` refuses a pack that is behind, so the fallback is a safety net rather
+	// than the normal path.
 	diagnostic: function(key, params) {
-		let msg;
-		if (this.pack && this.pack.diagnostics && this.pack.diagnostics[key]) {
-			msg = this.pack.diagnostics[key];
-		} else {
-			// Fallback English messages
-			const fallbacks = {
-				unknownCommand: `I don't understand '{token}' at line {line}.`,
-				undeclaredVariable: `Variable '{name}' has not been declared.`,
-				unexpectedToken: `Expected '{expected}' but got '{actual}' at line {line}.`,
-				divisionByZero: `Division by zero at line {line}.`,
-				indexOutOfRange: `Index {index} is out of range at line {line}.`,
-				moduleNotFound: `Module '{name}' not found.`,
-				syntaxError: `Syntax error at line {line}: {detail}.`
-			};
-			msg = fallbacks[key] || key;
+		const mine = this.pack && this.pack.diagnostics;
+		let msg = (mine && mine[key]) || null;
+		if (!msg && typeof AllSpeak_LanguagePack_en !== `undefined` && AllSpeak_LanguagePack_en.diagnostics) {
+			msg = AllSpeak_LanguagePack_en.diagnostics[key] || null;
 		}
+		if (!msg) msg = key;
 		if (params) {
 			for (const p in params) {
 				msg = msg.replace(`{${p}}`, params[p]);

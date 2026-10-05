@@ -95,8 +95,9 @@ Mechanically:
 
 1. Copy `LanguagePack_en.js` (and `languages/en.json` for Python) to the new language code.
 2. Translate the keyword, connector, literal, time-unit, condition, and word entries.
-3. Add the language to the loader's index.
-4. Author a `language <native-name>` line and write tests.
+3. **Translate every `diagnostics` entry** — the `unknownCommand` and `syntaxError` messages a script's author is shown, and the visualiser's own recording and refusal messages. A missing one is not an error at run time: `diagnostic()` falls back to the English text, so a pack that has not caught up reads as English in the places nobody looked. `./sync-language-packs` refuses exactly that, and it also checks that a translation has kept every `{placeholder}` English uses — a dropped `{line}` renders a sentence with a hole in it and nothing else would notice.
+4. Add the language to the loader's index.
+5. Author a `language <native-name>` line and write tests.
 
 The hard part is not mechanical — it's vocabulary choice. AllSpeak's English keywords are deliberately natural-language-like (`take A from B`, `add A to B`, `the index of`), and the translations need to read naturally in the target language, not as literal calques of the English. AI translation produces a decent first pass; human review by a native speaker brings it to ship quality.
 
