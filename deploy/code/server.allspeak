@@ -14,6 +14,9 @@
 !     GET  /list          →  returns entries in the root directory
 !     GET  /read/<file>   →  returns contents of <file>
 !     POST /write/<file>  →  writes request body to <file>; returns OK
+!     GET  /record/<file> →  runs <file> under this Python runtime, records the run, and
+!                            returns the verdict. The script's own output goes to
+!                            <file>-stdout.txt beside it, and the trace to <file>.viz.json
 !     GET  /version       →  compares this process's script with the published one;
 !                            returns OK or updated
 !     GET  /restart       →  restarts the server process
@@ -44,6 +47,12 @@
     variable LangTag
     variable LangDiv
     variable HomeDiv
+    variable ScriptPath
+    variable TracePath
+    variable OutputPath
+    variable VerdictPath
+    variable RecordCommand
+    variable RecordVerdict
     variable ProjectRuntime
     variable RuntimeDiv
     variable InitKey
@@ -184,6 +193,62 @@
                     put empty into Content
                 end
             return Content to Files
+        end
+        else if FullPath starts with `/record/`
+        begin
+            put FullPath into FilePath
+            replace `/record/` with `` in FilePath
+            if FilePath includes `..`
+            begin
+                ! The same guard, and for the same reason, as every other route — a refusal that only sets a
+                ! response does not refuse, because the lines after it still run.
+                return `Forbidden` to Files with status 403
+                stop
+            end
+            ! **Three names, each derived from the script, so a reader finds them beside it.** The trace goes
+            ! where the editor's Graph pane looks for it — `<script>.viz.json`, the name the editor computes
+            ! for the tab — the output where a person can read it, and the verdict into a scratch file that is
+            ! read and deleted, because it is what a status line needs and it is not worth keeping.
+            put BaseDir cat `/` cat FilePath into ScriptPath
+            put ScriptPath cat `.viz.json` into TracePath
+            put ScriptPath cat `-stdout.txt` into OutputPath
+            put BaseDir cat `/.record-verdict.txt` into VerdictPath
+
+            ! **`allspeak` is what runs it, so the run is the one a console would do.** The dev server does not
+            ! execute the script itself: the runtime owns that, the recorder's guard bounds it, and `--record`
+            ! writes the recording. `system` waits for the command, which is why this route answers only when
+            ! the run is over. The redirects are the point of doing it in a shell: a script's output is
+            ! unpredictable and would drown the console this server is also writing to, and the CLI's one line
+            ! about the recording goes to stderr so the two do not mix. Measured 2026-10-05 on
+            ! `examples/chemical/parser.allspeak`: 41 visits in 1 window, its four formula lines in the file.
+            if file ScriptPath exists
+            begin
+                put `allspeak --record="` cat TracePath cat `" "` cat ScriptPath cat `" > "` cat OutputPath cat `" 2> "` cat VerdictPath cat `"` into RecordCommand
+                system RecordCommand
+                put empty into RecordVerdict
+                if file VerdictPath exists
+                begin
+                    ! **Field 1 after the tag, not the whole file.** Anything else the CLI put on stderr sits
+                    ! before the verdict, and taking everything after `viz: ` is what drops it.
+                    load RecordVerdict from VerdictPath
+                    put field 1 of RecordVerdict delimited by `viz: ` into RecordVerdict
+                    replace newline with `` in RecordVerdict
+                    delete file VerdictPath
+                end
+                if RecordVerdict is empty
+                    put `ran, but no recording was written — see ` cat FilePath cat `-stdout.txt` into RecordVerdict
+                ! **`stop`, and not for decoration.** A `return … to Files` inside a block does not end the
+                ! section — the thread carries on to the lines after the block, and the *last* response wins.
+                ! This route returned `no such script` for a script it had just run and recorded, which is the
+                ! same fall-through the guards on /list, /read, /write and the static branch were given their
+                ! `stop`s for. Measured 2026-10-05, in this route's first draft.
+                ! The sentence is composed here rather than in the editor, so the verdict and the name of the
+                ! output file are written once, where both are known.
+                return RecordVerdict cat ` · output in ` cat FilePath cat `-stdout.txt` to Files
+                stop
+            end
+            return `no such script: ` cat FilePath to Files with status 404
+            stop
         end
         else if FullPath starts with `/write/`
         begin
