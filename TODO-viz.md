@@ -346,3 +346,37 @@ this project's rule that a symptom in a log line is evidence. Second, the bug wa
 **Unverified**: the JavaScript recorder is the twin and its behaviour was already right, but the measurement
 above is the Python CLI path — the one the editor uses. The fix needs a **release** to reach a user, then the
 reverted messages need a deploy.
+
+## The clip: built, checked, and withdrawn — 2026-10-05
+
+Graham's go was for the clip as a filter over the records with two entries, the notice and the re-fit key. All of
+that was written and it **compiled** (`asedit-check`: 1368 commands, 284 symbols), and then the check said no:
+
+```
+FAIL: a clip drew as many marks as the whole recording (242 then 242)
+FAIL: reloading did not restore the picture (242 then 242)
+```
+
+**So the filter did not take, and rather than leave an inert `VizClip` behind I reverted the pane and the harness
+to the last verified state.** Two things came out of it that are worth keeping:
+
+1. **A pane element cannot take a click.** `svg` is the one element type the plugin registers *without* the `dom`
+   extra — `AGENTS.md`'s own trap — and `on click VizClipBtn` therefore fails to compile with `I don't understand
+   'on'`. The editor's buttons work because they are `div`/`button`; the pane's are `svg`. So the controls need
+   either a *dom* surface (the editor's toolbar, or the page) or the pane's own idiom: an arithmetic hit test on
+   the pointer, which is how every one of its gestures already works ("there is nothing for the DOM to hit and
+   the answer has to be arithmetic"). **Either way it is a second slice, and the entries are what a first one
+   should prove.**
+2. **The harness's phases are order-sensitive, and appending one is not free.** My two new phases went before the
+   mark-press phase, and the press checks then failed — `a press on a mark named line 0` — because the clip and
+   its unclip re-fit the window, and the press checks assume the window the earlier gestures left. The harness
+   says as much of its own last phase ("It is last, so the line it leaves behind is the one the checks below
+   read"), and a new phase has to respect that. Next time: a phase that changes the window goes *after* every
+   check that reads it, or the checks get their own fixture.
+
+**What to do next, and it is the lesson of this whole evening**: *probe the filter before building the rest of
+it*. Both `json set <x> to array` and `json add <ev> to <x>` were verified in isolation an hour ago, so the
+failure is in how the pane uses them — most likely in reading `steps` from a clipped event, or in the range
+comparison (a number that arrived as text compares lexically, which this project has been bitten by before).
+A fifteen-line probe in `tools/` would settle it in one run, and it should be written before the entries, the
+notice, the re-fit key and the controls are attempted again.
