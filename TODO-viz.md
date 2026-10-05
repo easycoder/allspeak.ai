@@ -143,7 +143,7 @@ Two numbers for his eye: the fill is `#d6d6d6`, which against the page is 12.36:
 
 **And the flavour marker is what makes the pair non-trivial to place.** `record this run` arms *the program that called it*, and `save the recording to <path>` needs a file path — neither needs the marker. But a Python app recording itself needs `use plugin Viz from …` in its script, and a *pack* does not carry `as_viz.py` — the same "the packs are CDN clients" boundary as `tools/`.
 
-**The bug: Python's `@viz stop` never closes its window, and it is the same bug JS fixed on 2026-10-04 (`23a9b30`).** In `as_viz.py`'s `Recorder.tick`, `if marker == 'stop': self.stop()` sits *below* `if pc not in window['anchors']: … return`, and an `@viz stop` line compiles to the attribute entry, which is never an anchor — so every attribute-form stop falls through the early return and what closes a window is `finish()` at the end of the run. It is invisible in a single-window recording, which is why it has survived; it shows up as **a visit count the two runtimes disagree about**, because JS closes the window *before* counting the marker and Python counts it:
+**Fixed 2026-10-05 — see the section at the end. The bug was: Python's `@viz stop` never closed its window, the same bug JS fixed on 2026-10-04 (`23a9b30`).** In `as_viz.py`'s `Recorder.tick`, `if marker == 'stop': self.stop()` sits *below* `if pc not in window['anchors']: … return`, and an `@viz stop` line compiles to the attribute entry, which is never an anchor — so every attribute-form stop falls through the early return and what closes a window is `finish()` at the end of the run. It is invisible in a single-window recording, which is why it has survived; it shows up as **a visit count the two runtimes disagree about**, because JS closes the window *before* counting the marker and Python counts it:
 
 | script | Python | JS |
 |--|--|--|
@@ -311,24 +311,38 @@ when the run is opened", and "no coordinate below has to" know about the window.
 document units and letting that `viewBox` zoom would make a pan one attribute. It touches every coordinate, the
 axis labels and the clipping, so it wants its own pass with the same `PLOTVIEW=` before/after diff.
 
-## The markers do not bound a recording — measured 2026-10-05
+## The markers DO bound a recording — 2026-10-05, and the bug is fixed
 
-`@viz start` / `@viz stop` **name a region of a recording that is the whole run's**; they cannot make it smaller.
-Measured on `parser.allspeak` through the path the editor records by (`allspeak --record=…`): markers as they
-stand — 10 windows, 2488 events, **742 anchors**, 472 231 bytes; with `if FormulaIndex is 0` active — 1 window,
-2470 events, **742 anchors**, 460 396 bytes. The same anchors either way.
+**Graham asked why his recording was the same size however he gated the markers.** It was a bug, not a design:
+Python's `@viz stop` never closed its window. In `Recorder.tick`, `if marker == 'stop': self.stop()` sat *below*
+`if pc not in window['anchors']: … return` — and a marker line is not an anchor (it compiles to an attribute
+entry, which `window['anchors']` has no key for), so every attribute-form stop fell through the early return and
+the only things that closed a window were the next `viz start` and the end of the run. **This is the bug noted at
+line 146 above: JavaScript was fixed on 2026-10-04 (`23a9b30`), Python was not.** It is invisible in a
+single-window recording, which is why it survived — and Graham hit it the first time he gated a capture.
 
-So the alert's old advice ("narrow the markers to the part you want to watch") pointed at a control that could
-not help, and the `Recorder` note in both plugins ("what the runtime collects while a window is open, and
-nothing more") read as the opposite of what happens. **All three now carry the measurement and the honest
-advice** (give the script less work; the clip is the post-hoc version of that). What a window really bounds is
-the per-instruction counts (`as_viz.py:498`) and the `@show` values.
+**Fixed 2026-10-05**: the check moved above the anchor test and above the count, exactly as JavaScript's was,
+which also settles the ordering the 146 note records (JavaScript closes the window *before* counting the marker;
+Python counted it). Measured on `parser.allspeak` through the editor's own path (`allspeak --record=…`), markers
+gated to the first formula:
 
-**Unverified**: the *JavaScript* recorder is the twin by design and its note says the same corrected thing, but
-the measurement above is the Python/CLI path — the one the editor uses. If a JS trace is ever seen behaving
-differently (`save the recording to` writes as it goes, per `spec/viz-trace-format.md`), that is where to look.
+| runtime | bytes | windows | arrivals |
+|---|---|---|---|
+| installed (before) | 460 409 | 1 | **742** |
+| repo (after) | **25 792** | 1 | **39** |
 
-**Also from the same investigation**: `MeasureFormula` in `parser.allspeak` is called ten times — five report
-calls (`FormulaIndex` 0–4) and five self-check calls with the index still at 5, because the loop left it there.
-A seed of `FormulaIndex is 0` can only ever open on the first report call; harmless for the picture now, but it
-would silently collect no `@show` values in the self-check pass.
+**What this means for the plan, and it is a change of plan.** "Restrict the capture range" is not something the
+pane has to do at all for a *new* run: gating `viz start` / `viz stop` in the script now bounds the recording,
+which is what Graham expected when he first asked. The clip we discussed is still wanted — it is the *post-hoc*
+version, for a recording already made — but it is no longer the only lever, and the preview/overview work drops
+down the list behind it.
+
+**Two mistakes of mine, recorded because both were avoidable.** First, I measured the *arrival count* on a trace
+written by the wrong path and concluded the markers only *named* a region; then I wrote that conclusion into the
+pane's alert, both plugins' docstrings and this file — documenting a bug as the design, which is the opposite of
+this project's rule that a symptom in a log line is evidence. Second, the bug was already written down at line
+146 above, in this file, before I started. The revert is in the same commit as the fix.
+
+**Unverified**: the JavaScript recorder is the twin and its behaviour was already right, but the measurement
+above is the Python CLI path — the one the editor uses. The fix needs a **release** to reach a user, then the
+reverted messages need a deploy.

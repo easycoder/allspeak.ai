@@ -188,14 +188,7 @@ VizPredictJudged:
     ! Say where the number comes from. It is a measurement of the last drawing, not a promise, and
     ! a stale one is self-explanatory when the reader knows that — which matters, because a single
     ! slow run sets the rate and the next run corrects it.
-    !
-    ! **The advice used to be to narrow the markers, and that was wrong.** Measured 2026-10-05 on
-    ! `parser.allspeak` through the path the editor records by: one window and ten windows both give
-    ! **742 anchors** — 2470 and 2488 events, 460KB and 472KB — because the markers *name* a region
-    ! of a recording that is the run's; they cannot make it smaller. So the sentence sent a reader to
-    ! a control that could not help. What helps is a smaller run: fewer formulae, a shorter loop, less
-    ! work for the script to do. Graham's own reading of it, and his reason for wanting a clip.
-    alert `This recording is ` cat TraceSize cat ` bytes, and the last drawing of one this size took about ` cat VizPredicted cat ` seconds on this machine, so this may too. Carry on, or give the script less work to do: the recording is the whole run, and the viz start and viz stop markers only name a part of it.`
+    alert `This recording is ` cat TraceSize cat ` bytes, and the last drawing of one this size took about ` cat VizPredicted cat ` seconds on this machine, so this may too. Carry on, or narrow the viz start and viz stop markers to the part you want to watch.`
     return
 
 !   And remember what it actually cost, so the next prediction is a measurement rather than a guess.
@@ -250,7 +243,7 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 6aa74def
+!! @hash 5908b48e
 !! @verified 3fce0448
 !!!
 !! The view itself: everything from here down is the drawing.

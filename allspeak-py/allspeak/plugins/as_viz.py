@@ -317,15 +317,7 @@ class VizState:
 
 
 class Recorder:
-    """What a window is: a named region of a recording that is the whole run's.
-
-    **A marker cannot make a recording smaller, and measurement is why this is stated rather than
-    implied.** `parser.allspeak`, recorded through the path the editor uses, gives **742 anchors with
-    one window and 742 with ten** (2470 and 2488 events) — so what a window bounds is the
-    per-instruction counts and the values a script asks to watch with `@show`, not the visits or the
-    transfers. That is the right way round: a picture of a bounded recording would show the bounded
-    part and call it a run. The docstring here used to read "what the runtime collects while a window
-    is open, and nothing more", which reads as the opposite and sent a reader to the wrong control.
+    """What the runtime collects while a window is open, and nothing more.
 
     The host attaches it to a program; the markers arm and stop it. It records a visit
     to each anchor with a step count and a timestamp, and a count of every instruction by
@@ -505,6 +497,17 @@ class Recorder:
         window = self.current
         if window is None or pc >= len(window['counts']):
             return
+        # **`@viz stop` first, before the marker line is counted.** A marker line is not an anchor: it
+        # compiles to an attribute entry, so `window['anchors']` has no key for it. With this check below
+        # that test — where it sat until 2026-10-05 — every attribute-form stop fell through the early
+        # return, and the only things that closed a window were the next `viz start` and the end of the run.
+        # The symptom is that the markers appear to do nothing: gating `parser.allspeak`'s markers to the
+        # first formula gave the same 743 arrivals and the same file size, because every window stayed open.
+        # JavaScript was fixed this way on 2026-10-04 (`23a9b30`), including this ordering — closing before
+        # the marker is counted — and this is the other half of that fix.
+        if marker == 'stop':
+            self.stop()
+            return
         window['counts'][pc] += 1
         window['steps'] += 1
         self.noteTransfer(program, pc, window)
@@ -524,8 +527,6 @@ class Recorder:
             return
         window['visits'].append((pc, window['steps'], time.perf_counter_ns()))
         self.capture(program, attr, window)
-        if marker == 'stop':
-            self.stop()
 
     # ---------------------------------------------------------------- the guard
 

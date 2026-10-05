@@ -1817,13 +1817,7 @@ const vizValueText = function (program, name) {
 
 // ---------------------------------------------------------------- the recording
 
-// The recorder: what a window is — a named region of a recording that is the whole run's — and what it
-// is not. **A marker cannot make a recording smaller**, and this file used to say the opposite ("what the
-// runtime collects while a window is open, and nothing more"). Measured on `parser.allspeak` through the
-// path the editor records by, 2026-10-05: one window and ten windows both give 742 anchors, 2470 and 2488
-// events. What a window bounds is the per-instruction counts and the `@show` values; the visits and the
-// transfers are the run's, which is the right way round — a bounded recording would draw the bounded part
-// and call it a run. The host
+// The recorder: what the runtime collects while a window is open, and nothing more. The host
 // attaches one to a program; the markers arm and stop it. It never changes the program's own
 // state, so a run with a recorder behaves exactly like a run without one.
 //
