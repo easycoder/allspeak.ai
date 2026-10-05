@@ -36,12 +36,14 @@ class Language:
     def __init__(self):
         self.pack = None
         self._reverse_words = None
+        self._canonicals = None
         self._keyword_index = None
 
     def init(self, pack_data):
         """Initialize with a language pack dictionary."""
         self.pack = pack_data
         self._reverse_words = None
+        self._canonicals = None
         self._build_keyword_index()
 
     def load_file(self, path):
@@ -155,10 +157,32 @@ class Language:
 
     def reverse_word(self, token):
         """Reverse lookup: given a word in the active language, return its canonical name.
-        e.g. reverse_word('dando') -> 'giving' (from Italian)"""
+        e.g. reverse_word('dando') -> 'giving' (from Italian)
+
+        **Many-to-one, and therefore lossy.** Where a language spells two English words the same — French
+        `pas` is `not` and `step`, Italian `e` is `and` and `is` — this answers with one of them and the
+        other becomes invisible. `canonicals_of` is what a caller wants when it needs a name the runtime
+        can actually answer to.
+        """
         if self._reverse_words is None:
             self._build_reverse_words()
         return self._reverse_words.get(token, token)
+
+    def canonicals_of(self, token):
+        """Every canonical word this token is a form of, not only the one a reverse lookup keeps.
+
+        Nothing needs this to *read* a word — `reverse_word` answers that, and `matches_word` answers "is
+        this token a form of X?". It exists for the few places that turn a word into a *name*: a condition
+        type the runtime then looks a handler up by, where the lossy answer names a handler that does not
+        exist. French `contient` is a form of `includes` and answers `contains`; there is no such
+        condition, and the fallback in `compileCondition` asks this instead.
+        """
+        if self._canonicals is None:
+            self._canonicals = {}
+            for canonical, spelled in ((self.pack or {}).get('words') or {}).items():
+                for form in str(spelled).split('|'):
+                    self._canonicals.setdefault(form, []).append(canonical)
+        return self._canonicals.get(token, [])
 
     def is_keyword(self, token):
         """Check if a token is a known keyword in the active language."""

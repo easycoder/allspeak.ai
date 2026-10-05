@@ -421,7 +421,7 @@ class Core(Handler):
             command['mode'] = self.nextToken()
             if (self.nextIsSymbol()):
                 command['stack'] = self.getToken()
-                if language.reverse_word(self.peek()) == 'as':
+                if language.matches_word(self.peek(), 'as'):
                     self.nextToken()
                     command['as'] = self.nextValue()
                 else:
@@ -828,7 +828,7 @@ class Core(Handler):
                 if value is None:
                     break
                 args.append(value)
-                if language.reverse_word(self.peek()) != 'and':
+                if not language.matches_word(self.peek(), 'and'):
                     break
                 self.nextToken()  # move onto 'and' (nextValue skips it)
             if args:
@@ -1256,7 +1256,7 @@ class Core(Handler):
     def k_open(self, command):
         # open <filename> as <file-variable> for reading/writing/appending
         command['path'] = self.nextValue()
-        if language.reverse_word(self.peek()) == 'as':
+        if language.matches_word(self.peek(), 'as'):
             self.nextToken()
             if self.nextIsSymbol():
                 record = self.getSymbolRecord()
@@ -1317,7 +1317,7 @@ class Core(Handler):
             record = self.getSymbolRecord()
             self.checkObjectType(record, ECObject)
             command['target'] = record['name']
-            if language.reverse_word(self.peek()) == 'from':
+            if language.matches_word(self.peek(), 'from'):
                 self.nextToken()
                 if self.nextIsSymbol():
                     record = self.getSymbolRecord()
@@ -1482,7 +1482,7 @@ class Core(Handler):
         if self.nextIsSymbol():
             record = self.getSymbolRecord()
             self.checkObjectType(self.getObject(record), ECVariable)
-            if language.reverse_word(self.peek()) == 'from':
+            if language.matches_word(self.peek(), 'from'):
                 self.nextToken()
                 if self.nextIsSymbol():
                     fileRecord = self.getSymbolRecord()
@@ -1759,7 +1759,7 @@ class Core(Handler):
                     return False
             else:
                 return False
-            if language.reverse_word(self.peek()) == 'and':
+            if language.matches_word(self.peek(), 'and'):
                 self.nextToken()  # consume 'and'
                 token = self.nextToken()
                 if token != 'assign':
@@ -1865,7 +1865,7 @@ class Core(Handler):
                 self.add(command)
                 return True
             elif self.isObjectType(record, (ECVariable, ECDictionary, ECList)):
-                if language.reverse_word(self.peek()) == 'to':
+                if language.matches_word(self.peek(), 'to'):
                     self.nextToken()
                     value = self.nextValue()
                     command['type'] = 'value'
@@ -1889,7 +1889,7 @@ class Core(Handler):
                 self.nextToken()
             if self.nextIsSymbol():
                 command['name'] = self.getToken()
-                if language.reverse_word(self.peek()) == 'to':
+                if language.matches_word(self.peek(), 'to'):
                     self.nextToken()
                 command['elements'] = self.nextValue()
                 self.add(command)
@@ -1913,7 +1913,7 @@ class Core(Handler):
                     elif token == 'item':
                         self.checkObjectType(self.getObject(record), ECList)
                     command['target'] = record['name']
-                    if language.reverse_word(self.peek()) == 'to':
+                    if language.matches_word(self.peek(), 'to'):
                         self.nextToken()
                         command['value'] = self.nextValue()
                         self.add(command)
@@ -2424,6 +2424,18 @@ class Core(Handler):
 
     # while <condition> <action>
     def k_while(self, command):
+        # Optional joiner word (e.g. French 'que' in 'tant que X', German 'dass', Italian 'che'); the
+        # canonical is 'that', which every pack maps to its natural form. Mirrors `While.compile` in
+        # js/allspeak/Core.js, which has had it since 2026-04-21 — this side never did, so
+        # `tant que N est inférieur à 3` failed with `Je ne comprends pas 'tant'` and a loop written in
+        # any language but English could not run under Python at all.
+        #
+        # The *lookahead* form, not `if self.isWord('that')` as the JavaScript compiler has it, and the
+        # difference is real: `nextCondition()` advances past the keyword itself (as `nextValue` does),
+        # so at this point the index is still on `tant` and a test of the current token would never see
+        # `que`. `k_check` can test the current token because it advances past `check` first.
+        if language.matches_word(self.peek(), 'that'):
+            self.nextToken()
         code = self.nextCondition()
         if code == None:
             return None
@@ -2472,7 +2484,7 @@ class Core(Handler):
         else:
             command['line'] = False
         command['value'] = self.nextValue()
-        if language.reverse_word(self.peek()) == 'to':
+        if language.matches_word(self.peek(), 'to'):
             self.nextToken()
             if self.nextIsSymbol():
                 fileRecord = self.getSymbolRecord()
@@ -2838,7 +2850,7 @@ class Core(Handler):
             return value
 
         if token in ['stringify', 'prettify', 'json', 'lowercase', 'uppercase', 'hash', 'random', float, 'integer', 'encode', 'decode']:
-            if language.reverse_word(self.peek()) == 'of':
+            if language.matches_word(self.peek(), 'of'):
                 self.nextToken()
             value.setContent(self.nextValue())
             return value
@@ -2926,7 +2938,7 @@ class Core(Handler):
             if self.nextIsWord('of'):
                 if self.nextIsSymbol():
                     value.variable = self.getSymbolRecord()['name'] # type: ignore
-                    if language.reverse_word(self.peek()) == 'in':
+                    if language.matches_word(self.peek(), 'in'):
                         value.value = None # type: ignore
                         value.setType('indexOf')
                         self.nextToken()
@@ -2984,7 +2996,7 @@ class Core(Handler):
         # from {n} to {m} of {value}
         if token == 'from':
             value.start = self.nextValue() # type: ignore
-            if language.reverse_word(self.peek()) == 'to':
+            if language.matches_word(self.peek(), 'to'):
                 self.nextToken()
                 value.to = self.nextValue() # type: ignore
             else:
@@ -3007,7 +3019,7 @@ class Core(Handler):
 
         if token == 'timestamp':
             value.format = None # type: ignore
-            if language.reverse_word(self.peek()) == 'of':
+            if language.matches_word(self.peek(), 'of'):
                 self.nextToken()
                 value.timestamp = self.nextValue() # type: ignore
                 if language.reverse_word(self.peek()) == 'format':
@@ -3025,7 +3037,7 @@ class Core(Handler):
         if canon in ('year', 'month', 'monthnumber', 'day', 'daynumber', 'hour', 'minute', 'second'):
             value.setType(canon)
             value.timestamp = None # type: ignore
-            if language.reverse_word(self.peek()) == 'of':
+            if language.matches_word(self.peek(), 'of'):
                 self.nextToken()
                 value.timestamp = self.nextValue() # type: ignore
             return value
@@ -3621,7 +3633,7 @@ class Core(Handler):
 
         token = self.getToken()
 
-        if language.reverse_word(token) == 'not':
+        if language.matches_word(token, 'not'):
             # Check if this is 'not at end of <file>'
             if language.reverse_word(self.peek()) == 'at':
                 self.nextToken()
@@ -3667,7 +3679,7 @@ class Core(Handler):
                     condition.target = record['name'] # type: ignore
                     token = self.nextToken()
             else: token = self.getToken()
-            if language.reverse_word(token) == 'exists':
+            if language.matches_word(token, 'exists'):
                 return condition
             elif language.reverse_word(token) == 'does':
                 if self.nextIsWord('not'):
@@ -3687,11 +3699,24 @@ class Core(Handler):
         condition.value1 = value # type: ignore
         token = self.peek()
         # Handle natural word order: "X not is greater" (e.g. Italian "X non è maggiore")
-        if language.reverse_word(token) == 'not':
+        if language.matches_word(token, 'not'):
             condition.negate = True # type: ignore
             self.nextToken()
             token = self.peek()
         condition.type = language.reverse_word(token) # type: ignore
+        # **A condition's type is a *name* the runtime looks a handler up by**, so a lossy reverse lookup
+        # is not good enough here: French `contient` and German `enthält` are forms of `includes` and
+        # answer `contains`, and there is no `c_contains` — `if T contient \`jour\`` died with
+        # `'Core' object has no attribute 'c_contains'`. Italian `esiste` and French `existe` answer
+        # `exist`, and there is no `c_exist` either. The JavaScript compiler asks `matchesWord` for each
+        # named condition and assigns the type itself; this asks the pack which *other* canonical the
+        # same token is a form of, and takes the one the runtime can answer — which needs no list of
+        # pairs to keep in step with the packs.
+        if not hasattr(self, f'c_{condition.type}'):
+            for other in language.canonicals_of(token):
+                if hasattr(self, f'c_{other}'):
+                    condition.type = other # type: ignore
+                    break
 
         if language.reverse_word(token) == 'has':
             self.nextToken()
@@ -3743,7 +3768,7 @@ class Core(Handler):
                 condition.value2 = self.nextValue() # type: ignore
                 return condition
 
-        if language.reverse_word(token) == 'includes':
+        if language.matches_word(token, 'includes'):
             self.nextToken()
             condition.value2 = self.nextValue() # type: ignore
             return condition
@@ -3770,7 +3795,7 @@ class Core(Handler):
             if language.reverse_word(token) in ['numeric', 'string', 'bool', 'boolean', 'none', 'list', 'object', 'even', 'odd', 'empty', 'uppercase', 'lowercase']:
                 return condition
             if language.reverse_word(token) in ['greater', 'less']:
-                if language.reverse_word(self.nextToken()) == 'than':
+                if language.matches_word(self.nextToken(), 'than'):
                     condition.value2 = self.nextValue() # type: ignore
                     return condition
             condition.type = 'is' # type: ignore
@@ -3787,7 +3812,7 @@ class Core(Handler):
 
     def isNegate(self):
         token = self.getToken()
-        if language.reverse_word(token) == 'not':
+        if language.matches_word(token, 'not'):
             self.nextToken()
             return True
         return False

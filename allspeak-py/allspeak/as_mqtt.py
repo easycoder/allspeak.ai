@@ -393,7 +393,7 @@ class MQTT(Handler):
                     record = self.getSymbolRecord()
                     self.checkObjectType(record, ECTopic())
                     topics.append(record['name'])
-                    if language.reverse_word(self.peek()) == 'and': self.nextToken()
+                    if language.matches_word(self.peek(), 'and'): self.nextToken()
                     else:break
                 command['topics'] = topics
             elif token == 'action':
@@ -403,7 +403,7 @@ class MQTT(Handler):
                 if self.nextIsWord('requires'):
                     while True:
                         reqList.append(self.nextToken())
-                        if language.reverse_word(self.peek()) == 'and':
+                        if language.matches_word(self.peek(), 'and'):
                             self.nextToken()
                         else:
                             break
@@ -516,7 +516,7 @@ class MQTT(Handler):
                         token = self.nextToken()
                         if token == 'qos':
                             command['qos'] = self.nextValue()
-                        if language.reverse_word(self.peek()) == 'and':
+                        if language.matches_word(self.peek(), 'and'):
                             self.nextToken()
                         else:
                             break

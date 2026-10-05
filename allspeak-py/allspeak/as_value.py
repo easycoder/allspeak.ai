@@ -88,8 +88,16 @@ class Value:
 			value = ECValue(type='cat', content=items)
 			return self.checkDomainAdditions(value)
 
-		# Otherwise, consume any leading articles before normal parsing
-		self.compiler.skipArticles()
+		# **Otherwise, consume any leading articles before normal parsing — and they are *at* the cursor, not
+		# ahead of it.** `getToken()` does not advance, while `skipArticles()` only looks *past* the cursor, so
+		# the article was never skipped: `log the json count of T` took `the` for the value and refused to
+		# compile, and with it every `journalise la valeur de N` in French, `registra il conteggio di T` in
+		# Italian and `logge der Wert von N` in German — because an article is how a value phrase *starts* in
+		# all four packs. The JavaScript runtime accepts them, having one value compiler rather than two.
+		# Measured 2026-10-05. The special case above still comes first: it is the article case with `cat`,
+		# which the general path cannot express.
+		while language.matches_word(self.getToken(), 'the') or language.matches_word(self.getToken(), 'an'):
+			self.nextToken()
 		token = self.getToken()
 
 		item: ECValue|None = self.getItem()

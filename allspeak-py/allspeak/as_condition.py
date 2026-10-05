@@ -30,7 +30,7 @@ class Condition:
 		left = self._parseConditionTerm()
 		if left is None:
 			return None
-		while language.reverse_word(self.peek()) == 'and':
+		while language.matches_word(self.peek(), 'and'):
 			self.nextToken()  # advance to 'and'
 			self.nextToken()  # advance past 'and' to first token of next term
 			right = self._parseConditionTerm()

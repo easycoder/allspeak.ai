@@ -637,13 +637,13 @@ class Viz(Handler):
             self.nextToken()
         if language_word(self.peek()) == 'script':
             self.nextToken()
-        if language_word(self.peek()) == 'in':
+        if language.matches_word(self.peek(), 'in'):
             self.nextToken()
             command['path'] = self.nextValue()
         # `as <source>` is for a caller holding the text itself — an editor with an unsaved
         # buffer is the case that matters — so nothing has to be written out and read back
         # just to be looked at.
-        if language_word(self.peek()) == 'as':
+        if language.matches_word(self.peek(), 'as'):
             self.nextToken()
             command['text'] = self.nextValue()
         if language_word(self.peek()) != 'giving':
@@ -677,12 +677,12 @@ class Viz(Handler):
             self.nextToken()
         if language_word(self.peek()) == 'script':
             self.nextToken()
-        if language_word(self.peek()) == 'in':
+        if language.matches_word(self.peek(), 'in'):
             self.nextToken()
             command['path'] = self.nextValue()
         # `as <source>` is for a caller holding the text itself — an editor with an unsaved buffer is the case
         # that matters — so nothing has to be written out and read back just to be run.
-        if language_word(self.peek()) == 'as':
+        if language.matches_word(self.peek(), 'as'):
             self.nextToken()
             command['text'] = self.nextValue()
         if language_word(self.peek()) != 'giving':

@@ -391,7 +391,7 @@ class Graphics(Handler):
             if self.isObjectType(record, ECWidget):
                 # It's either (2), (6) or (1)
                 command['widget'] = record['name']
-                if language.reverse_word(self.peek()) == 'to':
+                if language.matches_word(self.peek(), 'to'):
                     # (2)
                     record = self.getSymbolRecord()
                     domainName = record['domain']

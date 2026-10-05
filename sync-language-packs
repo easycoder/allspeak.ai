@@ -74,6 +74,80 @@ def check_packs(packs):
     return problems
 
 
+def reverse_lookup_deaths(packs):
+    """Which canonical words a `reverse_word` lookup can never reach, per language.
+
+    **The reverse map is many-to-one, and therefore lossy.** Where a language spells two English words the
+    same — French `dans` is `in` and `into`, Italian `e` is `and` and `is` — it keeps one and the other becomes
+    invisible to any code that asks "what word is this?" rather than "is this token a form of that word?".
+    English has no such pair, out of 376 forms, so the hazard is exactly the non-English packs.
+    """
+    deaths = {}
+    for lang, pack in packs.items():
+        forms = {}
+        for canonical, spelled in (pack.get('words') or {}).items():
+            for form in str(spelled).split('|'):
+                forms.setdefault(form, []).append(canonical)
+        # Which canonical the reverse map keeps: it is built in pack order with the last writer winning,
+        # so the walk below is what `Language._build_reverse_words` does, not a guess at it.
+        words = pack.get('words') or {}
+        kept = {}
+        for canonical in words:
+            for form in str(words[canonical]).split('|'):
+                kept[form] = canonical
+        dead = {}
+        for form, canonicals in forms.items():
+            if len(canonicals) < 2:
+                continue
+            for canonical in canonicals:
+                if canonical != kept.get(form) and canonical != form:
+                    dead.setdefault(canonical, set()).add(form)
+        deaths[lang] = dead
+    return deaths
+
+
+def check_grammar(packs):
+    """Refuse a Python site that tests a word by reverse lookup against one a pack cannot reach.
+
+    **This is the guard that makes the class safe to leave behind.** `language.reverse_word(t) == 'word'` asks
+    the lossy map what `t` *is*; `language.matches_word(t, 'word')` asks the pack whether `t` is a *form* of it,
+    which is what the JavaScript grammar does and what every such site in `allspeak-py/` now does. The two agree
+    on every token in English — no ambiguous form there — so the difference shows only in a pack that has a
+    collision, where the reverse lookup silently names a word the code cannot reach.
+
+    Thirty-two sites were exactly this (measured 2026-10-05): a French loop could not run under Python, because
+    a comparison against `than` could never see `à`, and `record le script dans …` could not parse. A new pack
+    or a new word can reintroduce it, and a run-time test would only find the ones somebody happened to write a
+    script for — so it is checked here, from the packs, where the collision would come from.
+    """
+    deaths = reverse_lookup_deaths(packs)
+    problems = []
+    # `[^()]*(?:\([^()]*\))?[^()]*` because the argument is often a call — `reverse_word(self.nextToken())`
+    # — and a pattern that stops at the first `)` would miss exactly the sites that consume a token.
+    site = re.compile(r"(?:reverse_word|language_word)\([^()]*(?:\([^()]*\))?[^()]*\)"
+                      r"\s*(?:==|!=)\s*['\"]([a-z_]+)['\"]")
+    root = os.path.join(REPO_ROOT, 'allspeak-py')
+    for folder, _dirs, names in os.walk(root):
+        for name in sorted(names):
+            if not name.endswith('.py'):
+                continue
+            path = os.path.join(folder, name)
+            for n, line in enumerate(open(path, encoding='utf-8'), 1):
+                if line.lstrip().startswith('#'):
+                    continue
+                m = site.search(line)
+                if not m:
+                    continue
+                for lang in sorted(deaths):
+                    if m.group(1) in deaths[lang]:
+                        forms = ', '.join(sorted(deaths[lang][m.group(1)]))
+                        problems.append(
+                            f"allspeak-py/{os.path.relpath(path, root)}:{n} tests for '{m.group(1)}', which "
+                            f"a reverse lookup cannot reach in {lang} (the form is '{forms}') — "
+                            f"use language.matches_word(...)")
+    return problems
+
+
 def main():
     if not os.path.isdir(JSON_DIR):
         raise SystemExit(f'Output directory not found: {JSON_DIR}')
@@ -93,6 +167,15 @@ def main():
             print('  ' + line)
         print('\nNothing was written. A new language must translate every `diagnostics` key — see')
         print('learn/reference/15-multilingual.md — and the English pack is the one that defines the set.')
+        return 1
+
+    grammar = check_grammar(packs)
+    if grammar:
+        print('The Python grammar tests a word in a way some pack cannot answer:')
+        for line in grammar:
+            print('  ' + line)
+        print('\nNothing was written. See `check_grammar` in this script for why; the short version is that')
+        print('`reverse_word` is many-to-one and `matches_word` is not.')
         return 1
 
     synced = 0

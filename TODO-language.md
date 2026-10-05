@@ -68,21 +68,31 @@ The detail behind `TODO.md`'s language row. Anything here that is settled says s
 - **Owed: the four plugin messages left in English on purpose**, because they are a *host author's* diagnostics rather than a user's: `no source registered for … the host must set …` (twice — the same guard duplicated in `Model.run` and `Record.run`, a consolidation candidate), `could not arm a program in the app`, `could not load the visualiser into the app`, and `{name} is not a variable`.
 - **Open, and it wants a decision rather than a guess: whose language is a verdict in?** The verdict is the *caller's* (the pack is restored before the sentence is built), while the compile error *inside* it was produced while the recorded script's pack was active — so `could not run: Je ne comprends pas 'dictionary' à la ligne 46.` is a real possibility: English frame, French body. Either restore after the sentence (whole line in the recorded script's language, wrong for the reader) or keep the reason in the caller's language (needs the runtime error text re-generated, which nothing can do). Measured 2026-10-05; not decided.
 
-### The language layer's one real defect, sized 2026-10-05 — **and the two instances are not separable**
+### The language layer's one real defect — **fixed 2026-10-05**, and it was 33 lines in 7 files
 
-**It is one bug, not two, and the fix is 38 lines in 6 files.** What looked like two findings is a single habit on the Python side: the grammar tests whether a token *is* a word by asking the **reverse** map, `language.reverse_word(token) == 'c'`, while the JavaScript side asks the pack whether the token is a **form** of that word (`matchesWord` / `language.matches_word`). The reverse map is many-to-one and lossy, so where a language spells two English words the same, one of them can never be reached.
+**It was one bug, not two, and it is written up in full in `language-pack-issues.md`.** The Python grammar asked
+the *lossy* reverse map whether a token *is* a word (`reverse_word(t) == 'c'`), where JavaScript asks the pack
+whether the token is a *form* of it (`matchesWord`). Where a language spells two English words the same — French
+`à` is `than` and `to`, Italian `e` is `and` and `is` — one of them becomes unreachable, and **a loop written in
+any language but English could not run under the Python runtime at all.**
 
-**Measured, and this is the number that matters:**
-
-- **42 forms mean more than one canonical word** across fr/de/it (fr 10, de 13, it 19) — English has **none**, out of 376 forms. `dans` is `in` *and* `into`; Italian `e` is `and` *and* `is`; German `von` is `from` *and* `of`; French `à` is `than` *and* `to`.
-- So **37 (canonical, form) pairs — 28 distinct canonical words — are unreachable by a reverse lookup** in some pack: fr 9 (`delete, exists, in, includes, mail, not, remove, than, to`), de 8 (`as, by, char, field, from, includes, keys, storage`), it 17 (`and, by, char, element, exists, mail, of, position, request, reverse, send, split, state, subject, to, tracer, upload`).
-- **38 sites in 6 files compare against one of them**: `as_core.py` (~30: `to` ×5, `not` ×3, `of` ×3, `as` ×2, `from` ×2, `in`, `than`, `includes`, `exists`, `and`), `as_viz.py` 4 (`in` ×2 in fr, `as` ×2 in de), `as_mqtt.py` 3, `as_condition.py`, `as_graphics.py` and `as_server.py` one each.
-
-**The fix is the same one-line swap everywhere** — `language.reverse_word(X) == 'c'` → `language.matches_word(X, 'c')`, keeping `X` as it is so a `nextToken()` still consumes. **And it is provably safe under English**, which is what makes it a small job rather than a rewrite: with no ambiguous form in the `en` pack, `matches_word(t, c)` and `reverse_word(t) == c` agree on every token, so the swap can only change behaviour in a pack that has a collision — where the current behaviour is a command that cannot be written. The verification is therefore the project's usual sweep (211 tracked scripts, the same set compiling before and after), plus the conformance suite for runtime behaviour.
-
-**Two instances were prototyped and reverted**, to size it rather than guess: `k_while`'s missing optional `that`/`que` joiner (one statement — `Core.js`'s `While.compile` has had it since 2026-04-21, `as_core.py` never did) **plus** the one `than` site, together make `tant que N est inférieur à 3` run under Python and print `3`; and the plugin's two `in` sites make `record le script dans …` parse in French. Neither is worth landing alone: with the joiner fixed but `than` not, the French loop fails one word later with a *more* confusing message, so a partial fix is worse than none.
-
-**And the guard that would keep it fixed is cheap and is the natural companion**: a check that fails when a site compares a reverse lookup against a canonical word that is dead in *some* pack. It is a `grep`-sized rule over `allspeak-py/`, it would name the 38 today, and it would catch the next one — which is the shape that makes this class safe to leave behind, exactly as `./sync-language-packs` now does for the messages.
+- **32 comparisons** in 7 files now use `matches_word`, `k_while` gained `Core.js`'s optional `that`/`que`
+  joiner (missing since 2026-04-21), the condition *type* falls back to a canonical the runtime can answer
+  (`Language.canonicals_of`, new), and `as_value.compileValue`'s article is skipped at last.
+- **Provably a no-op under English** — no ambiguous form in `en`, out of 376 — which is why the whole class could
+  be fixed in one pass: all 323 tracked scripts compile to the *same set* before and after, and three
+  per-language probes print what the English equivalent prints.
+- **The guard lives in `./sync-language-packs`** (`check_grammar`): it fails, naming file and line, when a Python
+  site compares a reverse lookup against a word dead in some pack. It named all 32 before the fix and is
+  re-evaluated from the packs every run, so a new word or language cannot reintroduce it quietly.
+- **Still open, and neither is a one-liner.** `as_core.compileValue` knows the rich value forms and
+  `as_value.compileValue` (what `log` uses) does not, so `log the json count of T` prints under JS and fails to
+  compile under Python — the article half is fixed, the rich-form half is a design decision, because `as_value`
+  is the *value protocol* shared with plugin domains. And the packs' `conditions` section is **dead code**: only
+  `en` has it and `Language.condition_word` has zero call sites.
+- **And `BUILD.md` has no Python release step.** These fixes reach users only through a new `allspeak-ai`
+  release; the packs carry no runtime, so nothing else has to move. Worth a line in `BUILD.md` beside the JS
+  build.
 
 - **Open: the repo's own Python scripts are unmarked.** `server.allspeak`, `chat/chat-server.allspeak` and the `allspeak-py/*.allspeak` fixtures are `js` by default — correct as *tools* are written today (a host runs what it is handed and never consults the marker), and wrong the moment anything selects a runtime for them. This repository is the mixed project the `@js` override was invented for, so it wants either an `.allspeak-init` saying `runtime: js` with `@py` on the Python few, or the reverse.
 

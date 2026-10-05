@@ -414,3 +414,71 @@ for lang in ['en', 'de', 'fr', 'it']:
                     unmapped.append((cmd, pat, t))
     print(f'{lang}: {"clean" if not unmapped else unmapped}')
 ```
+
+---
+
+## 2026-10-05 — one word can mean two, and the Python grammar asked the wrong question
+
+**Found while adding translated messages, and it is the largest language defect this file has recorded.**
+
+A language pack maps canonical English → local forms, and the runtime builds the *reverse* map from it. That
+map is **many-to-one, and therefore lossy**: where a language spells two English words the same, it keeps one
+and the other becomes invisible.
+
+```
+fr   dans -> in | into        à -> than | to       pas -> not | step      contient -> contains | includes
+it   e -> and | is            di -> of | than       a -> a | to           per -> by | for
+de   von -> from | of         mit -> by | with      in -> in | into       als -> as | than
+```
+
+Measured across fr/de/it: **42 forms are ambiguous** (fr 10, de 13, it 19), and **37 (canonical, form) pairs —
+28 distinct words — cannot be reached by a reverse lookup at all**. English has **none**, out of 376 forms, which
+is why this went unnoticed for so long.
+
+**The JavaScript grammar never asks that question.** It asks the pack whether a token *is a form of* a word —
+`matchesWord(token, 'than')` — which is unambiguous. The Python grammar asked `language.reverse_word(token) ==
+'than'` in **32 places**, and every one of them silently failed in whichever languages spelled that word the way
+another word is spelled:
+
+| what a user wrote | language | what happened |
+|---|---|---|
+| `tant que N est inférieur à 3` | fr | `Je ne comprends pas 'tant'` — `à` answered `to`, so `than` was unreachable, and a **loop could not run under Python in any language but English** |
+| `solange N ist kleiner als 5` | de | worked: `als` answers `than` (and it is `as` that was dead) |
+| `record le script dans \`…\`` | fr | the `in` of the plugin's grammar could not be written |
+| `si T contient \`jour\`` | fr | `'Core' object has no attribute 'c_contains'` — the condition *type* is a name the runtime looks a handler up by, and `contient` answers `contains` |
+| `se T esiste` | it | the same for `exist`/`exists` |
+| `journalise la valeur de N` | fr | `as_value.compileValue: Cannot get the value of "la"` — two value compilers, and the one `log` uses did not skip a leading article |
+
+**Fixed:**
+
+1. **32 comparisons** across 6 files — `as_core.py` 21, `as_viz.py` 4, `as_mqtt.py` 3, and one each in
+   `as_condition.py`, `as_graphics.py`, `as_sql.py`, `as_server.py` — now `language.matches_word(...)`.
+   Provably a no-op under English, where the two questions have the same answer for every token.
+2. **`k_while`'s optional joiner** — `Core.js`'s `While.compile` has accepted `while that X` since 2026-04-21 and
+   `as_core.py` never did, so `tant que` (fr), `che` (it) and `dass` (de) could not be written. The Python form is
+   a *lookahead* (`nextCondition()` advances past the keyword itself), which is why the obvious mirror does not
+   work.
+3. **The condition type**, in `compileCondition`: when the reverse answer names no `c_<type>` handler, the pack is
+   asked which *other* canonical the same token is a form of (`Language.canonicals_of`, new) and that one is used.
+   General, and needs no list of pairs to keep in step with the packs.
+4. **`as_value.compileValue`'s article** — it called `skipArticles()`, which only looks *past* the cursor while
+   `getToken()` does not advance, so the article was never skipped.
+
+**Verified.** All 323 tracked scripts compile to the **same set** before and after (52), under the Python runtime;
+three probe scripts — one per language, using the forms the tutorials use — now print what the English equivalent
+prints; and the whole check suite passes.
+
+**Still open, and neither is a one-liner:**
+
+- **Two value compilers.** `as_core.compileValue` knows the rich forms (`the value of`, `the json count of`,
+  `the timestamp of`) and `as_value.compileValue` does not, and `log` uses the second: `log the json count of T`
+  prints `0` under the JS runtime and fails to compile under Python with `I don't understand 'of'`. The article
+  half is fixed; this half is a design decision, because `as_value` is the *value protocol* shared with plugin
+  domains and may deliberately not depend on core's vocabulary.
+- **The packs' `conditions` section is dead code.** Only `en` has it (fr/de/it have none), and nothing calls
+  `Language.condition_word` — checked, zero call sites. Either it is wired up or the section is deleted.
+
+**And the guard is in `./sync-language-packs`** (`check_grammar`): it fails, naming the file and line, when a
+Python site compares a reverse lookup against a word that is dead in some pack. It named all 32 before the fix, it
+is clean now, and it is re-evaluated from the packs on every run — so a new word, or a new language, cannot
+reintroduce the class quietly.

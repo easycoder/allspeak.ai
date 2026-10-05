@@ -160,7 +160,7 @@ class Server(Handler):
     def k_on(self, command):
         if self.nextIsSymbol():
             record = self.getSymbolRecord()
-            if self.isObjectType(record, ECServer) and language.reverse_word(self.peek()) == 'request':
+            if self.isObjectType(record, ECServer) and language.matches_word(self.peek(), 'request'):
                 self.nextToken()  # advance to 'request'
                 self.nextToken()  # advance past 'request' to handler body
                 command['server'] = record['name']

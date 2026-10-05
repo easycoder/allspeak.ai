@@ -320,7 +320,7 @@ class SQL(Handler):
         separated; commas in source are not supported because AllSpeak's
         tokeniser splits on whitespace only."""
         params = []
-        if language.reverse_word(self.peek()) != 'and':
+        if not language.matches_word(self.peek(), 'and'):
             return params
         self.nextToken()  # consume 'and'
         while self._is_value_atom(self.peek()):
