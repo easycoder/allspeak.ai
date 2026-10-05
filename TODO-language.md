@@ -182,3 +182,41 @@ object the cursor is on before it concludes anything.**
 to spell "this whole holder as a json list", or filtering where JSON is JSON — the `viz` plugin, in both
 runtimes, which already reads and writes trace documents and which the pane already depends on. The plugin
 remains the likelier answer, but the language question comes first because it is cheaper to answer.
+
+## Proposed: a `join` keyword, the inverse of `split` — 2026-10-05
+
+Graham's proposal, and it closes the gap above. `split` takes a value and fills the named holder with a slot per
+line; **`join` would take a whole holder and make one value out of it**:
+
+    join MyArray to json SingleValue          ! one json list, into the currently-indexed slot
+    join MyArray to StringValue with `,`      ! no `json`, so a CSV string
+    join from N to M of MyArray [ to ...]     ! a range of elements
+
+His own second example shows why the wording needs one change:
+
+    index MyArray to N
+    join MyArray to json MyArray              ! "destroys one of its own elements"
+
+There, one token — the bare name `MyArray` — means *the whole set* on the left of `to` and *the slot the cursor
+is on* on the right. A reader cannot see which is which, and everything else in the language means the slot: a
+bare name in `put A into B` copies **one** slot (measured — see above), and `json of` a holder gives one slot.
+So the *source* reading is an exception, and it is the right one — it is the same scoped exception `split`
+already makes, in reverse — but the *destination* should be marked with the word the language already uses for
+"the slot you are about to write": **`into`**.
+
+    join MyArray as json into SingleValue     ! as = the form; into = the target
+    join MyArray with `,` into StringValue    ! with = the delimiter; no `as` = text
+    join MyArray into StringValue             ! no delimiter at all
+
+One shape, three optional words, and a bare name after `join` always means the set — because that is what the
+keyword is for.
+
+**Two notes for whoever specifies it.** `json` must produce a **value**, not its text: `the json count of` a
+*string* is undefined (measured above), and a text where a list is wanted is exactly the fault that produced
+this section. And `join from N to M` is a *different* operation — an element-wise copy into another holder, not
+one value out of many — so it belongs with `split` as a second feature rather than as a fourth form of this one.
+
+**Why it matters beyond tidiness**: with `join` the clip's filter is pane work. Build a holder of the kept
+events, `join` it `as json into VizEvents`, and the pane's own loops read the range — no plugin call, no new
+boundary. The implementation is a small extension of what `json of` already does, since that already serialises
+the value the cursor stands on.
