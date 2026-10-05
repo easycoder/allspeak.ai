@@ -300,14 +300,20 @@ console.log(`  ..    the write itself is not asserted here, and cannot be: a rel
 // **Nothing in the language recorded this until 2026-10-05, and that is what made the trigger one-sided.** A
 // script said which runtime it was for only by failing to compile in the other one — `I don't understand
 // 'dictionary' at line 46`, which names the word and the line but answers a question nobody asked. `@py` and
-// `@js` are the script's own answer, `@js` is the default, and `record the script …` is the reader. It asks
-// the *token stream*, before anything is compiled, because the script it has to refuse is exactly the one that
-// would not compile: a check on the program could never be reached.
+// `@js` are the script's own answer and `record the script …` is the reader, which asks the *token stream*,
+// before anything is compiled, because the script it has to refuse is exactly the one that would not compile: a
+// check on the program could never be reached.
 //
-// Two hosts, and the same three facts on each — the marker is carried into the program and reported by the
-// model, the other runtime's script is refused in a sentence, and the host's own flavour runs. The sentence is
-// asserted whole rather than by a substring: it is what a person reads on the editor's status line, and
-// "could not run: …" was the verdict of every other failure too.
+// **And the default is the project's, which is the part that took a second pass.** A script that says nothing
+// has not said "JavaScript" — it has said nothing, and the project answers next, from the `runtime:` line in its
+// `.allspeak-init`; only if that is absent too is it `js`. That is what keeps a Python project free of markers,
+// and what makes `@js` the override a mixed project needs.
+//
+// Two hosts, and the same facts on each — the marker is carried into the program and reported by the model, the
+// other runtime's script is refused in a sentence, and the host's own flavour runs. **The sentences are
+// asserted whole**, because they are what a person reads on the editor's status line and `could not run: …` was
+// the verdict of every other failure too — and because each names *where the answer came from*, which is the
+// fact a reader needs when they go looking for a marker and there is none to find.
 
 // The body the three marked scripts share. **One shape, deliberate:** a window that opens *not* directly under
 // a label, so that the two runtimes agree on what it collected. A label is a command in Python and a bare symbol
@@ -334,6 +340,25 @@ const MARKED_PY = write(`marked-py`, [`    script MarkedPy`, `    @py`, ...FLAVO
 const MARKED_JS = write(`marked-js`, [`    script MarkedJs`, `    @js`, ...FLAVOUR_BODY]);
 
 const UNMARKED = write(`unmarked`, [`    script Unmarked`, ...FLAVOUR_BODY]);
+
+// **This check's own project, and it says `lang:` and nothing else.** That is deliberate twice over: it makes
+// the "nothing else says, so `js` is the default" case a *stated* one rather than a hope about what happens to
+// be above `/tmp`, and it exercises the rule that a project which has answered and said nothing about its
+// runtime has answered — the walk stops there rather than going up into a different project.
+fs.writeFileSync(path.join(work, `.allspeak-init`), `lang: en\nname: Capture check\n`);
+
+// And one that *does* name a runtime, in a directory of its own, because that is the case the project line
+// exists for. `py` with a script that carries no marker: the Python runtime must run it and the JavaScript one
+// must refuse it, saying where the answer came from.
+const PYP = path.join(work, `pyproject`);
+fs.mkdirSync(path.join(PYP, `src`), { recursive: true });
+fs.writeFileSync(path.join(PYP, `.allspeak-init`),
+	`lang: en\nruntime: py\nname: A Python project\ntype: cli\n`);
+const PYP_PLAIN = write(`pyproject/src/plain`, [`    script Plain`, ...FLAVOUR_BODY]);
+// The override: the same body, marked `@js`, inside that Python project. A mixed project is what the marker is
+// for, and this is the assertion that it still wins over the project.
+const PYP_MARKED = write(`pyproject/src/marked`,
+	[`    script Marked`, `    @js`, ...FLAVOUR_BODY]);
 
 // What each host should report for its own flavour's copy of that body.
 const FLAVOUR_VERDICT = `4 visits in 1 window`;
@@ -383,24 +408,48 @@ check(/attr \| line=2 \| js\b/.test(modelOf(`py`, MARKED_JS)),
 	+ `(${JSON.stringify(modelOf(`py`, MARKED_JS).split(`\n`).filter(l => /^\s*attr \| /.test(l)))})`);
 
 // The refusals. Each host is handed the other flavour's script by a script, which is the one caller that can
-// be driven from a host with no editor in the picture.
+// be driven from a host with no editor in the picture. Every expected sentence is written out in full — the
+// middle clause is the *origin*, and it is the whole reason there is more than one of these.
 const pyRefuses = logged(`py`, [trigger(`py`, MARKED_JS, `py-at-js`), MARKED_JS]);
-check(pyRefuses.includes(`could not run: this script is @js — a script for the JavaScript runtime, `
+check(pyRefuses.includes(`could not run: this script is for the JavaScript runtime — @js — `
 	+ `and this is the Python runtime`),
-	`the Python runtime refuses a script marked '@js' in a sentence that says why `
+	`the Python runtime refuses a script marked '@js', naming the marker that says so `
 	+ `(${JSON.stringify(pyRefuses.filter(l => /could not run/.test(l)))})`);
 
 const pyRefusesDefault = logged(`py`, [trigger(`py`, UNMARKED, `py-at-unmarked`), UNMARKED]);
-check(pyRefusesDefault.includes(`could not run: this script is @js (the default when there is no marker) — `
-	+ `a script for the JavaScript runtime, and this is the Python runtime`),
-	`and an unmarked script is refused the same way, having said so by *saying nothing* — which is what makes `
-	+ `'@js' a default rather than a guess (${JSON.stringify(pyRefusesDefault.filter(l => /could not run/.test(l)))})`);
+check(pyRefusesDefault.includes(`could not run: this script is for the JavaScript runtime — unmarked, and `
+	+ `nothing else says, so @js is the default — and this is the Python runtime`),
+	`and an unmarked script is refused the same way, having said so by *saying nothing* — and the sentence `
+	+ `says the default is what decided it (${JSON.stringify(pyRefusesDefault.filter(l => /could not run/.test(l)))})`);
 
 const jsRefuses = logged(`js`, [trigger(`js`, MARKED_PY, `js-at-py`), MARKED_PY]);
-check(jsRefuses.includes(`could not run: this script is @py — a script for the Python runtime, `
+check(jsRefuses.includes(`could not run: this script is for the Python runtime — @py — `
 	+ `and this is the JavaScript runtime`),
 	`and the JavaScript runtime refuses '@py' in the matching sentence, so the rule runs both ways `
 	+ `(${JSON.stringify(jsRefuses.filter(l => /could not run/.test(l)))})`);
+
+// **The project line, which is the case that keeps a Python project free of markers.** The target carries
+// nothing at all — no `@py` — and is three directories under a `.allspeak-init` that says `runtime: py`, so the
+// answer can only have come from the project. The walk is the other half: nothing above the project says `py`,
+// and the file that does is the *nearest* one.
+const jsRefusesProject = logged(`js`, [trigger(`js`, PYP_PLAIN, `js-at-project`), PYP_PLAIN]);
+check(jsRefusesProject.includes(`could not run: this script is for the Python runtime — unmarked, and the `
+	+ `project's .allspeak-init says @py — and this is the JavaScript runtime`),
+	`an unmarked script in a project whose '.allspeak-init' says 'runtime: py' is refused by the JavaScript `
+	+ `runtime, and the sentence names the project rather than a marker that is not there `
+	+ `(${JSON.stringify(jsRefusesProject.filter(l => /could not run/.test(l)))})`);
+
+const pyRunsProject = logged(`py`, [trigger(`py`, PYP_PLAIN, `py-at-project`), PYP_PLAIN]);
+check(pyRunsProject.includes(FLAVOUR_VERDICT),
+	`and the same unmarked script runs on the Python runtime with **no marker anywhere in it** — which is what `
+	+ `the project line is for (${JSON.stringify(pyRunsProject.filter(l => /visits in/.test(l)))})`);
+
+// The override: the same project, a script that *does* say `@js`. A mixed project is the case the marker exists
+// for — this repository is one — so the script has to beat the project.
+const jsRunsOverride = logged(`js`, [trigger(`js`, PYP_MARKED, `js-at-override`), PYP_MARKED]);
+check(jsRunsOverride.includes(FLAVOUR_VERDICT),
+	`and a script in that project which says '@js' still runs here — the script's own word beats the project's `
+	+ `(${JSON.stringify(jsRunsOverride.filter(l => /visits in/.test(l)))})`);
 
 // And the other half: the refusal is not a blanket one. Each host runs its own flavour and says what it got —
 // the sentence above replaced `I don't understand 'dictionary' at line 46`, which is only reached when the

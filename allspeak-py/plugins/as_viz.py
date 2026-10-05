@@ -24,11 +24,12 @@ The trigger — the vocabulary a *script* uses, as against the host contract abo
     record the script [in <path>] [as <source>] giving <variable> [reporting <verdict>]
         run a script of the caller's choosing under a recorder, and hand back the recording
 
-**Which runtime a script is for is the script's own declaration** — `@py` or `@js` on a
-line of its own, with `@js` the default — and `record` is the reader: handing this runtime
-a `@js` script is refused in a sentence rather than in a compile error about a word the
-author did write. The marker is read off the token stream, before anything is compiled,
-because a script handed to the wrong runtime is exactly the one that will not compile.
+**Which runtime a script is for comes from the script itself** — `@py` or `@js` on a line
+of its own — and failing that from the project's `.allspeak-init` (`runtime: py`), and
+failing both from `js`. `record` is the reader: handing this runtime the other flavour's
+script is refused in a sentence rather than in a compile error about a word the author did
+write. The marker is read off the token stream, before anything is compiled, because a
+script handed to the wrong runtime is exactly the one that will not compile.
 The other two shapes on the JS side, `record this run` and `save the recording to <path>`
 — the pair a *running app* needs to record itself — are not implemented here yet.
 """
@@ -39,6 +40,7 @@ from allspeak import (ECValue, ECVariable, FatalError, Handler, RuntimeError,
 import contextlib
 import io
 import json
+import os
 import sys
 import time
 
@@ -70,12 +72,22 @@ def _attrKey(text):
 # line of its own, which is exactly the case the language reference names for one ("what the script is"), so
 # there is no new syntax and no word in any pack.
 #
-# **The default is `@js`.** An unmarked script is a JavaScript one, which is the choice Graham made on
-# 2026-10-05 — so a Python script has to say so, and a tool choosing a runtime (`record`, below) can refuse
-# rather than guess. Kept in step with `VIZ_FLAVOUR_*` in `js/plugins/asviz.js`, value for value and sentence
+# **The default is the project's, and only failing that is it `@js`.** A project declares itself in
+# `.allspeak-init` beside the `lang:` line the dev server already reads (`runtime: py`), which is what stops a
+# Python project carrying `@py` on every script of it — and what makes `@js` the *override* a mixed project
+# needs: this repository is one, with `server.allspeak` in Python while its pages are JavaScript.
+#
+# Kept in step with `VIZ_FLAVOUR_*` and `VIZ_ORIGIN_*` in `js/plugins/asviz.js`, value for value and sentence
 # for sentence.
 FLAVOUR_JS = 'js'
 FLAVOUR_PY = 'py'
+
+# Where the answer came from — the script, the project, or nothing at all, which means JavaScript. A refusal
+# carries this, because a reader told "this is a Python script" goes looking for `@py` and will not find one
+# when it was the project that said so.
+ORIGIN_SCRIPT = 'script'
+ORIGIN_PROJECT = 'project'
+ORIGIN_DEFAULT = 'default'
 
 
 def flavourOf(tokens):
@@ -87,29 +99,105 @@ def flavourOf(tokens):
     carrying `attr`, so no compile is needed to find it — and that matters, because the script this is asked
     about is precisely the one that will not compile here.
 
-    Answers `(flavour, marked)`, because both facts come from the same scan and a caller needs both: which
-    flavour, and whether the script *said* so — the two refusals read differently, and a reader told the
-    default is at work has one fewer thing to wonder about.
+    Answers `(declared, origin)`, and `declared` is `None` when the script says nothing — **not `js`**, which it
+    used to be. A script that says nothing has not said "JavaScript"; it has said nothing, and the project gets
+    to answer instead. So the resolution belongs to `flavourFor`, not here.
     """
     for token in tokens or []:
         attr = getattr(token, 'attr', None)
         key = _attrKey(attr) if attr else ''
         if key in (FLAVOUR_JS, FLAVOUR_PY):
-            return key, True
-    return FLAVOUR_JS, False
+            return key, ORIGIN_SCRIPT
+    return None, None
 
 
-def flavourRefusal(flavour, marked):
+def initValue(path, key):
+    """One `key: value` from a project's `.allspeak-init`, or None.
+
+    **Line by line, and stopping at the end of the line.** The file is the project's own declaration: `lang:`
+    is written by the pack, `runtime:` beside it, and the agent adds a name and a type as the project is set
+    up. So a reader that took everything after the key would run into the next line and answer `enname:Notes`
+    — which is what the dev server did until 2026-10-05, and it served every set-up project an English editor.
+    A trailing `!` comment ends the value, as it does everywhere else in the language, since a person editing
+    this file will try it.
+    """
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            text = handle.read()
+    except (IOError, OSError):
+        return None
+    marker = key + ':'
+    at = text.find(marker)
+    if at < 0:
+        return None
+    value = text[at + len(marker):]
+    for end in ('\n', '!'):
+        cut = value.find(end)
+        if cut >= 0:
+            value = value[:cut]
+    return value.replace(' ', '').replace('\t', '').strip()
+
+
+def projectFlavourOf(path):
+    """The project's runtime declaration, from the `.allspeak-init` above a script.
+
+    **Asked about a path, and never about "the project" once and for all.** `record the script in <path>` names
+    its own target, and that target can be in another project than the caller's — so one answer for the process
+    would be the wrong answer for it.
+
+    The walk goes upward from the script's own directory, because a project's scripts live in subdirectories and
+    `.allspeak-init` is at the project root. It stops at the first directory that *has* the file, whether or not
+    it names a runtime: a project that has answered and said nothing about this has answered, and looking past it
+    at a parent directory would find a different project's.
+
+    No host has to supply this. The plugin has a filesystem — it reads the target's own source when a caller
+    names a path rather than handing the text over — and this is the same act. The browser has no such thing,
+    which is why the JavaScript half takes the answer from a page element instead.
+    """
+    folder = os.path.dirname(os.path.abspath(path)) if path else os.getcwd()
+    while True:
+        candidate = os.path.join(folder, '.allspeak-init')
+        if os.path.isfile(candidate):
+            said = initValue(candidate, 'runtime')
+            return said if said in (FLAVOUR_JS, FLAVOUR_PY) else None
+        parent = os.path.dirname(folder)
+        if parent == folder:
+            return None
+        folder = parent
+
+
+def flavourFor(tokens, path=None):
+    """**The one place the resolution order is written**: the script's own marker, then the project, then `js`.
+
+    Every reader gets both the answer and where it came from.
+    """
+    declared, origin = flavourOf(tokens)
+    if declared:
+        return declared, origin
+    project = projectFlavourOf(path)
+    if project:
+        return project, ORIGIN_PROJECT
+    return FLAVOUR_JS, ORIGIN_DEFAULT
+
+
+def flavourRefusal(flavour, origin):
     """The sentence a runtime says when it is handed the other flavour's script.
 
-    It names the marker, what the marker means, and which runtime is refusing — the three things a reader
-    needs, and the reason a refusal beats the compile error it replaces: `I don't understand 'dictionary' at
-    line 46` is true and unhelpful, because the script is not broken, it is simply not this runtime's.
+    It names which runtime the script is for, *where that came from*, and which runtime is refusing — the three
+    things a reader needs, and the reason a refusal beats the compile error it replaces: `I don't understand
+    'dictionary' at line 46` is true and unhelpful, because the script is not broken, it is simply not this
+    runtime's. The origin matters because a reader told "this is a Python script" will go looking for `@py` and
+    not find one when it was the project that said so.
     """
     name = '@py' if flavour == FLAVOUR_PY else '@js'
     runtime = 'Python' if flavour == FLAVOUR_PY else 'JavaScript'
-    tail = '' if marked else ' (the default when there is no marker)'
-    return (f'this script is {name}{tail} — a script for the {runtime} runtime, '
+    if origin == ORIGIN_SCRIPT:
+        where = name
+    elif origin == ORIGIN_PROJECT:
+        where = f"unmarked, and the project's .allspeak-init says {name}"
+    else:
+        where = f'unmarked, and nothing else says, so {name} is the default'
+    return (f'this script is for the {runtime} runtime — {where} — '
             f'and this is the Python runtime')
 
 
@@ -1678,9 +1766,9 @@ def recordSource(path, text):
         lines.pop()
 
     tokens = tokensOf(path, lines)
-    flavour, marked = flavourOf(tokens)
+    flavour, origin = flavourFor(tokens, path)
     if flavour != FLAVOUR_PY:
-        why = flavourRefusal(flavour, marked)
+        why = flavourRefusal(flavour, origin)
         VizState.problems.append(why)
         return '', 'could not run: ' + why
 

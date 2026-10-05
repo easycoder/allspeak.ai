@@ -70,6 +70,11 @@ const AllSpeak_Viz = {
 	// in the script at all. A script that names a file of its own wins; see `flushTo`, which reads the
 	// program's path first. Not to be confused with `target`, which says what to *look at*.
 	tracePath: null,
+	// **How a host answers "which runtime is the project at this path for?"** — a *function of the path*, set by a
+	// host that can read files (`tools/asviz-run.js` reads the `.allspeak-init` above each target), because the
+	// script being recorded need not be in the page's own project. Null is the ordinary state: a browser has no
+	// filesystem and answers for its own project instead (see `projectFlavourOf`).
+	projectFlavourFor: null,
 	// Non-empty when a target could not be compiled. The host clears this before
 	// each target and can use it to set an exit code.
 	problems: [],
@@ -510,6 +515,32 @@ const AllSpeak_Viz = {
 		return null;
 	},
 
+	// The project's answer to "which runtime", for a *particular* script — or null when nothing knows. Two ways
+	// in, and this is where both are reconciled:
+	//
+	//   * **A host that can read files supplies `projectFlavourFor`, a function of the path.** It has to be a
+	//     function rather than a value because the script being recorded is named by the script, not by the page
+	//     — so it may be in another project entirely, and one answer for the whole page would be wrong for it.
+	//   * **A page answers once, for the project it is in**, through a hidden element the dev server fills — the
+	//     same mechanism `#editor-lang` uses, because a browser cannot read a file and the project's declaration
+	//     has to reach it somehow. That is right for the editor, where every tab is a file of one project.
+	//
+	// The element is absent on every page that is not the editor, which is the ordinary case and answers nothing.
+	projectFlavourOf: function (path) {
+		if (typeof AllSpeak_Viz.projectFlavourFor === `function`) {
+			try {
+				const said = AllSpeak_Viz.projectFlavourFor(path);
+				if (said === VIZ_FLAVOUR_PY || said === VIZ_FLAVOUR_JS) return said;
+			} catch (err) { /* a host that cannot answer this path */ }
+		}
+		try {
+			const holder = document.getElementById(`editor-runtime`);
+			const said = holder && holder.textContent ? holder.textContent.trim() : ``;
+			if (said === VIZ_FLAVOUR_PY || said === VIZ_FLAVOUR_JS) return said;
+		} catch (err) { /* no document: the host function is the only way in, and there is none */ }
+		return null;
+	},
+
 	// Run a script with a recorder attached and the guard armed, and hand back what it collected *and* what
 	// that amounts to.
 	//
@@ -526,9 +557,9 @@ const AllSpeak_Viz = {
 		// 46`, which is true, unhelpful, and about a script that is not broken. The token stream is enough —
 		// the marker is an attribute-only line — so the refusal costs nothing and comes before the failure it
 		// explains.
-		const flavour = vizFlavourOf(source.tokens);
+		const flavour = vizFlavour(source.tokens, path);
 		if (flavour.declared !== VIZ_FLAVOUR_JS) {
-			const why = vizFlavourRefusal(flavour.declared, flavour.marked);
+			const why = vizFlavourRefusal(flavour.declared, flavour.origin);
 			AllSpeak_Viz.problems.push(why);
 			return { trace: ``, verdict: `could not run: ` + why };
 		}
@@ -1623,34 +1654,67 @@ const vizAttributeKey = function (text) {
 const VIZ_FLAVOUR_JS = `js`;
 const VIZ_FLAVOUR_PY = `py`;
 
+// Where the answer came from — the script, the project, or nothing at all, which means JavaScript. A refusal
+// carries this, because a reader told "this is a Python script" goes looking for `@py` and will not find one when
+// it was the project that said so.
+const VIZ_ORIGIN_SCRIPT = `script`;
+const VIZ_ORIGIN_PROJECT = `project`;
+const VIZ_ORIGIN_DEFAULT = `default`;
+
 // The flavour a source declares, read off the *token stream* rather than off the text. The tokeniser is the only
 // thing that knows an `@` inside a literal or inside a `!!` doc block from an attribute, so a reader scanning
 // lines would be a second, worse implementation of that rule — the same argument the editor's own attribute walk
 // makes. The marker is an attribute-only line, which is a token carrying `attr`, so no compile is needed to find
 // it — and that matters, because the script this is asked about is precisely the one that will not compile here.
 //
-// Both facts a caller needs come back together, because they are the same scan: which flavour, and whether the
-// script *said* so — the two refusals read differently, and a reader told the default is at work has one fewer
-// thing to wonder about.
+// `declared` is `null` when the script says nothing — **not `js`**, which it used to be. A script that says
+// nothing has not said "JavaScript"; it has said nothing, and the project gets to answer instead. Only
+// `vizFlavour` knows which it is, so the resolution is not this function's to make.
 const vizFlavourOf = function (tokens) {
 	for (const token of tokens || []) {
 		const key = token && token.attr ? vizAttributeKey(token.attr) : ``;
 		if (key === VIZ_FLAVOUR_PY || key === VIZ_FLAVOUR_JS) {
-			return { declared: key, marked: true };
+			return { declared: key, origin: VIZ_ORIGIN_SCRIPT };
 		}
 	}
-	return { declared: VIZ_FLAVOUR_JS, marked: false };
+	return { declared: null, origin: null };
 };
 
-// The sentence a runtime says when it is handed the other flavour's script. It names the marker, what the marker
-// means, and which runtime is refusing — the three things a reader needs, and the reason a refusal beats the
-// compile error it replaces: `I don't understand 'dictionary' at line 46` is true and unhelpful, because the
-// script is not broken, it is simply not this runtime's.
-const vizFlavourRefusal = function (flavour, marked) {
-	const name = flavour === VIZ_FLAVOUR_PY ? `@py` : `@js`;
+// **The one place the resolution order is written**: the script's own marker, then the project, then `js`. Every
+// reader gets both the answer and where it came from.
+//
+// **The project is where the default lives**, which is what stops a Python project carrying `@py` on every script
+// of it. A project declares itself in `.allspeak-init` beside the `lang:` line the dev server already reads
+// (`runtime: py`), so a Python project types nothing and `@js` becomes the *override* a mixed project needs —
+// this repository is one, with `server.allspeak` in Python while its pages are JavaScript.
+//
+// Two ways in, one per kind of host, and `AllSpeak_Viz.projectFlavourOf` holds both — a host that can read the
+// file, off the `.allspeak-init` above the path being asked about, and a page's hidden element, filled by the dev
+// server from the project the page is in. Neither applies to a page opened straight from the site, and an absent
+// answer is not a failure — it means JavaScript.
+//
+// `path` is which script is being asked about, not which one the host is looking at: `record the script in
+// <path>` names its own target, and that target can be in another project than the caller.
+const vizFlavour = function (tokens, path) {
+	const own = vizFlavourOf(tokens);
+	if (own.declared) return own;
+	const project = AllSpeak_Viz.projectFlavourOf(path);
+	if (project) return { declared: project, origin: VIZ_ORIGIN_PROJECT };
+	return { declared: VIZ_FLAVOUR_JS, origin: VIZ_ORIGIN_DEFAULT };
+};
+
+// The sentence a runtime says when it is handed the other flavour's script. It names which runtime the script is
+// for, *where that came from*, and which runtime is refusing — the three things a reader needs, and the reason a
+// refusal beats the compile error it replaces: `I don't understand 'dictionary' at line 46` is true and
+// unhelpful, because the script is not broken, it is simply not this runtime's. The origin matters because a
+// reader told "this is a Python script" will go looking for `@py` and not find one when the project said it.
+const vizFlavourRefusal = function (flavour, origin) {
 	const runtime = flavour === VIZ_FLAVOUR_PY ? `Python` : `JavaScript`;
-	return `this script is ${name}${marked ? `` : ` (the default when there is no marker)`} — a script for `
-		+ `the ${runtime} runtime, and this is the JavaScript runtime`;
+	const name = flavour === VIZ_FLAVOUR_PY ? `@py` : `@js`;
+	const where = origin === VIZ_ORIGIN_SCRIPT ? name
+		: (origin === VIZ_ORIGIN_PROJECT ? `unmarked, and the project's .allspeak-init says ${name}`
+			: `unmarked, and nothing else says, so ${name} is the default`);
+	return `this script is for the ${runtime} runtime — ${where} — and this is the JavaScript runtime`;
 };
 
 // Which marker a command is, from either spelling. The `viz` command is the language's own marker; `@viz start`

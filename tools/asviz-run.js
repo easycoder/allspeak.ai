@@ -222,6 +222,43 @@ const framework = fs.readFileSync(path.join(root, `viz.allspeak`), `utf8`);
 let failures = 0;
 const firstLine = (err) => String((err && err.message) || err).split(`\n`)[0];
 
+// **The project's runtime declaration, which a browser cannot read and this can.** `.allspeak-init` sits at the
+// project root and a script may be several directories in, so the walk goes upward from the script's own
+// directory. A directory that *has* the file ends the walk whether or not it names a runtime: a project that has
+// answered and said nothing about this has answered, and looking past it would find a different project's.
+//
+// **A function of the path, not one answer for the run.** `record the script in <path>` names its own target, so
+// the plugin has to be able to ask about a script that is not the one this host is looking at — and a target's
+// project is its own.
+//
+// The same reading the Python plugin makes of the file, and deliberately the same shape: the text after
+// `runtime:`, up to the end of the line or a `!` comment, with the spaces taken out. A file with two lines is the
+// ordinary case — `lang:` is one of them — so a reader that ran to the end of the file would answer `jsnname:My`.
+const projectFlavourOf = (target) => {
+	let folder = path.dirname(resolve(target));
+	while (true) {
+		const candidate = path.join(folder, `.allspeak-init`);
+		if (fs.existsSync(candidate)) {
+			const text = fs.readFileSync(candidate, `utf8`);
+			const at = text.indexOf(`runtime:`);
+			if (at < 0) return null;
+			const said = text.slice(at + `runtime:`.length).split(`\n`)[0].split(`!`)[0]
+				.replace(/[ \t]/g, ``);
+			return said === `py` || said === `js` ? said : null;
+		}
+		const parent = path.dirname(folder);
+		if (parent === folder) return null;
+		folder = parent;
+	}
+};
+
+// **The host's half of the contract, handed over once and asked per path.** A browser would answer from a hidden
+// element the dev server filled; a terminal has a filesystem and answers directly, and the plugin asks this for
+// whichever script it is about to run — which need not be the one being analysed. Set here rather than beside the
+// destructuring above because `projectFlavourOf` is a `const` below it, and a reference there would be in its
+// temporal dead zone.
+AllSpeak_Viz.projectFlavourFor = projectFlavourOf;
+
 // **Every named target is registered before any of them runs.** A script can now ask for another one by name —
 // `record the script in <path> giving …` — and it finds the source where a host put it, so the host has to put
 // it there first. Registering a target as it comes up was near enough while nothing could look ahead; it fails
@@ -239,7 +276,9 @@ for (const target of targets) {
 		failures++;
 		continue;
 	}
-	// The one target the framework is *looking at*, and the list of things that went wrong on this pass.
+	// The one target the framework is *looking at*, and the list of things that went wrong on this pass. The
+	// project's runtime is not set here — it is a *function of the path* the plugin asks, set once below, because
+	// the script being recorded need not be the one being analysed.
 	AllSpeak_Viz.target = target;
 	AllSpeak_Viz.problems = [];
 	if (wantsRun) {

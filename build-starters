@@ -52,11 +52,16 @@ for dir in starter/*/; do
     work="$STAGE/$lang"
     mkdir -p "$work"
     cp -p "$dir"CLAUDE.md "$work/"
-    # **`.allspeak-init` carries the language, and it is the only thing in a pack that is not prose.**
-    # The page is not in a pack any more: the dev server serves the deployed one and fills in the
-    # language, and the language can only come from the project — so the pack declares it here. The agent
-    # completes this file on first setup (project name and type) and is told to leave the `lang:` line be.
-    printf 'lang: %s\n' "$lang" > "$work/.allspeak-init"
+    # **`.allspeak-init` carries the language and the runtime, and it is the only thing in a pack that is not
+    # prose.** The page is not in a pack any more: the dev server serves the deployed one and fills both in, and
+    # neither can come from anywhere but the project — so the pack declares them here. The agent completes this
+    # file on first setup (project name and type) and is told to leave the `lang:` line be.
+    #
+    # **`js` is the runtime default, and the pack writes it out anyway** — a script's `@py`/`@js` says the same
+    # thing about one script, and this says it about all of them, which is what stops a Python project carrying
+    # a marker on every file. A pack is chosen by *language*, not by kind, so it cannot know which this project
+    # is: the AGENTS.md beside it tells the agent to change this line for a CLI or desktop project.
+    printf 'lang: %s\nruntime: js\n' "$lang" > "$work/.allspeak-init"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$dir$extra" ]; then
             cp -p "$dir$extra" "$work/"

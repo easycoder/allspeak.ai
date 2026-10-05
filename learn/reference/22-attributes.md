@@ -34,23 +34,38 @@ Two consequences worth stating plainly, because both are easy to assume the othe
 
 ## Which runtime a script is for
 
-AllSpeak has two implementations — one that runs in a browser, one that runs from the command line — and they are near-identical languages with different vocabularies. **A script says which of them it is for with `@py` or `@js` on a line of its own**, and **`@js` is the default**: an unmarked script is a JavaScript one.
+AllSpeak has two implementations — one that runs in a browser, one that runs from the terminal — and they are near-identical languages with different vocabularies. A script says which of them it is for with **`@py` or `@js` on a line of its own**, and failing that the answer comes from **the project**, and failing both it is JavaScript.
 
 ```as
-@py
+@js
 
 script Parser
 variable Total
 ```
 
-This is the file-level attribute above, used for the case it was named for. Nothing in the language needs it — a runtime runs the script it is given, and both runtimes run an attributed script with no tool loaded — but a *tool* that has to choose a runtime cannot work it out any other way, and the alternative is the one thing worse than either answer: a script that says nothing, handed to the runtime that cannot run it, and reporting `I don't understand 'dictionary' at line 46` about a script that is not broken.
+**The project answers first, and that is what keeps a Python project free of markers.** A project declares itself in `.allspeak-init`, the file beside it that already carries the project's `lang:`, and one line of it is the runtime:
 
-So the marker is **read by whatever chooses a runtime**, and there is one such thing so far: the visualiser's `record the script …` command, which runs a script of the caller's choosing. Asking the *other* runtime for a script is refused in a sentence that names the marker and both runtimes, rather than in a compile error.
+```
+lang: en
+runtime: js
+```
 
-Two things worth knowing:
+So a script in a project that says `runtime: py` needs no marker at all, and `@js` earns its place as the *override* — a mixed project is the case it exists for, one script in a project of the other kind. This repository is one: `server.allspeak` is Python while the pages are JavaScript.
 
-- **It is read from the source, before the script is compiled.** A script written for one runtime is exactly the script that will not compile in the other, so a marker read off the compiled program could never be reached. The tokeniser is what lifts an attribute out of a line, so no compile is needed to find one.
-- **It changes nothing about a run.** Rule 14 holds: the marker is carried into the program and the runtime ignores it, so the same script runs the same way with the marker deleted — it is simply no longer labelled.
+Two things worth knowing about the marker itself:
+
+- **It is read from the source, before the script is compiled.** A script written for one runtime is exactly the script that will not compile in the other, so a marker read off the compiled program could never be reached — the compile's own error arrives first.
+- **It changes nothing about a run.** Rule 14 holds: the marker is carried into the program and the runtime ignores it, so the same script runs the same way with the marker deleted. It is simply no longer labelled.
+
+## Why a script has to say, and who asks
+
+Nothing in *the language* needs the answer. A runtime runs the script it is handed — that is the whole design — and it reports an unknown word the way it always does. What needs the answer is a **tool that has to choose a runtime**, and there is one so far: the visualiser's `record the script …`, which runs a script of the caller's choosing and therefore has to know which of the two can run it.
+
+Without an answer the tool has only the compile to go on, and its refusal is the one thing worse than either: `I don't understand 'dictionary' at line 46` — true, and about a script that is not broken. With one, the refusal says what is actually the case, and where it came from:
+
+> could not run: this script is for the Python runtime — unmarked, and the project's .allspeak-init says @py — and this is the JavaScript runtime
+
+Naming the origin matters, because a reader told "this is a Python script" goes looking for `@py` and will not find one when it was the project that said so.
 
 ## Where to put it
 

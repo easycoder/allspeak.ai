@@ -143,7 +143,7 @@ Wenige Zeilen genügen, und beginnen Sie mit der Handlung. Es ist **kein** Ände
 
 Dieses Verzeichnis enthält `AGENTS.md` — diese Datei. Lesen Sie sie jetzt, um die AllSpeak-Sprache und den Arbeitsablauf zu verstehen, bevor Sie Code bearbeiten.
 
-**Wichtig:** Lesen Sie `.allspeak-init` in diesem Verzeichnis. Sie nennt **die Sprache des Projekts** und, sobald das Projekt eingerichtet ist, dessen Namen und Typ. Wenn sie kein Projekt nennt, wurde das Projekt noch nicht eingerichtet — führen Sie den untenstehenden Initialisierungsprozess durch. **Lassen Sie die Zeile `lang:` unverändert**: der Entwicklungsserver liest sie, um den Editor in der Sprache dieses Projekts auszuliefern.
+**Wichtig:** Lesen Sie `.allspeak-init` in diesem Verzeichnis. Sie nennt **die Sprache des Projekts** und, sobald das Projekt eingerichtet ist, dessen Namen und Typ. Wenn sie kein Projekt nennt, wurde das Projekt noch nicht eingerichtet — führen Sie den untenstehenden Initialisierungsprozess durch. **Lassen Sie die Zeile `lang:` unverändert**: der Entwicklungsserver liest sie, um den Editor in der Sprache dieses Projekts auszuliefern. Die Zeile `runtime:` nennt die Laufzeitumgebung des Projekts — `js` für ein Browserprojekt, `py` für eines, das im Terminal oder als Desktop-Anwendung läuft — und der Server gibt sie an den Editor weiter.
 
 **In diesem Verzeichnis liegt kein Werkzeug, und das ist Absicht.** Es gibt kein `server.allspeak` (der Befehl `allspeak server` holt das aktuelle), kein `edit.html` (der Server liefert die veröffentlichte Seite aus und gibt ihr die Sprache dieses Projekts), keine Editor-Dateien (die Seite bringt sie mit) und keine Prüfwerkzeuge. Ein Projekt enthält seinen eigenen Code, `AGENTS.md`, `CLAUDE.md` und `.allspeak-init` — sonst nichts. So ist alles, was ein Projekt ausführt, die *aktuelle* Fassung statt einer Kopie von etwas, das sich seither bewegt hat; ein Agent sollte diese Dateien weder lokal suchen noch hinzufügen.
 
@@ -161,7 +161,7 @@ Dieses Verzeichnis enthält `AGENTS.md` — diese Datei. Lesen Sie sie jetzt, um
    - **GUI**: Erstellen Sie `<projekt>.html`, `<projekt>-main.allspeak` und `<projekt>.json` aus den GUI-Vorlagen unten.
    - **Beides**: Erstellen Sie alle Dateien.
 
-5. **Vervollständigen Sie `.allspeak-init`** — ergänzen Sie Projektname und -typ (cli/gui/both), damit dieses Setup nicht wiederholt wird, und lassen Sie die bereits vorhandene Zeile `lang:` stehen.
+5. **Vervollständigen Sie `.allspeak-init`** — ergänzen Sie Projektname und -typ (cli/gui/both), damit dieses Setup nicht wiederholt wird, und lassen Sie die bereits vorhandene Zeile `lang:` stehen. **Wenn dieses Projekt ein CLI- oder Desktop-Projekt ist, ändern Sie `runtime:` in `py`** — der Standardwert ist `js`, und eine Markierung an jedem Skript ist es, was in einem gemischten Projekt das Gegenteil sagt.
 
 6. **Sagen Sie dem Benutzer, dass die Projektdateien bereit sind und wo er sie sieht.**
 
