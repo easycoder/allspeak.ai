@@ -310,3 +310,25 @@ intended design — `VizPane`'s `viewBox` is "the whole of the zoom and the pan 
 when the run is opened", and "no coordinate below has to" know about the window. Placing marks/flow/rules in
 document units and letting that `viewBox` zoom would make a pan one attribute. It touches every coordinate, the
 axis labels and the clipping, so it wants its own pass with the same `PLOTVIEW=` before/after diff.
+
+## The markers do not bound a recording — measured 2026-10-05
+
+`@viz start` / `@viz stop` **name a region of a recording that is the whole run's**; they cannot make it smaller.
+Measured on `parser.allspeak` through the path the editor records by (`allspeak --record=…`): markers as they
+stand — 10 windows, 2488 events, **742 anchors**, 472 231 bytes; with `if FormulaIndex is 0` active — 1 window,
+2470 events, **742 anchors**, 460 396 bytes. The same anchors either way.
+
+So the alert's old advice ("narrow the markers to the part you want to watch") pointed at a control that could
+not help, and the `Recorder` note in both plugins ("what the runtime collects while a window is open, and
+nothing more") read as the opposite of what happens. **All three now carry the measurement and the honest
+advice** (give the script less work; the clip is the post-hoc version of that). What a window really bounds is
+the per-instruction counts (`as_viz.py:498`) and the `@show` values.
+
+**Unverified**: the *JavaScript* recorder is the twin by design and its note says the same corrected thing, but
+the measurement above is the Python/CLI path — the one the editor uses. If a JS trace is ever seen behaving
+differently (`save the recording to` writes as it goes, per `spec/viz-trace-format.md`), that is where to look.
+
+**Also from the same investigation**: `MeasureFormula` in `parser.allspeak` is called ten times — five report
+calls (`FormulaIndex` 0–4) and five self-check calls with the index still at 5, because the loop left it there.
+A seed of `FormulaIndex is 0` can only ever open on the first report call; harmless for the picture now, but it
+would silently collect no `@show` values in the self-check pass.

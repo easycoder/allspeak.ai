@@ -317,7 +317,15 @@ class VizState:
 
 
 class Recorder:
-    """What the runtime collects while a window is open, and nothing more.
+    """What a window is: a named region of a recording that is the whole run's.
+
+    **A marker cannot make a recording smaller, and measurement is why this is stated rather than
+    implied.** `parser.allspeak`, recorded through the path the editor uses, gives **742 anchors with
+    one window and 742 with ten** (2470 and 2488 events) — so what a window bounds is the
+    per-instruction counts and the values a script asks to watch with `@show`, not the visits or the
+    transfers. That is the right way round: a picture of a bounded recording would show the bounded
+    part and call it a run. The docstring here used to read "what the runtime collects while a window
+    is open, and nothing more", which reads as the opposite and sent a reader to the wrong control.
 
     The host attaches it to a program; the markers arm and stop it. It records a visit
     to each anchor with a step count and a timestamp, and a count of every instruction by
