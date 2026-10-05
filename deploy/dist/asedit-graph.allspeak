@@ -79,7 +79,7 @@
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 10f33ffc
+!! @hash 06bab40f
 !! @verified 10f33ffc
 !!!
 !! The boundary: one message in, and the module parks until the next one.
@@ -123,7 +123,7 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 
-!! @hash 5b1f9f95
+!! @hash fdfb5b3b
 !! @verified 5b1f9f95
 !!!
 !! The module's one message: take the run, or stand down.
@@ -380,6 +380,7 @@ VizRemember:
     variable VizHitSeen
     variable VizHitVisit
     variable VizHitValues      ! what that arrival captured, if the script asked for anything
+    variable VizHitText        ! the report as one line, under the row the status line is on
     variable VizHitTotal
     variable VizHitCount
     variable VizMark
@@ -478,6 +479,10 @@ VizRemember:
     ! it carries the numbers raw rather than saying them in words: a reader copying a line into a bug
     ! report needs it to be exact, and the picture needs it to be short.
     svgtext VizStatus
+    ! The mark's own report, on the line below the status line. It lives here rather than in the panel
+    ! beside the picture because of where a reader's eye already is: they are pointing at a dot, and on a
+    ! big screen the foot of the sidebar is the other side of the room. Graham, 2026-10-05.
+    svgtext VizHitStatus
     ! **The scrollbars, and why the picture needs them.** Past a hundred per cent a reader can see
     ! *where* they are — the axis says which lines are on screen — but not *how much* of the run is on
     ! screen, and those are different questions. A scrollbar answers the second one at a glance and in
@@ -512,7 +517,7 @@ Draw:
         put json of VizTrace into VizParsed
         put property `traceEvents` of VizParsed into VizEvents
     end
-!! @hash 1ae42b87
+!! @hash 288a7130
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -685,6 +690,8 @@ Draw:
     ! let a reader tell, and they are only useful if they are on the picture.
     create VizStatus in VizCanvas
     set attribute `text-anchor` of VizStatus to `start`
+    create VizHitStatus in VizCanvas
+    set attribute `text-anchor` of VizHitStatus to `start`
 
     ! ---- the scrollbars ----
     ! Created last, so they are drawn over everything: nothing overlaps them, and last is the safe
@@ -830,7 +837,7 @@ Draw:
     put 1 into VizReady
 
 VizBuilt:
-!! @hash 20bf4472
+!! @hash c3ace25c
 !! @verified 20bf4472
 !!!
 !! What a draw does, in order.
@@ -1217,7 +1224,13 @@ VizWindow:
     ! opposite the keys. Graham's reading: the caption repeats what is visible elsewhere, so the
     ! status takes its row and the foot of the canvas loses one line.
     move VizStatus to 60 711
-!! @hash 52b8170a
+    ! **One line below it, and the pair is the whole of the foot.** The status says what the window is
+    ! showing; this says what the mark under the pointer is, which is the one thing a row of dots cannot
+    ! say for itself — every dot on a row names the same line and the same doc block, so the visit is
+    ! what tells them apart. Set here rather than on a press because a press leaves the picture alone:
+    ! the row is fixed for the life of the drawing, and `VizSelect` only changes the words.
+    move VizHitStatus to 60 728
+!! @hash 30d2ec43
 !! @verified 52b8170a
 !!!
 !! The axis is the picture's yardstick, and it is the same grid as the text.
@@ -1821,6 +1834,14 @@ VizSelect:
     ! The line's own total, read out of the table the walk filled: a reader told "visit 3" has no way to
     ! know whether that is all of them or the third of forty, and the answer is already in hand.
     put property VizHit of VizHitSeen into VizHitTotal
+    ! **And said here, where both numbers are in hand, rather than sent to be said elsewhere.** The
+    ! wording is the panel's own — the subject first, then the figures, in plain words rather than
+    ! symbols, because what a reader copies out of a status line should still read as a sentence. The
+    ! total can be missing (a report from a pane that did not count) and "visit 3 of 0" would be worse
+    ! than saying less.
+    put `line ` cat VizHit cat `   visit ` cat VizHitVisit into VizHitText
+    if VizHitTotal is greater than 0 put VizHitText cat ` of ` cat VizHitTotal into VizHitText
+    set the text of VizHitStatus to VizHitText
     put `{}` into VizMark
     set property `kind` of VizMark to `mark`
     set property `line` of VizMark to VizHit
@@ -2053,7 +2074,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash dc725895
+!! @hash ceaa0ffb
 !! @verified dc725895
 !!!
 !! And a doc block is not drawn in it.

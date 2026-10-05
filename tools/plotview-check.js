@@ -430,6 +430,15 @@ const drawing = () => {
 			const m = /(\d+)-(\d+)\s*$/.exec(String((status || {}).innerHTML || ``));
 			return m ? [Number(m[1]), Number(m[2])] : null;
 		})(),
+		// **What the pane says about the mark under the pointer**, on a line of its own under the status
+		// line. Read with the view's own variables beside it, so this is a known-answer check rather than
+		// one output compared with another: the words have to agree with the counts they name.
+		hit: String((texts.find(t => String(t.attributes.id || ``).startsWith(`ec-VizHitStatus`)) || {}).innerHTML || ``),
+		// ...and the counts it was built from, read here rather than at the check: a press clears them when
+		// the next press's walk starts, and the checks below press more marks on the way past.
+		hitLine: viewVar(`VizHit`),
+		hitVisit: viewVar(`VizHitVisit`),
+		hitTotal: viewVar(`VizHitTotal`),
 		handles: { v: boxOf(`ec-VizHandleV`), h: boxOf(`ec-VizHandleH`) },
 		steps: texts
 			.filter(t => String(t.attributes.id || ``).startsWith(`ec-VizXLabel`))
@@ -438,7 +447,12 @@ const drawing = () => {
 		href,
 		raw: JSON.stringify([
 			paths.map(p => p.attributes.d),
-			texts.map(t => [t.attributes.x, t.attributes.y, t.innerHTML]),
+			// **The mark's own report is left out, and it is the one thing a press is *for* changing.** The
+			// rest of the snapshot has to be byte-identical across a press — that is the property the checks
+			// below rest on — and the figures on the pane's foot are the news a press produces, so including
+			// them here would make the check fail for doing its job. Moved to the pane on 2026-10-05.
+			texts.filter(t => !String(t.attributes.id || ``).startsWith(`ec-VizHitStatus`))
+				.map(t => [t.attributes.x, t.attributes.y, t.innerHTML]),
 			picture ? [picture.attributes.x, picture.attributes.y, picture.attributes.width, picture.attributes.height] : null,
 		]),
 	};
@@ -1426,7 +1440,8 @@ const pressed = taken[taken.length - 1];
 const beforePress = taken[taken.length - 2];
 if (pressed && beforePress) {
 	console.log(pressed[1].raw === beforePress[1].raw
-		? `  OK: and the press changed nothing on screen — the picture is byte-identical across it`
+		? `  OK: and the press changed nothing on screen — the picture is byte-identical across it, `
+			+ `the mark's figures on the foot being the one thing a press is for`
 		: `  FAIL: a press on a mark repainted the picture`);
 }
 const pressedTicks = (pressed && pressed[1].ticks) || [];
@@ -1498,6 +1513,17 @@ if (!rowWithTwo) {
 			total: Number(viewVar(`VizHitTotal`)),
 		};
 	};
+// **The mark's figures are on the pane's own foot, and they have to match the counts they name.** They
+// moved there from the sidebar on 2026-10-05 — a reader pointing at a dot was reading the numbers at the
+// other side of a big screen — and this is the check that the two did not part company on the way: the
+// expected line is built from the view's own variables rather than copied from a run.
+const saidLine = pressed[1].hit;
+const wantLine = `line ${pressed[1].hitLine}   visit ${pressed[1].hitVisit}`
+	+ (Number(pressed[1].hitTotal) > 0 ? ` of ${pressed[1].hitTotal}` : ``);
+console.log(saidLine === wantLine
+	? `  OK: the pane says the mark's line and visit under its status line ("${saidLine}")`
+	: `  FAIL: the pane's foot says "${saidLine}" where its own counts make it "${wantLine}"`);
+
 	const first = visitOf(rowWithTwo.xs[0]);
 	const last = visitOf(rowWithTwo.xs[rowWithTwo.xs.length - 1]);
 	const told = first.line === last.line && first.line > 0

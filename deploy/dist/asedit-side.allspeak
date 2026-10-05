@@ -37,7 +37,6 @@
     variable SidePath       ! the script or its recording, named for the reader
     variable SideLine       ! the line the clicked mark named
     variable SideVisit      ! which arrival on that line the clicked mark was
-    variable SideTotal      ! how many arrivals that line had in the whole recording
     variable SideStatusText ! scratch: the status line, assembled before it is put up
     variable SideValues     ! what the clicked arrival captured: the names the script asked to watch
     variable SideValueKeys  ! scratch: those names, in the script's own order
@@ -53,7 +52,7 @@
     on message go to SideMessage
     release parent
     stop
-!! @hash b6b4b753
+!! @hash 0dfeb1aa
 !! @verified b6b4b753
 !!!
 !! Building the panel, once, and the tabs as the one pool of elements they are.
@@ -180,23 +179,18 @@ SideRenderHint:
 !! @hash b04946e6
 !! @verified b04946e6
 !!!
-!! The status bar: the one thing that tells two dots on a row apart.
+!! The status bar: what the script asked to have watched, at the mark it was watching.
 !!
-!! **It exists because the block cannot do this job.** Every dot along a row names the same line and so the same doc block; what differs is *which arrival* the dot is, and that is the count the dot's own colour is already drawn from — so the bar and the ramp are two readings of one number, and a reader who can see that a dot is redder than its neighbour can now read by how much.
+!! **It is the values and not the mark, and that is a division made on 2026-10-05.** It used to carry the mark's own figures too — "line 254 visit 23 of 44" — and Graham moved them out: they are read while pointing at a dot, and on a big screen the foot of this panel is the other side of the room from the picture, so the pane says them itself, one line under its own status line, where the eye already is. What is left here is the other half of the same message: the numbers the script asked to have shown by writing `@show`, which belong beside the block because they are about the work the line did rather than about which dot was clicked.
 !!
-!! It is about the *mark* and not about the block, which is why it is drawn regardless of whether a block was found: a line in no doc block still had its third visit, and saying so is more use than an empty bar. The line's total goes in the same breath — "visit 3" alone cannot be told from "visit 3 of 3" — and both come from the pane, which is the only one that can count them.
-!!
-!! The wording is the pane's own status line's: the subject first, then a group of figures, in plain words rather than symbols, because what a reader copies out of a status bar should still read as a sentence.
+!! **The figures still decide whether the bar is drawn at all.** A press that named no mark leaves an empty bar, and so does a mark whose script asked to watch nothing — the panel is not the place for a line that says only that there is nothing to say.
 SideStatusDraw:
     if SideVisit is less than 1
     begin
         set the content of SideStatus to ``
         return
     end
-    put `line ` cat SideLine cat `   visit ` cat SideVisit into SideStatusText
-    ! The total can be missing — a report from a pane that did not count — and a bar reading "visit 3 of 0"
-    ! would be worse than one that says less.
-    if SideTotal is greater than 0 put SideStatusText cat ` of ` cat SideTotal into SideStatusText
+    put `` into SideStatusText
     ! **And the values, which is what a script's `@show` was for.** This is where the question that made
     ! somebody write the attribute is answered: the bar is read at the same moment as the picture, so the
     ! number and the run it belongs to arrive together without a second place to look.
@@ -224,11 +218,12 @@ SideStatusDraw:
             put SideValueText cat SideValueName cat `=` cat property SideValueName of SideValues into SideValueText
             add 1 to SideValueI
         end
-        put SideStatusText cat `   ` cat SideValueText into SideStatusText
+        if SideStatusText is not empty put SideStatusText cat `   ` into SideStatusText
+        put SideStatusText cat SideValueText into SideStatusText
     end
     set the content of SideStatus to SideStatusText
     return
-!! @hash 591e92f4
+!! @hash b74412d4
 !! @verified 591e92f4
 !!!
 !! The boundary: one message in, and the module parks until the next one.
@@ -247,7 +242,6 @@ SideMessage:
     ! script — the picture has been replaced, and so has everything the sidebar was saying about it. The
     ! mark's figures go with it: they counted a line in a run that is no longer on screen.
     put 0 into SideVisit
-    put 0 into SideTotal
     put json of `{}` into SideValues
     gosub to SideRender
     stop
@@ -255,7 +249,6 @@ SideMessage:
 SideBlockArrived:
     put property `line` of SideRun into SideLine
     put property `visit` of SideRun into SideVisit
-    put property `total` of SideRun into SideTotal
     ! The values the script asked to have watched, if it asked for any. Passed through, not interpreted:
     ! what `@show Total` means was settled by the recorder that read it.
     put property `values` of SideRun into SideValues
@@ -265,7 +258,7 @@ SideBlockArrived:
     ! Said here as well as in the editor, so that the two halves of the relay can be told apart when only
     ! one of them is working: this line means the panel was reached, and its absence means the message
     ! never crossed. It names its own subject so a copied line still makes sense on its own.
-    log `sidebar: showing line ` cat SideLine cat ` visit ` cat SideVisit cat ` of ` cat SideTotal cat ` found=` cat SideFound cat ` title=` cat SideTitle
+    log `sidebar: showing line ` cat SideLine cat ` visit ` cat SideVisit cat ` found=` cat SideFound cat ` title=` cat SideTitle
     gosub to SideRender
     stop
 
@@ -274,6 +267,6 @@ SideBlockArrived:
 !   reader returning to the same run expects.
 SideClosed:
     stop
-!! @hash cd2f39fb
+!! @hash 5f3ab6e1
 !! @verified cd2f39fb
 !!!

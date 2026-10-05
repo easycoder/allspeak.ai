@@ -205,3 +205,42 @@ What is still open here:
 - **A check on a boundary must carry what the boundary carries** — the JSON string, the registered handler — and must set up what the real path sets up. Twice a green harness sat over a browser fault because the check entered the path where the reader cannot.
 - **Measure the picture from a screenshot before reading the code.** Three passes were spent deriving a row pitch from eyeballed axis-label positions when a screenshot settled it; the instrument's own constants are checked first.
 - **A log beats a theory.** Both faults diagnosed by reading the runtime were wrong; both found by a log or a harness were right.
+
+## Performance of the draw — 2026-10-05
+
+Graham's run is 461KB and "takes a long time to draw"; his steer is "we need to defer as much as possible, let's
+look into what's possible". Facts established, none of them yet a measurement of the cost:
+
+- **Already deferred**: `VizRequest` remembers a request arriving during a draw (so a burst of notches costs one
+  draw more, landing on the latest); the window is a `viewBox`, so a pan should not rebuild the picture; and the
+  pane measures its own draws into a `millis_per_kb` calibration, alerting above 5000ms.
+- **Not deferred**: everything inside one `Draw` — rules, marks, flow, source picture, labels, bars.
+- **The instrument is dead in the harness**: `tools/plotview-check.js` has no `rest` stub, so the pane's
+  `rest get` of `.viz-calibration.json` fails, `VizPredict` stands down and `VizRemember` never writes. **Put a
+  `rest` stub in first** — one `get` returning nothing and a `post` capturing the body — and the pane's own
+  number per trace falls out of every run. Everything below is guesswork until that exists.
+- Then: chunk the draw (frame first, marks after, the estimate covering the wait); draw marks at screen
+  resolution (at a fitted 461KB run the marks are a fraction of a unit apart and fourteen wide, so most of the
+  work is invisible overdraw — one per ~2 units with the hottest colour winning would cut it by an order of
+  magnitude); and **verify the "drawn once" claim** — a pan asks for a `Draw` through `VizRedraw`, and whether
+  `Draw` rebuilds the marks or only the window-dependent parts is worth measuring rather than reading.
+
+## The window clips a row, so a dot's visit is not the line's total — 2026-10-05
+
+Graham reported the status "consistently under-reporting": the rightmost dot on a row said `line 254 visit 23 of
+44`. Measured, and **the pane is right**: it drops marks outside the window (and the hit test skips the same ones,
+by design), so at a fitted window the rightmost dot is the line's last visit (`31/31` on a 31-arrival row, and
+the harness's own row check reads `visit 2` and `visit 4 ... both of 4`), while on a mid-zoom window the same row's
+drawn dots begin at visit 12 — the earlier arrivals are off the plot. The two numbers answer different questions:
+the visit is the dot's, the total is the line's across the whole recording.
+
+Open question for Graham: whether the total should be qualified when the row is clipped (a count of arrivals in
+view), or left as the recording's fact. Not changed — the evidence went first.
+
+## Owed
+
+- **The sidebar's bar has no check.** It now shows only the `@show` values, and nothing asserts that its values
+  survive the move or that an empty bar is left when a mark asked to watch nothing. `plotview-check` covers the
+  pane's new line; the sidebar has no harness of its own.
+- **The pane's mark line is English-only** (`line ...   visit ... of ...`), as the sidebar's wording was before it
+  moved — the editor's string table has the flow words but not these. It moved the gap rather than widening it.
