@@ -183,6 +183,33 @@ to spell "this whole holder as a json list", or filtering where JSON is JSON —
 runtimes, which already reads and writes trace documents and which the pane already depends on. The plugin
 remains the likelier answer, but the language question comes first because it is cheaper to answer.
 
+## CORRECTION, same evening: the language already has what the clip needs
+
+Graham explained the difference between the two flavours — **JS is older and descends from a product whose
+compiled script had to be *serializable*, so a symbol's content is stored as text and json-ness is recognised;
+Python abandoned serializability, so a value can be a real object** — and his prompt to look at the *word*
+rather than the phrase found the commands. The English pack lists the `json` word with a **set of patterns**,
+which is why every phrase-level search failed:
+
+    json set {variable} to array|object          ← make a list, or an object
+    json add {item} to {variable}                ← append to it
+    json delete property|element {value} from|of {variable}
+    json replace element {index} of {variable} by|with {value}
+    json format {variable}
+
+**So the gap this file described does not exist for the clip's purpose.** A filtered list of events is built
+with `json set <kept> to array`, filled with `json add <event> to <kept>`, and read back by the pane's own
+`element N of` / `has element` loops — which already read `.traceEvents`, a json array produced by another
+runtime entirely. **The clip is pane work today, and needs no new keyword.**
+
+`join` remains a good idea on its own terms — the inverse of `split`, and a way to say "this whole holder as one
+value" that the slot commands cannot say — but it is now a *convenience*, not a blocker, and it should be
+designed on its merits rather than to unblock something.
+
+**What is still true and worth keeping**: a bare holder name means the slot the cursor is on (measured);
+`json of` a holder gives that slot; and reading a holder element-by-element works through the cursor. The
+sections below stand except where this correction contradicts them.
+
 ## Proposed: a `join` keyword, the inverse of `split` — 2026-10-05
 
 Graham's proposal, and it closes the gap above. `split` takes a value and fills the named holder with a slot per
@@ -235,7 +262,9 @@ halves: `compile` reads an optional target symbol, the value, an optional `on`/`
 a *value*, and the run half **reads** `elements`/`value[n]` where `split` writes them. Everything else — the
 `as`/`with`/`into` modifiers, the target check (`is not a variable`), the lino — follows `Split` word for word.
 
-**The one thing to find before writing it: what a *list* value is.** `join … as json` must produce the same
+**ANSWERED (Graham, same evening): what a *list* value is.** In **JS** an `ECValue`'s content is *text* — a legacy of a compiler whose output had to be serializable — and json-ness is *recognised*, so a list is the text `json set … to array` and `json add` build, and `join … as json` must produce that same text (not a native array, which would not be recognised). In **Python** the compiled script is never serialized, so the content is a real object and `join` builds a real list. **This is the reason a `join` must be tested in both runtimes and not assumed to agree.**
+
+**Original note, kept for the record — what a *list* value is:** `join … as json` must produce the same
 kind of value that `the json count of` and `the json keys of` already read — and those two are in neither
 `Core.js`, the English pack, nor any plugin under `js/plugins/`, which was the surprise. The likely reason is
 that the packs list **words**, not phrases: `json`, `keys`, `of` are separate entries and the grammar composes
