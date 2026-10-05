@@ -1463,7 +1463,11 @@ class Viz(Handler):
                f'labels={len(labels)} | loops={len(loops)} | events={len(events)} | '
                f'anchors={len(anchors)}' + (' | incomplete=yes' if problem else '')]
         if problem is not None:
-            out.append(f'problem | script={path} | {problem}')
+            # **A compile failure is only a finding if this runtime is the one the script is for.** A script
+            # carrying `@js` is one this runtime cannot compile by definition, so its failure says nothing
+            # about the script. Reported against the JavaScript plugin on 2026-10-05; this is its twin.
+            if declared_flavour == 'py':
+                out.append(f'problem | script={path} | {problem}')
         if dynamic > 0:
             out.append(f'note | reachability is approximate: {dynamic} computed jump(s) '
                        'or returns')

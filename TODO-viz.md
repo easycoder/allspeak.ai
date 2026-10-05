@@ -282,3 +282,31 @@ view), or left as the recording's fact. Not changed — the evidence went first.
   *host* half, above the harness's `viewStart` cut, and only `asedit-check` (which runs the module whole) compiles
   it. What "drew in X.Y s" says is therefore unasserted — the whole-and-tenth assembly is the part worth a check,
   since the language has no fractions and the obvious `DrawMillis / 1000` gives `0 s` for a 700ms drawing.
+
+## The split, taken 2026-10-05 — first slice done, the rest named
+
+Graham: "Yes, I'd like you to take the split." The measurement that justified it, with the view's own clock
+(`DrawMillis`, written by every drawing at its own two ends — the harness's wall clock is dominated by its own
+settling): `parser-main`'s 46 gestures **166 694 ms → 90 735 ms**, median **4107 → 1873 ms**; small trace's
+dearest gesture **396 → 160 ms**; and on the small trace the drawn picture is **byte-identical** (`PLOTVIEW=`
+runs the old copy against the same trace).
+
+**Done**: the parts before "pass one" — the extent, the rule set, the mark size — are built once per *picture*
+(`VizPictureNew`, read at the top of the pass because the fit that decides it comes later and cannot be asked
+yet) instead of once per *draw*. Two findings fell out: **`wait N millis` costs about four times N** (`Browser.js`
+polls in 16 ms steps: `wait 20 millis` measures 84 ms), so the pass's breathing was ~1.7 s of every big gesture;
+and **`VizRuledLines` was initialised in the per-draw block** while the pass that fills it ran per draw, which is
+why it had to move into the gated part.
+
+**Four harness checks were failing on `parser-main` before this and pass now** (transfer ends not on a rule; a
+rule Infinity units from its text; a tick 143 units off its row; a two-modifier notch that changed the picture).
+They were one fault four ways — the old, slow gestures outlasted the harness's own phase-advance timeout, so the
+picture was mid-draw when the snapshot was taken. 33 OK/14 FAIL → **37 OK/10 FAIL**, no new failures. The
+standard trace is unchanged at 51 OK with the same two known window expectations.
+
+**The rest of the split**: the marks and the flow are still placed by `VizPlaceX`/`VizPlaceY`, which fold the
+*window* into the coordinates, so a gesture still walks every event to move them. The module's own prose says the
+intended design — `VizPane`'s `viewBox` is "the whole of the zoom and the pan … the picture itself is drawn once
+when the run is opened", and "no coordinate below has to" know about the window. Placing marks/flow/rules in
+document units and letting that `viewBox` zoom would make a pan one attribute. It touches every coordinate, the
+axis labels and the clipping, so it wants its own pass with the same `PLOTVIEW=` before/after diff.

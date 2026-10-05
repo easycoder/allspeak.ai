@@ -19,6 +19,16 @@
 // have altered the fitted picture: run the version before the change and the version after it
 // against the same trace and diff the two reports.
 //
+// Two modes exist for asking what the view *costs*, which the phases above cannot answer: they redraw about
+// fifty times over, and a big recording never finishes them — which is the complaint that prompted both.
+//
+//   PLOTVIEW_ONEDRAW=1     draw the picture, print the milliseconds, stop. A whole-load figure, covering the
+//                          two drawings the host script makes; the per-drawing number is the pane's own
+//                          `DrawMillis`.
+//   PLOTVIEW_GESTURES=1    run every phase and print the dearest five by what the *view* measured for each
+//                          (`DrawMillis`, which each drawing writes at its own two ends). Not this harness's
+//                          wall clock, which is dominated by its own patient settling.
+//
 const fs = require('fs');
 // **This harness runs the drawing, so it needs the runtime it runs on.** A copy shipped inside a
 // starter pack sits beside the editor but not beside `js/`, because a pack is a client of the CDN
@@ -128,7 +138,7 @@ if (viewStart < 0) {
 // view's own draw hands over to it. `VizSlide` is the same case again, and it is declared with the
 // *gestures* up there rather than with the view's own state for exactly the reason it has to be
 // repeated here: `on drag` reads it before any of the view's declarations have been reached.
-const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable DrawMillis\nvariable VizEstimate\n`
+const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable DrawMillis\nvariable VizEstimate\nvariable DrawStarted\n`
 	+ moduleSource.slice(viewStart);
 const trace = fs.readFileSync(tracePath, `utf8`);
 // What the recording says the transfers were, by kind. The view decides which of these to draw and
@@ -653,7 +663,15 @@ const PHASES = [
 	} },
 ];
 
+// **What each gesture cost.** Reported rather than asserted, because the pane's cost is a property of the
+// recording and the machine, not of correctness — and because the split it decides was proposed from reading
+// the code, which has already been wrong twice in this file's history. `-- gestures` prints it.
+const GESTURE_REPORT = process.env.PLOTVIEW_GESTURES === `1`;
 const taken = [];
+// When the phase's gesture was issued, so the settled picture that follows it can be charged to it. Module
+// scope rather than the loop body: the phase's own `act` runs after the *previous* one has settled, and the
+// figure wanted here is how long the picture took to catch up with it.
+let actClock = 0;
 let phase = 0;
 let lastSnapshot = null;
 let quietTicks = 0;
@@ -685,7 +703,10 @@ const settle = setInterval(() => {
 	// recording: Graham's 472KB trace never finishes them, and that is the whole complaint. This is the first
 	// moment the number means anything — a drawing is atomic, so the run returns when the two load-time
 	// drawings are behind it.
-	taken.push([PHASES[phase].name, drawing()]);
+	// **The drawing's own number, not this harness's patience.** Reading the wall clock here measures the
+	// settle waiting (four quiet ticks at the poll's period, ~3s) far more than it measures the gesture, which
+	// is what the first version of this did. `Draw` times itself end to end, gestures included.
+	taken.push([PHASES[phase].name, drawing(), viewVar(`DrawMillis`)]);
 	phase++;
 	if (phase >= PHASES.length) {
 		clearInterval(settle);
@@ -695,6 +716,7 @@ const settle = setInterval(() => {
 	quietTicks = 0;
 	sawChange = false;
 	lastSnapshot = null;
+	actClock = Date.now();
 	try {
 		if (PHASES[phase].act) PHASES[phase].act();
 	} catch (err) {
@@ -1595,6 +1617,17 @@ if (process.argv[3]) {
 <div id="panel">${markup}</div>
 `);
 	console.log(`\npage written: ${process.argv[3]}`);
+}
+// **One line per phase, in milliseconds, for whoever is asking what the picture costs to move.** The five
+// dearest are the interesting ones: a pan that costs as much as the first drawing is the whole question, and
+// the answer decides whether the drawing needs splitting or something else does.
+if (GESTURE_REPORT) {
+	const rows = taken.map(t => [t[0], Number(t[2])]).filter(([, ms]) => ms >= 0);
+	const sorted = rows.slice().sort((a, b) => b[1] - a[1]);
+	console.log(`\ngestures: ${rows.length} phase(s), dearest five`);
+	for (const [name, ms] of sorted.slice(0, 5)) console.log(`  ${ms} ms  ${name}`);
+	const total = rows.reduce((a, [, ms]) => a + ms, 0);
+	console.log(`  total ${total} ms; median ${sorted[Math.floor(sorted.length / 2)][1]} ms`);
 }
 const texts = Object.values(byId).filter(e => e.tagName === `text` || e.tagName === `svgtext`);
 for (const e of texts) {

@@ -121,13 +121,11 @@ VizDrawRun:
     ! browser takes for that frame is neither charged to the drawing nor counted into the rate the pane
     ! learns from it.
     gosub to VizBusyNotice
-    put now into DrawStarted
     gosub to VizRequest
     ! A request that had to wait is drawn after this entry has gone, so it is not timed here: timing it
     ! would record the turn-round of a queue as the cost of a draw, and the estimate that learning
     ! feeds is only worth having if it is a draw's own time.
     if VizPending is 1 return
-    subtract DrawStarted from now giving DrawMillis
     gosub to VizBusyDone
     gosub to VizRemember
     fork to ClearStatus
@@ -138,7 +136,7 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 
-!! @hash 4442e3b0
+!! @hash 06d18b21
 !! @verified 5b1f9f95
 !!!
 !! The module's one message: take the run, or stand down.
@@ -277,6 +275,8 @@ VizRemember:
     variable VizBreathe
     variable VizCount
     variable VizSeen        ! how many times each line has been reached so far, in this draw
+    variable VizPictureNew  ! 1 when this draw's recording or source is not the last one drawn, so the parts
+                             ! of the picture that depend on neither are built here and not on every gesture
     variable VizRunCounts   ! how often each line is reached in the whole recording
     variable VizMaxCount    ! the busiest line's total, which the ramp is scaled against
     variable VizBand
@@ -559,6 +559,12 @@ VizRemember:
     rect VizBarH
     rect VizHandleH
 Draw:
+    ! **The drawing keeps its own clock, at its own two ends.** Nothing else can measure it honestly: a
+    ! gesture asks for a draw directly (the editor's own entry point is only the *first* draw of a run), and
+    ! the drawing hands the thread back as it breathes, so a clock kept by any caller would time the frame it
+    ! was given and not the work. `DrawMillis` is what the corner prints and what `VizRemember` learns the
+    ! rate from, so the two can never disagree about what a drawing cost.
+    put now into DrawStarted
     ! **A draw is a long job, so it takes a ticket rather than a lock.** It says it is running here
     ! and clears that at its end; anything that wants a draw in the meantime asks `VizRequest`, which
     ! *remembers* the request instead of losing it. What must never happen is two draws in flight at
@@ -578,7 +584,7 @@ Draw:
         put json of VizTrace into VizParsed
         put property `traceEvents` of VizParsed into VizEvents
     end
-!! @hash ee7100d3
+!! @hash ad20c154
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -931,16 +937,28 @@ VizBuilt:
     put `` into VizFlowJumpD
     put `` into VizFlowReturnD
     put `` into VizRulesD
-    ! A leading and trailing space, so that every entry added is padded on both sides and ` 15 ` can
-    ! never match inside ` 115 `.
-    put ` ` into VizRuledLines
-!! @hash 466d9a4e
+!! @hash 55620f7b
 !! @verified 466d9a4e
 !!!
 !! The frame the picture is drawn in is the run's own extent, not the file's.
 !!
 !! The rules cover exactly the lines the recording names — an arrival, or either end of a transfer — and the axis is scaled to the steps it took, so a picture of a run that touched nine lines shows nine.
     ! ---- pass one: the frame the picture is drawn in ----
+    ! **Nothing below depends on the window, so it is built once per picture and not once per gesture.** It
+    ! reads the recording and nothing else — the extent the axis is scaled to, the rule set, and the size one
+    ! mark is drawn at, which is a judgement off the span. It used to run above the test for a new recording,
+    ! so every wheel notch re-read the whole trace *and* paid the `wait` this loop breathes with, which alone
+    ! is worth about a second and a half on a big one. The condition is the same one the fit is decided by,
+    ! read here because the fit comes later and cannot be asked yet; the two cannot disagree, since both read
+    ! `VizTrace` and `VizSource`.
+    put 0 into VizPictureNew
+    if VizTrace is not VizLastTrace put 1 into VizPictureNew
+    if VizSource is not VizLastSource put 1 into VizPictureNew
+    if VizPictureNew is 0 go to VizFrameDone
+    ! A leading and trailing space, so that every entry added is padded on both sides and ` 15 ` can
+    ! never match inside ` 115 `. Cleared with the pass that fills it rather than with the paths above,
+    ! because a gesture no longer runs the pass and an empty set is a picture with no rules.
+    put ` ` into VizRuledLines
     put 0 into VizBreathe
     put 0 into VizMaxSteps
     put 0 into VizMaxCount
@@ -995,7 +1013,7 @@ VizBuilt:
     end
 
     if VizMaxSteps is less than 1 put 1 into VizMaxSteps
-!! @hash 92278436
+!! @hash d1e13b91
 !! @verified 92278436
 !!!
 !! A mark has to stay legible at the pane's scale, or it is not a mark.
@@ -1015,7 +1033,8 @@ VizBuilt:
     ! to stay legible at the pane's scale to be a mark at all. When this view takes the host panel's
     ! size rather than asserting a 1000x700 frame, this is the number that should come from it.
     put 14 into VizDotSize
-!! @hash 74df2991
+VizFrameDone:
+!! @hash d35b38f7
 !! @verified 74df2991
 !!!
 !! The window is held as two ranges in the trace's own units, never as a scale factor.
@@ -1501,6 +1520,7 @@ VizWindow:
     set attribute `d` of VizFlowJump to VizFlowJumpD
     set attribute `d` of VizFlowReturn to VizFlowReturnD
     set attribute `d` of VizRules to VizRulesD
+    subtract DrawStarted from now giving DrawMillis
     put 0 into VizDrawing
     ! Whatever asked while this was running. Once, not in a loop: a request made *during* the draw
     ! below is served by that draw's own end, and that is what makes a chain of them settle.
@@ -1510,7 +1530,7 @@ VizWindow:
         gosub to Draw
     end
     return
-!! @hash ca7a095f
+!! @hash 03bb4bf0
 !! @verified ca7a095f
 !!!
 !! The gestures are four entry points, and this module registers them.

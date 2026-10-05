@@ -1313,6 +1313,13 @@ const AllSpeak_Viz = {
 		}
 		anchors.sort((a, b) => a.at - b.at);
 
+		// **A compile failure is only a finding if this runtime is the one the script is for.** A script
+		// carrying `@py` is one the JavaScript runtime cannot compile by definition — `dictionary` and `list`
+		// are Python's — so reporting "I don't understand 'dictionary'" against it says nothing about the
+		// script and a great deal about the reader's mistake in opening it here. Reported by Graham,
+		// 2026-10-05: the editor put the line up for three seconds over a graph it had drawn correctly. The
+		// flavour is read from the token stream above, so it is known before the compile is even news.
+		const ownFlavour = vizFlavour(source.tokens, path).declared === VIZ_FLAVOUR_JS;
 		const out = [];
 		const sections = parseSections(AllSpeak_Viz.sections[path]);
 		out.push(`model | script=${path} | lines=${source.scriptLines.length} | ` +
@@ -1320,7 +1327,7 @@ const AllSpeak_Viz = {
 			`labels=${labels.length} | loops=${loops.length} | ` +
 			`events=${events.length} | anchors=${anchors.length}` +
 			(problem === null ? `` : ` | incomplete=yes`));
-		if (problem !== null) out.push(`problem | script=${path} | ${problem}`);
+		if (problem !== null && ownFlavour) out.push(`problem | script=${path} | ${problem}`);
 		if (dynamic > 0) {
 			out.push(`note | reachability is approximate: ${dynamic} computed jump(s) ` +
 				`or returns`);
