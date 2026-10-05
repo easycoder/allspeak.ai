@@ -150,3 +150,34 @@ Both come from friction points in the chat/forum project, April 2026.
 4. **Multi-field unpack with remainder.** For protocols where the last field may contain the delimiter: `unpack MessageText by \`|\` into TopicName Subject Author Body` — the last variable gets the remainder.
 
 Done and closed: **string split by delimiter** (`split … by` and `put field N of … delimited by`), implemented in both runtimes; and **append to a JSON array in a file** (Python only; JS uses `rest post` to a server, and the in-memory `append` covers the JS case).
+
+## A script cannot build a json list — found designing the recording clip, 2026-10-05
+
+The Graph pane's clip has to reduce the trace's event list to the events inside a step range. The pane is an
+AllSpeak script, so the natural implementation is a filter in the script — and that is not possible today.
+
+Probed (in `/tmp`, both runtimes agree):
+
+- `set the elements of Kept to N`, writing slots with `index Kept to I` + `put Ev into Kept`, then trimming with
+  `set the elements of Kept to I` **builds the right array** — `kept 2` from three events, the filter itself
+  works.
+- **`put json of <that array> into X` does not give a json list**: `the json count of X` is *undefined*.
+- **`x has element 0` is *false* on an array** (`array: has element 0 is false`), so a filtered array cannot be
+  read by the pane's own loops.
+
+And the two forms are not interchangeable, which is the trap: **a json list is one value in one slot**, so
+`element N of X` reads *inside* it and `index X to N` would hand back the whole list; an **array** is a slot per
+element, so `index X to N` is the read and `has element` says nothing. The editor's buffer walk uses `index` +
+`has element` on its `split` array for exactly that reason, and the pane's draw loops use `element N of` on the
+json list for exactly the other.
+
+**Consequences.** A script that wants to *filter a json list* has no way to build the result: it can read one,
+and it can build an array, but it cannot turn an array into a list. Two ways out, and the second is better:
+
+1. Give the language a way to build a json list — `json of` an array would be the obvious spelling, and it
+   currently yields something `the json count of` cannot read.
+2. **Do the filtering where JSON is JSON** — the `viz` plugin, in both runtimes. It already reads and writes
+   trace documents, it has real lists, and the pane already depends on it for everything it draws.
+
+**Until one of those exists**, the clip is plugin work, not pane work — and that also means the *first* thing
+the clip build should produce is a plugin call the pane can make, not a button.
