@@ -32,6 +32,41 @@ Two consequences worth stating plainly, because both are easy to assume the othe
 - **An attribute is not a comment.** A comment (`!`) is for the person reading the source, and it is gone by the time the program exists. An attribute is *in* the program: a tool receives a compiled script and reads its attributes without the source in front of it.
 - **An attribute is not language.** The syntax is `@` in every language — [multilingual](multilingual.md) translation covers words, and `@` is not a word — so a tool written against one language's scripts reads an attribute in another's.
 
+## Which runtime a script is for
+
+AllSpeak has two implementations — one that runs in a browser, one that runs from the terminal — and they are near-identical languages with different vocabularies. A script says which of them it is for with **`@py` or `@js` on a line of its own**, and failing that the answer comes from **the project**, and failing both it is JavaScript.
+
+```as
+@js
+
+script Parser
+variable Total
+```
+
+**The project answers first, and that is what keeps a Python project free of markers.** A project declares itself in `.allspeak-init`, the file beside it that already carries the project's `lang:`, and one line of it is the runtime:
+
+```
+lang: en
+runtime: js
+```
+
+So a script in a project that says `runtime: py` needs no marker at all, and `@js` earns its place as the *override* — a mixed project is the case it exists for, one script in a project of the other kind. This repository is one: `server.allspeak` is Python while the pages are JavaScript.
+
+Two things worth knowing about the marker itself:
+
+- **It is read from the source, before the script is compiled.** A script written for one runtime is exactly the script that will not compile in the other, so a marker read off the compiled program could never be reached — the compile's own error arrives first.
+- **It changes nothing about a run.** Rule 14 holds: the marker is carried into the program and the runtime ignores it, so the same script runs the same way with the marker deleted. It is simply no longer labelled.
+
+## Why a script has to say, and who asks
+
+Nothing in *the language* needs the answer. A runtime runs the script it is handed — that is the whole design — and it reports an unknown word the way it always does. What needs the answer is a **tool that has to choose a runtime**, and there is one so far: the visualiser's `record the script …`, which runs a script of the caller's choosing and therefore has to know which of the two can run it.
+
+Without an answer the tool has only the compile to go on, and its refusal is the one thing worse than either: `I don't understand 'dictionary' at line 46` — true, and about a script that is not broken. With one, the refusal says what is actually the case, and where it came from:
+
+> could not run: this script is for the Python runtime — unmarked, and the project's .allspeak-init says @py — and this is the JavaScript runtime
+
+Naming the origin matters, because a reader told "this is a Python script" goes looking for `@py` and will not find one when it was the project that said so.
+
 ## Where to put it
 
 **On the same line as the statement it belongs to.** The line is the unit: an attribute runs from its `@` to the end of the line, or to a `!` comment, whichever comes first.

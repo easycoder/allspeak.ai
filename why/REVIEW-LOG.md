@@ -12,6 +12,17 @@ How to use it: when any of the features named in **Review triggers** changes, re
 
 | § | Claim | Depends on | Stale when |
 |---|---|---|---|
+| §1 | The four questions a reviewer has, and that a stack trace answers one and a log another | — | An instrument the table omits answers all four |
+| §1 | A runtime decides what can be seen: Python's `sys.settrace`/`sys.monitoring`, V8's inspector protocol, and nothing can be built on a hook that is not published | The runtimes, not this repo | Either runtime changes or withdraws a hook |
+| §1 | **Six claims in the pasted draft were corrected on 2026-10-04** — see Review 2. The one that matters: a Python or JavaScript debugger *can* answer the four questions, so the claim is not that AllSpeak can and others cannot | `coverage`, `viztracer`, DevTools | A reader who knows `viztracer` dismisses the piece — this is the row to re-read first |
+| §2 | The bars are the **code**; doc-block lines are blanked and get no bar, so the silhouette is of the code rather than the file | `asedit-graph.allspeak` `VizRedact`, the `!!` test | The blanking changes, or the bars start being drawn for prose |
+| §2 | Dots mark four kinds of place — label, `while`, event handler, `return` — plus the two markers | `js/plugins/asviz.js` `kind=label\|loop\|event\|viz` | The anchor kinds change |
+| §2 | The three transfer colours are call/jump/return, keyed `gosub`/`go`/`return`; an arriving arrow does not imply a call | `asedit-graph.allspeak` `VizColourCall`/`Jump`/`Return` | A fourth transfer kind, or the colours move |
+| §2 | Values appear in the **existing** Docs tab's bar, chosen by `@show`, with no effect on the run | `asedit-side.allspeak`, `asviz.js` | A second tab is added, or the values move out of the bar |
+| §2 | The image in Figure 3 shows steps 0–116 and lines 168–510 of a 626-line script at 376%/194% | `why/viz-example.png` | The screenshot is retaken — **re-read every claim in the tour against the new image** |
+| §2 | Figure 2's bars are the parser's **sections**, one bar each, at their real positions in the file and as wide as each section's longest line — the pane's own low-zoom reading, not one bar per line | `why/figure-2-axes.png`, drawn by `various/make-figure-2.py` | The parser is restructured, or the pane's low-zoom behaviour changes — re-run `python3 various/make-figure-2.py why/figure-2-axes.png` |
+| §2 | Figure 2's dots are real arrivals at their real line and step, taken from the busiest lines plus each labelled stage | `various/h2o.viz.json`, in the generator | The recording is regenerated, or the marker moves |
+| §1–§2 | Both figures use the pane's own colours, copied by value: bars `#d6d6d6`, heat `#3b7dd8`/`#8f5fd8`/`#d2467f`/`#e5484d`, wires `#e0a44a`/`#43c6a8`/`#c07ad0` | `asedit-graph.allspeak` | Any of them changes — a figure would then silently disagree with the pane |
 | §3 | Two words record a run: `viz start` / `viz stop`, and they are no-ops with no recorder | `Core.js` `Viz`, `as_core.py` `k_viz`/`r_viz` | The marker vocabulary or the no-op behaviour changes |
 | §3 | Visits to labelled subroutines, `while` loops and `return` are recorded | `js/plugins/asviz.js`, `allspeak-py/plugins/as_viz.py` | The set of anchor kinds grows or changes |
 | §3 | The language is BASIC-like: labels, `goto`/`gosub`, `if`, `while` | `Core.js`, `learn/reference/09-control-flow.md` | New flow-control keywords land (a `for`, a `case`) |
@@ -79,6 +90,27 @@ Two notes on the state of `examples/chemical/parser.allspeak` after the edit. It
 **And the "another toy" reflex now gets answered where AllSpeak is named.** §1 ends with what AllSpeak is for and what it takes nothing away from, so a professional reader meets the qualification before the pitch rather than in §9; §9 keeps the formal bound and no longer restates it.
 
 ---
+
+## Review 2 — 2026-10-04, later
+
+**What happened.** Graham wrote a draft of a new §1 and a walkthrough of the picture, to be checked for accuracy and tidied, with two editorial instructions: present the case for AllSpeak **earlier and more assertively**, stressing that it is one layer of a project and does not compete with JavaScript or Python; and **keep the document to code review alone**, because internationalisation belongs in a separate document. The draft is now in §1 and §2's new "The picture itself"; §10's multilingual paragraph is out.
+
+**Six corrections, and the last is the one that matters.**
+
+1. **"Languages arrive in three shapes" named two.** A count that does not survive its own paragraph. Now two *routes* — compiled to the processor's own instructions, or to a virtual machine's — with JavaScript given its own sentence, because V8 both interprets bytecode and compiles the hot parts further at run time.
+2. **"watching it instruction by instruction is impractical"** was wrong: `gdb`/`lldb`, `perf`, eBPF and record-and-replay debuggers all observe a compiled binary without recompiling. Rewritten: a binary *can* be watched one instruction at a time, and it is a hard place to read a program; the practical recourse for anything larger is instrumentation, which costs a rebuild.
+3. **"there is no way for you to change it or add to it"** was wrong twice over, and it was the load-bearing sentence for §10. Python publishes `sys.settrace` and `sys.monitoring` — which is how `coverage` and a family of tracing tools exist — and V8 publishes an inspector protocol, which is why its debugger has more than one front end.
+4. **"it leaves nothing behind when the session ends"** was true of stock interactive debuggers and false as a general claim: `python -m trace`, `coverage.py`, DevTools Coverage (which answers "where did it *not* go", one of the article's own four questions) and DevTools Performance all record and export.
+5. **The bars are not the file.** "Every line of it is a bar whose width is that line's length" is contradicted by `asedit-graph.allspeak`, which blanks every `!!` line — "a row that draws nothing gets no bar… the blanked doc blocks are most of a file written to this convention" — **and by the screenshot itself**, whose bars are dense in the upper third and sparse below because the lower rows are prose. The picture's silhouette is of the code, not of the file.
+6. **And the draft's central claim was too strong, which turned out to be an opportunity.** It said AllSpeak "has a debugger that is able to reveal answers to the questions above — the ones that can't be answered by a Python or JS debugger." They can be, and `viztracer` will even write a trace file in the very format §4 claims for AllSpeak. **§1 and §10 now name that prior art and say precisely what differs**: those tools watch through a general-purpose hook and therefore know about lines of text in a file, whereas AllSpeak's record is made *by the language*, so it carries the author's own sections, their names and their documentation. The piece is more credible for conceding the point, and a professional reader who knows `viztracer` is exactly the reader it is written for.
+
+Three smaller ones went with them: the dots mark **four** kinds of place (label, `while`, event handler, `return`) rather than three; an arriving arrow does not imply a call, and the colour says which transfer it was (there is no rule that a dot without one is a loop — that was invented); and the values paragraph is true except for placement, since they appear in the **existing** Docs tab's bar, not a second tab, which is unbuilt.
+
+**The one thing the picture settled that prose could not.** The vertical-axis caution said the axis "is not line numbers" while the screenshot's own ruler reads 168, 282, 396, 510. Both are true of different things — the axis is *laid out* by the file's lines, and *means* the program's parts — and the wording now says so. Reading the image rather than the prose is what found it, which is the third time an instrument has beaten reasoning in this project.
+
+**The internationalisation paragraph is out of §10**, and the draft note records where it went. It is recoverable from `git log -p -- why/article.md`.
+
+**Method worth repeating.** Two independent review passes were run over this revision, and both found real errors in prose I had just written and re-read: the second found all six above plus four of the smaller ones. Asking for a check *of the new material specifically*, with the checkable categories named, is what made it productive.
 
 ## Review triggers for the next pass
 

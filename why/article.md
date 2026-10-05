@@ -1,12 +1,14 @@
 > **Draft — not for publication.** Started 2026-10-04. Written to be read and argued with while the visualiser is still moving, which is why the claims are deliberately drawn at a level the implementation is unlikely to invalidate.
 >
-> **Before it goes anywhere, four things need doing:**
+> **Before it goes anywhere, seven things need doing:**
 >
-> 1. **The figures.** Three are marked `[to be produced]` below: the redacted silhouette (§2, from `various/make-redacted.py`), a bare pair of axes (§2), and the pane itself (§5). The last two come from one recording — `python3 tools/asviz-run.py --run --trace=<file.json> examples/chemical/parser.allspeak` writes it — and the axes diagram is best drawn by hand, since what it has to convey is two axis labels and a handful of marks.
+> 1. **The figures.** Four are marked below, and **two are in place** — Figure 2 (`why/figure-2-axes.png`, drawn by `various/make-figure-2.py`) and Figure 3 (`why/viz-example.png`, the screenshot), both beside this file and rendering in any markdown viewer. Figure 1 (the redacted silhouette, from `various/make-redacted.py`) and Figure 4 (the same recording seen whole) still need making. Recordings come from one command: `python3 tools/asviz-run.py --run --trace=<file.json> examples/chemical/parser.allspeak`.
 > 2. **The numbers in §5.** They were taken from the `H₂O` run on 2026-10-04, with the marker at `is 0` so that it records the first worked example, and they will drift as the parser and the recorder change. Re-run and re-read them before publishing, and say in the caption that they are one run of one script. The per-draw cost in §9 is a console measurement from an earlier session and is the least settled figure in the piece.
 > 3. **The state of the tools.** §11 says what is unfinished. Check it is still true, rather than still unfinished in the same way.
 > 4. **The title.** *Reading a program without reading it* is the working one. Alternatives that fit the same argument: *Nobody ships the run*, *The record and the picture*.
 > 5. **The marker was corrected, on Graham's call (2026-10-04).** `examples/chemical/parser.allspeak:206` read `if FormulaIndex is 1 viz start`; because the loop counts from zero that selected the *second* worked example, and with a single formula on the command line it recorded a self-check case instead. It now reads `is 0`, so the recording is of the first formula, `H₂O`. `MeasureFormula`'s doc-block hash was refreshed, and its `@verified` stamp is deliberately stale — that is the convention reporting the change, not a fault.
+> 6. **This document is about code review and nothing else.** §10's third paragraph — the picture's own words coming from the language packs, a French team reading a French picture — was **removed** on 2026-10-04 and belongs in the internationalisation document. It is recoverable from `git log -p -- why/article.md`.
+> 7. **§1 and §2 were revised from Graham's draft on 2026-10-04, and five of its claims were corrected rather than copied.** The sidebar's values appear in the **existing** tab's status bar, not in a second tab — there is one tab, and a second is unbuilt but ready (a tab is a name and a branch). The picture's bars are the **code**; the documentation is blanked and gets no bar, because on a file written to this convention the prose would bury the flow. The dots mark four kinds of place, not three — label, `while`, event handler, `return` — plus the two markers. An arrow arriving says only that control came from somewhere else, and the colour says how; there is no rule that a dot without one is a loop. And the draft's claim that a Python or JavaScript debugger *cannot* answer the four questions was **too strong and is now the article's sharpest point**: those runtimes do publish hooks, and `coverage` and `viztracer` exist on them. §1 and §10 now name that prior art and say precisely what differs — the record is made *by the language*, so it carries the author's own sections, names and documentation. **A reader who knows `viztracer` will otherwise dismiss the piece**, which is why this matters more than the rest of the list.
 >
 > Placement on the site, when it is ready: source lives here, `deploy-sync` mirrors `why/` into `deploy/shared/why/`, and `deploy/<lang>/why.html` is a thin loader in the manner of `deploy/<lang>/primer.html`. See the synopsis for the front door.
 
@@ -35,11 +37,28 @@ We do have tools that watch a program execute. None of them produces something y
 
 Each of these is good at its job. What none of them gives you is **the run**: this program, on this input, doing this, in this order, as a document. You can read a stack trace, but you cannot review it a month later as evidence of what the software does.
 
+**The questions a reviewer actually has are these.**
+
+- **Where did it go?** Which parts of the code ran, and in what order.
+- **Where did it not go at all?** The branch never taken; the subroutine nothing calls.
+- **How often did it visit a particular piece of code?** The loop that ran eight times, or eight hundred.
+- **What were the values?** The ones the program never printed.
+
+A stack trace answers the first, for one path, after a failure. A log answers the fourth, for the lines somebody thought to instrument in advance. None of the four answers all of them, and none answers any of them in a form you can hand to somebody else.
+
+**Of the four, only the debugger can go further — and few people do.** A debugger is not short of power; it is short of patience. It answers these questions a breakpoint at a time, in a live session, for a reader who already reads the language — and by the time the session ends, the answers are gone. There *are* tools that record: Python's `coverage` will tell you which lines never ran, and a tracing profiler will write down what happened and keep it. But each of them is about one of the questions, has its own conventions for being asked, and knows nothing of what a program's sections are called or what they are for. This article is about a runtime whose answers are part of the language.
+
+**How a program reaches the machine decides how much of that is possible.** A **compiled** language is translated ahead of time into the processor's own instructions. That is fast, and it is a harder place to read a program: a binary can be watched one machine instruction at a time, and people do exactly that, but the practical recourse for anything larger than a small question is to add code at the points you care about — which costs a recompilation before it can be run. An **interpreted** language such as Python takes the other route: the source is translated into the instructions of a **virtual machine**, a conceptual layer sitting above the CPU's assembly, and a runtime engine carries those out using whatever the hardware actually does. That indirection is what lets one program run on x86 or on ARM — what Java meant by *write once, run anywhere*. JavaScript sits between the two and has moved over the years: V8 compiles to its own bytecode, and then compiles the hot parts of it again, at run time, into the processor's own instructions.
+
+**And the runtime engine is where the debugger sits.** That is worth stating plainly, because it is where this article's subject comes from. A runtime chooses what to expose, and everything anybody builds to watch a program is built on what it exposes. Python publishes hooks for it — `sys.settrace`, and `sys.monitoring` in recent versions — which is how `coverage` and a family of tracing tools exist at all; V8 publishes an inspector protocol, which is why its debugger has more than one front end. What no runtime exposes, nothing can be built on: **the capabilities available to a reviewer are decided by the runtime**, and the only way to decide them yourself is to own the runtime.
+
+**But not all of your code needs the same level of debugging.** As a product matures, the parts that rarely change get baked into function libraries, and you seldom need to watch inside them — a JSON parser, a date library, a database driver. What keeps changing, and what keeps being wrong, is the layer above: the human interface. What the screen does, what happens when somebody clicks, what order the steps go in. That layer is the part that can be described in English — and, not by coincidence, it is the part that *was* described in English, in the prompt that the AI turned into code.
+
+**AllSpeak occupies that layer, and only that layer.** This is the case for using it, so let me put it as directly as I can. AllSpeak is **one layer of a project**, not a replacement for the project. It does not compete with JavaScript or Python; those go on doing the work they are good at, and AllSpeak is not attempting that work. If it competes with anything, it is with a front-end framework — React and its neighbours occupy that same top layer, the one where behaviour is written down — and choosing AllSpeak there need not disturb anything underneath it. What AllSpeak brings to that layer is that its runtime is ours, so it can be asked what it did.
+
 AllSpeak does ship the run. A script can be told to record what it did; the recording is written to a file; and the file can be drawn as a picture of the execution. The picture can be read by somebody who has never seen the program, and read before a single line of its text is legible — which, it turns out, includes not needing to know what language it was written in.
 
 That sentence is easy to read past, so let me put it plainly: **the record is an artefact of the program's behaviour, and it is a file.** It travels with the project the way a screenshot does. It can be read on a machine that cannot run the code, by a person who cannot install it, in a conversation that happened after the machine that produced it was switched off.
-
-One thing before the pictures, because the reflex on meeting a new language is *another toy*. AllSpeak is not offered as a rival to whatever you write in now. It is for the part of a program that can be described in English — what the screen does, what happens when somebody clicks, what order the steps go in — and it takes nothing from the rest. Algorithms, data structures, the tooling you reach for when performance matters: those stay where they are, in the languages and the hands that already do them well. What is new here is only that this part of a program now has a runtime which can be asked what it did.
 
 ---
 
@@ -59,9 +78,35 @@ The picture this article is about is the other kind. It is a picture of a **run*
 
 A picture of a run has two axes, and they are the two questions anybody asks of a program. Up the side is **what**: the parts of the program, in the order the script itself lays them out, so the shape of the file runs from top to bottom. Along the bottom is **when**: not clock time, but the order things actually happened in. Everything the picture shows is a mark at a position on those two axes — *this part of the program, at this moment of the run*.
 
-**Figure 2** — *[to be produced: a bare pair of axes. `what` up the side, labelled with three or four of the parser's own labels; `when` along the bottom, marked in order rather than in seconds. A few bars and dots on it, no legend.]*
+**Figure 2** — the two axes, and the whole of the idea. The grey bars are the parser's own sections at their real positions in the file, each as wide as its longest line; the dots are a handful of the arrivals recorded when §5's run was made, placed at the line they reached and at the step they reached it, and coloured by how often that line had been visited by then. There is no key, no ruler and no numbers, because this is the idea rather than the instrument.
 
-Two cautions for whoever draws it, because both are easy to get wrong and both would mislead. The vertical axis is not line numbers: it is what the program is *doing*, which is why the eye lands on the author's own labels — `ExpandGroups`, `ReadSymbol`, `MeasureFormula` — rather than on `line 388`. And the horizontal axis is order rather than duration, which is the whole reason the record counts commands as well as milliseconds (§4): two runs of one script put the marks in the same left-to-right sequence at quite different distances apart.
+![A pair of axes. Down the left, labelled what, five of the parser's section names sit at their positions in the file with a grey bar beside each; along the bottom, labelled when, are the words first and last. Blue, violet, magenta and red dots are scattered across the bars, and two vertical wires — one orange, one violet — run between them.](figure-2-axes.png)
+
+Two things about that figure, because both are easy to get wrong and both would mislead. The vertical axis is laid out by the file's lines, and the ruler down the side of the picture is numbered accordingly — but what the axis is *for* is what the program is doing, which is why the eye lands on the author's own labels, `ExpandGroups` and `ReadSymbol` and `MeasureFormula`, rather than on a line number. And the horizontal axis is order rather than duration, which is the whole reason the record counts commands as well as milliseconds (§4): two runs of one script put the marks in the same left-to-right sequence at quite different distances apart.
+
+### The picture itself
+
+It is made after the run has finished, from the record — the file described in §4 — so it can be opened later, elsewhere, by somebody who was not there when the program ran. Viewing one needs no more than the editor that shows the code. Here is one, showing a *window* into a run rather than the whole of it:
+
+**Figure 3** — the pane on a window into a run: steps 0–116 and lines 168–510 of a 626-line script, zoomed to 376% horizontally and 194% vertically, with the documentation for the `ReadSymbol` section in the side panel.
+
+![The Graph pane zoomed in, showing the grey bars of the code with coloured marks and vertical transfer lines keyed gosub, go and return along the foot, and the Doc block panel at the right showing the ReadSymbol section](viz-example.png)
+
+**The grey bars are the program.** Each line of *code* is a bar whose width is that line's length, so the code becomes a shape. The documentation is blanked rather than drawn, because on a file written to the convention of §7 the prose is longer than the code by a wide margin and it would bury the flow — but a blanked line keeps its row, so the axis still numbers the file as the editor does. At this magnification the text is unreadable and the language is not identifiable, which is the point: what remains is a **silhouette** a program has and no other program replicates exactly. A forensic examiner would call that valuable evidence, and it is worth not dismissing. Zoom in and the text appears inside the bars; at the top of the scale you are reading the source in place.
+
+**If the vertical axis is *what*, the horizontal axis is *when*.** The run starts at the left and ends at the right, and the scale is counted in commands rather than in nanoseconds (§4 says why). Within one run the two roughly track each other; between two runs only the first is trustworthy.
+
+**The dots mark the places a program can be watched from** — a labelled subroutine, a `while` loop, an event handler, a `return`, and the two marker commands — and a dot appears only where the run actually reached one. **Their colour is how busy that line is**: each starts blue and warms as the line is visited more often, so the busiest parts of the run end up red. A pale dot beside a red one is a comparison a reader can make without arithmetic.
+
+**The vertical lines are the moments control stopped being linear** — the assembly-level `jump`, drawn in three kinds and keyed along the foot of the pane: `gosub`, `go` and `return`. **The colour is what the transfer was** — orange for a call, teal for a jump, pink for a return — and an arrow arriving at a dot says that control reached that line from somewhere else, and how.
+
+**The two scrollbars are the window drawn as a proportion.** A handle's length is how much of the run you are looking at and its position is how far into it you have gone, which is why at a full fit the handle fills its bar and cannot be moved — not because a drag is refused, but because there is nowhere to go.
+
+The picture zooms and pans, so the whole of a large script and the detail of one line are the same view at different distances: the wheel scrolls, shift-wheel and control-wheel zoom the lines and the steps separately, and a drag pans.
+
+**And clicking a dot is where the picture starts answering questions rather than posing them.** A mark brings up, in the side panel, the documentation for the section that line belongs to. In Figure 3 that section is `ReadSymbol` — the very block §5 goes on to quote in full — so a reader can have the picture of what ran and the author's account of why, side by side, without scrolling. That is where AI does a double job: it wrote the code, it wrote the documentation, and the two are kept in step by the mechanism in §7.
+
+**The panel does one more thing, and it is what makes the picture an instrument rather than a diagram.** It can show **values** — the data that arises during a run, which you would otherwise have to scatter `log` commands to see. Here they arrive in context, attached to the visit that produced them: the bar that names the line and the visit also carries the values the program held when it arrived there. What is shown is chosen by an annotation in the code — `@show Total, Row` on the line concerned — and the annotation has no effect whatever on how the program runs. It exists only to say what the recording should carry.
 
 ---
 
@@ -120,7 +165,7 @@ MeasureFormula:
 
 Which is a way of saying: *record the first formula and nothing else*. That took one more step of reading than it looks, and the step is the point: the loop that drives this counts from zero, so `is 0` is the first formula and `is 1` would be the second. The marker is a condition, and a condition is code.
 
-**Figure 3** — *[to be produced: the Graph pane with the `H₂O` recording loaded, whole file in view]*
+**Figure 4** — *[to be produced: the same recording seen whole — the frame rather than a window, where the file's 626 lines compress into one band per section and the spine of calls is the shape. Figure 3 shows a window into the same kind of picture; this one is the whole of it.]*
 
 Here is what the record holds. One window, a dozen milliseconds of wall clock give or take, during which the program executed three hundred and one commands across one hundred and three of the file's six hundred and twenty-six lines. Forty-one arrivals at markers, spread across thirteen marker lines. Thirteen calls and thirteen returns, and sixty-seven jumps generated by the compiler itself for its own `if`s and loops. The single busiest line executed eighteen times. The millisecond figure is the one to distrust — two runs of this same script have given me 11.7 and 13.6 ms on a laptop — and the command count is the one that has not moved, which is §4's argument arriving as evidence.
 
@@ -229,11 +274,13 @@ The claim would not survive contact with a sceptical reader if I did not say thi
 
 There is one more thing here, and it is the thing that decides whether any of it is available to you, so I want to say it plainly rather than leave it as an implication.
 
-Recording a run needs a runtime that can be asked. That is a property of the implementation, not a feature you can add to a language you do not control. It is why the instruments in §1 all stop short in different ways, and why the answer here is not "write a library".
+§1 made the point that a runtime decides what can be seen of a program, and that everything built to watch one is built on what the runtime exposes. The consequence is worth following through, because it is where this article's claim actually lies — and the claim is narrower than it first sounds.
+
+**A recording of a run can be built for a language you do not own**, and people have built them. `coverage` will tell you which lines of Python never ran; `viztracer` writes a trace file in the very format §4 describes; a browser's own developer tools will record and export a performance profile. So the *format* is not the differentiator here, and neither is the idea.
+
+What is different is **where the record is made from.** Every tool above watches through a general-purpose hook that the runtime happens to publish — a line event, an inspector message — and so knows about lines of text in a file. None of them knows that this program has sections, what the author called them, or what the author said they were for. AllSpeak's record is made *by the language*: the two commands that start and stop it are spelled in AllSpeak, the anchors are the author's own labels, and the documentation the author wrote travels inside the picture. That is the difference, and it is the one thing on this list that needs the runtime to be yours.
 
 The second consequence is quieter. A picture of a run is only as useful as the relationship between the picture and the code, and that relationship is a property of the *language* — how many things can be happening at once, how control flow is expressed, whether a line means one thing. A language with a small grammar and explicit flow produces a picture with a readable shape. A language in which a page of arithmetic can hide four callbacks produces a picture that is mostly noise, and the honest thing to say about it is that recording would not have helped.
-
-And the third consequence is the one I did not expect. Because the record names lines and the anchors are the author's own labels, the picture is written in the author's language already — the prose in the sidebar is prose, the labels are names somebody chose. The handful of words the picture itself needs are translated, because AllSpeak's interface words live in the same per-language packs as the language's own vocabulary. So a French team reads a French picture of a French script and an English team reads an English one, and the two can be compared, because underneath they are the same record of the same events.
 
 ---
 

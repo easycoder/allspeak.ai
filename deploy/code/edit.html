@@ -10,6 +10,12 @@
 
 <body>
 <div id="editor-lang" style="display:none">en</div>
+<!-- **Which runtime this project is for, when the project says.** `js` here is the default and matches the
+     runtime's own; a project whose `.allspeak-init` says `runtime: py` is served `py` instead, by the dev
+     server, exactly as the language above is. The visualiser's plugin reads it — a browser cannot read a
+     file, and this is the only way a project's declaration reaches one — and it is what lets the editor
+     refuse a Python project's script in a sentence rather than in a compile error. -->
+<div id="editor-runtime" style="display:none">js</div>
 <!-- **Which copy of the editor is home, and the one thing a pack's page changes.** Empty means this
      directory, so the working tree runs the editor it is editing; a deployed base here means a project runs
      the *released* editor and every update reaches it the moment it is deployed, with no copy to refresh.

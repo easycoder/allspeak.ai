@@ -44,6 +44,11 @@
     variable LangTag
     variable LangDiv
     variable HomeDiv
+    variable ProjectRuntime
+    variable RuntimeDiv
+    variable InitKey
+    variable InitValue
+    variable InitAt
     variable GraphText
     variable SideText
     variable GraphDiv
@@ -256,6 +261,7 @@
                 ! starter AGENTS.md already has the agent create and complete; with no such line it is
                 ! English. Everything else in the page is already language-neutral.
                 put `en` into Lang
+                put `js` into ProjectRuntime
                 put empty into InitText
                 ! The same courtesy as the file above: a project with no manifest yet is an ordinary state — a
                 ! pack ships one, an older project has none — and the answer is English.
@@ -269,24 +275,33 @@
                 end
                 if InitText is not empty
                 begin
-                    ! `field 1 ... delimited by` is the text *after* the marker (measured: the
-                    ! occurrences are numbered, not the segments), so with one `lang:` line the
-                    ! language is field 1 and there is no field 2.
-                    put field 1 of InitText delimited by `lang:` into Lang
-                    replace ` ` with `` in Lang
-                    replace newline with `` in Lang
-                    if Lang is empty put `en` into Lang
+                    ! **Two keys out of one file, read a line at a time** — `InitValue` is the reader, and
+                    ! the reason it is one is that this used to take everything after `lang:` and strip the
+                    ! newlines out of it. That was correct only while the file was one line, and the packs
+                    ! tell the agent to add a name and a type as the project is set up, so a set-up project's
+                    ! language arrived as `enname:Myapptype:cli` and the editor was served in English
+                    ! whatever the project's language. Measured 2026-10-05.
+                    put `lang:` into InitKey
+                    gosub to ReadInitKey
+                    if InitValue is not empty put InitValue into Lang
+                    put `runtime:` into InitKey
+                    gosub to ReadInitKey
+                    if InitValue is not empty put InitValue into ProjectRuntime
                 end
                 get Page from url RepoBase cat `edit.html`
                     on failure
                     begin
                         return `Not found` to Files with status 404
                     end
+                if ProjectRuntime is not `js` and ProjectRuntime is not `py`
+                    put `js` into ProjectRuntime
                 put `<html lang="` cat Lang cat `">` into LangTag
                 put `id="editor-lang" style="display:none">` cat Lang cat `<` into LangDiv
+                put `id="editor-runtime" style="display:none">` cat ProjectRuntime cat `<` into RuntimeDiv
                 put `id="editor-home" style="display:none">` cat DistBase cat `</div>` into HomeDiv
                 replace `<html lang="en">` with LangTag in Page
                 replace `id="editor-lang" style="display:none">en<` with LangDiv in Page
+                replace `id="editor-runtime" style="display:none">js<` with RuntimeDiv in Page
                 replace `id="editor-home" style="display:none"></div>` with HomeDiv in Page
                 ! **The pane's two sources travel inside the page, and the server is what fetches them.**
                 !
@@ -353,3 +368,42 @@
             increment TabIndex
         end
     end
+
+    ! The main flow ends here and the server keeps the process alive, so the subroutine below is never fallen
+    ! into — which is the whole reason this `stop` is written rather than implied by the end of the file.
+    stop
+
+!   One `key: value` out of a project's `.allspeak-init`.
+!
+!   **Line by line, and stopping at the end of the line.** The file is the project's own declaration: the pack
+!   writes `lang:` and `runtime:`, and the agent adds a project name and type as the project is set up. So a
+!   reader that took everything after the key would run into the next line and answer `enname:Myapp` — which is
+!   what the reader above did
+!   what this did until 2026-10-05, and it served every set-up project an editor in English whatever its
+!   language. A trailing `!` comment ends the value, as it does everywhere else in the language, because a
+!   person editing this file will try it.
+!
+!   `field 1 ... delimited by` is the text *after* the marker and `position of` counts from 0, so `left` of a
+!   found position is everything before it. Both measured rather than assumed.
+!
+!   InitText and InitKey in; InitValue out, empty when the key is absent or has no value. **The label is not
+!   called `InitValue`** — a label and a variable share one symbol table here, and naming both the same would be
+!   the sort of coincidence that keeps working until something reads the wrong one.
+ReadInitKey:
+    put empty into InitValue
+    if InitText is empty
+        return
+    put field 1 of InitText delimited by InitKey into InitValue
+    put position of newline in InitValue into InitAt
+    if InitAt is greater than -1
+    begin
+        put left InitAt of InitValue into InitValue
+    end
+    put position of `!` in InitValue into InitAt
+    if InitAt is greater than -1
+    begin
+        put left InitAt of InitValue into InitValue
+    end
+    replace ` ` with `` in InitValue
+    replace tab with `` in InitValue
+    return

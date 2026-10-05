@@ -54,6 +54,18 @@ if (!fs.existsSync(pluginPath)) {
 }
 
 vm.createContext(context);
+
+// **The runtime's language, because a real page has one.** The plugin says what it recorded in the run's own
+// language, out of `diagnostics` in whichever pack is active — so a context with no `AllSpeak_Language` at all
+// is not a smaller version of a page, it is a host that cannot exist, and the messages this check asserts on
+// would come back as bare keys. That is the "a check must set up what the real path sets up" rule, and it is
+// the reason this check used to be able to pass with the English text living inside `Language.js`.
+for (const file of [`Language.js`, `LanguagePack_en.js`]) {
+	const path_ = path.join(root, `js/allspeak`, file);
+	vm.runInContext(fs.readFileSync(path_, `utf8`), context);
+}
+vm.runInContext(`AllSpeak_Language.init(AllSpeak_LanguagePack_en);`, context);
+
 vm.runInContext(fs.readFileSync(pluginPath, `utf8`), context);
 const AllSpeak_Viz = context.window.AllSpeak_Viz;
 
