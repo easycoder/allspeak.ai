@@ -151,33 +151,34 @@ Both come from friction points in the chat/forum project, April 2026.
 
 Done and closed: **string split by delimiter** (`split … by` and `put field N of … delimited by`), implemented in both runtimes; and **append to a JSON array in a file** (Python only; JS uses `rest post` to a server, and the in-memory `append` covers the JS case).
 
-## A script cannot build a json list — found designing the recording clip, 2026-10-05
+## `json of` a holder gives one slot, not the set — 2026-10-05, and the earlier claim is corrected
 
-The Graph pane's clip has to reduce the trace's event list to the events inside a step range. The pane is an
-AllSpeak script, so the natural implementation is a filter in the script — and that is not possible today.
+Found designing the recording clip. **An earlier version of this section said "a script cannot build a json
+list". That was broader than the evidence, and Graham's question — whether an "array" means the cursor-like
+indexed pattern *whose whole element set converts to a single JSON value* — is exactly the distinction.** What
+is actually measured, in both runtimes:
 
-Probed (in `/tmp`, both runtimes agree):
+- **A holder is the cursor-like indexed pattern**, and the cursor is stronger than it looks. It is declared with
+  `set the elements of X to N`; slots are written with `index X to I` + `put V into X`; a slot is read with
+  `index X to I` + `put X into G`. **`split` fills the variable it names** with a slot per line — the editor's
+  walk is `put Source into Lines` *then* `split Lines`, and splitting the original instead is how a copy of it
+  then yields one element rather than all of them.
+- **`put A into B` copies the value the cursor stands on, not the set.** Measured: after `split Text`, a
+  `put Text into Holder` left `Holder` holding **one** element.
+- **`json of <holder>` gives one slot's value too.** Measured: a three-slot holder of dicts came out as
+  `{"steps":9,"n":"c"}` (the last written), and a two-slot holder of numbers as `9`.
 
-- `set the elements of Kept to N`, writing slots with `index Kept to I` + `put Ev into Kept`, then trimming with
-  `set the elements of Kept to I` **builds the right array** — `kept 2` from three events, the filter itself
-  works.
-- **`put json of <that array> into X` does not give a json list**: `the json count of X` is *undefined*.
-- **`x has element 0` is *false* on an array** (`array: has element 0 is false`), so a filtered array cannot be
-  read by the pane's own loops.
+**So "the whole element set as a single JSON value" is not something the language spells today.** That is the
+real gap, and it is narrower than the first version of this note claimed: reading and writing slots works;
+what is missing is a way to say *the whole holder, as one json list*.
 
-And the two forms are not interchangeable, which is the trap: **a json list is one value in one slot**, so
-`element N of X` reads *inside* it and `index X to N` would hand back the whole list; an **array** is a slot per
-element, so `index X to N` is the read and `has element` says nothing. The editor's buffer walk uses `index` +
-`has element` on its `split` array for exactly that reason, and the pane's draw loops use `element N of` on the
-json list for exactly the other.
+**Next test, and it is the one the probe botched**: `put Text into Holder` **then** `split Holder`, and then ask
+`the elements of Holder`, `Holder has element 0`, and `json of Holder`. The first probe split `Text` and copied
+it afterwards, so every reading of the copy was a reading of one slot — which is why `has element` looked false
+and why the conclusion was drawn from the wrong object. **A probe that manipulates a cursor has to check which
+object the cursor is on before it concludes anything.**
 
-**Consequences.** A script that wants to *filter a json list* has no way to build the result: it can read one,
-and it can build an array, but it cannot turn an array into a list. Two ways out, and the second is better:
-
-1. Give the language a way to build a json list — `json of` an array would be the obvious spelling, and it
-   currently yields something `the json count of` cannot read.
-2. **Do the filtering where JSON is JSON** — the `viz` plugin, in both runtimes. It already reads and writes
-   trace documents, it has real lists, and the pane already depends on it for everything it draws.
-
-**Until one of those exists**, the clip is plugin work, not pane work — and that also means the *first* thing
-the clip build should produce is a plugin call the pane can make, not a button.
+**What this means for the clip.** A filtered list of events still needs a home. Two candidates, unchanged: a way
+to spell "this whole holder as a json list", or filtering where JSON is JSON — the `viz` plugin, in both
+runtimes, which already reads and writes trace documents and which the pane already depends on. The plugin
+remains the likelier answer, but the language question comes first because it is cheaper to answer.
