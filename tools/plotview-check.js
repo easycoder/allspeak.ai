@@ -470,6 +470,13 @@ const drawing = () => {
 		hitVisit: viewVar(`VizHitVisit`),
 		hitTotal: viewVar(`VizHitTotal`),
 		handles: { v: boxOf(`ec-VizHandleV`), h: boxOf(`ec-VizHandleH`) },
+		// **The clip bar as drawn**: the two markers' x and the band. Kept in the snapshot rather than
+		// read off the DOM at the check, because the phases after this one move the markers again and
+		// the live DOM is then a different picture — the same reason the press checks keep their phase.
+		clipBar: [`ec-VizClipMarkIn`, `ec-VizClipMarkOut`, `ec-VizClipBand`].map(id => {
+			const el = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(id));
+			return { id, x: el ? Number(el.attributes.x) : null, w: el ? Number(el.attributes.width) : null };
+		}),
 		steps: texts
 			.filter(t => String(t.attributes.id || ``).startsWith(`ec-VizXLabel`))
 			.map(t => Number(t.innerHTML))
@@ -612,6 +619,27 @@ const pressTroughAndDrag = () => {
 	dragTo(cx - 140, cy + 180);
 };
 
+// ---- the clip bar, driven the way a reader drives it ----
+// The marker's own place on the bar: the rect is four units wide and the view centres it on the step it
+// names, so the step's x is the box's x plus two. Read off the drawn rect rather than recomputed, which
+// is what a reader's pointer actually meets.
+const markerStepX = which => {
+	const box = boxOf(`ec-VizClipMark${which}`);
+	return box ? box.x + 2 : null;
+};
+const CLIP_STRIP_Y = 688;   // inside the strip: the markers are drawn 678..694
+// Press a marker, drag it to a place on the bar, and **let go** — and the release is the whole of it.
+// `VizRelease` is what applies the range: a drag on its own moves the marker and nothing else, which is
+// why the phases above hold the two halves apart rather than hiding them in here.
+const dragClipMarker = (which, toX) => {
+	const cx = markerStepX(which);
+	if (cx === null) throw new Error(`the ${which} clip marker was not drawn`);
+	pressAt(cx, CLIP_STRIP_Y);
+	const [dx, dy] = toClient(toX, CLIP_STRIP_Y);
+	dragTo(dx, dy);
+	entry(`VizRelease`);
+};
+
 const PHASES = [
 	{ name: `fitted`, act: null },
 	{ name: `shift-wheel (lines) in`, act: linesIn },
@@ -698,6 +726,19 @@ const PHASES = [
 	{ name: `the steps axis, zoomed in, so a clip is not the whole run`, act: stepsIn },
 	{ name: `clipped to the window`, act: () => entry(`VizClip`) },
 	{ name: `unclipped, so the whole recording is back`, act: () => entry(`VizUnclip`) },
+	// **The bar, which is the control a person actually has.** It is last of all for the same reason the
+	// clip pair is: it moves the window. The drag and the drop are two phases on purpose — between them
+	// the picture must be *unchanged*, and that the marker moved anyway is what says the drag costs no
+	// drawing. See the checks below.
+	{ name: `the clip bar: grab the OUT marker and drag it in, without letting go`, act: () => {
+		const cx = markerStepX(`Out`);
+		if (cx === null) throw new Error(`the OUT clip marker was not drawn to grab`);
+		pressAt(cx, CLIP_STRIP_Y);
+		const [dx, dy] = toClient(400, CLIP_STRIP_Y);
+		dragTo(dx, dy);
+	} },
+	{ name: `the clip bar: let go, which applies the range`, act: () => entry(`VizRelease`) },
+	{ name: `the clip bar: drag the marker home and let go, which clears the clip`, act: () => dragClipMarker(`Out`, 940) },
 ];
 
 // **What each gesture cost.** Reported rather than asserted, because the pane's cost is a property of the
@@ -1680,6 +1721,79 @@ if (!clippedState || !beforeClipState || !unclippedState || !fitAgainState) {
 	console.log(!/clipped to steps/.test(statusOf(unclippedState))
 		? `  OK: and the notice is gone from the status line`
 		: `  FAIL: the clip notice survived the unclip: "${statusOf(unclippedState)}"`);
+}
+
+// ---- the clip bar ----
+// **The control, and the three claims it makes.** A marker dragged inward clips the recording with no
+// zoom at all — the expensive gesture the bar exists to replace — and the notice, the picture and the
+// markers must agree about the range. Dragged home again there is no clip, because a range that *is*
+// the recording is not a range.
+//
+// And the claim in between, which is the design rather than a detail: **the drag itself draws
+// nothing.** The picture between the grab and the drop has to be byte-identical to the one before it
+// while the marker has visibly moved — that is what makes choosing a range cost one drawing instead
+// of five or six, and it is the one thing about this control that a later change could quietly lose.
+const barAt = indexOf(`the clip bar: grab the OUT marker`);
+const barDragged = barAt >= 0 ? taken[barAt][1] : null;
+const barBefore = barAt > 0 ? taken[barAt - 1][1] : null;
+const barApplied = barAt >= 0 && taken[barAt + 1] ? taken[barAt + 1][1] : null;
+const barHome = barAt >= 0 && taken[barAt + 2] ? taken[barAt + 2][1] : null;
+if (!barDragged || !barBefore || !barApplied || !barHome) {
+	console.log(`  ..: the clip bar phases did not run, so the bar cannot be checked`);
+} else {
+	// The rect is four units wide and the view centres it on the step it names, so a marker's *step* x
+	// is its box's x plus two — the same correction the drag helper makes, and the reason a marker read
+	// straight off the box is a step out when the mapping is inverted.
+	const boxX = (state, id) => (state.clipBar.find(m => m.id === id) || {}).x;
+	const barInX = state => boxX(state, `ec-VizClipMarkIn`) + 2;
+	const barOutX = state => boxX(state, `ec-VizClipMarkOut`) + 2;
+	console.log(barOutX(barDragged) !== barOutX(barBefore) && barInX(barDragged) === barInX(barBefore)
+		? `  OK: dragging the OUT marker moves it and leaves IN where it was (x ${boxX(barBefore, `ec-VizClipMarkOut`)} to ${boxX(barDragged, `ec-VizClipMarkOut`)}, IN at ${boxX(barDragged, `ec-VizClipMarkIn`)})`
+		: `  FAIL: the marker drag moved the wrong thing (OUT ${boxX(barBefore, `ec-VizClipMarkOut`)} to ${boxX(barDragged, `ec-VizClipMarkOut`)}, IN ${boxX(barDragged, `ec-VizClipMarkIn`)})`);
+	console.log(barDragged.raw === barBefore.raw
+		? `  OK: and the picture was not redrawn while the marker moved — the drag costs no drawing, `
+			+ `which is the whole reason for a bar rather than a zoom`
+		: `  FAIL: the marker drag redrew the picture, so choosing a range costs a drawing per move`);
+	// The range, cross-checked: what the notice says against where the markers are drawn, read back
+	// through the bar's own mapping. `VizRunFrom`/`VizRunTo` are the view's, so this is one claim about
+	// the picture and the recording rather than a number compared with itself.
+	const runFrom = Number(viewVar(`VizRunFrom`)), runTo = Number(viewVar(`VizRunTo`));
+	const stepAtX = x => runFrom + Math.floor((x - 60) * (runTo - runFrom) / 880);
+	// Four groups: the range's two ends, and how many records the range kept of the recording's whole.
+	const barRange = /clipped to steps (-?\d+)-(-?\d+): (\d+) of (\d+) records/.exec(statusOf(barApplied));
+	console.log(barRange && Number(barRange[1]) === stepAtX(barInX(barDragged))
+		&& Number(barRange[2]) === stepAtX(barOutX(barDragged)) && Number(barRange[4]) === recordCount
+		? `  OK: and the notice agrees with the markers — steps ${barRange[1]}-${barRange[2]}, which is `
+			+ `where the bar puts x=${barInX(barDragged)} and x=${barOutX(barDragged)}, of the recording's ${recordCount} records`
+		: `  FAIL: the notice and the bar disagree ("${statusOf(barApplied)}", markers at x=${barInX(barDragged)} `
+			+ `and x=${barOutX(barDragged)}, whose steps are ${stepAtX(barInX(barDragged))} and `
+			+ `${stepAtX(barOutX(barDragged))}, ${recordCount} records)`);
+	console.log(barRange && Number(barRange[3]) > 0 && Number(barRange[3]) < Number(barRange[4])
+		? `  OK: and it kept some of the recording and not all of it (${barRange[3]} of ${barRange[4]} records)`
+		: `  FAIL: the range the bar marked kept ${barRange && barRange[3]} of ${barRange && barRange[4]} records, `
+			+ `so it is not a narrowing of the recording`);
+	// **And the picture is of fewer marks — but only where the picture and the recording share an axis.**
+	// They do on a recording that opens one `viz` window, which is what the Python recorder writes and
+	// what this harness is tuned to. A recording that opens several has the pane's extent collapsed to
+	// the last window's step count by a fault of its own (`TODO-viz.md`), and then the fit is not a
+	// baseline the clip can be measured against — the check says so rather than failing for it.
+	if (Number(viewVar(`VizFitXW`)) !== runTo) {
+		console.log(`  ..: the picture's steps axis (${viewVar(`VizFitXW`)}) is not the recording's (${runTo}) — `
+			+ `this recording opens more than one viz window — so the clipped picture cannot be compared with `
+			+ `the fit as "fewer marks"`);
+	} else {
+		console.log(markCount(barApplied) < markCount(fitAgainState)
+			? `  OK: and the clip the bar applied really is narrower — fewer marks than the whole recording `
+				+ `(${markCount(barApplied)} against ${markCount(fitAgainState)})`
+			: `  FAIL: the clip the bar applied kept the whole recording (${markCount(barApplied)} marks)`);
+	}
+	console.log(barHome.raw === fitAgainState.raw
+		? `  OK: and dragging the marker home clears the clip — the picture is the fit again, byte for byte`
+		: `  FAIL: dragging the marker home left a clip behind (${markCount(barHome)} marks against the `
+			+ `fit's ${markCount(fitAgainState)})`);
+	console.log(barOutX(barHome) === 940
+		? `  OK: with the marker back at the end of the bar (x=${barOutX(barHome)})`
+		: `  FAIL: the marker came home to x=${barOutX(barHome)} rather than the bar's end`);
 }
 
 // What it asked the DOM for, and what the layers actually contain.
