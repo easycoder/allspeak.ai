@@ -19,6 +19,16 @@
 // have altered the fitted picture: run the version before the change and the version after it
 // against the same trace and diff the two reports.
 //
+// Two modes exist for asking what the view *costs*, which the phases above cannot answer: they redraw about
+// fifty times over, and a big recording never finishes them — which is the complaint that prompted both.
+//
+//   PLOTVIEW_ONEDRAW=1     draw the picture, print the milliseconds, stop. A whole-load figure, covering the
+//                          two drawings the host script makes; the per-drawing number is the pane's own
+//                          `DrawMillis`.
+//   PLOTVIEW_GESTURES=1    run every phase and print the dearest five by what the *view* measured for each
+//                          (`DrawMillis`, which each drawing writes at its own two ends). Not this harness's
+//                          wall clock, which is dominated by its own patient settling.
+//
 const fs = require('fs');
 // **This harness runs the drawing, so it needs the runtime it runs on.** A copy shipped inside a
 // starter pack sits beside the editor but not beside `js/`, because a pack is a client of the CDN
@@ -128,7 +138,7 @@ if (viewStart < 0) {
 // view's own draw hands over to it. `VizSlide` is the same case again, and it is declared with the
 // *gestures* up there rather than with the view's own state for exactly the reason it has to be
 // repeated here: `on drag` reads it before any of the view's declarations have been reached.
-const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\n`
+const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable DrawMillis\nvariable VizEstimate\nvariable DrawStarted\n`
 	+ moduleSource.slice(viewStart);
 const trace = fs.readFileSync(tracePath, `utf8`);
 // What the recording says the transfers were, by kind. The view decides which of these to draw and
@@ -243,7 +253,14 @@ try {
 	program.running = true;
 	const out = process.stdout.write.bind(process.stdout);
 	console.log = (...a) => out(a.join(` `) + `\n`);
+	const drawClock = Date.now();
 	AllSpeak_Run.run(program, 0);
+	if (process.env.PLOTVIEW_ONEDRAW) {
+		const ms = Date.now() - drawClock;
+		process.stdout.write(`load and both drawings: ${ms} ms for ${trace.length} bytes = `
+			+ `${(ms * 1024 / trace.length).toFixed(2)} ms/KB\n`);
+		process.exit(0);
+	}
 } catch (err) {
 	process.stderr.write(`FAIL: ${String(err.message || err).split(`\n`)[0]}\n`);
 	if (err && err.stack) process.stderr.write(String(err.stack).split(`\n`).slice(0, 6).join(`\n`) + `\n`);
@@ -430,6 +447,15 @@ const drawing = () => {
 			const m = /(\d+)-(\d+)\s*$/.exec(String((status || {}).innerHTML || ``));
 			return m ? [Number(m[1]), Number(m[2])] : null;
 		})(),
+		// **What the pane says about the mark under the pointer**, on a line of its own under the status
+		// line. Read with the view's own variables beside it, so this is a known-answer check rather than
+		// one output compared with another: the words have to agree with the counts they name.
+		hit: String((texts.find(t => String(t.attributes.id || ``).startsWith(`ec-VizHitStatus`)) || {}).innerHTML || ``),
+		// ...and the counts it was built from, read here rather than at the check: a press clears them when
+		// the next press's walk starts, and the checks below press more marks on the way past.
+		hitLine: viewVar(`VizHit`),
+		hitVisit: viewVar(`VizHitVisit`),
+		hitTotal: viewVar(`VizHitTotal`),
 		handles: { v: boxOf(`ec-VizHandleV`), h: boxOf(`ec-VizHandleH`) },
 		steps: texts
 			.filter(t => String(t.attributes.id || ``).startsWith(`ec-VizXLabel`))
@@ -438,7 +464,12 @@ const drawing = () => {
 		href,
 		raw: JSON.stringify([
 			paths.map(p => p.attributes.d),
-			texts.map(t => [t.attributes.x, t.attributes.y, t.innerHTML]),
+			// **The mark's own report is left out, and it is the one thing a press is *for* changing.** The
+			// rest of the snapshot has to be byte-identical across a press — that is the property the checks
+			// below rest on — and the figures on the pane's foot are the news a press produces, so including
+			// them here would make the check fail for doing its job. Moved to the pane on 2026-10-05.
+			texts.filter(t => !String(t.attributes.id || ``).startsWith(`ec-VizHitStatus`))
+				.map(t => [t.attributes.x, t.attributes.y, t.innerHTML]),
 			picture ? [picture.attributes.x, picture.attributes.y, picture.attributes.width, picture.attributes.height] : null,
 		]),
 	};
@@ -632,7 +663,15 @@ const PHASES = [
 	} },
 ];
 
+// **What each gesture cost.** Reported rather than asserted, because the pane's cost is a property of the
+// recording and the machine, not of correctness — and because the split it decides was proposed from reading
+// the code, which has already been wrong twice in this file's history. `-- gestures` prints it.
+const GESTURE_REPORT = process.env.PLOTVIEW_GESTURES === `1`;
 const taken = [];
+// When the phase's gesture was issued, so the settled picture that follows it can be charged to it. Module
+// scope rather than the loop body: the phase's own `act` runs after the *previous* one has settled, and the
+// figure wanted here is how long the picture took to catch up with it.
+let actClock = 0;
 let phase = 0;
 let lastSnapshot = null;
 let quietTicks = 0;
@@ -659,7 +698,15 @@ const settle = setInterval(() => {
 	if (!((sawChange && quietTicks >= 4) || quietTicks >= 80)) {
 		return;
 	}
-	taken.push([PHASES[phase].name, drawing()]);
+	// **One drawing, timed, and then stop — `PLOTVIEW_ONEDRAW=1`.** The phases below redraw the picture about
+	// fifty times over, which is the right way to exercise the gestures and no way at all to measure a big
+	// recording: Graham's 472KB trace never finishes them, and that is the whole complaint. This is the first
+	// moment the number means anything — a drawing is atomic, so the run returns when the two load-time
+	// drawings are behind it.
+	// **The drawing's own number, not this harness's patience.** Reading the wall clock here measures the
+	// settle waiting (four quiet ticks at the poll's period, ~3s) far more than it measures the gesture, which
+	// is what the first version of this did. `Draw` times itself end to end, gestures included.
+	taken.push([PHASES[phase].name, drawing(), viewVar(`DrawMillis`)]);
 	phase++;
 	if (phase >= PHASES.length) {
 		clearInterval(settle);
@@ -669,6 +716,7 @@ const settle = setInterval(() => {
 	quietTicks = 0;
 	sawChange = false;
 	lastSnapshot = null;
+	actClock = Date.now();
 	try {
 		if (PHASES[phase].act) PHASES[phase].act();
 	} catch (err) {
@@ -1426,7 +1474,8 @@ const pressed = taken[taken.length - 1];
 const beforePress = taken[taken.length - 2];
 if (pressed && beforePress) {
 	console.log(pressed[1].raw === beforePress[1].raw
-		? `  OK: and the press changed nothing on screen — the picture is byte-identical across it`
+		? `  OK: and the press changed nothing on screen — the picture is byte-identical across it, `
+			+ `the mark's figures on the foot being the one thing a press is for`
 		: `  FAIL: a press on a mark repainted the picture`);
 }
 const pressedTicks = (pressed && pressed[1].ticks) || [];
@@ -1498,6 +1547,17 @@ if (!rowWithTwo) {
 			total: Number(viewVar(`VizHitTotal`)),
 		};
 	};
+// **The mark's figures are on the pane's own foot, and they have to match the counts they name.** They
+// moved there from the sidebar on 2026-10-05 — a reader pointing at a dot was reading the numbers at the
+// other side of a big screen — and this is the check that the two did not part company on the way: the
+// expected line is built from the view's own variables rather than copied from a run.
+const saidLine = pressed[1].hit;
+const wantLine = `line ${pressed[1].hitLine}   visit ${pressed[1].hitVisit}`
+	+ (Number(pressed[1].hitTotal) > 0 ? ` of ${pressed[1].hitTotal}` : ``);
+console.log(saidLine === wantLine
+	? `  OK: the pane says the mark's line and visit under its status line ("${saidLine}")`
+	: `  FAIL: the pane's foot says "${saidLine}" where its own counts make it "${wantLine}"`);
+
 	const first = visitOf(rowWithTwo.xs[0]);
 	const last = visitOf(rowWithTwo.xs[rowWithTwo.xs.length - 1]);
 	const told = first.line === last.line && first.line > 0
@@ -1557,6 +1617,17 @@ if (process.argv[3]) {
 <div id="panel">${markup}</div>
 `);
 	console.log(`\npage written: ${process.argv[3]}`);
+}
+// **One line per phase, in milliseconds, for whoever is asking what the picture costs to move.** The five
+// dearest are the interesting ones: a pan that costs as much as the first drawing is the whole question, and
+// the answer decides whether the drawing needs splitting or something else does.
+if (GESTURE_REPORT) {
+	const rows = taken.map(t => [t[0], Number(t[2])]).filter(([, ms]) => ms >= 0);
+	const sorted = rows.slice().sort((a, b) => b[1] - a[1]);
+	console.log(`\ngestures: ${rows.length} phase(s), dearest five`);
+	for (const [name, ms] of sorted.slice(0, 5)) console.log(`  ${ms} ms  ${name}`);
+	const total = rows.reduce((a, [, ms]) => a + ms, 0);
+	console.log(`  total ${total} ms; median ${sorted[Math.floor(sorted.length / 2)][1]} ms`);
 }
 const texts = Object.values(byId).filter(e => e.tagName === `text` || e.tagName === `svgtext`);
 for (const e of texts) {

@@ -63,6 +63,13 @@ Chaque bloc de documentation inclut un hash du code enveloppé sous la forme `@h
 python3 tools/asdoc-check.py --write <file>
 ```
 
+C'est la commande **dans ce dépôt**, où l'analyseur est un checkout. Dans un projet, ce n'est pas le cas : il est *publié* plutôt que livré, donc récupère-le dans ton propre répertoire de travail et exécute cette copie — jamais dans le projet, où elle deviendrait une copie périmée sans que personne ne le voie. Le `.txt` n'est pas une erreur : le site *exécute* un `.py` qu'on lui demande au lieu de le servir :
+
+```
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.txt -o /tmp/asdoc-check.py
+python3 /tmp/asdoc-check.py --write <file>
+```
+
 Un hash périmé signifie que le code a changé sans que la prose ait été relue — l'analyseur le signale comme un avertissement. L'auteur relit la prose, décide si elle décrit toujours le code avec exactitude, puis édite la prose ou marque le bloc comme vérifié.
 
 ## Le mécanisme `@verified`

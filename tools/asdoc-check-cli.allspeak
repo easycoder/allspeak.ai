@@ -20,9 +20,10 @@
 !!
 !! V1 is read-only — refreshing stored @hash lines is left to the
 !! Python tool until the AS analyser is mature enough to take over.
-!!!
 
     script ASDocCheckCLI
+!! @hash addd935a
+!!!
 
 !! Variable declarations, grouped by purpose. Anything starting Sec...
 !! resets each time a new section opens; anything starting Total...

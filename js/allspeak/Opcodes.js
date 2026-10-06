@@ -61,6 +61,7 @@ const AllSpeak_Opcodes = {
 		case `replace`:   return `REPLACE`;
 		case `sort`:      return `SORT`;
 		case `split`:     return `SPLIT`;
+		case `join`:      return `JOIN`;
 		case `filter`:    return `FILTER`;
 		case `index`:     return `INDEX`;
 

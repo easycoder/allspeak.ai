@@ -7,6 +7,7 @@
     "2.9"
   ],
   "script": "EC-0009-starts-ends-with.allspeak",
+  "note": "The declaration was `string S`, which is not a keyword in either runtime — so this case had been failing to compile everywhere since 2026-09-27. `variable S` carries it: the subject is the two conditions, and the declaration was only scaffolding.",
   "expect": {
     "logs": [
       "starts ok",

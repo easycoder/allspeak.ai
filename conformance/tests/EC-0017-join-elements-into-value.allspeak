@@ -1,0 +1,45 @@
+! EC-0017: join — a holder's whole element set as one value
+
+variable Items
+variable Joined
+variable Untouched
+
+set the elements of Items to 4
+index Items to 0
+put `a` into Items
+index Items to 1
+put `b` into Items
+index Items to 2
+put `c` into Items
+index Items to 3
+put `d` into Items
+
+! No delimiter: the elements run together.
+join Items into Joined
+log Joined
+
+! `with` is the text form's separator.
+join Items with `,` into Joined
+log Joined
+
+! `from N to M of` is the half-open slice Items[N:M], so 0 to 1 is one element...
+join from 0 to 1 of Items into Joined
+log `[` cat Joined cat `]`
+
+! ...and 4 to 4 is empty, as a slice of a string would be.
+join from 4 to 4 of Items into Joined
+log `[` cat Joined cat `]`
+
+! Out-of-range bounds clamp rather than raise, and M < N is empty.
+join from 2 to 99 of Items into Joined
+log Joined
+join from 3 to 1 of Items into Joined
+log `[` cat Joined cat `]`
+
+! A holder that was never given elements joins as nothing. The bare name
+! after `join` is the whole holder — the one place in the language it is.
+join Untouched into Joined
+log `[` cat Joined cat `]`
+
+! `as json` is deliberately not asserted here: what a reader sees of it is
+! runtime-specific. See the note in this case's metadata.

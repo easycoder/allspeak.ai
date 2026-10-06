@@ -7,10 +7,13 @@
  * file for use with run_conformance.py --actuals.
  *
  * Usage:
- *   node conformance/as_js_runner.js
+ *   node conformance/ec_js_runner.js
  *     [--conformance-root conformance]
- *     [--dist-path dist/allspeak.js]
+ *     [--dist-path deploy/dist/allspeak.js]
  *     [--output conformance/actuals-js-browser.json]
+ *
+ * Run `./build-allspeak` first: the runner loads the *built* bundle, so a runtime
+ * change is invisible to it until the bundle is rebuilt.
  */
 
 'use strict';

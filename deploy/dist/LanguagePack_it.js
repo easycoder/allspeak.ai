@@ -913,6 +913,12 @@ var AllSpeak_LanguagePack_it = {
         "dividi {value} su|per {separator} dando|in {variable}"
       ]
     },
+    "JOIN": {
+      "keyword": "unisci",
+      "patterns": [
+        "unisci [da {first} a {last} di] {array} [con {delimiter}] [come json] in {variable}"
+      ]
+    },
     "STOP": {
       "keyword": "ferma",
       "patterns": [
@@ -1126,6 +1132,7 @@ var AllSpeak_LanguagePack_it = {
     "rename": "rinomina",
     "add": "aggiungi",
     "split": "dividi",
+    "join": "unisci",
     "replace": "sostituisci",
     "count": "conteggio",
     "size": "dimensione",

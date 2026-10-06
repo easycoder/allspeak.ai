@@ -2093,6 +2093,125 @@ class Core(Handler):
 
         return self.nextPC()
 
+    # Join a variable's elements into a single value — the inverse of split, and the one place
+    # where a bare holder name means the whole holder rather than the slot the cursor is on.
+    # join [from {first} to {last} of] {array} [with {delimiter}] [as json] into {variable}
+    def k_join(self, command):
+        # The range comes *before* the source, so the next token decides which shape this is.
+        # Every test below asks whether a token is a *form* of a word rather than what a reverse
+        # lookup says it is — see `check_grammar` in ./sync-language-packs for why.
+        if language.matches_word(self.peek(), 'from'):
+            self.nextToken()                          # on 'from'
+            command['from'] = self.nextValue()        # on the last token of N
+            if not language.matches_word(self.peek(), 'to'):
+                self.warning('Expected a bound after "from" in join')
+                return False
+            self.nextToken()                          # on 'to'
+            command['to'] = self.nextValue()          # on the last token of M
+            if not language.matches_word(self.peek(), 'of'):
+                self.warning('Expected "of" after the range in join')
+                return False
+            self.nextToken()                          # on 'of'
+            if not self.nextIsSymbol():               # on the source symbol
+                self.noSymbolWarning()
+                return False
+        elif not self.nextIsSymbol():                 # on the source symbol
+            self.noSymbolWarning()
+            return False
+        source = self.getSymbolRecord()
+        # The source is a holder read through the *cursor*, so it is a variable: a declared `list`
+        # is a different shape (its items are not slots), and reading `elements` off one would
+        # quietly join the whole list as a single element.
+        if not isinstance(source['object'], ECVariable):
+            FatalError(self.compiler, f"'{source['name']}' is not a variable")
+        command['source'] = source['name']
+        # The two modifiers, in either order: `with <delimiter>` gives the text form its
+        # separator, and `as json` asks for one json *value* rather than a string.
+        command['asJson'] = False
+        while True:
+            if language.matches_word(self.peek(), 'with'):
+                self.nextToken()                      # on 'with'
+                command['delimiter'] = self.nextValue()
+                continue
+            if language.matches_word(self.peek(), 'as'):
+                self.nextToken()                      # on 'as'
+                if not language.matches_word(self.peek(), 'json'):
+                    FatalError(self.compiler, 'Expected "json" after "as"')
+                self.nextToken()                      # on 'json'
+                command['asJson'] = True
+                continue
+            break
+        # `into`, because it is the word the language already uses for "the slot you are about to
+        # write" — and a bare name on this side means that slot, as it does in `put V into X`.
+        if not language.matches_word(self.peek(), 'into'):
+            self.warning('Expected "into <variable>" after the joined values')
+            return False
+        self.nextToken()                              # on 'into'
+        if not self.nextIsSymbol():                   # on the target symbol
+            self.noSymbolWarning()
+            return False
+        target = self.getSymbolRecord()
+        # A `list` is accepted as well as a variable **for the json form only**: it is where a
+        # joined json value belongs on this runtime, the same divergence `collections` documents
+        # for every collection shape. Text into a list would be a string where a sequence is
+        # wanted, and would read back a character at a time.
+        holders = (ECVariable, ECList) if command['asJson'] else (ECVariable,)
+        if not isinstance(target['object'], holders):
+            FatalError(self.compiler, f"'{target['name']}' is not a variable")
+        command['target'] = target['name']
+        self.add(command)
+        return True
+
+    def r_join(self, command):
+        source = self.getObject(self.getVariable(command['source']))
+        elements = source.getElements()
+        # Half-open, as a string slice is: `from 4 to 5` is one element and `from 4 to 4` is empty.
+        # Out-of-range bounds clamp rather than raise, and `M < N` is empty.
+        try:
+            first = 0 if command.get('from') is None else int(self.textify(command['from']))
+        except (TypeError, ValueError):
+            first = 0
+        try:
+            last = elements if command.get('to') is None else int(self.textify(command['to']))
+        except (TypeError, ValueError):
+            last = elements
+        first = max(0, min(first, elements))
+        last = max(0, min(last, elements))
+        if last < first:
+            last = first
+        # Read each slot through the cursor, and put the cursor back: `join` reports on the
+        # holder, it does not move through it.
+        saved = source.getIndex()
+        parts = []
+        try:
+            for n in range(first, last):
+                source.setIndex(n)
+                item = self.textify(source.getValue())
+                if isinstance(item, (list, dict)):
+                    item = json.dumps(item)
+                parts.append('' if item is None else str(item))
+        finally:
+            source.setIndex(saved if saved is not None else 0)
+        if command.get('asJson'):
+            # A real list, because this runtime never serialises the compiled script and its
+            # values are objects — where JavaScript's content is text and json-ness is recognised.
+            # The rule for an element that is itself json is `json add`'s, so the two agree.
+            items = []
+            for part in parts:
+                if part[:1] in ('{', '['):
+                    try:
+                        items.append(json.loads(part))
+                        continue
+                    except ValueError:
+                        pass
+                items.append(part)
+            value = ECValue(type='list', content=items)
+        else:
+            delimiter = '' if command.get('delimiter') is None else self.textify(command['delimiter'])
+            value = ECValue(type=str, content='' if delimiter is None else str(delimiter).join(parts))
+        self.putSymbolValue(self.getVariable(command['target']), value)
+        return self.nextPC()
+
     # Declare an SSH connection variable
     def k_ssh(self, command):
         self.compiler.addValueType()

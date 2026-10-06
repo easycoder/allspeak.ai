@@ -8,6 +8,7 @@
     "2.6"
   ],
   "script": "EC-0008-char-of-value.allspeak",
+  "note": "**This case cannot pass on the Python runtime, and the runtime is what is behind.** `char N of` is a JavaScript-only value form: `as_value.compileValue` (the value protocol `log` and `put … into` go through) does not know it, so Python refuses the statement while JavaScript answers. It is documented in no chapter of `learn/reference/`, in any language, which is why nothing noticed. The case is correct as written and is left as the *check* for the queued item in `TODO-language.md` — the two value compilers — so that when `char` reaches Python this goes green on both with no edit. EC-0007 used the same form and has been rewritten to avoid it (its subject is `includes`, not `char`).",
   "expect": {
     "logs": [
       "u",

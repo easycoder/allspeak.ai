@@ -12,7 +12,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 1. [Structure](reference/01-structure.md) — domains, the compiler-tries-each-domain model, how plugins extend vocabulary.
 2. [Symbols and layout](reference/02-symbols-and-layout.md) — the four punctuation symbols; doc-block markers; indenting and naming.
 3. [Variables and arrays](reference/03-variables-and-arrays.md) — the cursor model; scratch variables; `variable` vs typed.
-4. [Collections](reference/04-collections.md) — arrays, dictionaries, lists, properties; JS/Python divergence.
+4. [Collections](reference/04-collections.md) — arrays, dictionaries, lists, properties; `split` and `join`; JS/Python divergence.
 5. [Values and types](reference/05-values-and-types.md) — numbers, strings, booleans; automatic conversion.
 6. [Conditions](reference/06-conditions.md) — equality, comparison, presence; combining with `and` / `or`.
 7. [Arithmetic](reference/07-arithmetic.md) — integer-first model; scaled-integer pattern; trigonometry.

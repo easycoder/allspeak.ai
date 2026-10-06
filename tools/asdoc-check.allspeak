@@ -14,9 +14,10 @@
 !! V1 is read-only: refreshing stored @hash lines (the Python tool's
 !! --write mode) is not implemented yet and will land when the editor
 !! is ready to call it on save.
-!!!
 
     script ASDocCheck
+!! @hash 88e24655
+!!!
 
 !! Variable declarations, grouped by purpose so a reader can scan one
 !! block at a time without flipping back and forth. Anything starting

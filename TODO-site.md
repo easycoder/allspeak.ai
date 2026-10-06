@@ -2,9 +2,11 @@
 
 The detail behind `TODO.md`'s site row. The dated reasoning is in `git log -p -- TODO.md` (pre-2026-10-04) and in `conversation/`.
 
+**Headings carry their bin, since 2026-10-06** — the four are defined in `TODO.md` under "How this list is run". Here: `[note]` is a settled claim or decision, `[mine, queued]` is work that does not need you, `[your call]` is what wants your eye — and the prune below is the one item that is both measured and scheduled.
+
 ---
 
-## The claim, and where it goes
+## The claim, and where it goes — [note]
 
 **The claim, in the form that should go on the site.** Not "AllSpeak is readable" — that is the old sentence and others can say it. The new one: **a run is an artefact you can be handed.** It is a file, it travels with the project, it carries the author's own prose in the author's own language, and it can be read on a machine that cannot run the code. No conventional language ships that — a stack trace is a failure, a log is a choice, a debugger is interactive, a profiler is aggregate. It is a comprehension claim for the vibe coder and a governance claim for the professional.
 
@@ -24,7 +26,7 @@ Synopsis at `deploy/<lang>/why.html`, the long read linked from it, one shared s
 
 ---
 
-## Done, and what is next
+## Done, and what is next — [mine, queued], the four in that order
 
 **Done: `why/article.md`** — the long read, ~5,000 words, **draft and deliberately not published** while the visualiser is still moving. It is not too early by design: Graham's steer is that there are major features still to land, and the article is reviewed as they do. Eleven sections; three figures marked to produce; all its numbers taken from the `H₂O` run of `examples/chemical/parser.allspeak`.
 
@@ -39,7 +41,7 @@ Synopsis at `deploy/<lang>/why.html`, the long read linked from it, one shared s
 
 ---
 
-## Repo hygiene: prune `resources/ecs` — scheduled, not yet done
+## Repo hygiene: prune `resources/ecs` — [your call], scheduled, not yet done
 
 `resources/ecs/` is a **superseded site generation**. `documents/doclets-feature-checklist.md` records why: the deploy pipeline never ships it. What remains is a mixture of ages and purposes, which is the argument for pruning it rather than keeping it as one unit — 18 files dated 2026-04-06 (the fork day, the old site's pages), the five-file "scripted" colour-coded editor bundle (`scripted.allspeak` / `scripted-server.allspeak` / `scripted.html` / `scripted.json` / `README.md`), and the three more recent page scripts (`docman.allspeak`, `doclets.allspeak`, `main.allspeak`). Renaming the folder is not worth doing on its own: if it is pruned, the name goes with it.
 

@@ -909,6 +909,12 @@ var AllSpeak_LanguagePack_de = {
         "trenne {value} bei {separator} ergibt {variable}"
       ]
     },
+    "JOIN": {
+      "keyword": "vereinige",
+      "patterns": [
+        "vereinige [von {first} zu {last} von] {array} [mit {delimiter}] [als json] in {variable}"
+      ]
+    },
     "STOP": {
       "keyword": "stoppe",
       "patterns": [
@@ -1122,6 +1128,7 @@ var AllSpeak_LanguagePack_de = {
     "rename": "benenne",
     "add": "addiere",
     "split": "trenne",
+    "join": "vereinige",
     "replace": "ersetze",
     "count": "anzahl",
     "size": "größe|groesse",

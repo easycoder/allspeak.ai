@@ -63,6 +63,13 @@ Jeder Dokumentationsblock enthält einen Hash des umschlossenen Codes als `@hash
 python3 tools/asdoc-check.py --write <datei>
 ```
 
+Das ist der Befehl **in diesem Repository**, wo der Analysator ein Checkout ist. In einem Projekt ist er das nicht: er wird *veröffentlicht* statt mitgeliefert — lade ihn also in dein eigenes Arbeitsverzeichnis und führe diese Kopie aus, nie in das Projekt hinein, wo sie unbemerkt veralten würde. Das `.txt` ist kein Fehler: die Site *führt* eine angeforderte `.py` aus, statt sie auszuliefern:
+
+```
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.txt -o /tmp/asdoc-check.py
+python3 /tmp/asdoc-check.py --write <datei>
+```
+
 Ein veralteter Hash bedeutet, dass der Code sich geändert hat, ohne dass die Prosa erneut geprüft wurde — der Analysator markiert es als Warnung. Der Autor liest die Prosa erneut, entscheidet, ob sie den Code noch genau beschreibt, und bearbeitet entweder die Prosa oder markiert den Block als verifiziert.
 
 ## Der `@verified`-Mechanismus

@@ -190,7 +190,13 @@
             	on failure
             	begin
                 	log `Could not open ` cat BaseDir cat  `/` cat FilePath
-                    put empty into Content
+                    ! **A real 404, and `stop` because the response alone does not refuse.** This branch
+                    ! used to `put empty into Content` and fall through to the `return` below, so a file
+                    ! that is not there was answered `200` with an empty body — a caller could not tell
+                    ! "no file" from "empty file". The static branch was given its 404 on 2026-10-04 and
+                    ! this route was left alone; it is the same fault and the same fix.
+                    return `Not found` to Files with status 404
+                    stop
                 end
             return Content to Files
         end

@@ -63,6 +63,13 @@ Ogni blocco di documentazione include un hash del codice avvolto come `@hash <ma
 python3 tools/asdoc-check.py --write <file>
 ```
 
+Questo è il comando **in questo repository**, dove l'analizzatore è un checkout. In un progetto non lo è: viene *pubblicato* invece che fornito, quindi scaricalo nella tua directory di lavoro ed esegui quella copia — mai dentro il progetto, dove diventerebbe una copia obsoleta senza che nessuno se ne accorga. Il `.txt` non è un errore: il sito *esegue* un `.py` che gli viene chiesto invece di servirlo:
+
+```
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.txt -o /tmp/asdoc-check.py
+python3 /tmp/asdoc-check.py --write <file>
+```
+
 Un hash obsoleto significa che il codice è cambiato senza che la prosa sia stata riletta: l'analizzatore lo segnala come avviso. L'autore rilegge la prosa, decide se descrive ancora il codice con precisione, e modifica la prosa o segna il blocco come verificato.
 
 ## Il meccanismo `@verified`

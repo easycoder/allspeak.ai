@@ -63,6 +63,18 @@ Each doc block includes a hash of the wrapped code as `@hash <managed>`. The ana
 python3 tools/asdoc-check.py --write <file>
 ```
 
+That is the command **in this repository**, where the analyser is a checkout. **In a project it is not**: the analyser is *published* rather than shipped, so a project fetches it into its own scratch directory and runs that copy — never into the project, which would be a copy that goes stale unannounced:
+
+```
+curl -fsS https://allspeak.ai/code/tools/asdoc-check.txt -o /tmp/asdoc-check.py
+python3 /tmp/asdoc-check.py --write <file>
+```
+
+The `.txt` is not a mistake: the site *runs* a `.py` it is asked for rather than serving it, so the published file is saved under a `.py` name at the other end. Two things about paths, both measured:
+
+- The Python analyser resolves a relative path against the **working directory**, so run it from a directory the path makes sense from, or give an absolute one. A path it cannot find is reported as `warning: path not found` — and the exit code is still `0`, so read its output rather than its exit code.
+- The AllSpeak one (`tools/asdoc-check-cli.allspeak`, the third validator below) resolves a relative path against the **script's own directory**, because that is AllSpeak's rule for every script. From a project root it needs an absolute path; given a relative one it reports `could not load` for a file that is plainly there.
+
 A stale hash means the code changed without the prose being re-reviewed — the analyser flags it as a warning. The author re-reads the prose, decides whether it still describes the code accurately, and either edits the prose or marks the block verified.
 
 ## The `@verified` mechanism
@@ -79,10 +91,10 @@ Once a file has any doc block, the analyser expects the whole file to be covered
 
 ## Validators
 
-Two tools validate the same convention:
+Two tools validate the same convention, and they are not interchangeable:
 
-- `tools/asdoc-check.py` — Python CLI; recursive over a directory. Run with `--write` to refresh hashes.
-- `tools/asdoc-check-cli.allspeak` — runs under the Python AllSpeak runtime, exercising the same logic from inside AllSpeak itself.
+- `tools/asdoc-check.py` — the Python CLI, and the one to fetch into a project: recursive over a directory, and the only one that writes. Run with `--write` to refresh hashes.
+- `tools/asdoc-check-cli.allspeak` — the same convention from inside AllSpeak, running under the Python runtime. It is the demonstration that the convention is expressible in the language, and it is the one that resolves a relative path against its own directory (see above).
 
 Asedit's Blocks mode also performs in-editor validation as you type.
 

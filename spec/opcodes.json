@@ -1656,6 +1656,22 @@
         "target"
       ]
     },
+    "JOIN": {
+      "domain": "core",
+      "category": "collection",
+      "description": "Join a variable's elements into a single value",
+      "current": {
+        "keyword": "join"
+      },
+      "params": [
+        "source",
+        "from?",
+        "to?",
+        "delimiter?",
+        "asJson?",
+        "target"
+      ]
+    },
     "STOP": {
       "domain": "core",
       "category": "control_flow",

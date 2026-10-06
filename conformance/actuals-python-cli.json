@@ -44,11 +44,11 @@
     "error": null
   },
   "EC-0008": {
-    "logs": [
-      "u",
-      "e"
-    ],
-    "error": null
+    "logs": [],
+    "error": {
+      "category": "compile",
+      "message": "Compile error in <anon> at line 6 (log char 5 of Text):"
+    }
   },
   "EC-0009": {
     "logs": [

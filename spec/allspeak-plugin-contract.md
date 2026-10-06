@@ -66,6 +66,14 @@ feature parity for every plugin.
 - Condition runtime:
   - JS: `domain.condition.test(program, condition)`
   - PY: `domain.conditionHandler(condition_type)` -> `c_<type>`
+- Value modification — **Python only, and required of every domain**:
+  - PY: `domain.modifyValue(value)`, called for *every* registered domain each time a value is
+    compiled (`as_value.py`'s `checkDomainAdditions`). The call is unguarded, so a domain that does
+    not define it raises `AttributeError` on the first value a script compiles — in any language.
+    Return the value unchanged when the domain has nothing to add. The JavaScript twin of the same
+    hook *is* guarded (`handler.value` is tested before it is used), so the omission is invisible
+    there and only Python refuses. `allspeak-py/allspeak/plugins/as_viz.py` carries this note beside
+    its own empty implementation.
 
 ## Compatibility Rules
 

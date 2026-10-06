@@ -2,6 +2,8 @@
 
 The detail behind `TODO.md`'s viz row. Everything here is either a **binding decision** — checked against before adding anything — or **open work** with the smallest first step named. The dated reasoning that produced each of these lives in `git log -p -- TODO.md` (pre-2026-10-04) and in `conversation/`; it is deliberately not repeated here.
 
+**Headings carry their bin, since 2026-10-06** — the four are defined in `TODO.md` under "How this list is run". Here that reads: `[note]` is a settled decision or a fact; `[mine, queued]` is open work that does not need you, in the order it was chosen where an order is stated; `[your call]` is the few that want your eye or your hand.
+
 ---
 
 ## Read this first if you are resuming this work
@@ -26,7 +28,7 @@ The detail behind `TODO.md`'s viz row. Everything here is either a **binding dec
 
 ---
 
-## Settled decisions
+## Settled decisions — [note]: checked against before adding anything
 
 Each of these was decided by Graham and is not to be re-opened without him.
 
@@ -48,7 +50,7 @@ Each of these was decided by Graham and is not to be re-opened without him.
 
 ---
 
-## Open work, in the order it was chosen
+## Open work, in the order it was chosen — [mine, queued]
 
 ### First: the traffic lights — decided, designed, not built (2026-10-03)
 
@@ -108,7 +110,7 @@ The display side: the svg plugin has no `title`/tooltip support and the arrows a
 
 `VizRedact` is one `path` inside `VizPane`: one bar per drawn line, built in the same once-per-run pass as the text document, each bar as wide as its line at eight units a column and as tall as the whole eighteen-unit row. **The zoom behaviour is a consequence of where it lives** — `VizPane`'s `viewBox` is the document, so a bar is scaled by the browser exactly as the glyphs beside it are — and the width is pinned at the maximum-zoom length by a `transform` whose factor is the document's shrinkage inverted, so the two cancel at one attribute per draw with no rebuild. **The deferral Graham offered is not needed**, and the reason is what to keep: rebuilding the bars per notch is the obvious way and the one that would have cost what he expected.
 
-Two numbers for his eye: the fill is `#d6d6d6`, which against the page is 12.36:1 where the dark grey was 1.45:1, and **a rule crossing a bar is 1.25:1** — the rules are `#eee`, so a leader crossing a bar was identical to it and is now only a shade clear. If reading a rule across the text matters, the bars want to come down to about `#7a8290` (the horizontal scrollbar's grey), which puts the rule at 2.05.
+Two numbers for his eye, and **both are closed by his call of 2026-10-06: the redacter is a tool he expects never to use, so the fill stays `#d6d6d6` and neither number is worth moving.** Recorded so it is not re-derived: the fill is `#d6d6d6`, which against the page is 12.36:1 where the dark grey was 1.45:1, and **a rule crossing a bar is 1.25:1** — the rules are `#eee`, so a leader crossing a bar was identical to it and is now only a shade clear. The alternative was about `#7a8290` (the horizontal scrollbar's grey), which puts the rule at 2.05.
 
 ### Launching the project's app — built; the capture half open
 
@@ -154,7 +156,7 @@ Found while writing `tools/capture-check.js`'s flavour assertions, and worked ar
 
 ---
 
-## Smaller items, in any order
+## Smaller items, in any order — [mine, queued], unless marked
 
 - **The document is as wide as the longest line of the *file*, which may now be one of the blanked ones.** `VizGlyphMax` is measured over every line, prose included, so an invisible `!!` paragraph of four hundred characters still sets `VizGlyphWidth`. Nothing shows it — the pane clips at the frame and the glyph metrics are fixed by font size and row height — so the extra width is slack the browser never paints. One line in `VizSourceMeasure`'s measure loop if the width should mean "the widest row that is drawn".
 - **A horizontal notch rebuilds the `href` for nothing.** `VizSourcePicture` re-`cat`s the whole encoded body on every draw; a guard that reassigns the `href` only when the source or `VizViewY0`/`VizViewYH` moved removes it. Not done because the standing call is to leave optimisation until the functionality is finished.
@@ -178,7 +180,7 @@ What is still open here:
 - **The arming across the window boundary is still unasserted, and it had two defects until 2026-10-04.** `asedit-modes-check` asserts the *branch* (an app buffer opens the page and writes nothing) and says so in its own output; the arming itself needs two live windows and the harness has one. Graham's first run of it found both: the plugin was injected on every poll tick (`asviz.js` declares its namespace as a top-level `const`, and a classic script's `const` is not a property of `window`, so the editor's `win.AllSpeak_Viz` guard never passed) and the arming line would have failed next for the same reason. Both fixed; **a fake second window in the harness is what would hold them**.
 - **DONE 2026-10-05: the Launch message shows a real filename rather than a placeholder.** It read `add '@app <page>' on a line of its own` and `<page>` was eaten as an HTML tag by `innerHTML`, so the reader saw `add '@app ' on a line of its own` — Graham reported exactly that, which is the whole diagnosis. Now `@app mypage.html`, and `asedit-modes-check` asserts the message carries `@app` plus a filename, which is the content that does the work; the same trap is in `AGENTS.md`'s list. **The related decision is still open**: on a Py-side script this message *invites an `@app`*, and a Python script has no page to name — so Launch wants either a flavour-aware message or a meaning, which needs the editor to read `#editor-runtime` first. See `TODO-language.md`.
 - **The status line keeps a pane's report after the pane is gone.** Leaving the Graph pane for Edit leaves `I don't understand 'dictionary' at line 46.` sitting beside the toolbar buttons, which reads as a live fault. It has three writers (a transient action, the auto-save, and the pane when it fetches a run) — assert the value it is built from, and clear it when the pane that set it is closed.
-- **The ramp's bottom end:** with a band size of 1 a once-visited line lands in band 1, so a quiet run shows amber for its least-worked lines. One line to change (`take 1 from VizCount` before the division), and it moves every boundary; the legend makes either choice legible.
+- **The ramp's bottom end — closed by his call of 2026-10-06, kept only so the reasoning is not re-derived.** With a band size of 1 a once-visited line lands in band 1, so a quiet run shows amber for its least-worked lines; the change would be `take 1 from VizCount` before the division, and it moves every boundary. He reads it as noise rather than as a fault, and the legend makes either choice legible. **Do not re-open it without a reason from a screenshot.**
 - **The two copies of `asedit.allspeak`** — hygiene, not a bug: nothing he runs reads the second one. The options are in `DIFF.md`; the recommendation is to have `deploy-sync` refresh `deploy/code/` from the root, so the local published copy cannot be stale *and* so `BUILD.md`'s claim that the `cp` step is enough becomes true.
 - **The size of a mark** — settled in code at 14 units, one line if he wants it tuned. It does not shrink as the window narrows, which is deliberate: a mark has to stay legible to be a mark.
 - **`deploy/code/asedit-graph.allspeak` is behind the root copy** — the same hygiene item.
@@ -189,7 +191,7 @@ What is still open here:
 
 ---
 
-## Numbers to re-measure rather than carry
+## Numbers to re-measure rather than carry — [note]
 
 - **What a draw costs, which is the number that decides the pane's weight.** Measured on Graham's console, on a **24 KB recording**: 279, 131, 118, 125 ms — call it **120–280 ms per draw**, agreeing with the module's learned 4 ms/KB plus a fixed part. It scales with the recording, so a megabyte is seconds per gesture. **Measure the curve on a real recording before optimising anything** — and the standing rule is not to optimise before the functionality is finished.
 - **The editor's load time is creeping.** Compile cost looks linear in the script: ~1.04 s in node for 3,102 lines / 9,361 tokens, up 35 ms for the flow key. If it wants addressing, the shape is deferred loads — the editor split so a pane's section is compiled when it is fetched.
@@ -269,7 +271,7 @@ the visit is the dot's, the total is the line's across the whole recording.
 Open question for Graham: whether the total should be qualified when the row is clipped (a count of arrivals in
 view), or left as the recording's fact. Not changed — the evidence went first.
 
-## Owed
+## Owed — [mine, queued]
 
 - **The sidebar's bar has no check.** It now shows only the `@show` values, and nothing asserts that its values
   survive the move or that an empty bar is left when a mark asked to watch nothing. `plotview-check` covers the

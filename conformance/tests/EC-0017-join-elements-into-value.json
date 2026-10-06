@@ -1,0 +1,25 @@
+{
+  "id": "EC-0017",
+  "name": "join-elements-into-value",
+  "specVersion": "0.1",
+  "required": true,
+  "requirements": [
+    "2.1",
+    "2.2",
+    "2.6"
+  ],
+  "script": "EC-0017-join-elements-into-value.allspeak",
+  "note": "The text form and the range are asserted here because a reader sees the same thing in both runtimes. `as json` is not, and cannot be: a json value's *reader* is runtime-specific — `the json count of` and `element N of` on JavaScript, `the count of` and `item N of` on a declared `list` in Python — so no one script reads it both ways. The representation differs too (JavaScript holds json text, Python a real list). With the source holder given its elements explicitly the two agree exactly; a holder never given any joins as one empty element on JavaScript and as nothing on Python, which is the two models' own difference about a fresh variable rather than a difference in `join`.",
+  "expect": {
+    "logs": [
+      "abcd",
+      "a,b,c,d",
+      "[a]",
+      "[]",
+      "cd",
+      "[]",
+      "[]"
+    ],
+    "error": null
+  }
+}

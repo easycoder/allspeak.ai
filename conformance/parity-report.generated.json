@@ -1,12 +1,12 @@
 {
   "specVersion": "0.1",
-  "generatedAt": "2026-10-03T14:10:45.524068+00:00",
+  "generatedAt": "2026-10-06T12:23:56.229719+00:00",
   "implementations": {
     "js-browser": {
-      "runtimeVersion": "unknown",
+      "runtimeVersion": "2610061214",
       "summary": {
-        "pass": 14,
-        "fail": 2,
+        "pass": 17,
+        "fail": 0,
         "skip": 0
       },
       "results": [
@@ -74,22 +74,12 @@
         },
         {
           "id": "EC-0007",
-          "status": "fail",
+          "status": "pass",
           "actual": {
-            "logs": [],
-            "error": {
-              "category": "compile",
-              "message": "Compile error in 'undefined':\n   1 ! EC-0007: Includes membership in condition\n   2 \n   3 string Sentence\nI don't understand 'string' at line 3.\n"
-            }
-          },
-          "details": {
-            "expected": {
-              "logs": [
-                "11"
-              ],
-              "error": null
-            },
-            "reason": "Output mismatch"
+            "logs": [
+              "5"
+            ],
+            "error": null
           }
         },
         {
@@ -105,23 +95,13 @@
         },
         {
           "id": "EC-0009",
-          "status": "fail",
+          "status": "pass",
           "actual": {
-            "logs": [],
-            "error": {
-              "category": "compile",
-              "message": "Compile error in 'undefined':\n   1 ! EC-0009: starts with / ends with string conditions\n   2 \n   3 string S\nI don't understand 'string' at line 3.\n"
-            }
-          },
-          "details": {
-            "expected": {
-              "logs": [
-                "starts ok",
-                "ends ok"
-              ],
-              "error": null
-            },
-            "reason": "Output mismatch"
+            "logs": [
+              "starts ok",
+              "ends ok"
+            ],
+            "error": null
           }
         },
         {
@@ -208,6 +188,22 @@
               "4",
               "done @ last",
               "a literal @ is not an attribute"
+            ],
+            "error": null
+          }
+        },
+        {
+          "id": "EC-0017",
+          "status": "pass",
+          "actual": {
+            "logs": [
+              "abcd",
+              "a,b,c,d",
+              "[a]",
+              "[]",
+              "cd",
+              "[]",
+              "[]"
             ],
             "error": null
           }

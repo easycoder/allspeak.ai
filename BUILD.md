@@ -10,7 +10,7 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 | `allspeak-py/**` (the Python runtime and its plugins) | nothing here — **release `allspeak-ai`**, then a deploy if a script on the other side calls it |
 | `js/allspeak/LanguagePack_*.js` | `./build-allspeak` **and** `./sync-language-packs` |
 | `starter/<lang>/*` (the agent instructions, and nothing else) | `./build-starters` — a pack is three files: `AGENTS.md`, `CLAUDE.md` and `.allspeak-init` |
-| a tool an agent uses (`tools/asdoc-check.py` / `plotview-check.js` / `viz-align-measure.py` / `guard-check.js` / `capture-check.js` / `encoding-check.js`) | `./build-starters` (it fails if one has gone missing) **and deploy** — the deploy publishes them at `/code/tools/`, which is where a project fetches one from. They are not shipped in a pack |
+| a tool an agent uses (`tools/asdoc-check.py` / `plotview-check.js` / `viz-align-measure.py` / `guard-check.js` / `capture-check.js` / `encoding-check.js` / `flush-check.js`) | `./build-starters` (it fails if one has gone missing) **and deploy** — the deploy publishes them at `/code/tools/`, which is where a project fetches one from. They are not shipped in a pack |
 | `server.allspeak`, on its way to projects | **deploy** — `allspeak server <port>` fetches `https://allspeak.ai/code/server.allspeak` at every start when the directory has none, so a deploy puts a change in front of every project at once. No version file, no bump, nothing to remember. A project's own `server.allspeak`, if it keeps one, is used instead and never replaced |
 | `edit.html` | **deploy** — the dev server fetches the deployed page for any project that has none of its own, and fills in that project's language from its `.allspeak-init` |
 | `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
@@ -58,16 +58,35 @@ A project made from a pack carries its own code, `AGENTS.md`, `CLAUDE.md` and `.
 | `server.allspeak` | fetched by the CLI at every `allspeak server` start, cached in `~/.cache/allspeak/` |
 | `edit.html` | fetched by that server from `/code/`, with the project's language filled in from its `.allspeak-init` |
 | the editor, its two modules, `asedit.json` | the page's payload, `dist/asedit.js`, written by `./build-allspeak` |
-| the checks (`asdoc-check.py`, `plotview-check.js`, `viz-align-measure.py`, `guard-check.js`, `capture-check.js`) | fetched from `/code/tools/` by whoever wants one, into scratch space rather than the project |
+| the checks (`asdoc-check.py`, `plotview-check.js`, `viz-align-measure.py`, `guard-check.js`, `capture-check.js`, `encoding-check.js`, `flush-check.js`) | fetched from `/code/tools/` by whoever wants one, into scratch space rather than the project |
 
 The point is that none of it can be stale without that being obvious: there is no copy to notice. A project that *wants* to pin one of them keeps a file of that name and it is used in preference — which is also how this repository runs its own server and its own page.
 
 ### The Python runtime: a release, not a build
 
-**`apispeak-py/` is a pip package, and nothing in this repository publishes it.** The four scripts at the root
+**`allspeak-py/` is a pip package, and nothing in this repository publishes it.** The four scripts at the root
 are all JS-side or docs-side; a change under `allspeak-py/` reaches users only when `allspeak-ai` is released
 (flit, from `allspeak-py/pyproject.toml`) — and a project keeps running its installed copy until it is
-upgraded. Two consequences worth knowing:
+upgraded. **The release, in full:**
+
+    # 1. the version, date-time, YYMMDDHHMM — flit reads it from here
+    $EDITOR allspeak-py/allspeak/__init__.py
+    # 2. build and publish
+    cd allspeak-py && flit build && flit publish
+
+**A version bump is not optional, and it is the only thing that changes what a user sees**: `Program.__init__`
+asks the *installed distribution* for its version and only falls back to the source tree when there is none, so
+a source checkout at a newer version still reports the installed one. Measured 2026-10-06: with
+`allspeak-py/allspeak/__init__.py` bumped and `join` working, `allspeak --version` answered the older installed
+number.
+
+**And commit the bump, because the two can drift in the direction that hurts.** Measured 2026-10-06: the
+installed `allspeak-ai` read `2610061243` — a wheel built from a tree carrying `join` — while the source tree's
+`__version__` read `2610061214`, the bump that produced it. A wheel built from *that* tree would carry a **lower**
+version than the published one, and pip will not upgrade to a lower number: the next bump must be above the last
+*published* version, not merely above the value in the file.
+
+Two consequences worth knowing:
 
 - **A feature that spans the two sides needs both.** `server.allspeak`'s `/record/` route shells out to
   `allspeak --record=<trace>`, so a deploy without a release ships a route whose flag the project's installed
@@ -96,4 +115,4 @@ Triggered manually via `workflow_dispatch` on `.github/workflows/deploy.yml`. Th
 
 The local script does both implicitly so there's nothing extra to remember.
 
-The deploy's own `cp` step is what publishes the tooling: `server.allspeak` and `edit.html` at `/code/` (the CLI fetches the one, the server the other), the editor's four files beside the payload at `/dist/`, and the five checks at `/code/tools/`. No separate sync is needed for those — but both deploy paths carry that list, so keep them in step.
+The deploy's own `cp` step is what publishes the tooling: `server.allspeak` and `edit.html` at `/code/` (the CLI fetches the one, the server the other), the editor's four files beside the payload at `/dist/`, and the seven checks at `/code/tools/` — the list `build-starters` refuses if one of them has gone missing. No separate sync is needed for those — but both deploy paths carry that list, so keep them in step.

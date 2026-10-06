@@ -924,6 +924,12 @@ var AllSpeak_LanguagePack_en = {
         "split {value} on|by {separator} giving|into {variable}"
       ]
     },
+    "JOIN": {
+      "keyword": "join",
+      "patterns": [
+        "join [from {first} to {last} of] {array} [with {delimiter}] [as json] into {variable}"
+      ]
+    },
     "STOP": {
       "keyword": "stop",
       "patterns": [
@@ -1223,6 +1229,7 @@ var AllSpeak_LanguagePack_en = {
     "rename": "rename",
     "add": "add",
     "split": "split",
+    "join": "join",
     "replace": "replace",
     "count": "count",
     "size": "size",

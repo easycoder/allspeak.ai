@@ -1,25 +1,37 @@
 ! EC-0007: Includes membership in condition
 
-string Sentence
-string Vowels
-string Ch
-number I
-number Count
+variable Letters
+variable Phrase
+variable Letter
+variable I
+variable Hits
 
-put `The quick brown fox jumps over the lazy dog` into Sentence
-put lowercase Sentence into Sentence
-put `aeiou` into Vowels
+set the elements of Letters to 5
+index Letters to 0
+put `a` into Letters
+index Letters to 1
+put `e` into Letters
+index Letters to 2
+put `i` into Letters
+index Letters to 3
+put `o` into Letters
+index Letters to 4
+put `u` into Letters
+
+put `the quick brown fox jumps over the lazy dog` into Phrase
 put 0 into I
-put 0 into Count
+put 0 into Hits
 
-while I is less than length of Sentence
+! The holder is walked with the cursor, which is the form both runtimes have.
+while I is less than 5
 begin
-	put char I of Sentence into Ch
-	if Vowels includes Ch
+	index Letters to I
+	put Letters into Letter
+	if Phrase includes Letter
 	begin
-		add 1 to Count
+		add 1 to Hits
 	end
 	add 1 to I
 end
 
-log Count
+log Hits

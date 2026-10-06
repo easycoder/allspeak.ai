@@ -2706,6 +2706,139 @@ const AllSpeak_Core = {
 		}
 	},
 
+	Join: {
+
+		// **The inverse of Split, and the one place a bare holder name means the whole holder.**
+		// Everywhere else a bare name is *the slot the cursor is on* — `put A into B` copies one slot
+		// and `json of` a holder reads one slot, both measured — so `join`'s source reading is a
+		// deliberate exception, made in the same way `split` already makes it in reverse.
+		compile: compiler => {
+			const lino = compiler.getLino();
+			// Step off the keyword first: every test below reads the token the index is *on*,
+			// which is how `Split` reads its own optional words.
+			compiler.next();
+			// `from N to M of` narrows the source to the half-open slice X[N:M].
+			let from = null;
+			let to = null;
+			if (compiler.isWord(`from`)) {
+				from = compiler.getNextValue();
+				if (!compiler.isWord(`to`)) {
+					return false;
+				}
+				to = compiler.getNextValue();
+				if (!compiler.isWord(`of`)) {
+					return false;
+				}
+				compiler.next();
+			}
+			if (!compiler.isSymbol()) {
+				return false;
+			}
+			const sourceRecord = compiler.getSymbolRecord();
+			if (sourceRecord.keyword !== `variable`) {
+				throw new Error(`'{sourceRecord.name}' is not a variable`);
+			}
+			compiler.next();
+			// The two modifiers, in either order: `with <delimiter>` gives the text form its
+			// separator, and `as json` asks for one json *value* rather than a string.
+			let delimiter = null;
+			let asJson = false;
+			for (;;) {
+				if (compiler.isWord(`with`)) {
+					delimiter = compiler.getNextValue();
+					continue;
+				}
+				if (compiler.isWord(`as`)) {
+					compiler.next();
+					if (!compiler.isWord(`json`)) {
+						throw new Error(`Expected 'json' after 'as'`);
+					}
+					compiler.next();
+					asJson = true;
+					continue;
+				}
+				break;
+			}
+			// `into`, because it is the word the language already uses for "the slot you are about
+			// to write" — a bare name on this side means that slot, as it does in `put V into X`.
+			if (!compiler.isWord(`into`)) {
+				throw new Error(`Expected 'into <variable>' after the joined values`);
+			}
+			if (!compiler.nextIsSymbol()) {
+				return false;
+			}
+			const targetRecord = compiler.getSymbolRecord();
+			if (targetRecord.keyword !== `variable`) {
+				throw new Error(`'{targetRecord.name}' is not a variable`);
+			}
+			compiler.next();
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `join`,
+				lino,
+				source: sourceRecord.name,
+				from,
+				to,
+				delimiter,
+				asJson,
+				target: targetRecord.name
+			});
+			return true;
+		},
+
+		run: program => {
+			const command = program[program.pc];
+			const sourceRecord = program.getSymbolRecord(command.source);
+			const elements = sourceRecord.elements;
+			// Half-open, as a string slice is: `from 4 to 5` is one element and `from 4 to 4` is
+			// empty. Out-of-range bounds clamp rather than raise, and `M < N` is empty.
+			let first = command.from === null ? 0 : Number(program.getValue(command.from));
+			let last = command.to === null ? elements : Number(program.getValue(command.to));
+			if (isNaN(first)) {
+				first = 0;
+			}
+			if (isNaN(last)) {
+				last = elements;
+			}
+			first = Math.max(0, Math.min(first, elements));
+			last = Math.max(0, Math.min(last, elements));
+			if (last < first) {
+				last = first;
+			}
+			const parts = [];
+			for (let n = first; n < last; n++) {
+				const slot = sourceRecord.value[n];
+				// A slot that was never written is `{}`, which `getValue` refuses as an
+				// uninitialised value; the slot is empty text for joining purposes.
+				if (!slot || typeof slot.type === `undefined`) {
+					parts.push(``);
+					continue;
+				}
+				const text = program.getValue(slot);
+				parts.push((text === null || typeof text === `undefined`) ? `` : String(text));
+			}
+			let content;
+			if (command.asJson) {
+				// **The same text `json set … to array` and `json add …` build.** An `ECValue`'s
+				// content is text and json-ness is *recognised*, so a native array would not be
+				// recognised by any reader — the fault that produced this keyword in the first place.
+				const array = parts.map(part => program.isJsonString(part) ? JSON.parse(part) : part);
+				content = JSON.stringify(array);
+			} else {
+				const delimiter = command.delimiter === null ? `` : program.getValue(command.delimiter);
+				content = parts.join((delimiter === null || typeof delimiter === `undefined`) ?
+					`` : String(delimiter));
+			}
+			const targetRecord = program.getSymbolRecord(command.target);
+			targetRecord.value[targetRecord.index] = {
+				type: `constant`,
+				numeric: false,
+				content
+			};
+			return command.pc + 1;
+		}
+	},
+
 	Stop: {
 
 		compile: compiler => {
@@ -3418,6 +3551,7 @@ const AllSpeak_Core = {
 			REPLACE: this.Replace,
 			SORT: this.Sort,
 			SPLIT: this.Split,
+			JOIN: this.Join,
 			FILTER: this.Filter,
 			INDEX: this.Index,
 			IF: this.If,
@@ -12494,6 +12628,7 @@ const AllSpeak_Opcodes = {
 		case `replace`:   return `REPLACE`;
 		case `sort`:      return `SORT`;
 		case `split`:     return `SPLIT`;
+		case `join`:      return `JOIN`;
 		case `filter`:    return `FILTER`;
 		case `index`:     return `INDEX`;
 
@@ -13827,6 +13962,12 @@ var AllSpeak_LanguagePack_en = {
         "split {value} on|by {separator} giving|into {variable}"
       ]
     },
+    "JOIN": {
+      "keyword": "join",
+      "patterns": [
+        "join [from {first} to {last} of] {array} [with {delimiter}] [as json] into {variable}"
+      ]
+    },
     "STOP": {
       "keyword": "stop",
       "patterns": [
@@ -14126,6 +14267,7 @@ var AllSpeak_LanguagePack_en = {
     "rename": "rename",
     "add": "add",
     "split": "split",
+    "join": "join",
     "replace": "replace",
     "count": "count",
     "size": "size",
@@ -15555,7 +15697,7 @@ const AllSpeak = {
 		}
 	},
 };
-AllSpeak.version = `2610031512`;
+AllSpeak.version = `2610061214`;
 AllSpeak.timestamp = Date.now();
 AllSpeak.writeStartupTrace(`AllSpeak loaded; waiting for page`);
 

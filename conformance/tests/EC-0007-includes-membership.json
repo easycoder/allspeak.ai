@@ -7,9 +7,10 @@
     "2.8"
   ],
   "script": "EC-0007-includes-membership.allspeak",
+  "note": "Rewritten 2026-10-06 so the test is one script on both runtimes. It used `string`/`number` declarations and `char N of`, none of which exists in either runtime — `string` is not even a keyword — so it had been failing to compile everywhere, and on JavaScript only, since 2026-09-27. It now walks a holder with the cursor, which is the form both runtimes have. The count changed from 11 to 5 with it: the test now counts the vowels *present* in the phrase rather than vowel *occurrences*, because counting occurrences needs a per-character walk, and `char N of` is JavaScript-only (see EC-0008).",
   "expect": {
     "logs": [
-      "11"
+      "5"
     ],
     "error": null
   }

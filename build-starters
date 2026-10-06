@@ -20,7 +20,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-for tool in tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js tools/capture-check.js tools/encoding-check.js; do
+for tool in tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js tools/capture-check.js tools/encoding-check.js tools/flush-check.js; do
     if [ ! -f "$tool" ]; then
         echo "Error: $tool not found — it is published by the deploy, not shipped in a pack." >&2
         exit 1

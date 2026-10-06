@@ -2,31 +2,55 @@
 
 The detail behind `TODO.md`'s language row. Anything here that is settled says so; anything open has the smallest first step named. The dated reasoning behind each is in `git log -p -- TODO.md` (pre-2026-10-04) and in `conversation/`.
 
+**How to read it, since 2026-10-06: every heading carries its bin.** `[your call]` is a fork or your own hand — the ones to read. `[mine, queued]` is work with no design question in it; it does not need you, and a queued item that is never picked up costs nothing. `[guard]` is a check that stops a class of fault recurring. `[note]` is a fact the code cites, with no action ever. `[landed]` is what is in and working. The rule the whole sort follows is in `TODO.md` under "How this list is run".
+
 ---
 
 ## Open in the language
 
-### Attributes — landed, five small things outstanding
+### Attributes — [landed], and [your call] on one question
 
 **What is in.** `@` at the start of a token, outside a literal, is an attribute: the text runs to the end of the line or to a `!` comment, and it is carried into the compiled program with no runtime effect. A statement's attribute is an `attr` field on the command it compiles to; a line that compiles to no command of its own gets an `attr` entry of its own, which the runtime steps over. Rules 11–14 of `spec/allspeak-language-contract.md`; `ATTR` in `spec/opcodes.json`.
 
 **Where the design is decided, so nobody looks in the wrong place.** Recognition lives in the **tokeniser**, not the grammar — `js/allspeak/Main.js` `attributeText` + `tokeniseFile`, `allspeak-py/allspeak/as_program.py` `attribute_text` + `Program.tokenise` — so no keyword handler knows `@` exists and no condition parser can swallow the tail. The compiler holds the attribute for the length of one statement (`attrPending`/`attrStamped`, saved and restored because a `begin` compiles its whole body) and `addCommand` stamps the first command emitted. `!` ends an attribute. `tools/attr-check.js` drives both runtimes and is the place to read the claim.
 
-**Open, and each is small.**
+**Left, after the 2026-10-06 pass closed three of the five:**
 
-1. **`@app` is still `!! @app` in a doc block**, read by the editor's own buffer walk. Moving it onto a bare `@` line is Graham's re-base, and the editor's Launch is the only reader to change.
-2. **Nothing highlights `@`** in the editor or the CodeMirror mode.
-3. **Should `tools/attr-check.js` join the starter packs?** It needs a full checkout, so a pack could never run it — the same position `guard-check.js` is in while being shipped.
-4. **`conformance/actuals-js-browser.json` is stale from April:** all nine tests in it report a compile error, and it has not been regenerated since. Also `ec_js_runner.js`'s usage names `as_js_runner.js` and a `dist/` path that is really `deploy/dist/`; and `run_conformance.py` has no notion of an optional case (`required: false` is ignored).
-5. **A known divergence to accommodate rather than fix blindly:** Python keeps the colon on a label's symbol name (`Main:`) and JS strips it (`Main`), and Python stamps no `opcode`.
+- **[your call] Should `tools/attr-check.js` be published?** It needs a full checkout, so a pack could never run it — the position `guard-check.js` and `capture-check.js` are in *while being published*, with a sentence saying so. Under Decide in `TODO.md`.
+- **[mine, queued] Nothing highlights `@`** in the editor or in the CodeMirror mode.
+- **[note] Two divisions to accommodate rather than fix blindly:** Python keeps the colon on a label's symbol name (`Main:`) and JS strips it (`Main`), and Python stamps no `opcode` on a compiled command. Both are load-bearing for any tool that reads the two programs, and neither is a fault.
+- **[landed 2026-10-06] `@app` never needed re-basing, and this was stale.** `!! @app` appears exactly **once** in the tree — in `asedit.allspeak`'s own prose explaining that the doc-block spelling is legacy and to prefer `@app` — and **no script uses `@app` in either spelling**, so there was no call site to move and no reader to change beyond the one that already accepts both.
+- **[landed 2026-10-06] The conformance actuals and the runner's usage text.** `actuals-js-browser.json` was regenerated (it had recorded every test as a compile failure since April), `ec_js_runner.js`'s usage now names itself and `deploy/dist/allspeak.js`, and both actuals files live at the root with both halves of the record. What remains of this item is `run_conformance.py` ignoring `required` — queued under Do in `TODO.md`.
 
-### Doc blocks — the sweep, and one gap in the tools
+### Doc blocks — [mine, queued], and a gap in the tools
 
-- **Nine files of 337 have errors, all `code-outside-section`.** In order of size: `codex/codex.allspeak` (537 — one large partially-blocked file, plus its `deploy/` copy), `deploy/code/asedit-graph.allspeak` (36, the stale deploy copy — `./deploy-allspeak` refreshes it), **`examples/chemical/parser.allspeak` (19)**, `tools/strike-fixture.allspeak` (10, a fixture and probably deliberate), and then three files with exactly one error each — `learn/reader.allspeak`, `tools/asdoc-check-cli.allspeak` and `tools/asdoc-check.allspeak` — where the shape is identical and the fix is one line: the `script X` declaration sits *outside* the first block, when it belongs inside it. A further **75 `title-long` warnings** are a sweep of their own, not blocking.
-- **The two `.allspeak` analysers are behind the Python one.** `tools/asdoc-check-cli.allspeak` and `tools/asdoc-check.allspeak` do not have `code-outside-section`, `title-long`, `doc-after-code`, `meta-not-in-tail`, `symbol-unknown` or `redundant-giving`, so the three analysers AGENTS.md calls interchangeable currently disagree.
-- **A rule the convention implies but the tool does not enforce:** "`!!!` must be followed, after blank lines, by the next block's `!!` or the end of file". Seventeen misplaced terminators in one file would have been caught by it. **Not added unasked** — the analyser is shared with other projects and a new error would start failing their files. Offered.
-- **A gap in the doc-block tooling generally:** the analyser hashes code, not prose, so a doc block that describes deleted code is invisible to it. That is why the code-outside-section rule mattered.
-- **The pane's own doc block states a false path rule** — that the recording is "a file beside the script… which the runtime writes with `--trace=`" — eliding that the host refuses to guess a filename (`tools/asviz-run.py`: "guessing writes files"). A doc/code disagreement to fix with whichever capture route is chosen.
+- **[partly landed 2026-10-06] Eight files of 323 carry errors, all `code-outside-section`** (the count was nine of 337, and the ninth — `deploy/code/asedit-graph.allspeak`, 36 errors — is gone). Measured over the **tracked** set, since the whole-tree count includes `various/` and the `deploy/` copies: `codex/codex.allspeak` (537 — one large partially-blocked file, plus its `deploy/` copy), `examples/chemical/parser.allspeak` (19), `tools/strike-fixture.allspeak` (10, a fixture and probably deliberate), and **four files that had exactly one error each and are now fixed** — `learn/reader.allspeak` (plus its `deploy/learn/` copy, which `./deploy-sync` refreshes), `tools/asdoc-check-cli.allspeak` and `tools/asdoc-check.allspeak`: in each the `script X` declaration sat *outside* the first block, and the fix was one line plus a hash refresh (`--write`). No new warnings. **The remainder is queued** under Do in `TODO.md`, and so is the warnings sweep: 231 across 17 files, most of the total in the `deploy/` copies, and the largest single source `title-long`.
+- **The two `.allspeak` analysers implement a smaller, differently-named rule set** — measured 2026-10-06, and it is not just "behind": `tools/asdoc-check-cli.allspeak` and `tools/asdoc-check.allspeak` have *none* of `code-outside-section`, `title-long`, `doc-after-code`, `meta-not-in-tail`, `symbol-unknown` or `redundant-giving`, so the three analysers AGENTS.md calls interchangeable currently disagree. Queued under Do in `TODO.md`.
+- **[your call] A rule the convention implies but the tool does not enforce:** "`!!!` must be followed, after blank lines, by the next block's `!!` or the end of file". Seventeen misplaced terminators in one file would have been caught by it. **Not added unasked** — the analyser is shared with other projects and a new error would start failing their files. Offered.
+- **[note] A gap in the doc-block tooling generally:** the analyser hashes code, not prose, so a doc block that describes deleted code is invisible to it. That is why the code-outside-section rule mattered.
+- **[mine, queued] The pane's own doc block states a false path rule** — that the recording is "a file beside the script… which the runtime writes with `--trace=`" — eliding that the host refuses to guess a filename (`tools/asviz-run.py`: "guessing writes files"). A doc/code disagreement to fix with whichever capture route is chosen.
+- **[landed 2026-10-06] `reference/16-doc-blocks.md` told a project to run an analyser it does not have.** The repository's own path (`python3 tools/asdoc-check.py --write <file>`) was the only invocation the chapter gave, and in a project the analyser is fetched, not checked out. All four language editions now give the fetch-and-run form, and the English one adds what was measured while fixing it: the Python analyser resolves a relative path against the **working directory** and still exits `0` when it finds nothing; the AllSpeak one resolves against **its own script's directory** and reports `could not load` for a file that is plainly there.
+
+### `join` — [landed] 2026-10-06, and what it left behind
+
+**What is in, in both runtimes.** `join` is `split`'s inverse: it reads a holder's **whole element set** where a bare name everywhere else means the slot the cursor is on. `join MyArray into V` runs the elements together; `with \`,\`` gives the text form its separator; `as json` makes one json *value*; `from N to M of` narrows the source, half-open as a string slice is — `from 4 to 5` is one element, `from 4 to 4` is empty, out-of-range bounds clamp, `M < N` is empty. The destination is the cursor slot, exactly as for `put`. One shape, three optional modifiers, in either order.
+
+**Graham's call on the spelling, 2026-10-06: the `as`/`with`/`into` shape**, not his original `join MyArray to json V` — `to` does two jobs once a range is in play, and `into` is the word the language already uses for "the slot you are about to write".
+
+**Where it lives.** `js/allspeak/Core.js`'s `Join` domain entry **and** `JOIN: this.Join` in its opcode map (the second registration site — `Split` is the model for both halves), `case 'join'` in `js/allspeak/Opcodes.js`, a `JOIN` entry plus a `join` word in all four JS packs and in `spec/opcodes.json`, `k_join`/`r_join` in `allspeak-py/allspeak/as_core.py`, and `conformance/tests/EC-0017-…` with `index.json`.
+
+**What a reader sees, measured on the same scripts in both runtimes.** JavaScript's target is a plain `variable` holding json *text*, read with `the json count of` / `element N of` / `has element`; Python's is a declared `list` holding a real list, read with `the count of` / `item N of`. A Python `variable` target takes the value as json text instead, which `json of` parses into a `list` before it can be counted or indexed. The representation was never expected to agree — JS's content is text because its compiled script had to be serializable, Python's is a real object — and the readers were checked rather than assumed. `learn/reference/04-collections.md` states all of it.
+
+**Two divergences, both inherited rather than new, both measured.** (1) **A holder never given elements joins as one empty element on JS and as nothing on Python** — `[""]` against `[]`. JS gives every variable one slot from birth, Python none until something writes to it, and Python cannot tell "never grown" from "explicitly set to zero elements"; explicitly grown, the two agree exactly, which is why `EC-0017` grows its holder. (2) **An out-of-range cursor on the target behaves exactly as `put` does, which is to say differently**: `set the elements of V to 0` then `put \`x\` into V` prints `x` in JS and raises `Index out of range` in Python, and `join` writes through the same path. Not `join`'s fault, nothing to do with it, and worth documenting with `put` rather than here.
+
+**Open, sorted — three of the four are now up in `TODO.md`'s bins, so this is the evidence rather than the list.**
+
+1. **[your call] A new word can be silently lost on Python, and this is how — found by walking into it.** The German word first chosen for `join`, `verbinde`, was *already* the German `connect`: `reverse_word('verbinde')` answers `connect`, `keywordHandler` then looks for `k_connect`, Core has none, and the token is refused — **while JavaScript accepted it**, because JS builds its compile handlers from the pack's `opcodes` map. The German word is now `vereinige` (free, and the natural inverse of `trenne`). **The class is wider than `join`:** `Language._keyword_index` / `get_opcodes_for_keyword` are built and *never called*, so every keyword's reachability rests on the lossy reverse map. Already lost in the shipped Italian pack — `dividi` (SPLIT) answers `divide`, `scorri` (SCROLL) answers `swipe`, `invia` (SEND_MESSAGE/REST_POST/MQTT_SEND) answers `post`, `traccia` (TRACE_*) answers `trace` — and the German `symbol` (DECLARE_SYMBOL) answers `icon`. **The fix to weigh is one function** — have `keywordHandler` consult the pack's opcode keyword index before the reverse lookup — **but it changes precedence for every keyword in every language**, which is why it is a decision and not a patch, and why the order is to *measure* it against the 323-script sweep first. `./sync-language-packs`' `check_grammar` cannot see any of it: that guard inspects Python *source* for `reverse_word(...) == 'x'` comparisons, not whether a pack's own keyword survives the reverse map. The **guard** for the class is proposed in `TODO.md`. And **the French `joins`, German `vereinige` and Italian `unisci` want a native eye plus that collision check** — `reverse_word` of the form must answer `join` and nothing else, which the first German choice did not.
+2. **[landed 2026-10-06] `EC-0007` and `EC-0009` were broken everywhere, not just on JS.** They declared `string` and `number`, and **neither is a keyword in either runtime** — so they had been failing to compile everywhere since 2026-09-27, and the "fail 2" in the JS parity report was that, not a platform limit. Both are rewritten with `variable`, and `EC-0007`'s loop now walks a holder with the cursor rather than using `char N of` (whose absence in Python is a *runtime* defect, item 3 of the value-compiler note below). The suite is now **js-browser 17 pass / 0 fail, python-cli 16 pass / 1 fail**, and the one red case is `EC-0008`, which tests `char N of` on purpose and is the test that will prove the fix.
+3. **[corrected 2026-10-06] There *is* a Python actuals producer — `allspeak-py/conformance/as_py_runner.py`.** This item said there was none, and that was wrong: the runner exists, works, and is the only one of the Python project's conformance files that is not a stale duplicate of the root's. What was actually missing was that **nothing named it** — the root README's usage line pointed at `--actuals my-actuals.json` and stopped there. The root `conformance/` now carries `actuals-python-cli.json`, the README names the runner and the `--conformance-root` it needs, and the duplicate tree beside it is on Decide in `TODO.md`.
+4. **[mine, queued] The translated references lag the English one**, and `learn/{fr,de,it}/contents.md` with them. `learn/reference/04-collections.md` gained a `split`/`join` section — **and `split` was documented nowhere in `learn/reference/` before, in any language**, so that section is the first place the reference names either keyword. `16-doc-blocks.md` was corrected in all four on 2026-10-06 for the fetch-and-run form, which is the part that was actively misleading; the path caveats and the validator descriptions are English-only for now.
+
+**Done and checked.** `./sync-language-packs` (four packs, both guards clean); the compile sweep (323 tracked scripts, **52 compile before and after, 0 differences** — the keyword is additive); `./build-allspeak`, with the four `deploy/dist/asedit.*` files the build deletes restored from the repo root; a JS probe and a Python probe per form (text, `as json`, four range cases, both modifier orders, variable bounds, a range spelled with variables); the four packs' `join` exercised in the JS runtime, and in Python for French, German and Italian; and the conformance suite, **both** halves of it, regenerated.
 
 ---
 
@@ -34,7 +58,7 @@ The detail behind `TODO.md`'s language row. Anything here that is settled says s
 
 **What is already in step.** The trace is one contract (`spec/viz-trace-format.md`, Draft 2) and both write it — `js/plugins/asviz.js` (`VIZ_TRACE_VERSION = 2`) and `allspeak-py/allspeak/plugins/as_viz.py` (`TRACE_VERSION = 2`). The marker syntax is core in both, and the shared framework `viz.allspeak` runs on both hosts. Measured by running both hosts on `tools/trace-run.allspeak`, the two reports agree except in the differences the spec documents — command counts 25 against 23, the `steps` axis, and a label followed immediately by a marker counting as two arrivals in Python and one in JS.
 
-**Two divergences the spec does not document, so they are open as a *decision*:**
+**Two divergences the spec does not document, so they are open as a *[your call]*:**
 
 - **`shape | … | exit-exit=0` (Python) against `exit-exit=1` (JS)**, and the same run's `Worker` anchor reading `exit=stop` against `exit=stop,exit`. **The cause is one command:** JS's `Compile.compile` appends a final `exit` to every program, and the last label's block runs into it; Python emits no such command. My reading is that the *model* should ignore a compiler-appended exit, since it is not a line the author wrote.
 - The two runs are otherwise line-for-line equal, which is worth knowing: the trace format is doing its job.
@@ -58,7 +82,7 @@ The detail behind `TODO.md`'s language row. Anything here that is settled says s
 - **Asked about a *path*, never once for the process.** `record the script in <path>` names its own target, and that target can be in another project than the caller's — so the first version, which resolved the project once per host and cached it, refused the wrong thing. The Python plugin reads the `.allspeak-init` above the path it is given (it has a filesystem, and reads the target's source the same way); the JS plugin asks `AllSpeak_Viz.projectFlavourFor(path)` — a *function*, supplied by `tools/asviz-run.js` — and falls back to `#editor-runtime`, the page element the dev server fills, which is right for the editor because every tab is a file of one project.
 - **`server.allspeak` read `.allspeak-init` wrongly, and it was live.** `put field 1 of InitText delimited by \`lang:\`` takes everything *after* the key, and the lines after it were only stripped of spaces and newlines — so a project the packs had told the agent to *set up* (name and type added) served `lang="frruntime:pyname:Mynotesapptype:cli"` and an editor in English whatever its language. Measured 2026-10-05 against a four-line file, before and after; `InitValue` is now a line-aware reader and `runtime:` is read through it too.
 
-### The messages a person reads — landed 2026-10-05, with two batches owed
+### The messages a person reads — [landed] 2026-10-05, [mine, queued] for two batches
 
 **The mechanism, which is the part that matters.** A plugin's message is now a key in the pack's `diagnostics`, read through `AllSpeak_Language.diagnostic` / `language.diagnostic` — the same accessor the compiler's seven errors have always used. `diagnostics` went from 7 keys to 33, all four packs translated, and `say()` in each plugin is the only way a message is made. The English text has **one** home: `LanguagePack_en.js`. It used to be two — the pack and a table copied inside `diagnostic()` — and nothing kept them in step, which is the shape of bug that makes a new message both more work and less reliable.
 
@@ -68,7 +92,7 @@ The detail behind `TODO.md`'s language row. Anything here that is settled says s
 - **Owed: the four plugin messages left in English on purpose**, because they are a *host author's* diagnostics rather than a user's: `no source registered for … the host must set …` (twice — the same guard duplicated in `Model.run` and `Record.run`, a consolidation candidate), `could not arm a program in the app`, `could not load the visualiser into the app`, and `{name} is not a variable`.
 - **Open, and it wants a decision rather than a guess: whose language is a verdict in?** The verdict is the *caller's* (the pack is restored before the sentence is built), while the compile error *inside* it was produced while the recorded script's pack was active — so `could not run: Je ne comprends pas 'dictionary' à la ligne 46.` is a real possibility: English frame, French body. Either restore after the sentence (whole line in the recorded script's language, wrong for the reader) or keep the reason in the caller's language (needs the runtime error text re-generated, which nothing can do). Measured 2026-10-05; not decided.
 
-### The language layer's one real defect — **fixed 2026-10-05**, and it was 33 lines in 7 files
+### The language layer's one real defect — [landed] 2026-10-05, and [your call] on what it left
 
 **It was one bug, not two, and it is written up in full in `language-pack-issues.md`.** The Python grammar asked
 the *lossy* reverse map whether a token *is* a word (`reverse_word(t) == 'c'`), where JavaScript asks the pack
@@ -85,19 +109,15 @@ any language but English could not run under the Python runtime at all.**
 - **The guard lives in `./sync-language-packs`** (`check_grammar`): it fails, naming file and line, when a Python
   site compares a reverse lookup against a word dead in some pack. It named all 32 before the fix and is
   re-evaluated from the packs every run, so a new word or language cannot reintroduce it quietly.
-- **Still open, and neither is a one-liner.** `as_core.compileValue` knows the rich value forms and
-  `as_value.compileValue` (what `log` uses) does not, so `log the json count of T` prints under JS and fails to
-  compile under Python — the article half is fixed, the rich-form half is a design decision, because `as_value`
-  is the *value protocol* shared with plugin domains. And the packs' `conditions` section is **dead code**: only
-  `en` has it and `Language.condition_word` has zero call sites.
-- **And `BUILD.md` has no Python release step.** These fixes reach users only through a new `allspeak-ai`
-  release; the packs carry no runtime, so nothing else has to move. Worth a line in `BUILD.md` beside the JS
-  build.
+- **[your call, and the largest single item in the language layer] The two value compilers.** `as_core.compileValue` knows the rich value forms and `as_value.compileValue` — which `log` and `put … into` go through — does not, so `log the json count of T` prints under JS and fails to compile under Python, and so does **`char N of`**, which is a JavaScript-only value form as a result. The article half is fixed; the rich-form half is a design decision, because `as_value` is the *value protocol* shared with plugin domains. **There is now a red test for it**: `EC-0008` tests `char N of` on purpose and is the only case the Python runtime fails (16 of 17) while JavaScript passes all 17, so the fix is proved the moment it goes green — with no edit to the case.
+- **[mine, queued] The packs' `conditions` section is dead code:** only `en` has it and `Language.condition_word` has zero call sites. Either wire it up or delete it.
+- **[landed 2026-10-06] `BUILD.md` now has the Python release step**, in full — the version bump in `allspeak-py/allspeak/__init__.py`, then `flit build && flit publish` — with the measured reason it matters: `Program.__init__` asks the *installed distribution* for its version, so a source checkout at a newer version still reports the installed one.
+- **[note, closed 2026-10-06] The version strings are current.** `js/allspeak/AllSpeak.js` line 1 read `2608191442` while `Browser.js` changed on 2026-10-02, and the note said the string no longer dated the runtime. Both it and the Python `__version__` are date-time again as of 2026-10-06.
 
-- **Open, and it is the smallest useful piece of Py-side Launch/Record: the editor does not read `#editor-runtime`.** The page carries it and the dev server fills it (verified live: `id="editor-runtime" style="display:none">py`), and the *plugin* reads it — verified through the editor's own path with a page standing up: an unmarked script resolves to `{declared: py, origin: project}`. But **no check asserts it**, because `asedit-modes-check`'s stub page has no such element, and the editor cannot branch on flavour until it attaches one. That is what would let **Launch** stop inviting an `@app` on a script that has no page, and let **Record** route a Py-side script to the project's server rather than refusing it. The remaining pieces are named in the message above and in `TODO-viz.md`'s "three routes": the route itself is ~20 lines of `server.allspeak` and the command it needs exists; **shipping `as_viz.py` to a project is the real work**, because a pack carries three files and no plugin — which is a decision, not a coding detail.
-- **Open: the repo's own Python scripts are unmarked.** `server.allspeak`, `chat/chat-server.allspeak` and the `allspeak-py/*.allspeak` fixtures are `js` by default — correct as *tools* are written today (a host runs what it is handed and never consults the marker), and wrong the moment anything selects a runtime for them. This repository is the mixed project the `@js` override was invented for, so it wants either an `.allspeak-init` saying `runtime: js` with `@py` on the Python few, or the reverse.
+- **[mine, queued] The smallest useful piece of Py-side Launch/Record: the editor does not read `#editor-runtime`.** The page carries it and the dev server fills it (verified live: `id="editor-runtime" style="display:none">py`), and the *plugin* reads it — verified through the editor's own path with a page standing up: an unmarked script resolves to `{declared: py, origin: project}`. But **no check asserts it**, because `asedit-modes-check`'s stub page has no such element, and the editor cannot branch on flavour until it attaches one. That is what would let **Launch** stop inviting an `@app` on a script that has no page, and let **Record** route a Py-side script to the project's server rather than refusing it. The remaining pieces are named in the message above and in `TODO-viz.md`'s "three routes": the route itself is ~20 lines of `server.allspeak` and the command it needs exists; **shipping `as_viz.py` to a project is the real work**, because a pack carries three files and no plugin — which is a decision, not a coding detail.
+- **[your call] The repo's own Python scripts are unmarked.** `server.allspeak`, `chat/chat-server.allspeak` and the `allspeak-py/*.allspeak` fixtures are `js` by default — correct as *tools* are written today (a host runs what it is handed and never consults the marker), and wrong the moment anything selects a runtime for them. This repository is the mixed project the `@js` override was invented for, so it wants either an `.allspeak-init` saying `runtime: js` with `@py` on the Python few, or the reverse.
 
-**One parity gap found on 2026-10-04, and it is a *leniency* rather than a break:** the JS compiler accepts `run <value>` with **no `as <module>`**, the Python one refuses it (`'as {module name}' expected`). `learn/reference/12-modules.md` documents only the `as` form, and the starter packs' GUI launcher template uses the bare form — inside an HTML page, which the browser's runtime compiles, so it never meets Python there. It bites the moment somebody copies the idiom into a `.allspeak` file: measured at 2026-10-04, `run Script` compiled with 0 problems under `tools/asviz-run.js` and failed to compile under the CLI.
+**One parity gap found on 2026-10-04, and it is a *leniency* rather than a break — [mine, queued]:** the JS compiler accepts `run <value>` with **no `as <module>`**, the Python one refuses it (`'as {module name}' expected`). `learn/reference/12-modules.md` documents only the `as` form, and the starter packs' GUI launcher template uses the bare form — inside an HTML page, which the browser's runtime compiles, so it never meets Python there. It bites the moment somebody copies the idiom into a `.allspeak` file: measured at 2026-10-04, `run Script` compiled with 0 problems under `tools/asviz-run.js` and failed to compile under the CLI.
 
 **On versions, for the record:** `js/allspeak/AllSpeak.js` line 1 still reads `2608191442` while `Browser.js` changed on 2026-10-02. The versioning policy says the runtime scheme "may remain implementation-specific", so this breaks no rule — but the string no longer dates the runtime, and AGENTS.md describes it as date-time.
 
@@ -105,7 +125,7 @@ any language but English could not run under the Python runtime at all.**
 
 ## Language packs
 
-### The `viz` marker's option words — reviewed 2026-09-28, the words stand
+### The `viz` marker's option words — [note], reviewed 2026-09-28, the words stand
 
 Every option word has a local spelling in all four packs, so a marker can be written entirely in the local language. `viz` itself stays `viz` in all four, as `json` and `mqtt` do: technical keywords are not translated.
 
@@ -130,66 +150,44 @@ Every option word has a local spelling in all four packs, so a marker can be wri
 
 **One follow-up.** `tools/generate-translated-docs.py` substitutes word by word, and the English doc source contains the new words — `once` 4 times, `thread` 3, `until` 5 — so the next doc regeneration will change some French/Italian/German lines, including prose containing those words. Eyeball those diffs before the next `deploy-sync`.
 
-### `dictionary` / `list` in the JS flavour — measured 2026-09-29; **decided: leave it alone**
+### `dictionary` / `list` in the JS flavour — [note], measured 2026-09-29, **decided: leave it alone**
 
 The assumption that implementing them in JS "would have severe implications" was recorded nowhere and never tested. Measuring says they cost almost nothing: JS already has both shapes under the spellings the reference documents. It was also prototyped in **four edits, all in `Core.js`, with no pack change**, and it moves `examples/chemical/parser.allspeak` from failing at line 43 to line 45.
 
 **It still should not be done**, and the reason is the one to keep: the two runtimes' lists are different structures — Python has no `element` (it is `item`), JS has no `reset`, Python dies on index-assign to a non-existent slot where JS auto-extends — so `list` + `element` would compile on both, run on JS and fail on Python. Graham's rule is that the JS variant must follow **"adding without taking away"**: the sweep passes (319 scripts compiled with and without: 149 OK either way, **0 regressions**) but it would advertise a portability the list semantics do not support. **No visualiser workaround is needed** — the trace format is portable, so a script the JS runtime cannot run is recorded by Python and drawn by the same picture. Full measurements in `language-pack-issues.md` #14 / #14b / #14c. **`entry` is half-wired** (`has entry` works, `set entry` and `put entry` do not), which looks accidental.
 
-### `modifyValue` is still undocumented in the plugin contract
+### `modifyValue` — [landed] 2026-10-06, and it was undocumented everywhere
 
-`as_value.py` calls `domain.modifyValue(value)` on every registered domain, and the JS twin of that bug was fixed by guarding `handler.value`. Any plugin domain must define `modifyValue` to avoid an AttributeError, and `spec/allspeak-plugin-contract.md` does not say so.
+`as_value.py` calls `domain.modifyValue(value)` on **every** registered domain as a value is compiled
+(`checkDomainAdditions`), and the call is unguarded, so a domain that does not define it raises `AttributeError`
+on the first value any script compiles. `spec/allspeak-plugin-contract.md` did not say so; it does now, in the
+capability map, and `as_viz.py`'s own comment pointing at the gap is the evidence that this cost somebody time
+once already.
 
 ---
 
-## Language proposals, carried and not started
+## Language proposals, carried and not started — [your call], and none of them urgent
 
 Both come from friction points in the chat/forum project, April 2026.
 
 3. **Storage get with defaults.** `get X from storage` returns the string `"null"` or `"undefined"` when a key is missing, requiring repeated cleanup. It should return empty, or support a fallback: `get Broker from storage as \`chat-broker\` or clear`.
 4. **Multi-field unpack with remainder.** For protocols where the last field may contain the delimiter: `unpack MessageText by \`|\` into TopicName Subject Author Body` — the last variable gets the remainder.
 
-Done and closed: **string split by delimiter** (`split … by` and `put field N of … delimited by`), implemented in both runtimes; and **append to a JSON array in a file** (Python only; JS uses `rest post` to a server, and the in-memory `append` covers the JS case).
+Done and closed: **string split by delimiter** (`split … by` and `put field N of … delimited by`), implemented in both runtimes; **append to a JSON array in a file** (Python only; JS uses `rest post` to a server, and the in-memory `append` covers the JS case); and **`join`, the inverse of `split`** — landed 2026-10-06 in both runtimes, see the note above.
 
-## `json of` a holder gives one slot, not the set — 2026-10-05, and the earlier claim is corrected
+## `json of` a holder gives one slot, not the set — [note], measured 2026-10-05, still true
 
-Found designing the recording clip. **An earlier version of this section said "a script cannot build a json
-list". That was broader than the evidence, and Graham's question — whether an "array" means the cursor-like
-indexed pattern *whose whole element set converts to a single JSON value* — is exactly the distinction.** What
-is actually measured, in both runtimes:
+Four standing facts, each measured in both runtimes, plus the correction of an over-claim an earlier version of this section made ("a script cannot build a json list" — broader than the evidence) and one maxim about probing:
 
-- **A holder is the cursor-like indexed pattern**, and the cursor is stronger than it looks. It is declared with
-  `set the elements of X to N`; slots are written with `index X to I` + `put V into X`; a slot is read with
-  `index X to I` + `put X into G`. **`split` fills the variable it names** with a slot per line — the editor's
-  walk is `put Source into Lines` *then* `split Lines`, and splitting the original instead is how a copy of it
-  then yields one element rather than all of them.
-- **`put A into B` copies the value the cursor stands on, not the set.** Measured: after `split Text`, a
-  `put Text into Holder` left `Holder` holding **one** element.
-- **`json of <holder>` gives one slot's value too.** Measured: a three-slot holder of dicts came out as
-  `{"steps":9,"n":"c"}` (the last written), and a two-slot holder of numbers as `9`.
+- **A holder is the cursor-like indexed pattern.** It is declared with `set the elements of X to N`; slots are written with `index X to I` + `put V into X`; a slot is read with `index X to I` + `put X into G`. **`split` refills the holder it names**, one slot per piece — which is why the editor's walk is `put Source into Lines` *then* `split Lines`, and why splitting the original and copying afterwards yields one element rather than all of them.
+- **`put A into B` copies the value the cursor stands on, not the set.** Measured: after `split Text`, a `put Text into Holder` left `Holder` holding **one** element.
+- **`json of <holder>` gives one slot's value too.** Measured: a three-slot holder of dicts came out as `{"steps":9,"n":"c"}` (the last written), and a two-slot holder of numbers as `9`.
+- **`join` is now the exception to all three** — the one place a bare name means the whole set. See the landed note above.
+- And a rule about probing, since the first probe here got it wrong: **a probe that manipulates a cursor has to check which object the cursor is on before it concludes anything.** That probe split `Text` and copied it afterwards, so every reading of the copy was a reading of one slot — which is why `has element` looked false and the conclusion was drawn from the wrong object.
 
-**So "the whole element set as a single JSON value" is not something the language spells today.** That is the
-real gap, and it is narrower than the first version of this note claimed: reading and writing slots works;
-what is missing is a way to say *the whole holder, as one json list*.
+## The clip — [note], no new keyword needed, decided 2026-10-05
 
-**Next test, and it is the one the probe botched**: `put Text into Holder` **then** `split Holder`, and then ask
-`the elements of Holder`, `Holder has element 0`, and `json of Holder`. The first probe split `Text` and copied
-it afterwards, so every reading of the copy was a reading of one slot — which is why `has element` looked false
-and why the conclusion was drawn from the wrong object. **A probe that manipulates a cursor has to check which
-object the cursor is on before it concludes anything.**
-
-**What this means for the clip.** A filtered list of events still needs a home. Two candidates, unchanged: a way
-to spell "this whole holder as a json list", or filtering where JSON is JSON — the `viz` plugin, in both
-runtimes, which already reads and writes trace documents and which the pane already depends on. The plugin
-remains the likelier answer, but the language question comes first because it is cheaper to answer.
-
-## CORRECTION, same evening: the language already has what the clip needs
-
-Graham explained the difference between the two flavours — **JS is older and descends from a product whose
-compiled script had to be *serializable*, so a symbol's content is stored as text and json-ness is recognised;
-Python abandoned serializability, so a value can be a real object** — and his prompt to look at the *word*
-rather than the phrase found the commands. The English pack lists the `json` word with a **set of patterns**,
-which is why every phrase-level search failed:
+The gap this file described for the recording clip does not exist. A filtered list of events is built with the `json` **word**, whose patterns are listed in the pack (which is why every phrase-level search failed):
 
     json set {variable} to array|object          ← make a list, or an object
     json add {item} to {variable}                ← append to it
@@ -197,84 +195,7 @@ which is why every phrase-level search failed:
     json replace element {index} of {variable} by|with {value}
     json format {variable}
 
-**So the gap this file described does not exist for the clip's purpose.** A filtered list of events is built
-with `json set <kept> to array`, filled with `json add <event> to <kept>`, and read back by the pane's own
-`element N of` / `has element` loops — which already read `.traceEvents`, a json array produced by another
-runtime entirely. **The clip is pane work today, and needs no new keyword.**
+So: `json set <kept> to array`, filled with `json add <event> to <kept>`, read back by the pane's own `element N of` / `has element` loops — which already read `.traceEvents`, a json array produced by another runtime entirely. **The clip is pane work today and needs no new keyword.**
 
-`join` remains a good idea on its own terms — the inverse of `split`, and a way to say "this whole holder as one
-value" that the slot commands cannot say — but it is now a *convenience*, not a blocker, and it should be
-designed on its merits rather than to unblock something.
+`join` was proposed to unblock that, and it turned out not to be needed for it — it landed on 2026-10-06 on its own terms, as the inverse of `split` and a way to say "this whole holder as one value" that the slot commands cannot say.
 
-**What is still true and worth keeping**: a bare holder name means the slot the cursor is on (measured);
-`json of` a holder gives that slot; and reading a holder element-by-element works through the cursor. The
-sections below stand except where this correction contradicts them.
-
-## Proposed: a `join` keyword, the inverse of `split` — 2026-10-05
-
-Graham's proposal, and it closes the gap above. `split` takes a value and fills the named holder with a slot per
-line; **`join` would take a whole holder and make one value out of it**:
-
-    join MyArray to json SingleValue          ! one json list, into the currently-indexed slot
-    join MyArray to StringValue with `,`      ! no `json`, so a CSV string
-    join from N to M of MyArray [ to ...]     ! a range of elements
-
-His own second example shows why the wording needs one change:
-
-    index MyArray to N
-    join MyArray to json MyArray              ! "destroys one of its own elements"
-
-There, one token — the bare name `MyArray` — means *the whole set* on the left of `to` and *the slot the cursor
-is on* on the right. A reader cannot see which is which, and everything else in the language means the slot: a
-bare name in `put A into B` copies **one** slot (measured — see above), and `json of` a holder gives one slot.
-So the *source* reading is an exception, and it is the right one — it is the same scoped exception `split`
-already makes, in reverse — but the *destination* should be marked with the word the language already uses for
-"the slot you are about to write": **`into`**.
-
-    join MyArray as json into SingleValue     ! as = the form; into = the target
-    join MyArray with `,` into StringValue    ! with = the delimiter; no `as` = text
-    join MyArray into StringValue             ! no delimiter at all
-
-One shape, three optional words, and a bare name after `join` always means the set — because that is what the
-keyword is for.
-
-**Two notes for whoever specifies it.** `json` must produce a **value**, not its text: `the json count of` a
-*string* is undefined (measured above), and a text where a list is wanted is exactly the fault that produced
-this section. And `join from N to M` is a *different* operation — an element-wise copy into another holder, not
-one value out of many — so it belongs with `split` as a second feature rather than as a fourth form of this one.
-
-**Why it matters beyond tidiness**: with `join` the clip's filter is pane work. Build a holder of the kept
-events, `join` it `as json into VizEvents`, and the pane's own loops read the range — no plugin call, no new
-boundary. The implementation is a small extension of what `json of` already does, since that already serialises
-the value the cursor stands on.
-
-## `join`: the implementation recon, so the next session resumes rather than rediscovers — 2026-10-05
-
-**The template is `split`, and it mirrors cleanly.** In `js/allspeak/Core.js` the `Split` domain entry has both
-halves: `compile` reads an optional target symbol, the value, an optional `on`/`by` and an optional
-`giving`/`into`, then `addCommand({domain: 'core', keyword: 'split', lino, item, on, target})`; `run` does
-`program.getValue(command.item).split(on)`, sets `targetRecord.elements` and fills `targetRecord.value[n]` with
-`{type: 'constant', …}` entries. In `allspeak-py/allspeak/as_core.py` the same pair is `k_split` (compile, using
-`nextIsSymbol`/`getSymbolRecord`/`add`) and `r_split` (run, using `getVariable`, `getSymbolValue`,
-`object.setElements`, `setIndex`, `setValue`).
-
-**`join` is those two halves with the direction reversed**: the compile half takes a *symbol* where `split` takes
-a *value*, and the run half **reads** `elements`/`value[n]` where `split` writes them. Everything else — the
-`as`/`with`/`into` modifiers, the target check (`is not a variable`), the lino — follows `Split` word for word.
-
-**ANSWERED (Graham, same evening): what a *list* value is.** In **JS** an `ECValue`'s content is *text* — a legacy of a compiler whose output had to be serializable — and json-ness is *recognised*, so a list is the text `json set … to array` and `json add` build, and `join … as json` must produce that same text (not a native array, which would not be recognised). In **Python** the compiled script is never serialized, so the content is a real object and `join` builds a real list. **This is the reason a `join` must be tested in both runtimes and not assumed to agree.**
-
-**Original note, kept for the record — what a *list* value is:** `join … as json` must produce the same
-kind of value that `the json count of` and `the json keys of` already read — and those two are in neither
-`Core.js`, the English pack, nor any plugin under `js/plugins/`, which was the surprise. The likely reason is
-that the packs list **words**, not phrases: `json`, `keys`, `of` are separate entries and the grammar composes
-them, so a search for the phrase finds nothing. **Start there** — find the word entry and its handler, and make
-`join … as json` produce exactly that shape.
-
-That matters more than it sounds: my own reading of a json value went wrong an hour before this note was
-written (a *reader* and a *producer* disagreeing about what "json" means — see the section above). A `join` that
-produced a json *string* instead of a json *value* would be the same fault shipped as a feature.
-
-**Order of work, and why**: JavaScript first — it is what the Graph pane runs, and JS is this project's primary
-focus — then the packs (`./sync-language-packs` mirrors them into the Python JSONs; note that a pack word with no
-Python handler is a parity gap that wants stating, not hiding), then the Python twin, then the clip that uses it.

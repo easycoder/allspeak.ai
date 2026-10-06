@@ -1,6 +1,6 @@
 ! EC-0009: starts with / ends with string conditions
 
-string S
+variable S
 
 put `hello world` into S
 

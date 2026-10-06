@@ -142,6 +142,43 @@ set element 1 of Bucket to OtherRow
 
 The cursor (`index X to N`) addresses *slots of X*. The element/property keywords (`set element N of`, `set property K of`, `json add … to`) address *inside the JSON value held by the current slot*. They never overlap.
 
+## `split` and `join` — between many elements and one value
+
+Two keywords convert between a single value and a holder's many elements — `split` writes the whole element set, and `join` reads it. `join` is also the one place where a bare name means a holder's **whole element set** rather than the slot the cursor stands on.
+
+`split` refills a holder from the value it already holds — one slot per line, or one slot per piece between a delimiter. That form works in both runtimes:
+
+```as
+put Text into Lines
+split Lines                   ! one slot per line
+
+put Row into Fields
+split Fields on `,`           ! one slot per comma-separated field
+```
+
+JavaScript additionally takes the value and the holder in one statement — ``split Text on `,` giving Fields``, and ``split Text into Lines`` for the newline case. Python's `split` does neither: it refuses `giving` and `into` (measured), so write the two-statement form, which both runtimes accept.
+
+`join` is its inverse: it takes a whole holder and makes one value out of it.
+
+```as
+join Items into Joined                  ! the elements run together
+join Items with `,` into Joined         ! ...separated by a comma
+join Items as json into Joined          ! one json list
+join from 1 to 3 of Items into Joined   ! a range of them, combined with either of the above
+```
+
+- **A bare name after `join` always means the whole holder.** Everywhere else a bare name is the slot the cursor is on: `put A into B` copies one slot and `json of` a holder gives one slot (both measured — see the trap above). `join` is the exception, made deliberately in the same way `split` already makes it in reverse.
+- **`from N to M of` is the half-open slice `Items[N:M]`**, consistent with string and array handling everywhere else. So `from 4 to 5` is **one** element and `from 4 to 4` is **empty** — an empty string, or `[]` for `as json`. Out-of-range bounds clamp rather than raise, and a range whose end is below its start is empty.
+- **`as json` produces the same value the `json` command set produces** — a list whose elements are recognised as json where their text is — so `the json count of`, `the json keys of`, `element N of` and `has element` all read it. Without `as json` the result is ordinary text.
+- **The destination is the cursor slot**, exactly as it is for `put`. So `index Items to 2` before `join Items into Items` writes the whole joined value into slot 2, replacing what was there and leaving the other slots alone.
+
+**Reading `as json` is where the runtimes differ**, and it is the same divergence the table below describes — a list is a typed shape on Python and json-shaped text inside a `variable` on JavaScript:
+
+- **JavaScript** — the target is a plain `variable`, holding json text. Read it with `the json count of Joined`, `element N of Joined`, or `Joined has element N`.
+- **Python** — declare the target a `list`, which then holds a real list: read it with `the count of Joined` and `item N of Joined`. A plain `variable` takes the value as json text instead, which `json of` parses (into a `list` before it can be counted or indexed).
+
+One more difference, and it is the two models' own rather than `join`'s: a holder that was **never given elements** joins as one *empty* element on JavaScript and as *nothing* on Python — `[""]` against `[]` for `as json`. JavaScript gives every variable one slot from birth; Python gives none until something writes to it, and cannot tell a variable that was never grown from one explicitly set to zero elements. Write `set the elements of X to N` before joining `X` and the two agree.
+
 ## Picking a shape
 
 The choice usually comes down to access pattern:

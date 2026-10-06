@@ -1,10 +1,10 @@
-    script LearnReader
-
 !! Reader state: handles for the four toolbar buttons and the two content-area divs, plus scratch variables for navigation lookups.
 !!
 !! CurrentIndex is the cursor into the manifest's `pages` array. It has just two states: -1 means "viewing the contents page", 0..Count-1 means "viewing page N". The two are mutually exclusive — there is no third state. The toolbar derives its enabled/disabled appearance entirely from CurrentIndex.
 !!
 !! NavTrigger and NavTarget are hidden DOM elements that exist solely as the bridge from the JS click-intercept shim in `index.html` — JS writes a slug into NavTarget's content and clicks NavTrigger, and the AllSpeak on-click handler reads from NavTarget. They are not user-facing.
+
+    script LearnReader
 
     variable Layout
     variable Manifest
@@ -31,7 +31,7 @@
     button PrevButton
     button NextButton
     button NavTrigger
-!! @hash 7559c7b0
+!! @hash 3438d366
 !!!
 
 !! Boot: render the layout into the body, attach the AllSpeak variables to their DOM elements, prime the markdown renderer on the content pane, load the manifest of pages, register event handlers, and land on the contents page.

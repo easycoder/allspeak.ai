@@ -909,6 +909,12 @@ var AllSpeak_LanguagePack_fr = {
         "scinde {value} sur|par {separator} donnant|dans {variable}"
       ]
     },
+    "JOIN": {
+      "keyword": "joins",
+      "patterns": [
+        "joins [depuis {first} à {last} de] {array} [avec {delimiter}] [comme json] dans {variable}"
+      ]
+    },
     "STOP": {
       "keyword": "arrête|arrete",
       "patterns": [
@@ -1125,6 +1131,7 @@ var AllSpeak_LanguagePack_fr = {
     "rename": "renomme",
     "add": "ajoute",
     "split": "scinde",
+    "join": "joins",
     "replace": "remplace",
     "count": "compte",
     "size": "taille",
