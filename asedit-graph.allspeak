@@ -39,6 +39,7 @@
     ! declared here because the code that writes it is up in the module's plumbing, above the shape block,
     ! and the compiler is single-pass: a name has to be declared above the line that uses it.
     svgtext VizBusy
+    variable VizWarned         ! 1 when the warning on the editor's status line was ours to clear
     variable VizBusyText       ! what the corner says while a drawing is under way, and after it
     variable VizBusySecs       ! the drawing's own seconds, whole part
     variable VizBusyTenths     ! ...and its tenths: the language has no fractions, and a corner that rounded
@@ -63,7 +64,7 @@
     ! because the handlers below are the first thing in the file to read it, and a variable has to be
     ! declared before the code that uses it.
     variable VizSlide          ! 0 the picture, 1 the lines bar, 2 the steps bar
-!! @hash 39beeb97
+!! @hash 2c3989b5
 !! @verified a04b40d6
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
@@ -197,7 +198,18 @@ VizPredictJudged:
     ! `viz start`/`viz stop` — which means editing and re-running the script, and answers a different
     ! question. What they want is less of *this* recording on screen, and that is the clip bar. Graham's
     ! wording, 2026-10-06.
-    alert `This recording is ` cat TraceSize cat ` bytes, and the last drawing of one this size took about ` cat VizPredicted cat ` seconds on this machine, so this may too. You may need to narrow the range viewed: drag the two markers on the clip bar above the picture to the part you want to watch.`
+    !
+    ! **A line on the editor's status bar, not a dialog box, and that is a fix rather than a preference.**
+    ! It used to be `alert`, which the language hands straight to the browser (`Browser.js`, `Alert`) — so
+    ! the box was the browser's own, its button could be neither greyed nor dismissed on cue, and Graham
+    ! had to click it twice: *"either the box should disappear or the button should grey out after being
+    ! clicked, it's not apparent that it took the click"*. Nothing of that is ours to fix in a native
+    ! dialog. The status bar is already the pane's to write to (it names a missing recording there), it is
+    ! visible before the first drawing has built anything, and it needs no acknowledgement — and the
+    ! readout below the picture says `Working - about N seconds` from the moment the drawing starts, so
+    ! the number is not lost with the box.
+    set the content of StatusSpan to `This recording is ` cat TraceSize cat ` bytes - about ` cat VizPredicted cat ` seconds to draw. Drag the clip bar's markers above the picture to narrow the range viewed.`
+    put 1 into VizWarned
     return
 
 !   And remember what it actually cost, so the next prediction is a measurement rather than a guess.
@@ -234,6 +246,13 @@ VizBusyNotice:
 !   seven hundred milliseconds would be a worse answer than no corner at all. Whole part and tenth are taken
 !   separately and joined; the tenth is floored, so the number never claims more time than was spent.
 VizBusyDone:
+    ! Only a message of ours: the status bar is the editor's, and a drawing that had nothing to warn about
+    ! must not wipe whatever the editor is saying there.
+    if VizWarned is 1
+    begin
+        put 0 into VizWarned
+        set the content of StatusSpan to ``
+    end
     if DrawMillis is less than 1
     begin
         set the text of VizBusy to ``
@@ -255,7 +274,7 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 83f8ade0
+!! @hash 2aa45248
 !! @verified 3fce0448
 !!!
 !! The view itself: everything from here down is the drawing.
