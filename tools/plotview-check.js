@@ -174,6 +174,19 @@ const namedLines = (() => {
 		return new Set();
 	}
 })();
+// How many records the pane counts — an arrival, or either end of a transfer, and nothing else. It
+// is the denominator the clip's notice prints (`238 of 2488 records`), so it is read here from the
+// recording rather than from the view, which is the only way the number can be checked and not
+// merely echoed. The `window` records are excluded for the same reason the pane excludes them: their
+// `steps` is how long a window ran, not a step anything is at.
+const recordCount = (() => {
+	try {
+		return (JSON.parse(trace).traceEvents || [])
+			.filter(e => e.cat === `anchor` || e.cat === `transfer`).length;
+	} catch (err) {
+		return -1;
+	}
+})();
 // The second thing the host gives the view: the script itself, which the view draws behind the heat.
 // A fixture of its own rather than the recorded file, because what is being checked is the mechanism
 // — the row count, the escaping, the width — and because the source has to be embedded in an AllSpeak
@@ -546,6 +559,17 @@ const marksById = id => [...drawnById(id).matchAll(/[ML]([0-9.]+) ([0-9.]+)/g)]
 	.map(m => [Number(m[1]), Number(m[2])]);
 const allMarks = () => MARK_LAYERS.flatMap(marksById);
 const markPlace = () => allMarks()[0] || null;
+// How many marks a phase drew — the four heat layers together. Read from the phase's own snapshot
+// rather than from the live DOM, so a phase earlier in the list can still be asked about after the
+// phases that follow it have redrawn the picture. The clip's check rests on this.
+const markCount = st => (st && st.heat ? st.heat.flat().length : -1);
+// The pane's status line as text, out of a phase's snapshot of the text elements. It is how a phase
+// says whether it is clipped, and what range it is showing.
+const statusOf = st => {
+	const line = ((st && st.labels) || []).find(l => l.startsWith(`ec-VizStatus-`)) || ``;
+	const m = /ec-VizStatus-\d+ = "(.*)"$/.exec(line);
+	return m ? m[1] : ``;
+};
 // A view variable by name, read the way `asedit-modes-check` reads the editor's: the report compares
 // what the view *drew*, and the one thing a press leaves behind is a number it keeps.
 const viewVar = name => {
@@ -661,6 +685,19 @@ const PHASES = [
 		if (!place) throw new Error(`no mark was drawn to press on`);
 		pressAt(place[0], place[1]);
 	} },
+	// **The clip, and it is last on purpose.** A phase that moves the window has to go after every
+	// check that reads it — the press phase above reads the picture the press left, and the checks
+	// below now find it *by name* for exactly this reason. Two phases: a clip, and the unclip that
+	// gives the recording back.
+	//
+	// **The steps axis is zoomed in first, and that is the lesson this pair was written from.** The
+	// phases end at the fit, and a clip taken at the fit is a clip to the whole run — a no-op by
+	// design. The first version of this check did not narrow the window first, read `242 then 242`,
+	// and the clip was reverted as broken when it was the *question* that was broken. Narrowing
+	// first is what makes "fewer marks" a claim about the clip rather than about the fixture.
+	{ name: `the steps axis, zoomed in, so a clip is not the whole run`, act: stepsIn },
+	{ name: `clipped to the window`, act: () => entry(`VizClip`) },
+	{ name: `unclipped, so the whole recording is back`, act: () => entry(`VizUnclip`) },
 ];
 
 // **What each gesture cost.** Reported rather than asserted, because the pane's cost is a property of the
@@ -1010,8 +1047,15 @@ if (!fittedState) {
 	let rulesChecked = 0;
 	let overflows = 0;
 	let labelRules = 0;
+	let clippedSkipped = 0;
 	for (const [name, s] of withPicture) {
 		if (!s.rules.length || !s.box || !s.box[2] || !s.box[3]) continue;
+		// **A clipped phase is left out, and it is the one phase that may not have the rule.** The
+		// claim below is that every line the *recording* names has a rule; a clip draws rules for the
+		// lines the *range* names, which is a subset, so a clipped phase would fail this for doing
+		// exactly what it is for. Its own claim — that it draws no rule the recording does not name —
+		// is made in the clip's section.
+		if (/clipped to steps/.test(statusOf(s))) { clippedSkipped++; continue; }
 		for (const line of namedLines) {
 			// Where the phase's window puts that line: the middle of its row, one row being 18 units.
 			const y = FRAME_TOP + ((line - 1) * 18 + 9 - s.box[1]) * FRAME_HEIGHT / s.box[3];
@@ -1034,7 +1078,7 @@ if (!fittedState) {
 		}
 	}
 	console.log(worstRule.off <= 2
-		? `  OK: every rule the recording asks for begins one em past that line's code, and ends at the frame's edge or one em short of a label's name (${rulesChecked} rules over all phases, ${labelRules} of them on a label, worst ${worstRule.off.toFixed(1)} units out; ${overflows} too wide to lead from, so their rules span the frame)`
+		? `  OK: every rule the recording asks for begins one em past that line's code, and ends at the frame's edge or one em short of a label's name (${rulesChecked} rules over all phases, ${labelRules} of them on a label, worst ${worstRule.off.toFixed(1)} units out; ${overflows} too wide to lead from, so their rules span the frame${clippedSkipped ? `; ${clippedSkipped} clipped phase(s) left out, their rules being the range's lines and not the recording's` : ``})`
 		: `  FAIL: a rule is ${worstRule.off} units from where the line's text ends: ${JSON.stringify(worstRule)}`);
 	// **The label layer's claim — the half of it a check can make.** It puts each label's name, without its
 	// colon, at the frame's right-hand edge on the y the *drawing* gives that line, so that what the eye
@@ -1470,8 +1514,10 @@ if (fitted && reset) {
 // against a recomputation of the view's mapping: the axis says where a line is, and the line a press
 // names must be the one the axis puts at that mark's height. A sign error or a half-row offset — both
 // of which this file has paid for — would show here as a line one or two out.
-const pressed = taken[taken.length - 1];
-const beforePress = taken[taken.length - 2];
+// **Found by name rather than by position.** The clip phases come after this one, and a phase
+// appended to the end of the list must not silently become "the press" for the checks below.
+const pressed = taken.find(([n]) => n.startsWith(`a press on a mark`));
+const beforePress = taken[taken.indexOf(pressed) - 1];
 if (pressed && beforePress) {
 	console.log(pressed[1].raw === beforePress[1].raw
 		? `  OK: and the press changed nothing on screen — the picture is byte-identical across it, `
@@ -1479,7 +1525,11 @@ if (pressed && beforePress) {
 		: `  FAIL: a press on a mark repainted the picture`);
 }
 const pressedTicks = (pressed && pressed[1].ticks) || [];
-const pressedPlace = markPlace();
+// **The place is read from the press phase's own snapshot, not from the picture on screen.** The
+// clip phases that follow re-fit the window, so the live DOM at this point is no longer the picture
+// the press was made on; the marks that phase drew are the ones its line has to agree with.
+const pressedMarks = (pressed && pressed[1].heat ? pressed[1].heat.flat() : []);
+const pressedPlace = pressedMarks.length ? [pressedMarks[0].x, pressedMarks[0].y] : null;
 const named = Number(viewVar(`VizHit`));
 if (!pressedPlace || pressedTicks.length < 2) {
 	console.log(`  ..: a press on a mark cannot be checked here (${allMarks().length} mark(s) drawn, `
@@ -1569,6 +1619,67 @@ console.log(saidLine === wantLine
 		: `  FAIL: the dots on row y=${rowWithTwo.y} reported line ${first.line}/${last.line}, `
 			+ `visits ${first.visit}/${last.visit}, totals ${first.total}/${last.total} — they should share `
 			+ `a line and a total, and rise along the row`);
+}
+
+// ---- the clip ----
+// **The two entries, by name, and what each must do to the picture.** Read carefully, because the
+// first version of this check was wrong in a way that cost an evening: it clipped at the fit, where
+// the window *is* the whole run, and a clip to the whole run is a no-op by design — so `242 then 242`
+// was the right answer to a question that asked nothing, and the clip was reverted as broken. The
+// window is narrowed by the phase before the clip, and the comparison below is against the *whole
+// recording*, which is the claim worth making: the clipped picture has fewer marks than the fit.
+//
+// **And the marks in view are not expected to change.** A mark outside the window is not drawn, so a
+// clip to the window removes records the picture was already leaving out; what the clip buys is the
+// work it no longer does, and what it *says* — the notice, and counts over the range. So the checks
+// are: fewer marks than the whole recording, the notice naming the window's own range, no rule for a
+// line the recording does not name, the unclip restoring the fit exactly, and the notice gone.
+const clipAt = indexOf(`clipped to the window`);
+const clippedState = clipAt >= 0 ? taken[clipAt][1] : null;
+const beforeClipState = clipAt > 0 ? taken[clipAt - 1][1] : null;
+const unclippedState = clipAt >= 0 ? taken[clipAt + 1][1] : undefined;
+const fitAgainState = (taken.find(([n]) => n.startsWith(`the fit again, for the bars`)) || [])[1];
+if (!clippedState || !beforeClipState || !unclippedState || !fitAgainState) {
+	console.log(`  ..: the clip phases did not run, so the clip cannot be checked`);
+} else {
+	const wholeRun = markCount(fitAgainState), inRange = markCount(clippedState);
+	console.log(inRange < wholeRun
+		? `  OK: a clip to a window narrower than the recording draws fewer marks than the whole `
+			+ `recording does (${inRange} against ${wholeRun})`
+		: `  FAIL: a clip drew as many marks as the whole recording (${inRange} then ${wholeRun}) — the `
+			+ `range is not filtering the records, or the window was not narrowed before the clip`);
+	// The notice, against the numbers rather than against itself: the range must be the window the
+	// clip was taken from, and the denominator must be the recording's own count of arrivals and
+	// transfers, read from the trace above. A notice that agreed with nothing would pass a check
+	// that only looked for the words.
+	const notice = statusOf(clippedState);
+	const clipRange = /clipped to steps (-?\d+)-(-?\d+): (\d+) of (\d+) records/.exec(notice);
+	const windowSteps = /steps (-?\d+)-(-?\d+),/.exec(statusOf(beforeClipState));
+	console.log(clipRange && windowSteps
+		&& clipRange[1] === windowSteps[1] && clipRange[2] === windowSteps[2]
+		&& Number(clipRange[3]) > 0 && Number(clipRange[3]) <= Number(clipRange[4])
+		&& Number(clipRange[4]) === recordCount
+		? `  OK: and the status line leads with the notice, naming the window's own range and the `
+			+ `recording's ${recordCount} records — "${notice}"`
+		: `  FAIL: the status line's clip notice does not agree with the window it was taken from `
+			+ `("${notice}", window ${windowSteps && windowSteps.slice(1, 3).join(`-`)}, `
+			+ `${recordCount} records in the recording)`);
+	// A clip may only *remove* rules, never invent one: every rule it draws is a line the recording
+	// names. The y a line is drawn at is read here from the phase's own box, the same formula the
+	// rule check uses — a second reading of one rule, which is what makes the two comparands.
+	const lineYOf = (s, line) => FRAME_TOP + ((line - 1) * 18 + 9 - s.box[1]) * FRAME_HEIGHT / s.box[3];
+	const strayRules = (clippedState.ruleYs || [])
+		.filter(y => ![...namedLines].some(line => Math.abs(lineYOf(clippedState, line) - y) <= 1));
+	console.log(strayRules.length === 0
+		? `  OK: and it draws no rule for a line the recording does not name (${(clippedState.ruleYs || []).length} rules in the range, ${namedLines.size} lines named in all)`
+		: `  FAIL: the clipped picture draws ${strayRules.length} rule(s) at a line the recording does not name: ${strayRules.slice(0, 4).join(`, `)}`);
+	console.log(unclippedState.raw === fitAgainState.raw
+		? `  OK: and the unclip gives the whole recording back — the picture is the fit again, byte for byte`
+		: `  FAIL: the unclip did not give the whole recording back (${markCount(unclippedState)} marks `
+			+ `against the fit's ${markCount(fitAgainState)})`);
+	console.log(!/clipped to steps/.test(statusOf(unclippedState))
+		? `  OK: and the notice is gone from the status line`
+		: `  FAIL: the clip notice survived the unclip: "${statusOf(unclippedState)}"`);
 }
 
 // What it asked the DOM for, and what the layers actually contain.

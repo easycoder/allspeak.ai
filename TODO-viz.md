@@ -349,36 +349,20 @@ this project's rule that a symptom in a log line is evidence. Second, the bug wa
 above is the Python CLI path — the one the editor uses. The fix needs a **release** to reach a user, then the
 reverted messages need a deploy.
 
-## The clip: built, checked, and withdrawn — 2026-10-05
+## The clip: built, checked, and in the pane — 2026-10-06
 
-Graham's go was for the clip as a filter over the records with two entries, the notice and the re-fit key. All of
-that was written and it **compiled** (`asedit-check`: 1368 commands, 284 symbols), and then the check said no:
+**It is in, and the check that withdrew it was the thing that was wrong.** `VizClip` takes the range from the window and asks for a draw; `VizUnclip` clears it; the range joins the re-fit key at both places that decide a picture, so a clip re-measures the extent, the rule set, the busiest line and the fit rather than staying fitted to the part that was cut away; and the status line leads with the notice. The pane filters `VizEvents` where the recording is parsed, so pass one, the marks, the rules, `visit N of T` and the hit test all read the same kept set — which is what makes the notice a fact rather than a label.
 
-```
-FAIL: a clip drew as many marks as the whole recording (242 then 242)
-FAIL: reloading did not restore the picture (242 then 242)
-```
+**What was measured, 2026-10-06.** `asedit-check asedit-graph.allspeak` compiles (1380 commands, 284 symbols); `asdoc-check` 0 errors; `plotview-check` on the Python recording of `tools/trace-run.allspeak` is **56 OK / 2 FAIL**, the two FAILs being the same two known window expectations the file carried before the change. **And the unclipped report is byte-identical to the previous pane's**, on that trace and on the JS one (`PLOTVIEW=` diff: 51 OK / 2 FAIL either side, no line differing) — the strongest statement available that the step origin added below changed nothing when there is no clip. Five new checks: fewer marks than the whole recording, the notice's range and denominator read against the window and the trace, no rule for a line the recording does not name, the unclip restoring the fit byte for byte, and the notice gone.
 
-**So the filter did not take, and rather than leave an inert `VizClip` behind I reverted the pane and the harness
-to the last verified state.** Two things came out of it that are worth keeping:
+**Two things the second attempt had to find out, and neither was in the prompt.**
 
-1. **A pane element cannot take a click.** `svg` is the one element type the plugin registers *without* the `dom`
-   extra — `AGENTS.md`'s own trap — and `on click VizClipBtn` therefore fails to compile with `I don't understand
-   'on'`. The editor's buttons work because they are `div`/`button`; the pane's are `svg`. So the controls need
-   either a *dom* surface (the editor's toolbar, or the page) or the pane's own idiom: an arithmetic hit test on
-   the pointer, which is how every one of its gestures already works ("there is nothing for the DOM to hit and
-   the answer has to be arithmetic"). **Either way it is a second slice, and the entries are what a first one
-   should prove.**
-2. **The harness's phases are order-sensitive, and appending one is not free.** My two new phases went before the
-   mark-press phase, and the press checks then failed — `a press on a mark named line 0` — because the clip and
-   its unclip re-fit the window, and the press checks assume the window the earlier gestures left. The harness
-   says as much of its own last phase ("It is last, so the line it leaves behind is the one the checks below
-   read"), and a new phase has to respect that. Next time: a phase that changes the window goes *after* every
-   check that reads it, or the checks get their own fixture.
+1. **A clip cannot reduce the marks *in view* — only the marks of the whole recording.** A mark outside the window is not drawn, so clipping to the window removes exactly the records the picture was already leaving out: the drawn picture is the same, and what the clip buys is the *work* it no longer does plus the reading (the ramp rescales to the range's busiest line — the fixture's hottest band goes 1 mark → 2 — and `visit N of T` counts the range). The prompt's "assert fewer marks", posed against the phase before the clip, is unachievable and reads `4 then 4`; posed against the **fit**, where the window is the whole run, it is `4 against 8` and is the claim worth making. This is the same fault as the one that cost the evening, one level down: the question, not the code.
+2. **The range had to join the *fit*, and the pane's steps axis had to acquire an origin.** The fit began at `put 0 into VizViewX0`, so a refit after a clip would put the picture back at the recording's start and show the cut-away part blank. The run's first step is now a value — `VizMinSteps`, 0 unclipped and the clip's own start when clipped — with its width in `VizSpanSteps`, and the fit, `VizClamp`, the steps bar and the handle drag read those instead of a hard 0. Every one of them reduces to exactly what it was when `VizMinSteps` is 0, which is why the unclipped report is byte-identical.
 
-**What to do next, and it is the lesson of this whole evening**: *probe the filter before building the rest of
-it*. Both `json set <x> to array` and `json add <ev> to <x>` were verified in isolation an hour ago, so the
-failure is in how the pane uses them — most likely in reading `steps` from a clipped event, or in the range
-comparison (a number that arrived as text compares lexically, which this project has been bitten by before).
-A fifteen-line probe in `tools/` would settle it in one run, and it should be written before the entries, the
-notice, the re-fit key and the controls are attempted again.
+**The controls are still not built, and the entries are what they will stand on.** `VizClip`/`VizUnclip` are driven by the harness only — no button sets the range, because a pane element cannot take a click (`svg` is the one element type registered without the `dom` extra). A dom surface in the editor, or the pane's own arithmetic hit test on the pointer, is the second slice; Graham's **clip bar** with IN and OUT markers is a third way to set the same range and changes neither entry.
+
+**Two standing faults this pass ran into, both pre-existing and neither introduced by the clip — reported, not fixed.**
+
+- **A later `window` record overwrites `VizMaxSteps`.** Pass one does `put property `steps` of VizArgs into VizMaxSteps` for every `window` record, so on a recording that opens more than one window the extent collapses to the *last* window's step count (anchors can only raise it, and they have already been seen). Measured: the JS recording of `tools/trace-run.allspeak` has three windows and fits to `steps -1-2`, where the Python host's single-window recording of the same script is the well-behaved 24-step one the harness's expectations are tuned to. `VizMaxSteps` should be a maximum, not an assignment — a one-line fix, but it changes the unclipped picture for any multi-window trace, so it wants its own measurement.
+- **`steps` is per window, not per recording.** So a clip range is approximate on a multi-window recording: the steps of one window land on top of another's. That is the pane's existing step model rather than anything the clip introduced, but a clip magnifies it, and it is the reason the harness is run on the *Python* recording.
