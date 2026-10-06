@@ -71,6 +71,14 @@ run_sync "learn/"           "deploy/learn/"
 run_sync "primer/"          "deploy/en/primer/" --exclude=README.md --exclude=project.allspeak
 # dist/ is now built directly into deploy/dist/ by build-allspeak, so no sync needed.
 run_sync "resources/doc/"   "deploy/resources/doc/"
+# Images an article calls for that belong to no page's own asset directory.
+#
+# **The mirror has to be committed as well as synced.** This script is not the only way a deploy happens:
+# the GitHub workflow (`Deploy to allspeak.ai`) checks out the repo, runs build-allspeak and build-starters,
+# and rsyncs `deploy/` to the server *as-is* — it never runs this one. So a copy that exists only in the
+# working tree is not published by that path, and its `--delete` removes it from the server. Sync, then
+# commit, exactly as `resources/doc/` above.
+run_sync "resources/other/"   "deploy/resources/other/"
 
 # The four language Primer pages all load /shared/primer/project.allspeak. Keep that
 # single file in sync with source so we have one canonical script.
