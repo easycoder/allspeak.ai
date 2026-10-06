@@ -166,6 +166,20 @@ once already.
 
 ---
 
+## Reading one element of a json array costs a parse of the whole array — [your call], measured 2026-10-06
+
+**What it is.** `Core.js` reads a json variable as *text*, so its `element` case (and `item`, identically) does `JSON.parse(<the whole array>)[N]` and then `JSON.stringify` of the element when that element is an object. Measured on the visualiser's own workload — a 435 KB recording of 2,300 records — that is **~15 ms per access**, so a single loop over a recording costs **~35 seconds**, and the pane walks it several times a drawing. It is the whole of why a big recording is slow to draw, and it is in `AGENTS.md`'s trap list now.
+
+**Why it is worth a decision rather than a note.** The cost is not in the loop, it is in the *access*, and it is paid by every `.allspeak` script that iterates a json array — the pane's slowness is just where it is most visible. A **parse cache keyed on the text of the variable** (one `Map` from string to parsed value, invalidated when the string changes) would fix every loop in the language at once, for an afternoon's work and no change to any script.
+
+**What it would cost, and the two things to settle first.**
+
+- **It touches the reading path of both runtimes**, and the two do not hold json the same way (JavaScript keeps text with its json-ness recognised; Python keeps a real object). A JS-only cache would be a *performance* difference rather than a semantic one — which is defensible, since nothing observable changes — but it should be said out loud in `spec/` rather than discovered.
+- **The cache has to be keyed on the text, not the variable**, or a variable reassigned to different json inherits the old parse. That is the same failure mode as the pane's own stale-parse bug, which cost a session: a cache that is not invalidated is worse than no cache.
+- **It wants a measurement, not a demonstration**: the 323-script sweep and the pane's own `PLOTVIEW_ONEDRAW` figure before and after, so the claim is "no observable change and this much faster" rather than "it seems quicker".
+
+**And it is not needed for the clip to work.** The pane's own fixes — read the recording once, cache the filtered set — make the clip pay today; this is the change that would make the *unclipped* picture quick as well.
+
 ## Language proposals, carried and not started — [your call], and none of them urgent
 
 Both come from friction points in the chat/forum project, April 2026.

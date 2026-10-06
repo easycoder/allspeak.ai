@@ -184,6 +184,17 @@ Be liberal with them, and cheerful about intrusive ones — they are not permane
 Standing knowledge rather than next steps, which is why they live here and not in `TODO*.md`. Every one of these has cost real time in this project.
 
 - **`or` on a `rest get` stops the thread.** The rest of the section is abandoned; use `on failure` to continue.
+- **`element N of X` parses the whole array, and stringifies the element it returns.** A json variable is
+  held as *text*, so every indexed read is `JSON.parse(<the whole array>)[N]` — plus `JSON.stringify` when
+  the element is an object, which every trace record is. Measured 2026-10-06 on a 435 KB recording (2,300
+  anchor/transfer records): **~15 ms per access**, so `~35 s` for one loop over the recording, and the
+  visualiser's pane walks it several times a draw. **Any loop over a json array is therefore quadratic in
+  what it walks**, and the two things that follow from it are worth the sentence: a recording has to be
+  *read once* and a filtered copy *cached* (`json add` parses and re-stringifies the array it appends to,
+  so building that copy one record at a time is quadratic as well), and in the visualiser the **number of
+  records walked** is the cost that matters, not the number of marks drawn — which is why the clip is the
+  only lever the language offers and why a gesture that walks the whole recording cannot be made quick by
+  drawing fewer marks.
 - **A status code does not mean the file arrived.** The dev server answers an unknown path with `200`, the editor's own page, and the MIME guessed from the extension — so a fetch checks its body for a leading `<`.
 - **A variable must be declared before the statement that *writes* it**, not merely before the section that reads it: the compiler is single-pass. A declaration below the point where a handler is *registered* is not there yet.
 - **A duplicate declaration is an error.**

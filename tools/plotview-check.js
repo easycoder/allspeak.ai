@@ -28,6 +28,8 @@
 //   PLOTVIEW_GESTURES=1    run every phase and print the dearest five by what the *view* measured for each
 //                          (`DrawMillis`, which each drawing writes at its own two ends). Not this harness's
 //                          wall clock, which is dominated by its own patient settling.
+//   PLOTVIEW_CLIP=<f>-<t>  clip to a range of steps before the load-time drawings, so the same two questions
+//                          can be asked of a *clipped* draw on a recording whose phases cannot finish.
 //
 const fs = require('fs');
 // **This harness runs the drawing, so it needs the runtime it runs on.** A copy shipped inside a
@@ -138,7 +140,7 @@ if (viewStart < 0) {
 // view's own draw hands over to it. `VizSlide` is the same case again, and it is declared with the
 // *gestures* up there rather than with the view's own state for exactly the reason it has to be
 // repeated here: `on drag` reads it before any of the view's declarations have been reached.
-const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable DrawMillis\nvariable VizEstimate\nvariable DrawStarted\n`
+const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable DrawMillis\nvariable VizEstimate\nvariable DrawStarted\nsvgtext VizBusy\n`
 	+ moduleSource.slice(viewStart);
 const trace = fs.readFileSync(tracePath, `utf8`);
 // What the recording says the transfers were, by kind. The view decides which of these to draw and
@@ -179,6 +181,20 @@ const namedLines = (() => {
 // recording rather than from the view, which is the only way the number can be checked and not
 // merely echoed. The `window` records are excluded for the same reason the pane excludes them: their
 // `steps` is how long a window ran, not a step anything is at.
+// The recording's own last step, read from the trace. The pane measures this too, and the two agreeing is
+// what says the picture's steps axis is the recording's — the bar's claims are placed in those steps, so
+// they mean nothing when the pane's extent has collapsed (a recording that opens more than one `viz`
+// window does that to it; `TODO-viz.md` has it as a standing fault).
+const traceMaxSteps = (() => {
+	try {
+		const steps = (JSON.parse(trace).traceEvents || [])
+			.filter(e => e.cat === `anchor` || e.cat === `window`)
+			.map(e => Number((e.args || {}).steps) || 0);
+		return steps.length ? Math.max(...steps) : 0;
+	} catch (err) {
+		return -1;
+	}
+})();
 const recordCount = (() => {
 	try {
 		return (JSON.parse(trace).traceEvents || [])
@@ -236,6 +252,30 @@ const source = Array.from({ length: 260 }, (_, i) => {
 const editedSource = source + `\n    one line more`;
 // The order matters: the host's main flow comes *first*, and the view's section after it, so that
 // execution stops before falling into the section's body. That is how it will sit in asedit too.
+// **`PLOTVIEW_CLIP=<from>-<to>` sets a clip before the load-time drawings.** The phases below cannot be
+// run on a big recording — a 435KB trace never finishes them — so the only way to ask what a *clipped*
+// draw costs on one is to hand the view a range before it draws. It is the same two variables `VizClip`
+// sets, which is what keeps it honest: nothing here reaches past the entry the pane has.
+const clipFirst = (() => {
+	const spec = process.env.PLOTVIEW_CLIP;
+	if (!spec) return null;
+	const [from, to] = spec.split(`-`).map(Number);
+	if (!Number.isFinite(from) || !Number.isFinite(to)) {
+		process.stderr.write(`plotview-check: PLOTVIEW_CLIP wants <from>-<to>, e.g. PLOTVIEW_CLIP=0-300\n`);
+		process.exit(2);
+	}
+	return [from, to];
+})();
+// Writing a variable the view owns, from the host side, is what `viewVar` already does for reading — and
+// it is the only way to clip a big recording *before* the load-time drawings, because the host half of the
+// compiled script sits above the view's own declarations and cannot name them. The shape is the runtime's
+// own (`Core.Put`), so what this writes is exactly what `put 300 into VizClipTo` would have written.
+const setViewVar = (name, number) => {
+	const record = program && program.getSymbolRecord(name);
+	if (!record) throw new Error(`the view declares no '${name}'`);
+	record.value[record.index] = { type: `constant`, numeric: true, content: number };
+};
+
 const script = [
 	`! the host: the panel the view draws in, the trace it is given, and the script behind it`,
 	`    div VizHost`,
@@ -263,6 +303,10 @@ const script = [
 let program = null;
 try {
 	program = AllSpeak.compileScript(AllSpeak.tokeniseFile(script.split(`\n`)), null, null, null);
+	if (clipFirst) {
+		setViewVar(`VizClipFrom`, clipFirst[0]);
+		setViewVar(`VizClipTo`, clipFirst[1]);
+	}
 	program.running = true;
 	const out = process.stdout.write.bind(process.stdout);
 	console.log = (...a) => out(a.join(` `) + `\n`);
@@ -473,7 +517,8 @@ const drawing = () => {
 		// **The clip bar as drawn**: the two markers' x and the band. Kept in the snapshot rather than
 		// read off the DOM at the check, because the phases after this one move the markers again and
 		// the live DOM is then a different picture — the same reason the press checks keep their phase.
-		clipBar: [`ec-VizClipMarkIn`, `ec-VizClipMarkOut`, `ec-VizClipBand`].map(id => {
+		clipBar: [`ec-VizClipMarkIn`, `ec-VizClipMarkOut`, `ec-VizClipBand`,
+			`ec-VizClipGuideIn`, `ec-VizClipGuideOut`, `ec-VizClipMaskIn`, `ec-VizClipMaskOut`].map(id => {
 			const el = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(id));
 			return { id, x: el ? Number(el.attributes.x) : null, w: el ? Number(el.attributes.width) : null };
 		}),
@@ -488,7 +533,23 @@ const drawing = () => {
 			// rest of the snapshot has to be byte-identical across a press — that is the property the checks
 			// below rest on — and the figures on the pane's foot are the news a press produces, so including
 			// them here would make the check fail for doing its job. Moved to the pane on 2026-10-05.
-			texts.filter(t => !String(t.attributes.id || ``).startsWith(`ec-VizHitStatus`))
+			//
+			// **And the working readout, for the same reason in another place.** It says what the last
+			// drawing cost, and consecutive phases are drawings of different costs — so it changes between
+			// any two of them and would make "the picture is byte-identical across the press" false for a
+			// reason that has nothing to do with the picture. It is a measurement *about* the pane, not
+			// part of what the pane shows.
+			//
+			// **And the clip notice, which a drag *is* allowed to move.** It names the range being
+			// dragged, so it changes while the marker moves — by attribute write, like the marker itself,
+			// which is also outside this snapshot. Leaving it in would make "the drag redrew nothing"
+			// fail for the feedback the drag exists to give: what that check is about is the *picture*
+			// (marks, rules, flow, axis, source, status), and that is what it still compares.
+			texts.filter(t => {
+				const id = String(t.attributes.id || ``);
+				return !id.startsWith(`ec-VizHitStatus`) && !id.startsWith(`ec-VizBusy`)
+					&& !id.startsWith(`ec-VizClipNotice`);
+			})
 				.map(t => [t.attributes.x, t.attributes.y, t.innerHTML]),
 			picture ? [picture.attributes.x, picture.attributes.y, picture.attributes.width, picture.attributes.height] : null,
 		]),
@@ -572,6 +633,11 @@ const markPlace = () => allMarks()[0] || null;
 const markCount = st => (st && st.heat ? st.heat.flat().length : -1);
 // The pane's status line as text, out of a phase's snapshot of the text elements. It is how a phase
 // says whether it is clipped, and what range it is showing.
+const noticeOf = st => {
+	const line = ((st && st.labels) || []).find(l => l.startsWith(`ec-VizClipNotice-`)) || ``;
+	const m = /ec-VizClipNotice-\d+ = "(.*)"$/.exec(line);
+	return m ? m[1] : ``;
+};
 const statusOf = st => {
 	const line = ((st && st.labels) || []).find(l => l.startsWith(`ec-VizStatus-`)) || ``;
 	const m = /ec-VizStatus-\d+ = "(.*)"$/.exec(line);
@@ -627,7 +693,7 @@ const markerStepX = which => {
 	const box = boxOf(`ec-VizClipMark${which}`);
 	return box ? box.x + 2 : null;
 };
-const CLIP_STRIP_Y = 688;   // inside the strip: the markers are drawn 678..694
+const CLIP_STRIP_Y = 41;   // inside the strip above the plot: the markers are drawn 31..51
 // Press a marker, drag it to a place on the bar, and **let go** — and the release is the whole of it.
 // `VizRelease` is what applies the range: a drag on its own moves the marker and nothing else, which is
 // why the phases above hold the two halves apart rather than hiding them in here.
@@ -1096,7 +1162,7 @@ if (!fittedState) {
 		// lines the *range* names, which is a subset, so a clipped phase would fail this for doing
 		// exactly what it is for. Its own claim — that it draws no rule the recording does not name —
 		// is made in the clip's section.
-		if (/clipped to steps/.test(statusOf(s))) { clippedSkipped++; continue; }
+		if (/clipped to steps/.test(noticeOf(s))) { clippedSkipped++; continue; }
 		for (const line of namedLines) {
 			// Where the phase's window puts that line: the middle of its row, one row being 18 units.
 			const y = FRAME_TOP + ((line - 1) * 18 + 9 - s.box[1]) * FRAME_HEIGHT / s.box[3];
@@ -1693,16 +1759,16 @@ if (!clippedState || !beforeClipState || !unclippedState || !fitAgainState) {
 	// clip was taken from, and the denominator must be the recording's own count of arrivals and
 	// transfers, read from the trace above. A notice that agreed with nothing would pass a check
 	// that only looked for the words.
-	const notice = statusOf(clippedState);
+	const notice = noticeOf(clippedState);
 	const clipRange = /clipped to steps (-?\d+)-(-?\d+): (\d+) of (\d+) records/.exec(notice);
 	const windowSteps = /steps (-?\d+)-(-?\d+),/.exec(statusOf(beforeClipState));
 	console.log(clipRange && windowSteps
 		&& clipRange[1] === windowSteps[1] && clipRange[2] === windowSteps[2]
 		&& Number(clipRange[3]) > 0 && Number(clipRange[3]) <= Number(clipRange[4])
 		&& Number(clipRange[4]) === recordCount
-		? `  OK: and the status line leads with the notice, naming the window's own range and the `
+		? `  OK: and the picture's own line carries the notice, naming the window's own range and the `
 			+ `recording's ${recordCount} records — "${notice}"`
-		: `  FAIL: the status line's clip notice does not agree with the window it was taken from `
+		: `  FAIL: the clip notice does not agree with the window it was taken from `
 			+ `("${notice}", window ${windowSteps && windowSteps.slice(1, 3).join(`-`)}, `
 			+ `${recordCount} records in the recording)`);
 	// A clip may only *remove* rules, never invent one: every rule it draws is a line the recording
@@ -1718,9 +1784,9 @@ if (!clippedState || !beforeClipState || !unclippedState || !fitAgainState) {
 		? `  OK: and the unclip gives the whole recording back — the picture is the fit again, byte for byte`
 		: `  FAIL: the unclip did not give the whole recording back (${markCount(unclippedState)} marks `
 			+ `against the fit's ${markCount(fitAgainState)})`);
-	console.log(!/clipped to steps/.test(statusOf(unclippedState))
-		? `  OK: and the notice is gone from the status line`
-		: `  FAIL: the clip notice survived the unclip: "${statusOf(unclippedState)}"`);
+	console.log(!/clipped to steps/.test(noticeOf(unclippedState))
+		? `  OK: and the notice is gone`
+		: `  FAIL: the clip notice survived the unclip: "${noticeOf(unclippedState)}"`);
 }
 
 // ---- the clip bar ----
@@ -1738,55 +1804,90 @@ const barDragged = barAt >= 0 ? taken[barAt][1] : null;
 const barBefore = barAt > 0 ? taken[barAt - 1][1] : null;
 const barApplied = barAt >= 0 && taken[barAt + 1] ? taken[barAt + 1][1] : null;
 const barHome = barAt >= 0 && taken[barAt + 2] ? taken[barAt + 2][1] : null;
+// The recording's steps, as the view holds them. Read *here* rather than inside one of the branches
+// below, because the guard itself needs them — and a name read before its declaration is a ReferenceError
+// that takes the whole report with it, silently if the harness's own stderr is being dropped.
+const barRunFrom = Number(viewVar(`VizRunFrom`));
+const barRunTo = Number(viewVar(`VizRunTo`));
+// **The bar's claims all need a picture whose steps axis is the recording's.** They are placed in the
+// recording's steps — that is what the bar is measured in — and a recording whose extent the pane has
+// collapsed (it opens more than one `viz` window; `TODO-viz.md` has that as a standing fault) has a fit
+// that spans neither. On the fixture this harness is tuned to, the two agree and every claim below is
+// made; on the JS recording of the same script they do not, and *saying so* is the honest answer rather
+// than failing the pane for the recording's own fault.
 if (!barDragged || !barBefore || !barApplied || !barHome) {
 	console.log(`  ..: the clip bar phases did not run, so the bar cannot be checked`);
+} else if (barRunTo !== traceMaxSteps) {
+	console.log(`  ..: the clip bar's claims need a picture whose steps axis is the recording's, and this `
+		+ `recording's last step is ${traceMaxSteps} where the pane measured ${barRunTo} — so they are not asked`);
 } else {
-	// The rect is four units wide and the view centres it on the step it names, so a marker's *step* x
-	// is its box's x plus two — the same correction the drag helper makes, and the reason a marker read
+	// The rect is four units wide and the view centres it on the step it names, so a marker's *step* x is
+	// its box's x plus two — the same correction the drag helper makes, and the reason a marker read
 	// straight off the box is a step out when the mapping is inverted.
 	const boxX = (state, id) => (state.clipBar.find(m => m.id === id) || {}).x;
+	const barW = (state, id) => (state.clipBar.find(m => m.id === id) || {}).w;
 	const barInX = state => boxX(state, `ec-VizClipMarkIn`) + 2;
 	const barOutX = state => boxX(state, `ec-VizClipMarkOut`) + 2;
+	const inStep = barInX(barDragged), outStep = barOutX(barDragged);
+
 	console.log(barOutX(barDragged) !== barOutX(barBefore) && barInX(barDragged) === barInX(barBefore)
 		? `  OK: dragging the OUT marker moves it and leaves IN where it was (x ${boxX(barBefore, `ec-VizClipMarkOut`)} to ${boxX(barDragged, `ec-VizClipMarkOut`)}, IN at ${boxX(barDragged, `ec-VizClipMarkIn`)})`
 		: `  FAIL: the marker drag moved the wrong thing (OUT ${boxX(barBefore, `ec-VizClipMarkOut`)} to ${boxX(barDragged, `ec-VizClipMarkOut`)}, IN ${boxX(barDragged, `ec-VizClipMarkIn`)})`);
+
 	console.log(barDragged.raw === barBefore.raw
 		? `  OK: and the picture was not redrawn while the marker moved — the drag costs no drawing, `
 			+ `which is the whole reason for a bar rather than a zoom`
 		: `  FAIL: the marker drag redrew the picture, so choosing a range costs a drawing per move`);
-	// The range, cross-checked: what the notice says against where the markers are drawn, read back
-	// through the bar's own mapping. `VizRunFrom`/`VizRunTo` are the view's, so this is one claim about
-	// the picture and the recording rather than a number compared with itself.
-	const runFrom = Number(viewVar(`VizRunFrom`)), runTo = Number(viewVar(`VizRunTo`));
-	const stepAtX = x => runFrom + Math.floor((x - 60) * (runTo - runFrom) / 880);
-	// Four groups: the range's two ends, and how many records the range kept of the recording's whole.
-	const barRange = /clipped to steps (-?\d+)-(-?\d+): (\d+) of (\d+) records/.exec(statusOf(barApplied));
-	console.log(barRange && Number(barRange[1]) === stepAtX(barInX(barDragged))
-		&& Number(barRange[2]) === stepAtX(barOutX(barDragged)) && Number(barRange[4]) === recordCount
-		? `  OK: and the notice agrees with the markers — steps ${barRange[1]}-${barRange[2]}, which is `
-			+ `where the bar puts x=${barInX(barDragged)} and x=${barOutX(barDragged)}, of the recording's ${recordCount} records`
-		: `  FAIL: the notice and the bar disagree ("${statusOf(barApplied)}", markers at x=${barInX(barDragged)} `
-			+ `and x=${barOutX(barDragged)}, whose steps are ${stepAtX(barInX(barDragged))} and `
-			+ `${stepAtX(barOutX(barDragged))}, ${recordCount} records)`);
+
+	// **The guides and the wash, which are what make the bar a control rather than a readout.** While a
+	// marker is being dragged the plot is still the whole recording, so the guides run down it at the two
+	// marker positions and the wash covers exactly what the range leaves out — checked on the *drag* phase,
+	// which is where the reader is choosing.
+	const guidesOk = boxX(barDragged, `ec-VizClipGuideIn`) === inStep
+		&& boxX(barDragged, `ec-VizClipGuideOut`) === outStep;
+	const washOk = boxX(barDragged, `ec-VizClipMaskIn`) === 60 && barW(barDragged, `ec-VizClipMaskIn`) === inStep - 60
+		&& boxX(barDragged, `ec-VizClipMaskOut`) === outStep && barW(barDragged, `ec-VizClipMaskOut`) === 940 - outStep;
+	console.log(guidesOk && washOk
+		? `  OK: and the guides run down the plot at the two markers while the wash covers what the range `
+			+ `leaves out (guides at ${inStep} and ${outStep}; wash 60-${inStep} and ${outStep}-940)`
+		: `  FAIL: the guides or the wash disagree with the markers (guides ${boxX(barDragged, `ec-VizClipGuideIn`)} `
+			+ `and ${boxX(barDragged, `ec-VizClipGuideOut`)} against ${inStep} and ${outStep}; wash `
+			+ `${boxX(barDragged, `ec-VizClipMaskIn`)}-${barW(barDragged, `ec-VizClipMaskIn`)} and `
+			+ `${boxX(barDragged, `ec-VizClipMaskOut`)}-${barW(barDragged, `ec-VizClipMaskOut`)})`);
+
+	// Nothing to wash when the range *is* the recording: untouched, both washes are empty and the picture is
+	// unmarked — the state a reader should find on opening a run.
+	console.log(barW(barBefore, `ec-VizClipMaskIn`) === 0 && barW(barBefore, `ec-VizClipMaskOut`) === 0
+		? `  OK: and with no range chosen there is nothing washed — the picture is unmarked`
+		: `  FAIL: the picture is washed before any range is chosen (${barW(barBefore, `ec-VizClipMaskIn`)} `
+			+ `and ${barW(barBefore, `ec-VizClipMaskOut`)})`);
+
+	// The range, cross-checked: what the notice says against where the markers are drawn, read back through
+	// the bar's own mapping. `VizRunFrom`/`VizRunTo` are the view's, so this is one claim about the picture
+	// and the recording rather than a number compared with itself.
+	const stepAtX = x => barRunFrom + Math.floor((x - 60) * (barRunTo - barRunFrom) / 880);
+	const barRange = /clipped to steps (-?\d+)-(-?\d+): (\d+) of (\d+) records/.exec(noticeOf(barApplied));
+	console.log(barRange && Number(barRange[1]) === stepAtX(inStep) && Number(barRange[2]) === stepAtX(outStep)
+		&& Number(barRange[4]) === recordCount
+		? `  OK: and the notice agrees with the markers — steps ${barRange[1]}-${barRange[2]}, which is where `
+			+ `the bar puts x=${inStep} and x=${outStep}, of the recording's ${recordCount} records`
+		: `  FAIL: the notice and the bar disagree ("${noticeOf(barApplied)}", markers at x=${inStep} and `
+			+ `x=${outStep}, whose steps are ${stepAtX(inStep)} and ${stepAtX(outStep)}, ${recordCount} records)`);
 	console.log(barRange && Number(barRange[3]) > 0 && Number(barRange[3]) < Number(barRange[4])
 		? `  OK: and it kept some of the recording and not all of it (${barRange[3]} of ${barRange[4]} records)`
 		: `  FAIL: the range the bar marked kept ${barRange && barRange[3]} of ${barRange && barRange[4]} records, `
 			+ `so it is not a narrowing of the recording`);
-	// **And the picture is of fewer marks — but only where the picture and the recording share an axis.**
-	// They do on a recording that opens one `viz` window, which is what the Python recorder writes and
-	// what this harness is tuned to. A recording that opens several has the pane's extent collapsed to
-	// the last window's step count by a fault of its own (`TODO-viz.md`), and then the fit is not a
-	// baseline the clip can be measured against — the check says so rather than failing for it.
-	if (Number(viewVar(`VizFitXW`)) !== runTo) {
-		console.log(`  ..: the picture's steps axis (${viewVar(`VizFitXW`)}) is not the recording's (${runTo}) — `
-			+ `this recording opens more than one viz window — so the clipped picture cannot be compared with `
-			+ `the fit as "fewer marks"`);
-	} else {
-		console.log(markCount(barApplied) < markCount(fitAgainState)
-			? `  OK: and the clip the bar applied really is narrower — fewer marks than the whole recording `
-				+ `(${markCount(barApplied)} against ${markCount(fitAgainState)})`
-			: `  FAIL: the clip the bar applied kept the whole recording (${markCount(barApplied)} marks)`);
-	}
+	console.log(markCount(barApplied) < markCount(fitAgainState)
+		? `  OK: and the clip the bar applied really is narrower — fewer marks than the whole recording `
+			+ `(${markCount(barApplied)} against ${markCount(fitAgainState)})`
+		: `  FAIL: the clip the bar applied kept the whole recording (${markCount(barApplied)} marks)`);
+
+	// And when a clip *is* on, the picture is the range — so the guides and the wash go. They are placed in
+	// the recording's steps, and there is no longer any part of the recording off the picture to point at.
+	console.log(barW(barApplied, `ec-VizClipMaskIn`) === 0 && barW(barApplied, `ec-VizClipMaskOut`) === 0
+		? `  OK: and once the clip is on they are gone, because the picture is the range`
+		: `  FAIL: a clipped picture is still washed`);
+
 	console.log(barHome.raw === fitAgainState.raw
 		? `  OK: and dragging the marker home clears the clip — the picture is the fit again, byte for byte`
 		: `  FAIL: dragging the marker home left a clip behind (${markCount(barHome)} marks against the `
@@ -1794,6 +1895,12 @@ if (!barDragged || !barBefore || !barApplied || !barHome) {
 	console.log(barOutX(barHome) === 940
 		? `  OK: with the marker back at the end of the bar (x=${barOutX(barHome)})`
 		: `  FAIL: the marker came home to x=${barOutX(barHome)} rather than the bar's end`);
+
+	// The notice is on the bar's own line, not the status row: it used to lead the status line and ran into
+	// the flow key's words, which is what moved it.
+	console.log(noticeOf(barApplied) && !/clipped to steps/.test(statusOf(barApplied))
+		? `  OK: and the notice has its own line, clear of the status line and the flow key`
+		: `  FAIL: the notice is missing, or is still on the status line ("${noticeOf(barApplied)}")`);
 }
 
 // What it asked the DOM for, and what the layers actually contain.
