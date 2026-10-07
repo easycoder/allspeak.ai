@@ -979,6 +979,18 @@
       },
       "params": []
     },
+    "ON_HOVER": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for the pointer moving over an element",
+      "current": {
+        "keyword": "on",
+        "action": "hover"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
     "ON_KEY": {
       "domain": "browser",
       "category": "event",
@@ -1012,7 +1024,7 @@
     "ON_PICK": {
       "domain": "browser",
       "category": "event",
-      "description": "Register handler for file picker selection",
+      "description": "Register handler for a pointer press on an element",
       "current": {
         "keyword": "on",
         "action": "pick"
@@ -1041,6 +1053,18 @@
       },
       "params": [
         "direction"
+      ]
+    },
+    "ON_WHEEL": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for the wheel gesture on an element",
+      "current": {
+        "keyword": "on",
+        "action": "wheel"
+      },
+      "params": [
+        "symbol"
       ]
     },
     "ON_WINDOW_RESIZE": {

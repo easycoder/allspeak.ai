@@ -249,15 +249,20 @@ const AllSpeak_Opcodes = {
 			case `browserBack`:  return `ON_BROWSER_BACK`;
 			case `swipe`:        return `ON_SWIPE`;
 			case `pick`:         return `ON_PICK`;
-			// **`ON_WHEEL` has no case here and no entry in the browser opcode map**, so a wheel
-			// resolves to no opcode and is dispatched by keyword instead — which runs it perfectly,
-			// so the omission is invisible. `hover` is registered because a new event should start
-			// out whole; the wheel is left as it is, since nothing is broken by it and it is not
-			// what this change is about.
 			case `hover`:        return `ON_HOVER`;
 			case `resume`:       return `ON_RESUME`;
 			case `drag`:         return `ON_DRAG`;
 			case `drop`:         return `ON_DROP`;
+			case `wheel`:        return `ON_WHEEL`;
+			// **A case missing from this group does not break the event, and that is exactly why one
+			// went missing.** `Browser.js`'s opcode map sends every `ON_*` opcode to the same `On`
+			// handler, and that handler dispatches on the command's action — so an unlisted event
+			// falls through to the `default` below, carries `ON_CLICK` as its opcode, and runs
+			// perfectly anyway. Nothing a script can see differs; only the tools that print an
+			// opcode say the wrong thing. `wheel` was in that state — present in all four packs,
+			// absent here and in that map — until it was brought in whole on 2026-10-07. So an
+			// event is finished when it has a case here, an entry in that map, an entry in each
+			// pack's `opcodes` section, and one in `spec/opcodes.json`.
 			default:             return `ON_CLICK`;
 			}
 

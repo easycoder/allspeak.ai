@@ -3173,6 +3173,7 @@ const AllSpeak_Browser = {
 			ON_RESUME: this.On,
 			ON_DRAG: this.On,
 			ON_DROP: this.On,
+			ON_WHEEL: this.On,
 
 			// Navigation
 			ALERT: this.Alert,
