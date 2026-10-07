@@ -32,9 +32,14 @@
     variable TraceSize         ! bytes of the recording, which is what predicts the drawing time
     variable DrawStarted       ! `now` when the drawing began
     variable DrawMillis        ! how long it took
-    div VizBusy                ! the corner notice: a box on the panel, not a text in the picture — because the
-                               ! first drawing of a run is the one that needs it and the one with nothing on
-                               ! screen yet. See `VizBusyNotice`, which carries the whole reason.
+    ! **The readout is an `svgtext` in the drawing, declared here rather than with the other shapes below.**
+    ! It was a `div` on the host and it landed at the top left of the *window*, over the editor's toolbar —
+    ! a `div` positioned absolutely goes to the nearest positioned ancestor, and the host is not one. In the
+    ! drawing it cannot escape, and the foot is where a reader looks for what the pane is saying. It is
+    ! declared here because the code that writes it is up in the module's plumbing, above the shape block,
+    ! and the compiler is single-pass: a name has to be declared above the line that uses it.
+    svgtext VizBusy
+    variable VizWarned         ! 1 when the warning on the editor's status line was ours to clear
     variable VizBusyText       ! what the corner says while a drawing is under way, and after it
     variable VizBusySecs       ! the drawing's own seconds, whole part
     variable VizBusyTenths     ! ...and its tenths: the language has no fractions, and a corner that rounded
@@ -59,7 +64,7 @@
     ! because the handlers below are the first thing in the file to read it, and a variable has to be
     ! declared before the code that uses it.
     variable VizSlide          ! 0 the picture, 1 the lines bar, 2 the steps bar
-!! @hash 5b887677
+!! @hash 2c3989b5
 !! @verified a04b40d6
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
@@ -188,30 +193,49 @@ VizPredictJudged:
     ! Say where the number comes from. It is a measurement of the last drawing, not a promise, and
     ! a stale one is self-explanatory when the reader knows that — which matters, because a single
     ! slow run sets the rate and the next run corrects it.
-    alert `This recording is ` cat TraceSize cat ` bytes, and the last drawing of one this size took about ` cat VizPredicted cat ` seconds on this machine, so this may too. Carry on, or narrow the viz start and viz stop markers to the part you want to watch.`
+    !
+    ! **And the advice points at the *view*, not at the script.** It used to send the reader off to narrow
+    ! `viz start`/`viz stop` — which means editing and re-running the script, and answers a different
+    ! question. What they want is less of *this* recording on screen, and that is the clip bar. Graham's
+    ! wording, 2026-10-06.
+    !
+    ! **A line on the editor's status bar, not a dialog box, and that is a fix rather than a preference.**
+    ! It used to be `alert`, which the language hands straight to the browser (`Browser.js`, `Alert`) — so
+    ! the box was the browser's own, its button could be neither greyed nor dismissed on cue, and Graham
+    ! had to click it twice: *"either the box should disappear or the button should grey out after being
+    ! clicked, it's not apparent that it took the click"*. Nothing of that is ours to fix in a native
+    ! dialog. The status bar is already the pane's to write to (it names a missing recording there), it is
+    ! visible before the first drawing has built anything, and it needs no acknowledgement — and the
+    ! readout below the picture says `Working - about N seconds` from the moment the drawing starts, so
+    ! the number is not lost with the box.
+    set the content of StatusSpan to `This recording is ` cat TraceSize cat ` bytes - about ` cat VizPredicted cat ` seconds to draw. Drag the clip bar's markers above the picture to narrow the range viewed.`
+    put 1 into VizWarned
     return
 
 !   And remember what it actually cost, so the next prediction is a measurement rather than a guess.
 !   Overwritten rather than averaged: a machine's speed is not a thing to smooth, and the last
 !   measurement is the only evidence there is.
-!   What the corner says while a drawing is under way, and the `wait` that lets it be read at all.
+!   What the readout says while a drawing is under way, and the `wait` that lets it be read at all.
 !
-!   **Two numbers, and only the first is a promise.** The estimate is the last drawing's own rate applied to
-!   this recording's size — a measurement, though a stale one on a machine that has changed — and it is said
-!   in seconds because that is the unit somebody waiting for something thinks in. When there is no rate yet
-!   the corner says only that a drawing is happening, which is still the one thing the reader cannot
-!   otherwise tell.
+!   **It says `Working` in words, and it is coloured to be noticed.** Every drawing that rebuilds the
+!   picture — a marker released, a wheel notch, a script re-read — takes seconds on a recording worth
+!   clipping at all, and a pane that simply goes quiet for that long reads as a pane that has lost the
+!   reader's click. The word comes first because that is the part a reader needs; the estimate follows
+!   because it is the part that says how long to wait.
+!
+!   **Two numbers, and only the second is a measurement.** The estimate is the last drawing's own rate
+!   applied to this recording's size — stale on a machine that has changed — and it is said in seconds
+!   because that is the unit somebody waiting thinks in. With no rate yet the readout says only that a
+!   drawing is happening, which is still the one thing the reader cannot otherwise tell.
 !
 !   **The `wait` is not a delay: it is the whole of how the message is seen.** This script runs on the
-!   browser's own thread, so a corner set and then painted over by a second of drawing would never be read —
+!   browser's own thread, so a line set and then painted over by seconds of drawing would never be read —
 !   `wait` hands the thread back for a frame first. Twenty milliseconds against a drawing that costs
 !   hundreds, and the clock is started after it so the wait is not charged to the rate the pane learns.
 VizBusyNotice:
-    create VizBusy in VizHost
-    set the style of VizBusy to `position:absolute;left:10px;top:8px;font:13px system-ui,sans-serif;color:#8a8a80`
-    put `Drawing the recording...` into VizBusyText
-    if VizEstimate is greater than 0 put `Drawing the recording - about ` cat VizEstimate cat ` seconds` into VizBusyText
-    set the content of VizBusy to VizBusyText
+    put `Working` into VizBusyText
+    if VizEstimate is greater than 0 put `Working - about ` cat VizEstimate cat ` seconds` into VizBusyText
+    set the text of VizBusy to VizBusyText
     wait 20 millis
     return
 
@@ -222,9 +246,16 @@ VizBusyNotice:
 !   seven hundred milliseconds would be a worse answer than no corner at all. Whole part and tenth are taken
 !   separately and joined; the tenth is floored, so the number never claims more time than was spent.
 VizBusyDone:
+    ! Only a message of ours: the status bar is the editor's, and a drawing that had nothing to warn about
+    ! must not wipe whatever the editor is saying there.
+    if VizWarned is 1
+    begin
+        put 0 into VizWarned
+        set the content of StatusSpan to ``
+    end
     if DrawMillis is less than 1
     begin
-        set the content of VizBusy to ``
+        set the text of VizBusy to ``
         return
     end
     divide DrawMillis by 1000 giving VizBusySecs
@@ -233,7 +264,7 @@ VizBusyDone:
     divide VizBusyTenths by 100 giving VizBusyTenths
     put `drew in ` cat VizBusySecs into VizBusyText
     put VizBusyText cat `.` cat VizBusyTenths into VizBusyText
-    set the content of VizBusy to VizBusyText cat ` s`
+    set the text of VizBusy to VizBusyText cat ` s`
     return
 
 VizRemember:
@@ -243,7 +274,7 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 5908b48e
+!! @hash 2aa45248
 !! @verified 3fce0448
 !!!
 !! The view itself: everything from here down is the drawing.
@@ -346,6 +377,32 @@ VizRemember:
     variable VizViewFit
     variable VizFitXW
     variable VizFitYH
+    ! The clip: the range of steps the reader has narrowed the recording to. It is the *window*
+    ! they chose it with — `VizClip` takes `VizViewX0` and the window's width into these two — and
+    ! it is stored nowhere else, because the recording is re-read on every draw: clearing the range
+    ! puts these back and the whole of the run returns with the next one. `VizClipKey` is the range
+    ! as one string, which is what the two tests that decide a new picture compare; without it a
+    ! clip would change nothing, since it does not touch the recording's text.
+    variable VizClipFrom
+    variable VizClipTo
+    variable VizClipKey
+    variable VizLastClipKey
+    ! **The run the picture shows need not start at step 0.** Unclipped it does, which is why these
+    ! read as they always did; clipped, the picture's steps are the clip's own range, so the first
+    ! step is the clip's start and the width is its span. Two names rather than a subtraction at
+    ! every site: the fit, the clamp, the bars and the handle drag all have to agree, and they agree
+    ! by reading the same two numbers. `VizSpanSteps` is set in pass one, where `VizMaxSteps` is
+    ! known; `VizMinSteps` here, where the filter is.
+    variable VizMinSteps
+    variable VizSpanSteps
+    ! The filter's own scratch: the records it kept, and how many of the recording's anchor and
+    ! transfer records it kept and saw — the two figures the notice on the status line carries.
+    variable VizKept
+    variable VizKeptKey     ! the clip the kept set was built for, so only a change rebuilds it
+    variable VizParsedFrom  ! the recording the parse came from, so it is read once and not per draw
+    variable VizClipKept
+    variable VizClipTotal
+    variable VizClipIs        ! 1 while the filter is looking at a record it might keep
     variable VizStatusText
     variable VizStatusEnd
     variable VizStatusZoom
@@ -471,6 +528,28 @@ VizRemember:
     variable VizHandleVSize
     variable VizHandleHPos
     variable VizHandleHSize
+    ! ---- the clip bar ----
+    ! **Two markers on the steps axis that set the clip range without a zoom** — because the zoom is
+    ! the expensive gesture on a big recording, and marking a range costs one drawing where reaching
+    ! it by wheel and pan takes five or six. The bar is the *recording's* own steps, not the picture's:
+    ! `VizRunFrom`/`VizRunTo` are measured from the recording itself, before any clip filters it, so a
+    ! marker can be dragged back out after a clip — which a bar drawn over the clipped range could not.
+    !
+    ! `VizClipInX`/`VizClipOutX` are where the two markers were *drawn*, which is what the hit test
+    ! has to agree with (the same reasoning the scrollbar handles' boxes are kept for) and what the
+    ! release reads the range back from — so the drawn marker is the one place that knows what the
+    ! reader chose, and nothing else has to remember a pending range.
+    variable VizRunFrom
+    variable VizRunTo
+    variable VizClipInX
+    variable VizClipOutX
+    variable VizClipPos     ! one step's x, or one x's step, while the mapping runs
+    variable VizClipSpan    ! the recording's width in steps, which the mapping divides by
+    variable VizClipStep
+    variable VizClipOther   ! the other marker's step, while one is being dragged past it
+    variable VizClipMin     ! the least a range may be, which is never more than the recording is
+    variable VizClipWide    ! 1 when the plot's steps axis is the recording's, so the guides line up with it
+    variable VizGrabMarker  ! where the grabbed marker stood when the press named it
     variable VizPtrX
     variable VizPtrY
     variable VizPtrA
@@ -558,6 +637,31 @@ VizRemember:
     rect VizHandleV
     rect VizBarH
     rect VizHandleH
+    ! **The clip bar, above the picture rather than below it.** It is the steps axis's own instrument,
+    ! so it belongs where the steps are — and above is where it can do the most good, because its two
+    ! markers carry *guides* down through the whole plot: a reader dragging one sees the exact x it is
+    ! at, over the marks it is choosing between, which is what a range chosen against a chart needs.
+    !
+    ! **And the mask**: the two areas outside the range are washed over while the range is being
+    ! chosen, so the reader sees what is about to be cut away and not merely where the edges are. It is
+    ! painted over the picture, which is the one thing the margins otherwise never do — deliberately,
+    ! because the thing being shown *is* the part of the picture that will go.
+    !
+    ! All of them are moved by attribute writes, which is what lets a drag show the reader where they
+    ! are without redrawing anything (see `VizClipMove`).
+    rect VizBarClip
+    rect VizClipBand
+    rect VizClipMarkIn
+    rect VizClipMarkOut
+    rect VizClipGuideIn
+    rect VizClipGuideOut
+    rect VizClipMaskIn
+    rect VizClipMaskOut
+    ! The notice line, on the bar's own row above the plot: the clip is stated here rather than on the
+    ! status line, where it ran into the flow key's words. A pane literal, so English like the rest of
+    ! the pane's own strings.
+    svgtext VizClipNotice
+    ! And the readout's own style is set where it is created, in the built-once block below.
 Draw:
     ! **The drawing keeps its own clock, at its own two ends.** Nothing else can measure it honestly: a
     ! gesture asks for a draw directly (the editor's own entry point is only the *first* draw of a run), and
@@ -581,10 +685,55 @@ Draw:
     put json of `[]` into VizEvents
     if VizTrace is not empty
     begin
-        put json of VizTrace into VizParsed
+        ! **The recording is parsed once, not once per draw.** Measured on a 435KB trace: one
+        ! `element N of` costs about 15ms, because the runtime parses the whole array *and*
+        ! stringifies the element it returns (`Core.js`, the `element` and `item` cases) — so every
+        ! loop here is quadratic in the number of records, and re-parsing per draw paid that again
+        ! for nothing. Keyed on the recording's own text, which is what "the same run" means.
+        if VizTrace is not VizParsedFrom
+        begin
+            put json of VizTrace into VizParsed
+            put VizTrace into VizParsedFrom
+            ! A new recording is new objects, so the kept set belongs to the old one.
+            put `` into VizKeptKey
+        end
         put property `traceEvents` of VizParsed into VizEvents
     end
-!! @hash ad20c154
+    if VizTrace is empty put `` into VizParsedFrom
+    ! **A clip is a filter over the records, and it is applied here — before anything else reads
+    ! them.** Pass one measures the events, the marks are placed from them, the rules are the lines
+    ! they name and the hit test walks them, so replacing `VizEvents` with the kept ones is the whole
+    ! of it: the extent, the rule set, the busiest line over the ramp and the `visit N of T` the
+    ! sidebar reads all follow from the same set. That is what makes the notice on the status line a
+    ! fact rather than a decoration — the picture really is of the part of the run that is left.
+    !
+    ! The two tests below are the re-fit key, and both are needed. `VizClipKey` is the range as one
+    ! string, so a clip is *visible* to the two places that decide a picture; without it a clip would
+    ! change nothing, because it does not touch the recording's text or the script, which is what
+    ! those places compare. `VizMinSteps` is the run's first step in the picture — 0, or the clip's
+    ! own start — and it is what the fit, the clamp and the bars read instead of a hard 0.
+    ! **A clip is a range over *this* recording, so a new recording clears it.** That also keeps the
+    ! clip bar's axis honest: the axis is the run's own step extent, taken from pass one, which measures
+    ! the *range* once a clip is on — so it is taken while there is no clip and would otherwise go stale
+    ! against a re-recorded run.
+    if VizTrace is not VizLastTrace
+    begin
+        put 0 into VizClipFrom
+        put 0 into VizClipTo
+    end
+    put 0 into VizMinSteps
+    put VizClipFrom cat `-` cat VizClipTo into VizClipKey
+    ! **And the kept set is built when the *clip* changes, not on every draw.** This is the whole of why
+    ! the clip did not pay at first: rebuilding it per draw cost more than the records it left out, so a
+    ! clipped gesture was slower than an unclipped one (measured on a 435KB trace: 41s a draw against
+    ! 16s). Built once, every later draw walks only the kept records — and since a walk is quadratic in
+    ! what it walks, that is where the saving is.
+    if VizClipFrom is not 0 or VizClipTo is not 0
+    begin
+        if VizClipKey is not VizKeptKey gosub to VizClipKeep
+        put VizKept into VizEvents
+    end
+!! @hash 114ee3a6
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -795,6 +944,66 @@ Draw:
     set attribute `height` of VizHandleH to 10
     set attribute `rx` of VizHandleH to 5
     set attribute `fill` of VizHandleH to `#c9ced8`
+    ! **The clip bar, above the picture.** It sits in the pane's top margin, which held nothing: the plot
+    ! begins at 60 and the step numbers are down at the foot, so this is the one free band, and above is
+    ! where the bar does the most good — its markers carry guides down the whole plot, so the reader
+    ! dragging one sees the exact x it is at, over the very marks they are choosing between.
+    !
+    ! The rail is two units of a pale grey, the band is the range, and the markers are twenty units tall
+    ! so there is something to grab; the cursor style says so, as it does on the scrollbar handles.
+    create VizBarClip in VizCanvas
+    set attribute `x` of VizBarClip to VizMargin
+    set attribute `y` of VizBarClip to 40
+    set attribute `width` of VizBarClip to VizPlotW
+    set attribute `height` of VizBarClip to 2
+    set attribute `fill` of VizBarClip to `#d8d4cb`
+    create VizClipBand in VizCanvas
+    set attribute `y` of VizClipBand to 34
+    set attribute `height` of VizClipBand to 12
+    set attribute `fill` of VizClipBand to `#c9d2e2`
+    create VizClipMarkIn in VizCanvas style `cursor:ew-resize`
+    set attribute `y` of VizClipMarkIn to 31
+    set attribute `width` of VizClipMarkIn to 4
+    set attribute `height` of VizClipMarkIn to 20
+    set attribute `rx` of VizClipMarkIn to 1
+    set attribute `fill` of VizClipMarkIn to `#5c6b7f`
+    create VizClipMarkOut in VizCanvas style `cursor:ew-resize`
+    set attribute `y` of VizClipMarkOut to 31
+    set attribute `width` of VizClipMarkOut to 4
+    set attribute `height` of VizClipMarkOut to 20
+    set attribute `rx` of VizClipMarkOut to 1
+    set attribute `fill` of VizClipMarkOut to `#5c6b7f`
+    ! The two guides, from the markers down through the plot: one unit wide, so they read as a plumb line
+    ! rather than as another rule. Their height is the plot's, and their y is where the bar's band ends.
+    create VizClipGuideIn in VizCanvas
+    set attribute `width` of VizClipGuideIn to 1
+    set attribute `height` of VizClipGuideIn to VizPlotH
+    set attribute `fill` of VizClipGuideIn to `#5c6b7f`
+    create VizClipGuideOut in VizCanvas
+    set attribute `width` of VizClipGuideOut to 1
+    set attribute `height` of VizClipGuideOut to VizPlotH
+    set attribute `fill` of VizClipGuideOut to `#5c6b7f`
+    ! The notice and the working readout: the first on the bar's own row, the second on the strip below
+    ! the plot that the bar used to occupy.
+    create VizClipNotice in VizCanvas
+    set attribute `text-anchor` of VizClipNotice to `start`
+    set attribute `font-size` of VizClipNotice to 13
+    set attribute `fill` of VizClipNotice to `#5c6b7f`
+    move VizClipNotice to VizMargin 24
+    create VizBusy in VizCanvas
+    set attribute `text-anchor` of VizBusy to `start`
+    set attribute `font-size` of VizBusy to 15
+    set attribute `font-weight` of VizBusy to 600
+    set attribute `fill` of VizBusy to `#b2431f`
+    move VizBusy to VizMargin 690
+    ! The bar's axis is the recording's own steps, and its first step is the pane's: the fit starts at
+    ! zero, so a marker at the far left is step zero and lines up with the picture's left edge.
+    put 0 into VizRunFrom
+    ! And where the two markers stand before the first draw has put them anywhere, so a press in the
+    ! strip meets two numbers rather than two unset names — the same guard the scrollbar handles get by
+    ! being drawn before anything can press them.
+    put VizMargin into VizClipInX
+    put VizPlotRight into VizClipOutX
 
     ! A mark is a *stroked* hairline with a round cap, not a filled one: `M x y h0.01` alone fills to
     ! nothing at all, and stroked without the cap it is a 0.01-long rectangle — so the cap belongs to
@@ -843,6 +1052,23 @@ Draw:
     set attribute `stroke` of VizFlowJump to VizColourJump
     set attribute `stroke-width` of VizFlowJump to 2
     set attribute `fill` of VizFlowJump to `none`
+    ! **The masks last, and that is the whole of their reason: SVG paints in document order, so an element
+    ! created before the marks would sit *under* them and hide nothing.** One covers the recording before
+    ! the range and one what follows it, so a reader choosing a range sees the part that is about to go.
+    ! Their x and width are set per draw and per drag; only their shape is fixed here.
+    ! **The wash has to be given as a *string*, not as the number 0.62** — the language has no fractions and
+    ! `set attribute ... to 0.62` is a compile error ("not an integer"), where a backtick value is just the
+    ! text of the attribute and never goes near the arithmetic.
+    create VizClipMaskIn in VizCanvas
+    set attribute `y` of VizClipMaskIn to VizMargin
+    set attribute `height` of VizClipMaskIn to VizPlotH
+    set attribute `fill` of VizClipMaskIn to `#f2efe9`
+    set attribute `fill-opacity` of VizClipMaskIn to `0.62`
+    create VizClipMaskOut in VizCanvas
+    set attribute `y` of VizClipMaskOut to VizMargin
+    set attribute `height` of VizClipMaskOut to VizPlotH
+    set attribute `fill` of VizClipMaskOut to `#f2efe9`
+    set attribute `fill-opacity` of VizClipMaskOut to `0.62`
     create VizFlowReturn in VizPlot
     set attribute `stroke` of VizFlowReturn to VizColourReturn
     set attribute `stroke-width` of VizFlowReturn to 2
@@ -904,7 +1130,7 @@ Draw:
     put 1 into VizReady
 
 VizBuilt:
-!! @hash a986f984
+!! @hash f9531133
 !! @verified 20bf4472
 !!!
 !! What a draw does, in order.
@@ -954,6 +1180,11 @@ VizBuilt:
     put 0 into VizPictureNew
     if VizTrace is not VizLastTrace put 1 into VizPictureNew
     if VizSource is not VizLastSource put 1 into VizPictureNew
+    ! **The range is part of the key, and this is one of the two places it has to be.** A clip does
+    ! not change the recording's text, so without this test the guard would let a clipped draw
+    ! through on the previous picture's measurements — its extent, its rule set, its busiest line.
+    ! The same test is made at the fit below; the two decide the same thing and must not disagree.
+    if VizClipKey is not VizLastClipKey put 1 into VizPictureNew
     if VizPictureNew is 0 go to VizFrameDone
     ! A leading and trailing space, so that every entry added is padded on both sides and ` 15 ` can
     ! never match inside ` 115 `. Cleared with the pass that fills it rather than with the paths above,
@@ -1013,7 +1244,19 @@ VizBuilt:
     end
 
     if VizMaxSteps is less than 1 put 1 into VizMaxSteps
-!! @hash d1e13b91
+    ! **The run's width in steps, which is not `VizMaxSteps` once a clip is on.** `VizMaxSteps` is the
+    ! run's *last* step, wherever the picture starts; the fit, the clamp, the bars and the handle drag
+    ! all want the width — how much run there is to move a window over — and with a clip that is the
+    ! clip's own span. Unclipped `VizMinSteps` is 0, so this is `VizMaxSteps` and every one of those
+    ! four sites reads exactly what it always did.
+    take VizMinSteps from VizMaxSteps giving VizSpanSteps
+    if VizSpanSteps is less than 1 put 1 into VizSpanSteps
+    ! **The clip bar's own axis.** Taken here, and only while there is no clip, because pass one over a
+    ! clipped recording has measured the *range* — and this walk is the one the pass already makes, so the
+    ! measurement is free. Measuring it separately cost 37 seconds on a 435KB recording, which is what
+    ! walking 2,300 records at 15ms a record costs.
+    if VizClipFrom is 0 and VizClipTo is 0 put VizMaxSteps into VizRunTo
+!! @hash e376c062
 !! @verified 92278436
 !!!
 !! A mark has to stay legible at the pane's scale, or it is not a mark.
@@ -1055,7 +1298,14 @@ VizFrameDone:
     ! meant, while re-running the script writes a new one and the window is fitted again.
     put 0 into VizNewRun
     if VizTrace is not VizLastTrace put 1 into VizNewRun
+    ! **The range joins the key here too, and this is the second of the two places.** A clip changes
+    ! what the picture is *of*, so the window has to be fitted afresh or the fit would stay fitted to
+    ! the part that has just been cut away: the extent, `VizFitXW` — which is what the status line
+    ! measures the zoom against — and the bars would all still describe the whole run. Both keys are
+    ! advanced at this one point, where a picture is decided, so they cannot drift apart.
+    if VizClipKey is not VizLastClipKey put 1 into VizNewRun
     put VizTrace into VizLastTrace
+    put VizClipKey into VizLastClipKey
     ! The picture first, because the fit below is over the extent it measured.
     if VizNewRun is 1 go to VizPictureFresh
     if VizSource is not VizLastSource go to VizPictureFresh
@@ -1071,15 +1321,17 @@ VizPictureFresh:
 VizPictureDone:
     if VizNewRun is 1 gosub to VizReset
     if VizViewFit is 1 go to VizWindow
-    put 0 into VizViewX0
-    put VizMaxSteps into VizViewXW
+    ! The run starts at `VizMinSteps` — 0 unclipped, the clip's own start when clipped — so a clip
+    ! fits the picture to the range the reader chose and not to the whole recording they cut it from.
+    put VizMinSteps into VizViewX0
+    put VizSpanSteps into VizViewXW
     put VizMinLine into VizViewY0
     put VizSpanLines into VizViewYH
     ! The fit is kept, because it is what the status line measures the zoom *against*: the two window
     ! sizes on their own say what is in view but not how far in it is, and "how far in" is the part a
     ! reader can recognise. It is the only thing here that a second copy is right for — recomputing it
     ! would mean asking `VizClamp` what it allowed, which is not a question it answers.
-    put VizMaxSteps into VizFitXW
+    put VizSpanSteps into VizFitXW
     put VizSpanLines into VizFitYH
     put 1 into VizViewFit
 VizWindow:
@@ -1100,7 +1352,7 @@ VizWindow:
     multiply VizViewYH by 18 giving VizWindowH
     multiply VizWindowH by VizPlotW giving VizWindowW
     divide VizWindowW by VizPlotH
-!! @hash 91fd04ef
+!! @hash 687c4353
 !! @verified 91fd04ef
 !!!
 !! The source is drawn behind the heat, once, and shown through a window.
@@ -1285,9 +1537,19 @@ VizWindow:
     ! same size over different parts of the run are the same number and different pictures. Multiplying
     ! before dividing keeps the intermediate large: the runtime truncates every division, and a ratio
     ! computed the other way rounds a 125% zoom to 1.
+    ! **The clip is stated, and it has to be** — but on its own row now, up on the bar, rather than leading
+    ! this line: once a clip is on, the `visit N of T` the sidebar reads counts the arrivals *in the range*
+    ! and the ramp's reddest mark is the range's busiest line, so a picture that did not say it was clipped
+    ! would be a picture that lies about both. It ran into the flow key's words when it led this line, which
+    ! is what moved it. See `VizClipEdge`.
+    !
+    ! **And it starts from empty.** This line is the accumulator, so dropping it as "the clip's reset" took
+    ! the reset away with it and the status line grew by a copy of itself on every draw — which is what the
+    ! harness caught, as every check that reads the window off this line.
+    put `` into VizStatusText
     multiply 100 by VizFitXW giving VizStatusZoom
     divide VizStatusZoom by VizViewXW
-    put `zoom x ` cat VizStatusZoom cat `% y ` into VizStatusText
+    put VizStatusText cat `zoom x ` cat VizStatusZoom cat `% y ` into VizStatusText
     multiply 100 by VizFitYH giving VizStatusZoom
     divide VizStatusZoom by VizViewYH
     put VizStatusText cat VizStatusZoom cat `%   ` into VizStatusText
@@ -1310,7 +1572,7 @@ VizWindow:
     ! what tells them apart. Set here rather than on a press because a press leaves the picture alone:
     ! the row is fixed for the life of the drawing, and `VizSelect` only changes the words.
     move VizHitStatus to 60 728
-!! @hash acf4de73
+!! @hash 010002b4
 !! @verified 52b8170a
 !!!
 !! The axis is the picture's yardstick, and it is the same grid as the text.
@@ -1503,6 +1765,9 @@ VizWindow:
     gosub to VizLabelNames
     ! And the scrollbars, which are the same window read a second way.
     gosub to VizBars
+    ! And the clip bar, which is the recording read a second way: the two markers stand where the range
+    ! is, and at the recording's ends when there is none.
+    gosub to VizClipBar
 
     set attribute `d` of VizHeat0 to VizHeatD
     set attribute `d` of VizHeat1 to VizHeatE
@@ -1530,7 +1795,7 @@ VizWindow:
         gosub to Draw
     end
     return
-!! @hash 03bb4bf0
+!! @hash cca01dd3
 !! @verified ca7a095f
 !!!
 !! The gestures are four entry points, and this module registers them.
@@ -1613,6 +1878,12 @@ VizGrab:
     return
 
 VizRelease:
+    ! **And the clip is applied here, on the drop — not while the marker moves.** One assignment pair
+    ! and one drawing is the whole point of the bar: reaching a range by wheel and pan takes five or
+    ! six drawings on a big recording, and applying the clip on every pointer move would put that cost
+    ! straight back. What the reader gets while dragging is the marker's own position, on the same axis
+    ! as the picture above it.
+    if VizSlide is 3 or VizSlide is 4 gosub to VizClipApply
     put 0 into VizGrabbed
     return
 
@@ -1704,10 +1975,14 @@ VizBars:
     set attribute `height` of VizHandleV to VizSlideSize
 
     put VizPlotW into VizBarLen
-    put VizMaxSteps into VizBarExtent
+    ! The steps axis runs from `VizMinSteps` to `VizMaxSteps` — 0 and the run's last step when there
+    ! is no clip, the clip's own range when there is one. The origin is what the handle's position is
+    ! measured from, so the pair has to move together or a clipped bar would put the handle at the
+    ! wrong place along it.
+    put VizSpanSteps into VizBarExtent
     put VizViewXW into VizBarSpan
     put VizViewX0 into VizBarStart
-    put 0 into VizBarOrigin
+    put VizMinSteps into VizBarOrigin
     gosub to VizBarFit
     put VizSlidePos into VizHandleHPos
     put VizSlideSize into VizHandleHSize
@@ -1748,6 +2023,8 @@ VizDrag:
     if VizSlide is 0 gosub to VizPan
     if VizSlide is 1 gosub to VizSlideTo
     if VizSlide is 2 gosub to VizSlideTo
+    if VizSlide is 3 gosub to VizClipMove
+    if VizSlide is 4 gosub to VizClipMove
     return
 
 VizHandleAt:
@@ -1803,6 +2080,26 @@ VizHandleAt:
         begin
             take VizHandleHSize from VizPtrA
             if VizPtrA is less than 5 put 2 into VizSlide
+        end
+    end
+    ! **The clip bar's two markers, in the strip above the plot.** A band of its own, so this test cannot
+    ! be confused with anything else on the canvas — the plot begins at 60 and nothing else is drawn above
+    ! it — and each marker is the drawn one grown by four units, the same forgiveness the handles get. The
+    ! band between them is deliberately *not* hit: a press there is a pan of the picture, which is the
+    ! gesture the strip would otherwise take away.
+    if VizPtrY is greater than 24 and VizPtrY is less than 60
+    begin
+        take VizClipInX from VizPtrX giving VizPtrA
+        if VizPtrA is greater than -5 and VizPtrA is less than 5
+        begin
+            put 3 into VizSlide
+            put VizClipInX into VizGrabMarker
+        end
+        take VizClipOutX from VizPtrX giving VizPtrA
+        if VizPtrA is greater than -5 and VizPtrA is less than 5
+        begin
+            put 4 into VizSlide
+            put VizClipOutX into VizGrabMarker
         end
     end
     return
@@ -1960,7 +2257,7 @@ VizSlideTo:
     begin
         take VizGrabX from VizDragX giving VizDy
         take VizHandleHSize from VizPlotW giving VizSlideTravel
-        take VizViewXW from VizMaxSteps giving VizSlideRoom
+        take VizViewXW from VizSpanSteps giving VizSlideRoom
     end
     ! At the fit the handle fills its bar: no travel, no room, nothing to move. This is what makes a
     ! hundred per cent immovable rather than merely hard to move.
@@ -2108,11 +2405,15 @@ VizClamp:
     ! clamp to the run, so a recording shorter than that many lines simply has no vertical zoom in it,
     ! which is right: the whole run is already legible and there is nothing to zoom into.
     if VizViewYH is less than VizGlyphRows put VizGlyphRows into VizViewYH
-    if VizViewXW is greater than VizMaxSteps put VizMaxSteps into VizViewXW
+    ! The steps axis is bounded by the *run* the picture is of, which is `VizMinSteps` to `VizMaxSteps`
+    ! — 0 to the last step with no clip, the clip's own range with one. `VizSpanSteps` is that width,
+    ! and the lower clamp is where the run now begins, so both gestures stop at the clip's edges
+    ! exactly as they stop at the recording's when there is no clip.
+    if VizViewXW is greater than VizSpanSteps put VizSpanSteps into VizViewXW
     if VizViewYH is greater than VizSpanLines put VizSpanLines into VizViewYH
     if VizViewXW is less than 4 put 4 into VizViewXW
     if VizViewYH is less than 4 put 4 into VizViewYH
-    if VizViewX0 is less than 0 put 0 into VizViewX0
+    if VizViewX0 is less than VizMinSteps put VizMinSteps into VizViewX0
     if VizViewY0 is less than VizMinLine put VizMinLine into VizViewY0
     put VizViewX0 into VizViewTemp
     add VizViewXW to VizViewTemp
@@ -2155,7 +2456,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 53f1442b
+!! @hash 56bafb68
 !! @verified dc725895
 !!!
 !! And a doc block is not drawn in it.
@@ -2513,4 +2814,280 @@ VizPlaceX:
     return
 !! @hash 3de4d772
 !! @verified 3de4d772
+!!!
+
+!! Keep the picture to a range of steps, and give the whole recording back.
+!!
+!! A recording of a big run is slow to draw and, past a certain size, only useful as an overview: the reader wants one region of it, and everything outside that region is what costs the time. The clip is that, after the fact — nothing is rewritten, so the recording stays the run's own evidence and the same file can be read whole again.
+!!
+!! **The window is the selector.** The two numbers are taken from `VizViewX0` and its width, which are in the trace's own steps — the unit an IN/OUT bar would mark — so the range is chosen with gestures already in use: shift-wheel zooms the lines, control-wheel the steps, and a drag pans. There is nothing else to learn and no second control to find.
+!!
+!! **Nothing is stored but the range.** The recording is re-read from `VizTrace` on every draw, so `VizUnclip` is two assignments and the whole of the run is back on the next draw. That also means a clip does not survive leaving the pane — the same deal the window itself makes, and the honest one: a recording is a file, and a range over it is a way of looking, not a property of the run.
+!!
+!! **And the controls are a bar of two markers along the foot.** A pane element cannot take a click — `svg` is the one element type the plugin registers without the `dom` extra — so a button cannot live inside the pane, and the pane's own idiom, an arithmetic hit test on the pointer, is what every one of its gestures already uses. For this job the bar is the better control for a reason that is measured rather than argued: **the zoom is the expensive gesture on a big recording**, each notch a whole drawing, so marking a range costs one drawing where reaching the same range by wheel and pan takes five or six. The markers are moved as attributes and the clip is applied **on the drop**, never while the drag is in flight — applying it live would put the cost straight back.
+!!
+!! The bar is the *recording's* own steps, so a marker can be dragged back out after a clip; a bar drawn over the clipped range could not. And it shares the fitted picture's axis, which is what lets a reader line a marker up with the feature it marks instead of reconciling two scales. `VizClip` — the window as the range — remains, and is the same two numbers, so the markers show a window-driven clip as readily as a dragged one.
+    ! ---- the clip ----
+VizClip:
+    ! The range is the window, exactly as it stands. `VizViewX0` is the first step in view and the
+    ! window's width is how many of them there are, so the last one is one short of their sum — the
+    ! same convention the status line prints.
+    put VizViewX0 into VizClipFrom
+    put VizViewX0 into VizClipTo
+    add VizViewXW to VizClipTo
+    take 1 from VizClipTo
+    gosub to VizRequest
+    return
+
+VizUnclip:
+    ! Give the whole recording back. The recording itself was never touched, so this is the two
+    ! numbers and nothing more — the next draw re-reads `VizTrace` and finds all of it. The range is
+    ! also what the re-fit key is made of, so clearing it fits the window to the whole run again.
+    put 0 into VizClipFrom
+    put 0 into VizClipTo
+    gosub to VizRequest
+    return
+
+VizClipKeep:
+    ! **Keep the records the range covers, and count what was kept and seen.** Called from `Draw`
+    ! before anything reads the events, so what it leaves in `VizEvents` is what the whole draw —
+    ! the extent, the rule set, the busiest line over the ramp and the hit test's `visit N of T` —
+    ! is built from. That is what makes the notice on the status line a fact rather than a label.
+    !
+    ! **`add 0 to` before the comparison is not tidiness.** A number that arrived as text compares
+    ! *lexically*, so an unconverted `10` is less than `9` and the filter would keep the wrong
+    ! records — measured in isolation before this was written: `10 is less than 9` is 1 without the
+    ! conversion and 0 with it. The step comes out of a parsed recording, so it is text until
+    ! something makes it a number.
+    !
+    ! Only `anchor` and `transfer` records are counted or kept. They are the two kinds the picture is
+    ! made of; the metadata entries in a Chrome trace name the process and the thread and are read by
+    ! nothing here. The `window` records are deliberately dropped with the rest: their `steps` is how
+    ! long a window ran rather than a step anything is *at*, so keeping one would stretch the extent
+    ! back out past the range the reader chose.
+    json set VizKept to array
+    put 0 into VizClipTotal
+    put 0 into VizIndex
+    while VizEvents has element VizIndex
+    begin
+        put element VizIndex of VizEvents into VizEvent
+        put property `cat` of VizEvent into VizCategory
+        put 0 into VizClipIs
+        if VizCategory is `anchor` put 1 into VizClipIs
+        if VizCategory is `transfer` put 1 into VizClipIs
+        if VizClipIs is 1
+        begin
+            add 1 to VizClipTotal
+            put property `args` of VizEvent into VizArgs
+            put property `steps` of VizArgs into VizSteps
+            add 0 to VizSteps
+            if VizSteps is not less than VizClipFrom and VizSteps is not greater than VizClipTo
+            begin
+                json add VizEvent to VizKept
+            end
+        end
+        add 1 to VizIndex
+    end
+    put the json count of VizKept into VizClipKept
+    put VizKept into VizEvents
+    ! The run the picture is of now begins here, so the fit, the clamp and the bars are bounded by
+    ! the clip rather than by the recording it was cut from.
+    put VizClipFrom into VizMinSteps
+    ! **And the key it was built for, so that only a *change* of clip rebuilds it.** The walk this
+    ! makes is the expensive one — it reads every record, and reading a record costs about 15ms on a
+    ! 435KB recording, because the runtime re-parses the whole array per access — so it is a cost to
+    ! pay once when the range is chosen and never again while that range stands.
+    put VizClipKey into VizKeptKey
+    return
+
+VizClipBar:
+    ! **Where the two markers stand, and the band between them.** Read from the clip's ends, or from
+    ! the recording's ends when there is no clip, so clearing a clip puts them back without a second
+    ! place knowing how. The band is the range drawn as a shape, which is the reading a reader wants
+    ! off the bar: not *where* each end is, but how much of the run is in.
+    !
+    ! The markers are drawn centred on the step they name — they are four units wide — and both are
+    ! clamped to the bar, because the floor `VizClamp` puts under a window can push the window's own
+    ! range a step outside a very short run.
+    put VizRunFrom into VizClipStep
+    if VizClipFrom is not 0 or VizClipTo is not 0 put VizClipFrom into VizClipStep
+    gosub to VizClipToPos
+    if VizClipPos is less than VizMargin put VizMargin into VizClipPos
+    put VizClipPos into VizClipInX
+    put VizRunTo into VizClipStep
+    if VizClipFrom is not 0 or VizClipTo is not 0 put VizClipTo into VizClipStep
+    gosub to VizClipToPos
+    if VizClipPos is greater than VizPlotRight put VizPlotRight into VizClipPos
+    put VizClipPos into VizClipOutX
+    gosub to VizClipEdge
+    return
+
+VizClipEdge:
+    ! **Everything the chosen range looks like, from the two markers' places.** One place, called by the
+    ! draw (so the bar and its guides stand where the clip is) and by the drag (so a reader moving a marker
+    ! sees them follow without a drawing). Two copies of this would be two answers to "where is the range",
+    ! and the drag's would be the one nobody checked.
+    !
+    ! reads `VizClipInX`/`VizClipOutX`, the two step positions in the frame's own x.
+    !
+    ! **The guides and the washes are drawn only when the plot's x axis *is* the recording's.** They are
+    ! placed in the recording's steps, which is what the bar is measured in — and the plot is measured in
+    ! the window's, so the two agree at the fit and nowhere else. Zoom, and the guide would point at a step
+    ! the picture is not showing under it; clip, and the picture is the range, so there is nothing left to
+    ! wash. Hiding them then is the honest answer, and the band on the bar still says where the range sits
+    ! in the recording.
+    take 2 from VizClipInX giving VizMove
+    set attribute `x` of VizClipMarkIn to VizMove
+    take 2 from VizClipOutX giving VizMove
+    set attribute `x` of VizClipMarkOut to VizMove
+    set attribute `x` of VizClipBand to VizClipInX
+    take VizClipInX from VizClipOutX giving VizMove
+    set attribute `width` of VizClipBand to VizMove
+    put 0 into VizClipWide
+    if VizViewX0 is VizRunFrom and VizViewXW is VizRunTo put 1 into VizClipWide
+    set attribute `x` of VizClipGuideIn to VizClipInX
+    set attribute `x` of VizClipGuideOut to VizClipOutX
+    if VizClipWide is 0
+    begin
+        set attribute `x` of VizClipGuideIn to -10
+        set attribute `x` of VizClipGuideOut to -10
+    end
+    set attribute `x` of VizClipMaskIn to VizMargin
+    take VizMargin from VizClipInX giving VizMove
+    set attribute `width` of VizClipMaskIn to VizMove
+    set attribute `x` of VizClipMaskOut to VizClipOutX
+    take VizClipOutX from VizPlotRight giving VizMove
+    set attribute `width` of VizClipMaskOut to VizMove
+    if VizClipWide is 0
+    begin
+        set attribute `width` of VizClipMaskIn to 0
+        set attribute `width` of VizClipMaskOut to 0
+    end
+    ! And the notice, in the recording's own numbers. The counts are the filter's, so they are only known
+    ! once a clip has been applied — which is why a range being dragged is named without them.
+    set the text of VizClipNotice to ``
+    if VizClipFrom is not 0 or VizClipTo is not 0
+        set the text of VizClipNotice to `clipped to steps ` cat VizClipFrom cat `-` cat VizClipTo cat `: ` cat VizClipKept cat ` of ` cat VizClipTotal cat ` records`
+    return
+
+VizClipToPos:
+    ! **One step, in the frame's own x** — the clip bar's half of the mapping the axis, the marks and
+    ! the rules all share. The scaled-integer shape is the file's everywhere: the span is multiplied
+    ! out before it is divided, because the runtime truncates every division and a proportion of a big
+    ! run rounds to nothing the other way round.
+    !
+    ! reads `VizClipStep`, leaves `VizClipPos`, and `VizClipSpan` beside them because the inverse needs
+    ! the same width.
+    take VizRunFrom from VizRunTo giving VizClipSpan
+    if VizClipSpan is less than 1 put 1 into VizClipSpan
+    take VizRunFrom from VizClipStep giving VizClipPos
+    multiply VizClipPos by VizPlotW
+    divide VizClipPos by VizClipSpan
+    add VizMargin to VizClipPos
+    return
+
+VizClipToStep:
+    ! And the inverse, for a marker being dragged: an x read as a step. It truncates, so a round trip
+    ! can land a step low — which is why `VizClipApply` treats a marker *at the end of the bar* as the
+    ! recording's end rather than trusting the arithmetic not to leave a one-step clip behind.
+    !
+    ! reads `VizClipPos`, leaves `VizClipStep`.
+    take VizRunFrom from VizRunTo giving VizClipSpan
+    if VizClipSpan is less than 1 put 1 into VizClipSpan
+    take VizMargin from VizClipPos giving VizClipStep
+    multiply VizClipStep by VizClipSpan
+    divide VizClipStep by VizPlotW
+    add VizRunFrom to VizClipStep
+    return
+
+VizClipMove:
+    ! **A marker being dragged, and the picture deliberately not redrawn.** The marker and the band are
+    ! attributes, so moving them costs nothing; the clip is applied by `VizRelease` on the drop. See the
+    ! section's own note for why that ordering is the whole point of the bar rather than an omission.
+    !
+    ! The partner's step is read *first*, because both markers have to be interpreted the same way
+    ! whether or not a clip is already on — the other end is a drawn marker either way.
+    if VizGrabbed is 0 return
+    if VizSlide is 3 put VizClipOutX into VizClipPos
+    if VizSlide is 4 put VizClipInX into VizClipPos
+    gosub to VizClipToStep
+    put VizClipStep into VizClipOther
+    ! The dragged marker's own x, from the pointer: the grab was measured in the same units and the
+    ! delta scaled, which is the arithmetic the scrollbar handle drag uses and for the same reason —
+    ! a position accumulated event by event drifts, because every division throws its remainder away.
+    put the drag position into VizDragPos
+    put property `x` of VizDragPos into VizDragX
+    take VizGrabX from VizDragX giving VizDy
+    gosub to VizPixelScale
+    multiply VizDy by 1000
+    divide VizDy by VizPixelsK
+    add VizGrabMarker to VizDy
+    if VizDy is less than VizMargin put VizMargin into VizDy
+    if VizDy is greater than VizPlotRight put VizPlotRight into VizDy
+    put VizDy into VizClipPos
+    gosub to VizClipToStep
+    ! **Inside the recording, and not onto its partner** — and the floor between them has to yield to
+    ! the run. On a three-step recording a four-step floor fights the run's own bounds, and the two
+    ! clamps then disagreed and the later one lost: that is how a marker was drawn past the end of the
+    ! bar the first time this was tried. The run's bounds are therefore applied *last*, after the floor.
+    take VizRunFrom from VizRunTo giving VizClipMin
+    if VizClipMin is greater than 4 put 4 into VizClipMin
+    if VizSlide is 3
+    begin
+        take VizClipMin from VizClipOther giving VizClipPos
+        if VizClipStep is greater than VizClipPos put VizClipPos into VizClipStep
+    end
+    if VizSlide is 4
+    begin
+        add VizClipMin to VizClipOther giving VizClipPos
+        if VizClipStep is less than VizClipPos put VizClipPos into VizClipStep
+    end
+    if VizClipStep is less than VizRunFrom put VizRunFrom into VizClipStep
+    if VizClipStep is greater than VizRunTo put VizRunTo into VizClipStep
+    ! **And a snap at the ends, within one floor's width.** A pointer cannot land exactly on the last step:
+    ! the drag's x round-trips through pixels and truncates, so a marker dragged hard against the end
+    ! stopped a step or two short and `VizClipApply` then saw a range that was not quite the recording —
+    ! so "drag it home to clear the clip" did not work, measured on the 441-step trace while it happened
+    ! to work on the 24-step one. Every scrollbar snaps at its ends for the same reason: the end is a place
+    ! the reader means to reach, and it should not be a place they have to hit exactly.
+    take VizClipMin from VizRunTo giving VizClipPos
+    if VizClipStep is greater than VizClipPos put VizRunTo into VizClipStep
+    add VizClipMin to VizRunFrom giving VizClipPos
+    if VizClipStep is less than VizClipPos put VizRunFrom into VizClipStep
+    gosub to VizClipToPos
+    if VizSlide is 3 put VizClipPos into VizClipInX
+    if VizSlide is 4 put VizClipPos into VizClipOutX
+    ! One call draws the whole appearance, the same one a drawing uses — see `VizClipEdge`.
+    gosub to VizClipEdge
+    ! **And the range being dragged, named as it moves.** The counts belong to a clip that has been
+    ! applied, so this says only the steps; `VizClipEdge` has just cleared the notice, which is why this
+    ! comes after it. This is the reader's feedback while dragging, and it costs two attribute writes.
+    if VizSlide is 3 set the text of VizClipNotice to `clip to steps ` cat VizClipStep cat `-` cat VizClipOther
+    if VizSlide is 4 set the text of VizClipNotice to `clip to steps ` cat VizClipOther cat `-` cat VizClipStep
+    return
+
+VizClipApply:
+    ! **The range, read back from where the markers are drawn.** That is the one place that knows what
+    ! the reader chose — the drag keeps no pending range — so there is no second answer to disagree
+    ! with the picture.
+    !
+    ! And if the pair is the recording's own ends there is *no* clip: clearing it keeps the filter, the
+    ! notice and the fit all meaning the same thing by the word, and it is what makes dragging a marker
+    ! home the same gesture as `VizUnclip`.
+    put VizClipInX into VizClipPos
+    gosub to VizClipToStep
+    put VizClipStep into VizClipFrom
+    put VizClipOutX into VizClipPos
+    gosub to VizClipToStep
+    put VizClipStep into VizClipTo
+    if VizClipInX is not greater than VizMargin put VizRunFrom into VizClipFrom
+    if VizClipOutX is not less than VizPlotRight put VizRunTo into VizClipTo
+    if VizClipFrom is VizRunFrom and VizClipTo is VizRunTo
+    begin
+        put 0 into VizClipFrom
+        put 0 into VizClipTo
+    end
+    gosub to VizRequest
+    return
+!! @hash 9c15a46e
 !!!
