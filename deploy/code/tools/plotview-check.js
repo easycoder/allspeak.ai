@@ -378,8 +378,14 @@ try {
 		const clippedFirst = Number(readViewVar(`DrawMillis`));
 		at(`Draw`);
 		const clippedThen = Number(readViewVar(`DrawMillis`));
+		// **And a second cut, which is the figure that tells the two designs apart.** If a cut reads the
+		// recording it costs what the first cut cost; if it reads the set on screen it costs what is left
+		// of it. Graham's report, 2026-10-07: *"the second clip took the same time as the first"*.
+		at(`VizClip`);
+		const clippedAgain = Number(readViewVar(`DrawMillis`));
 		process.stdout.write(`clip ${clipFirst[0]}-${clipFirst[1]}: whole ${whole} ms, `
-			+ `the drawing that applies it ${clippedFirst} ms, and a redrawing of it ${clippedThen} ms\n`);
+			+ `the drawing that applies it ${clippedFirst} ms, a redrawing of it ${clippedThen} ms, `
+			+ `and a second cut ${clippedAgain} ms\n`);
 	}
 	if (process.env.PLOTVIEW_ONEDRAW) {
 		const ms = Date.now() - drawClock;
@@ -880,6 +886,11 @@ const PHASES = [
 	// first is what makes "fewer marks" a claim about the clip rather than about the fixture.
 	{ name: `the steps axis, zoomed in, so a clip is not the whole run`, act: stepsIn },
 	{ name: `clipped to the window`, act: () => entry(`VizClip`) },
+	// **A cut is taken from what is on screen, not from the recording.** Pressing the host's clip again
+	// asks to keep the window the picture already shows, so nothing is removed — and the notice must name
+	// the *set it was cut from*, which is the first cut's count and not the recording's. A filter that read
+	// the recording could not have a denominator smaller than the recording.
+	{ name: `clipped again, from what the first cut left`, act: () => entry(`VizClip`) },
 	{ name: `unclipped, so the whole recording is back`, act: () => entry(`VizUnclip`) },
 	// **The bar, which is the control a person actually has.** It is last of all for the same reason the
 	// clip pair is: it moves the window. The drag and the drop are two phases on purpose — between them
@@ -1843,9 +1854,10 @@ console.log(saidLine === wantLine
 const clipAt = indexOf(`clipped to the window`);
 const clippedState = clipAt >= 0 ? taken[clipAt][1] : null;
 const beforeClipState = clipAt > 0 ? taken[clipAt - 1][1] : null;
-const unclippedState = clipAt >= 0 ? taken[clipAt + 1][1] : undefined;
+const clipAgainState = clipAt >= 0 ? taken[clipAt + 1][1] : undefined;
+const unclippedState = clipAt >= 0 ? taken[clipAt + 2][1] : undefined;
 const fitAgainState = (taken.find(([n]) => n.startsWith(`the fit again, for the bars`)) || [])[1];
-if (!clippedState || !beforeClipState || !unclippedState || !fitAgainState) {
+if (!clippedState || !beforeClipState || !clipAgainState || !unclippedState || !fitAgainState) {
 	console.log(`  ..: the clip phases did not run, so the clip cannot be checked`);
 } else {
 	const wholeRun = markCount(fitAgainState), inRange = markCount(clippedState);
@@ -1867,6 +1879,18 @@ if (!clippedState || !beforeClipState || !unclippedState || !fitAgainState) {
 			+ `recording's ${recordCount} records — "${notice}"`
 		: `  FAIL: the clip notice does not name the window's own count of the recording's ${recordCount} `
 			+ `records ("${notice}")`);
+	// **And a second cut is taken from what is on screen.** What the notice divides by is the *set it was
+	// cut from*: the first cut's count, which is smaller than the recording's. A filter that read the whole
+	// recording could not have a denominator that small — and the records kept are at most that, since the
+	// window the host hands over is the fitted range and its ends can be a step inside it.
+	const againClip = /kept the window: (\d+) of (\d+) records/.exec(noticeOf(clipAgainState));
+	console.log(againClip && Number(againClip[2]) < recordCount
+		&& Number(againClip[2]) === Number(clipRange && clipRange[1])
+		&& Number(againClip[1]) > 0 && Number(againClip[1]) <= Number(againClip[2])
+		? `  OK: and a second cut is taken from what is on screen — its notice counts ${againClip[2]} `
+			+ `records, which is what the first cut left, against the recording's ${recordCount}`
+		: `  FAIL: the second cut's notice reads "${noticeOf(clipAgainState)}" where the first left `
+			+ `${clipRange && clipRange[1]} of the recording's ${recordCount} records`);
 	// A clip may only *remove* rules, never invent one: every rule it draws is a line the recording
 	// names. The y a line is drawn at is read here from the phase's own box, the same formula the
 	// rule check uses — a second reading of one rule, which is what makes the two comparands.
