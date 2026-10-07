@@ -70,6 +70,8 @@ python3 /tmp/asdoc-check.py --write <fichier>
 
 Cela rafraîchit les lignes `@hash` de chaque bloc, afin que les modifications futures puissent détecter une dérive entre la prose et le code.
 
+Les autres vérifications sont publiées de la même manière et récupérées par leur nom depuis `https://allspeak.ai/code/tools/` — `attr-check.js`, `capture-check.js`, `encoding-check.js`, `flush-check.js`, `guard-check.js`, `opcode-check.js`, `plotview-check.js`, et `viz-align-measure.py` (un fichier `.py` voyage en `.txt`). **La plupart exigent une copie de travail (*checkout*) du dépôt AllSpeak plutôt qu'un projet, parce qu'elles exécutent le runtime depuis `js/` ou `allspeak-py/` ; chacune le dit et s'arrête** au lieu d'échouer sur un fichier manquant.
+
 ### 2. Consulte `learn/` avant d'écrire, pas après
 
 Avant de produire du code qui utilise une fonctionnalité que tu n'as pas déjà utilisée dans ce projet, récupère le fichier `learn/` pertinent. Ne devine pas à partir des données d'entraînement — récupère la référence, lis-la, puis écris. C'est particulièrement vrai pour : le placement de `cat`, les clauses d'échec (`ou` vs `sur échec`), les tableaux d'éléments DOM (`crée` doit être dans une boucle avec le curseur positionné, pas à l'extérieur), et `définis le contenu de` avec du markdown.

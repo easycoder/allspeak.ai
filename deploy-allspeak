@@ -51,9 +51,14 @@ cp server.allspeak edit.html deploy/code/
 cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json deploy/dist/
 # **The tools an agent uses are published, not shipped in a pack.** A project fetches the one it needs —
 # https://allspeak.ai/code/tools/asdoc-check.py and friends — so it holds no copy that could go stale, and
-# one published set serves every project. `build-starters` checks that all five exist before a pack is built.
+# one published set serves every project. `build-starters` checks that all nine exist before a pack is built.
+#
+# **Being published does not mean a project can run it**, and that is already the shape of the set: most of the
+# `.js` checks compile or run the runtime from `js/` (and two of them import `allspeak-py/`), which a pack does
+# not carry — so each says so in its own words and stops. What publishing buys is that a *checkout* has no copy
+# to go stale, and that an agent knows the check exists at all.
 mkdir -p deploy/code/tools
-cp -p tools/plotview-check.js tools/guard-check.js tools/capture-check.js tools/encoding-check.js tools/flush-check.js deploy/code/tools/
+cp -p tools/plotview-check.js tools/guard-check.js tools/capture-check.js tools/encoding-check.js tools/flush-check.js tools/attr-check.js tools/opcode-check.js deploy/code/tools/
 # **The Python tools are published with no `py` in the name at all, because the site *executes* one.**
 # Measured 2026-10-04: `/code/tools/asdoc-check.py` answered `500` (run, not served) — and so did
 # `asdoc-check.py.txt`, because the handler matches `.py` *anywhere* in the name. `.txt` alone is served as

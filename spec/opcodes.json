@@ -73,6 +73,15 @@
         "text"
       ]
     },
+    "BEGIN": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Open a block — the statements that follow run as one, up to the matching 'end'. Compiles the block rather than itself, and running it simply moves on",
+      "current": {
+        "keyword": "begin"
+      },
+      "params": []
+    },
     "CHECK": {
       "domain": "core",
       "category": "control_flow",
@@ -116,6 +125,17 @@
       },
       "params": [
         "target"
+      ]
+    },
+    "CLOSE_MODULE": {
+      "domain": "core",
+      "category": "module",
+      "description": "Close a named module, running its 'on close' handler",
+      "current": {
+        "keyword": "close"
+      },
+      "params": [
+        "module"
       ]
     },
     "CONTINUE": {
@@ -215,6 +235,17 @@
         "item": "symbols"
       },
       "params": []
+    },
+    "DECREMENT": {
+      "domain": "core",
+      "category": "arithmetic",
+      "description": "Subtract one from a variable's value",
+      "current": {
+        "keyword": "decrement"
+      },
+      "params": [
+        "variable"
+      ]
     },
     "DECLARE_ALIAS": {
       "domain": "core",
@@ -349,6 +380,15 @@
       "params": [
         "symbol"
       ]
+    },
+    "END": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Close a block — the runtime reaching it ends the current statement sequence, which is what makes a 'begin … end' pair a unit",
+      "current": {
+        "keyword": "end"
+      },
+      "params": []
     },
     "END_TEST": {
       "domain": "core",
@@ -599,6 +639,17 @@
       },
       "params": []
     },
+    "INCREMENT": {
+      "domain": "core",
+      "category": "arithmetic",
+      "description": "Add one to a variable's value",
+      "current": {
+        "keyword": "increment"
+      },
+      "params": [
+        "variable"
+      ]
+    },
     "INDEX": {
       "domain": "core",
       "category": "collection",
@@ -793,15 +844,20 @@
         "body?"
       ]
     },
-    "MQTT_INIT": {
+    "MQTT_CONNECT": {
       "domain": "mqtt",
       "category": "mqtt",
-      "description": "Initialize MQTT connection",
+      "description": "Connect to an MQTT broker and subscribe to its topics",
       "current": {
-        "keyword": "init"
+        "keyword": "mqtt"
       },
       "params": [
-        "url"
+        "token",
+        "secretKey?",
+        "clientID",
+        "broker",
+        "port",
+        "topic"
       ]
     },
     "MQTT_ON_CONNECT": {
@@ -847,6 +903,19 @@
         "topic"
       ]
     },
+    "MQTT_TOPIC_INIT": {
+      "domain": "mqtt",
+      "category": "mqtt",
+      "description": "Declare a topic object on a symbol, with the name and QoS it carries — the topic a 'subscribe' clause then names",
+      "current": {
+        "keyword": "init"
+      },
+      "params": [
+        "topic",
+        "name",
+        "qos"
+      ]
+    },
     "MULTIPLY": {
       "domain": "core",
       "category": "arithmetic",
@@ -882,6 +951,15 @@
       "params": [
         "symbol"
       ]
+    },
+    "NO_CACHE": {
+      "domain": "core",
+      "category": "module",
+      "description": "Turn off the cache the runtime would otherwise use for this run — read by the loader and by 'rest get'",
+      "current": {
+        "keyword": "no"
+      },
+      "params": []
     },
     "ON_BROWSER_BACK": {
       "domain": "browser",
@@ -1076,6 +1154,18 @@
         "action": "windowResize"
       },
       "params": []
+    },
+    "PARAM": {
+      "domain": "core",
+      "category": "module",
+      "description": "Read a numbered argument the caller passed into a variable — the argument frame at the top of the call stack",
+      "current": {
+        "keyword": "param"
+      },
+      "params": [
+        "number",
+        "variable"
+      ]
     },
     "PLAY_AUDIO": {
       "domain": "browser",
@@ -1302,6 +1392,17 @@
       "params": [
         "name?",
         "to?"
+      ]
+    },
+    "SCRIPT": {
+      "domain": "core",
+      "category": "declaration",
+      "description": "Declare the name this program runs under — the name a host and the editor reach it by; a name already running is refused",
+      "current": {
+        "keyword": "script"
+      },
+      "params": [
+        "name"
       ]
     },
     "SEND_MESSAGE": {
@@ -1798,6 +1899,21 @@
         "path",
         "progress?",
         "status?"
+      ]
+    },
+    "VIZ": {
+      "domain": "core",
+      "category": "instrumentation",
+      "description": "Mark a window of the run for a recorder — 'viz start' / 'viz stop' with the options the marker carries. Running the marker does nothing; a recorder watching the commands does the work",
+      "current": {
+        "keyword": "viz"
+      },
+      "params": [
+        "request",
+        "label?",
+        "mode?",
+        "until?",
+        "count?"
       ]
     },
     "WAIT": {

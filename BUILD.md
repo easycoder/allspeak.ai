@@ -115,4 +115,4 @@ Triggered manually via `workflow_dispatch` on `.github/workflows/deploy.yml`. Th
 
 The local script does both implicitly so there's nothing extra to remember.
 
-The deploy's own `cp` step is what publishes the tooling: `server.allspeak` and `edit.html` at `/code/` (the CLI fetches the one, the server the other), the editor's four files beside the payload at `/dist/`, and the seven checks at `/code/tools/` — the list `build-starters` refuses if one of them has gone missing. No separate sync is needed for those — but both deploy paths carry that list, so keep them in step.
+The deploy's own `cp` step is what publishes the tooling: `server.allspeak` and `edit.html` at `/code/` (the CLI fetches the one, the server the other), the editor's four files beside the payload at `/dist/`, and the nine checks at `/code/tools/` — the list `build-starters` refuses if one of them has gone missing. No separate sync is needed for those — but both deploy paths carry that list, so keep them in step. Publishing a check does not mean a project can *run* it: most of them compile or run the runtime from `js/`, so from a pack each stops with the sentence that says so.
