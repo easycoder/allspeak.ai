@@ -560,6 +560,12 @@
         "sur erreur"
       ]
     },
+    "ON_HOVER": {
+      "keyword": "sur",
+      "patterns": [
+        "sur survole {element}"
+      ]
+    },
     "ON_KEY": {
       "keyword": "sur",
       "patterns": [
@@ -1160,6 +1166,7 @@
     "pick": "choisi",
     "drag": "glisse",
     "drop": "dépose",
+    "hover": "survole",
     "change": "changement",
     "leave": "sortie",
     "restore": "restaure",

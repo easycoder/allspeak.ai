@@ -568,6 +568,12 @@
         "su errore"
       ]
     },
+    "ON_HOVER": {
+      "keyword": "su",
+      "patterns": [
+        "su sorvola {element}"
+      ]
+    },
     "ON_KEY": {
       "keyword": "su",
       "patterns": [
@@ -1161,6 +1167,7 @@
     "pick": "scegli",
     "drag": "trascina",
     "drop": "rilascia",
+    "hover": "sorvola",
     "change": "cambio",
     "leave": "lascia",
     "restore": "ripristina",

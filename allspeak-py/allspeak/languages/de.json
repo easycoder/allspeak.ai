@@ -560,6 +560,12 @@
         "bei fehler"
       ]
     },
+    "ON_HOVER": {
+      "keyword": "bei",
+      "patterns": [
+        "bei schwebe {element}"
+      ]
+    },
     "ON_KEY": {
       "keyword": "bei",
       "patterns": [
@@ -1157,6 +1163,7 @@
     "pick": "wähle|waehle",
     "drag": "ziehe",
     "drop": "ablege",
+    "hover": "schwebe",
     "change": "änderung|aenderung",
     "leave": "verlassen",
     "restore": "wiederherstelle",

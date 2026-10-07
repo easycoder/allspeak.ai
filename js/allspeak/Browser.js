@@ -1425,6 +1425,34 @@ const AllSpeak_Browser = {
 					return compiler.completeHandler();
 				}
 				return false;
+			case `hover`:
+				// Element-scoped like `pick` and `wheel`, because its whole use is to say what is
+				// under the pointer *while* the pointer is over it — a rollover on a control, to
+				// say what pressing it would do. What it can read is `the hover position`, which is
+				// the same pair of coordinates in the same shape the other two give.
+				//
+				// **It fires at pointer rate, and that is the handler's business rather than the
+				// runtime's.** A hover is dozens of events a second, so a handler that redraws
+				// makes a pane unusable; the discipline is attribute writes only, which is what a
+				// drag's guide-and-wash feedback already is. There is nothing the runtime can do
+				// about a heavy handler without inventing a throttle a script cannot see, and the
+				// browser already coalesces a move to about one a frame.
+				if (compiler.nextIsSymbol()) {
+					const symbol = compiler.getSymbolRecord();
+					compiler.next();
+					if (symbol.extra !== `dom`) {
+						return false;
+					}
+					compiler.addCommand({
+						domain: `browser`,
+						keyword: `on`,
+						lino,
+						action,
+						symbol: symbol.name
+					});
+					return compiler.completeHandler();
+				}
+				return false;
 			case `resume`:
 				compiler.next();
 				compiler.addCommand({
@@ -1617,6 +1645,44 @@ const AllSpeak_Browser = {
 						event.preventDefault();
 						program.run(program.onWheel);
 					}, { passive: false });
+				});
+				break;
+			case `hover`:
+				// **`mousemove` and `mouseleave`, and deliberately no touch counterpart.** The
+				// other direction is `pick`'s, which registers `touchstart` because a touch may
+				// never send a mouse event and a tap really is a press. A rollover has nothing for
+				// a tap to be: a touch has no pointer merely *over* a thing, so a synthetic hover
+				// would be a gesture the reader never made — and a tooltip they could not get rid
+				// of, since the gesture that would have carried it away is the one that does not
+				// exist. Not having it is better than inventing it.
+				//
+				// **`mouseleave` is what carries the words away again**, and it is not decoration.
+				// A hover arrives at pointer rate, so the last one the pane sees is *inside* the
+				// host; when the pointer leaves, no further move is sent, so a rollover built from
+				// moves alone would outlive the pointer. The leave carries the coordinates it
+				// crossed the boundary at, which is enough for the pane's own hit test to find
+				// nothing under the pointer — the tooltip is the pane's answer, drawn from its
+				// arithmetic, exactly as every other gesture in it is.
+				program.onHover = command.pc + 2;
+				const hoverRecord = program.getSymbolRecord(command.symbol);
+				hoverRecord.element.forEach(function (element, index) {
+					if (!element) {
+						return;
+					}
+					element.addEventListener(`mousemove`, function (event) {
+						document.hoverX = event.clientX;
+						document.hoverY = event.clientY;
+						// As with `pick` and `wheel`, the record's index says which element of an
+						// array the pointer was over.
+						hoverRecord.index = index;
+						program.run(program.onHover);
+					});
+					element.addEventListener(`mouseleave`, function (event) {
+						document.hoverX = event.clientX;
+						document.hoverY = event.clientY;
+						hoverRecord.index = index;
+						program.run(program.onHover);
+					});
 				});
 				break;
 			case `pick`:
@@ -3103,6 +3169,7 @@ const AllSpeak_Browser = {
 			ON_BROWSER_BACK: this.On,
 			ON_SWIPE: this.On,
 			ON_PICK: this.On,
+			ON_HOVER: this.On,
 			ON_RESUME: this.On,
 			ON_DRAG: this.On,
 			ON_DROP: this.On,
@@ -3434,6 +3501,7 @@ const AllSpeak_Browser = {
 				break;
 			case `pick`:
 			case `drag`:
+			case `hover`:
 				if (compiler.nextIsWord(`position`)) {
 					compiler.next();
 					return {
@@ -3930,6 +3998,18 @@ const AllSpeak_Browser = {
 					content: JSON.stringify({
 						"x": document.dragX,
 						"y": document.dragY
+					})
+				};
+			case `hoverPosition`:
+				// The same pair in the same shape as `pick` and `drag`, so a pane that reads one
+				// reads all three the same way — which is the whole of what a hit test needs, and
+				// the reason this event carries no other reading.
+				return {
+					type: `constant`,
+					numeric: false,
+					content: JSON.stringify({
+						"x": document.hoverX,
+						"y": document.hoverY
 					})
 				};
 			case `click`:

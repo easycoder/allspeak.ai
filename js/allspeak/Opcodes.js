@@ -249,6 +249,12 @@ const AllSpeak_Opcodes = {
 			case `browserBack`:  return `ON_BROWSER_BACK`;
 			case `swipe`:        return `ON_SWIPE`;
 			case `pick`:         return `ON_PICK`;
+			// **`ON_WHEEL` has no case here and no entry in the browser opcode map**, so a wheel
+			// resolves to no opcode and is dispatched by keyword instead — which runs it perfectly,
+			// so the omission is invisible. `hover` is registered because a new event should start
+			// out whole; the wheel is left as it is, since nothing is broken by it and it is not
+			// what this change is about.
+			case `hover`:        return `ON_HOVER`;
 			case `resume`:       return `ON_RESUME`;
 			case `drag`:         return `ON_DRAG`;
 			case `drop`:         return `ON_DROP`;

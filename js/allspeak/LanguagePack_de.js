@@ -562,6 +562,12 @@ var AllSpeak_LanguagePack_de = {
         "bei fehler"
       ]
     },
+    "ON_HOVER": {
+      "keyword": "bei",
+      "patterns": [
+        "bei schwebe {element}"
+      ]
+    },
     "ON_KEY": {
       "keyword": "bei",
       "patterns": [
@@ -1159,6 +1165,7 @@ var AllSpeak_LanguagePack_de = {
     "pick": "wähle|waehle",
     "drag": "ziehe",
     "drop": "ablege",
+    "hover": "schwebe",
     "change": "änderung|aenderung",
     "leave": "verlassen",
     "restore": "wiederherstelle",

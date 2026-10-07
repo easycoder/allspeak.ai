@@ -570,6 +570,12 @@ var AllSpeak_LanguagePack_en = {
         "on error"
       ]
     },
+    "ON_HOVER": {
+      "keyword": "on",
+      "patterns": [
+        "on hover {element}"
+      ]
+    },
     "ON_KEY": {
       "keyword": "on",
       "patterns": [
@@ -1260,6 +1266,7 @@ var AllSpeak_LanguagePack_en = {
     "pick": "pick",
     "drag": "drag",
     "drop": "drop",
+    "hover": "hover",
     "change": "change",
     "leave": "leave",
     "restore": "restore",
