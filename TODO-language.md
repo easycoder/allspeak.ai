@@ -166,7 +166,25 @@ once already.
 
 ---
 
-## Reading one element of a json array costs a parse of the whole array — [your call], measured 2026-10-06
+## Reading one element of a json array costs a parse of the whole array — **[your call], and the pane's slowness is now the case for it, measured 2026-10-07**
+
+**Graham's report of the built clip, 2026-10-07:** *"It seems that as it stands the record size isn't reducing with each clip. Scrolling remains very slow."* The first half is not what is happening — the kept set really does shrink, and the pane's own notice says so (`kept the window: 5 of 17 records` on the fixture, with the marks falling from 8 to 3) — and the second half is this section's subject. That is why the clip cannot pay enough on its own.
+
+**The arithmetic, confirmed against two independent measurements** — which is what turns this from a theory into the cause:
+
+| | records | array | a drawing |
+|---|---|---|---|
+| the fixture (`various/h2o.viz.json`) | 134 | 22.9 KB | 142 ms → **1.06 ms a record** |
+| Graham's recording | 2,273 | 435 KB | **34.2 s**, as pass one measured before |
+
+The cost *per record* is proportional to the size of the whole array: the big recording's array is 19× larger and it has 17× more records, so 1.06 ms × 19 × 17 predicts **45.8 s** against **34.2 s** measured. That is the shape of `JSON.parse(<everything>)[N]` per access — **quadratic in the recording** — so a clip that keeps a fifth of the records still walks a fifth of a very expensive array. Every hot loop in the pane has this shape (pass one at `asedit-graph.allspeak` ~1383, the marks at ~1590, the filter at ~3317), and so does `json add` in the filter's kept-set build, which re-parses and re-stringifies the array it appends to.
+
+**Two ways to fix it, and they are not exclusive.**
+
+- **Pane-local, and safe.** The pane stops using `element N of` on the events: one pass at load into a *holder* whose slots carry each record's own text (`element N of` stringifies the element anyway, so that text is free), after which every drawing reads slots and does a `json of` on a single record — a parse of a few hundred bytes instead of the whole array, which is the 15 ms → ~0.05 ms difference between the two tables above. The filter's kept array wants building by `cat` rather than `json add`, for the same reason. **It touches the pane only**, leaves the runtime alone, and leaves the *first* draw as slow as it is today — that pass is a one-off, and already expected.
+- **The runtime parse cache, and general.** What this section has always proposed. It fixes every script that iterates a json array, not just this pane, and it fixes the *first* draw too — at the cost of a change to the reading path of both runtimes, with the keying problem below to settle first.
+
+**Graham's decision, 2026-10-07: he is being asked which.** The pane-local fix is the recommendation, having no blast radius; the cache is worth doing as well, later, with the measurement this section asks for.
 
 **What it is.** `Core.js` reads a json variable as *text*, so its `element` case (and `item`, identically) does `JSON.parse(<the whole array>)[N]` and then `JSON.stringify` of the element when that element is an object. Measured on the visualiser's own workload — a 435 KB recording of 2,300 records — that is **~15 ms per access**, so a single loop over a recording costs **~35 seconds**, and the pane walks it several times a drawing. It is the whole of why a big recording is slow to draw, and it is in `AGENTS.md`'s trap list now.
 
