@@ -151,7 +151,16 @@ if (viewStart < 0) {
 // assignment, which is what the plumbing does for real.
 // `VizShown` is the host's (`script`, above) rather than this header's: a statement here is below the
 // host's `stop`, so it would never run — see the note where it is declared.
+//
+// **And the alert panel's two ends are stubbed, because the view calls into the module's plumbing for
+// them.** `Draw` arms the panel at its start and disarms it at its end (`VizAlertStart`/`VizAlertStop`),
+// and both of those live above the view marker with the rest of the host half — so the slice would
+// compile a `gosub` to a label that is not in it. The stubs are the honest stand-in for a harness that
+// deliberately compiles the view alone, and they are *deliberately empty*: the panel is a message about
+// a drawing's cost rather than any part of the picture, and a stub that pretended to show one would be a
+// check on this file rather than on the pane. The panel itself is measured in a browser (`TODO-viz.md`).
 const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable VizClipInit\nput 0 into VizClipInit\nvariable DrawMillis\nvariable VizEstimate\nvariable DrawStarted\nsvgtext VizBusy\n`
+	+ `VizAlertStart:\n    return\nVizAlertStop:\n    return\n`
 	+ moduleSource.slice(viewStart);
 const trace = fs.readFileSync(tracePath, `utf8`);
 // What the recording says the transfers were, by kind. The view decides which of these to draw and

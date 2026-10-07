@@ -52,6 +52,7 @@
     ! waiting, written by the prediction and empty when there is no rate to judge by.
     variable VizAlertOn
     variable VizAlertUp
+    variable VizAlertTicking  ! 1 while a ticker is live, so a burst of gestures cannot start a second one
     variable VizAlertWaited
     variable VizAlertSeconds  ! how long the drawing has been going, in whole seconds
     variable VizAlertWhy
@@ -87,7 +88,7 @@
     ! nothing is reachable at load.
     variable VizClipInit
     put 0 into VizClipInit
-!! @hash 59f0e30a
+!! @hash 6e7303bc
 !! @verified a04b40d6
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
@@ -297,10 +298,22 @@ VizBusyNotice:
 !   on which the pane has no learned rate and so nothing measured to say, is told about exactly as any
 !   other. That matters because the first display of a large recording is the case Graham named, and it
 !   is the one the pane could otherwise say least about.
+!
+!   **Every drawing is covered, and that took a second pass.** `VizAlertStart` was called from
+!   `VizBusyNotice` alone, which only `VizDrawRun` reaches — so the panel was armed for a *run* and for
+!   nothing else, and a clip, which is the one gesture that reads the whole recording, was silent. The
+!   arming and the disarm are in `Draw` now, where every drawing begins and ends.
 VizAlertStart:
+    ! **Armed for every drawing, and only one ticker ever lives.** `Draw` calls this at its start and
+    ! `VizAlertStop` at its end, so a clip is covered exactly as a run's first drawing is. The guard is
+    ! not decoration: a wheel scroll asks for a drawing a frame, and a `fork` per drawing would leave a
+    ! second of timers stacking up, each of them writing the same panel. One ticker adopts whatever
+    ! drawing is current, which is all that is wanted.
     put 1 into VizAlertOn
     put 0 into VizAlertUp
     put 0 into VizAlertSeconds
+    if VizAlertTicking is 1 return
+    put 1 into VizAlertTicking
     fork to VizAlertTick
     return
 
@@ -308,7 +321,13 @@ VizAlertTick:
     wait 1 seconds
     ! The ticker is the only thing holding the panel open, so `VizAlertOn` is how it stops: a drawing that
     ! has finished clears it, and the next tick returns without writing anything.
-    if VizAlertOn is 0 return
+    if VizAlertOn is 0
+    begin
+        ! The drawing is over and `VizAlertStop` has already said what it cost — all the ticker has left to
+        ! do is stand itself down, so the next drawing can start one.
+        put 0 into VizAlertTicking
+        return
+    end
     if VizAlertUp is 0 gosub to VizAlertShow
     ! **The count is the drawing's own clock, not the ticker's.** It is measured from `DrawStarted`, the
     ! moment the drawing began, so `N s so far` and the `drew in X.Y s` that replaces it are the same
@@ -351,13 +370,36 @@ VizAlertHide:
     set style `display` of AlertPanel to `none`
     return
 
+VizAlertStop:
+    ! **The end of a drawing, said for every drawing.** Called from `Draw`'s tail, so a clip's finish
+    ! reaches the panel as a gesture's finish — the fault Graham found, where the first clip of a large
+    ! recording gave no sign of life at all.
+    !
+    ! It disarms and steps back rather than writing the panel itself, because the ticker is what knows
+    ! whether the panel is up: a drawing that finished inside the ticker's first second never showed
+    ! anything, and a cost sentence for a message nobody saw would be a box appearing *after* the wait it
+    ! was meant to explain.
+    put 0 into VizAlertOn
+    if VizAlertUp is 0 return
+    if DrawMillis is less than 1
+    begin
+        gosub to VizAlertHide
+        return
+    end
+    gosub to VizBusyCost
+    fork to VizAlertFinish
+    return
+
 VizAlertFinish:
     ! **What the drawing cost, kept up for a moment and then taken away.** The reader's attention is back
     ! on the picture and a panel holding a number they have already read is in the way of it — but the
-    ! number is the one they were waiting for, so it is worth a few seconds. A drawing that starts in the
-    ! meantime arms the panel again, and this must not take that one away, which is what `VizAlertOn` is
-    ! tested for on the way out.
-    put 0 into VizAlertOn
+    ! number is the one they were waiting for, so it is worth a few seconds.
+    !
+    ! **`VizAlertOn` is deliberately *not* cleared here, and that is the one subtlety in this block.** A
+    ! drawing that starts while the cost is on screen arms the panel for itself, and clearing the flag on
+    ! the way in would disarm that drawing — so the panel would go missing for the gesture the reader made
+    ! *because* they had just waited. The flag belongs to the drawing that set it; all this does is take
+    ! the message away if nothing has taken the panel over.
     if VizAlertUp is 1 set the content of AlertText to VizBusyText cat ` s.`
     wait 4 seconds
     if VizAlertOn is 1 return
@@ -370,24 +412,26 @@ VizAlertFinish:
 !   integer arithmetic shows: `0.7` is not reachable by dividing 700 by 1000, and `0 s` for a drawing of
 !   seven hundred milliseconds would be a worse answer than no corner at all. Whole part and tenth are taken
 !   separately and joined; the tenth is floored, so the number never claims more time than was spent.
-VizBusyDone:
-    if DrawMillis is less than 1
-    begin
-        set the text of VizBusy to ``
-        gosub to VizAlertHide
-        return
-    end
+VizBusyCost:
+    ! The sentence, in one place, because two callers need it now: the corner readout below, and the
+    ! panel's own ending (`VizAlertStop`). Leaves `VizBusyText` as `drew in X.Y`, with the whole part and
+    ! the tenth beside it for anything that wants them.
     divide DrawMillis by 1000 giving VizBusySecs
     multiply VizBusySecs by 1000 giving VizBusyTenths
     take VizBusyTenths from DrawMillis giving VizBusyTenths
     divide VizBusyTenths by 100 giving VizBusyTenths
     put `drew in ` cat VizBusySecs into VizBusyText
     put VizBusyText cat `.` cat VizBusyTenths into VizBusyText
+    return
+
+VizBusyDone:
+    if DrawMillis is less than 1
+    begin
+        set the text of VizBusy to ``
+        return
+    end
+    gosub to VizBusyCost
     set the text of VizBusy to VizBusyText cat ` s`
-    ! The panel's own ending: what it cost, and then away. It is a `fork` because the four seconds it
-    ! waits must not hold up the rest of the run — the picture is finished and the reader's next gesture
-    ! should not be queued behind a message.
-    fork to VizAlertFinish
     return
 
 VizRemember:
@@ -397,7 +441,7 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 470f56c0
+!! @hash 9bd6583e
 !! @verified 3fce0448
 !!!
 !! The view itself: everything from here down is the drawing.
@@ -909,6 +953,15 @@ Draw:
     ! but the gestures are the last thing that should wait, because a wheel notch that is dropped is a
     ! notch the reader has to repeat.
     put 1 into VizDrawing
+    ! **And the panel is armed here, at the start of *every* drawing, which is the fix for a clip that
+    ! gave no sign of life.** It used to be armed by `VizBusyNotice` alone, and that is called only from
+    ! `VizDrawRun` — the entry for a *new run* — so a gesture, and a clip is a gesture, drew without ever
+    ! putting the panel up. Graham's report: *"the first clip of a large recording takes some time to
+    ! run, but I didn't see a popup appear."* `Draw` is the one place every drawing passes through, run or
+    ! gesture, so the arming and the disarm at its end cannot miss one. `VizAlertStart` is guarded, so
+    ! arming twice for a new run (the notice does it too, before the corner readout, for the case where
+    ! that write throws) costs nothing.
+    gosub to VizAlertStart
     ! **The arrivals are replaced, never left over, and the reading happens *inside* the guard that has a
     ! recording to read.** Two faults met here and looked like one. The clearing must come first, because
     ! `put json of` raises on an empty value and the raise ends the draw; and the parse must not be consulted
@@ -996,7 +1049,7 @@ Draw:
     ! correctly and then thrown away, so a narrowed picture scrolled as slowly as the whole one. Measured
     ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
     put VizKept into VizEvents
-!! @hash 53efe24b
+!! @hash ab83e5d2
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -2200,6 +2253,13 @@ VizWindow:
     set attribute `d` of VizRules to VizRulesD
     subtract DrawStarted from now giving DrawMillis
     put 0 into VizDrawing
+    ! **And the drawing is over, which the panel is told here for the same reason it was armed above.**
+    ! A clip's finish has to reach the panel as a *gesture's* finish, and `VizBusyDone` — which knows what
+    ! a drawing cost — is only reached from `VizDrawRun`. So the disarm and the cost are the panel's own,
+    ! in `VizAlertStop`, and this is the one place they can be said for every drawing there is. Before
+    ! the pending request below, deliberately: the re-entry is a *new* drawing and arms the panel again,
+    ! so a disarm after it would clear the arming of a drawing that has just started.
+    gosub to VizAlertStop
     ! Whatever asked while this was running. Once, not in a loop: a request made *during* the draw
     ! below is served by that draw's own end, and that is what makes a chain of them settle.
     if VizPending is 1
@@ -2208,7 +2268,7 @@ VizWindow:
         gosub to Draw
     end
     return
-!! @hash cca01dd3
+!! @hash cd84104b
 !! @verified ca7a095f
 !!!
 !! The gestures are four entry points, and this module registers them.
