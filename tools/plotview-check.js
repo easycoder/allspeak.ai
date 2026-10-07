@@ -24,7 +24,10 @@
 //
 //   PLOTVIEW_ONEDRAW=1     draw the picture, print the milliseconds, stop. A whole-load figure, covering the
 //                          two drawings the host script makes; the per-drawing number is the pane's own
-//                          `DrawMillis`.
+//                          `DrawMillis`. **The `wait` is stood down in this mode** (`Core.js`, `Wait`), because
+//                          otherwise a drawing hands the thread back every hundred marks and returns — so the
+//                          figure covered only the part before the first yield, which is not what the name
+//                          says and not what a reader of it would take it for.
 //   PLOTVIEW_GESTURES=1    run every phase and print the dearest five by what the *view* measured for each
 //                          (`DrawMillis`, which each drawing writes at its own two ends). Not this harness's
 //                          wall clock, which is dominated by its own patient settling.
@@ -256,6 +259,13 @@ const editedSource = source + `\n    one line more`;
 // run on a big recording — a 435KB trace never finishes them — so the only way to ask what a *clipped*
 // draw costs on one is to hand the view a range before it draws. It is the same two variables `VizClip`
 // sets, which is what keeps it honest: nothing here reaches past the entry the pane has.
+// **`PLOTVIEW_CLIP=<from>-<to>` clips through the pane's own `VizClip`, *after* the load-time drawings.**
+// That order is the whole of the fix and it cost a wrong answer once: an earlier version wrote
+// `VizClipFrom`/`VizClipTo` through the symbol record *before* the first drawing, and the pane clears a clip
+// when the recording changes ("a clip is a range over *this* recording") — so the range was wiped on the
+// way in and **both halves of the comparison it was built for were unclipped runs**. Clipping afterwards,
+// by setting the window and calling the entry a reader's gesture calls, cannot be wiped: by then the
+// recording is the one the pane has drawn.
 const clipFirst = (() => {
 	const spec = process.env.PLOTVIEW_CLIP;
 	if (!spec) return null;
@@ -266,6 +276,25 @@ const clipFirst = (() => {
 	}
 	return [from, to];
 })();
+
+// **`PLOTVIEW_ONEDRAW=1` stands the `wait` down**, so that a drawing runs from end to end inside one pass.
+// Otherwise it hands the thread back every hundred marks and returns to its caller, and the figure the
+// pane prints at its own two ends is not written until much later — the reason the mode used to report a
+// figure that covered only the part of a drawing that ran before the first yield. The stub is the one the
+// runtime's own `wait` is, minus the timer: `Core.js`, `Wait`, whose `run` resumes the program itself.
+const standDownTheWait = () => {
+	if (!process.env.PLOTVIEW_ONEDRAW) return;
+	const wait = AllSpeak.domain && AllSpeak.domain.core && AllSpeak.domain.core.Wait;
+	if (!wait || typeof wait.run !== `function`) {
+		process.stderr.write(`plotview-check: no \`Wait\` in the core domain to stand down\n`);
+		return;
+	}
+	wait.run = program => {
+		const command = program[program.pc];
+		program.run(command.pc + 1);
+		return 0;
+	};
+};
 // Writing a variable the view owns, from the host side, is what `viewVar` already does for reading — and
 // it is the only way to clip a big recording *before* the load-time drawings, because the host half of the
 // compiled script sits above the view's own declarations and cannot name them. The shape is the runtime's
@@ -274,6 +303,16 @@ const setViewVar = (name, number) => {
 	const record = program && program.getSymbolRecord(name);
 	if (!record) throw new Error(`the view declares no '${name}'`);
 	record.value[record.index] = { type: `constant`, numeric: true, content: number };
+};
+// And reading one, here rather than through the `viewVar` the checks use: that one is declared much lower
+// down, and this file's measurement block runs at load time, where reaching for it is a `ReferenceError`
+// (the second time this file has been caught by its own declaration order, and the reason the first
+// attempt at this measurement looked slow — the throw landed in the catch and the phases then ran).
+const readViewVar = name => {
+	const record = program && program.getSymbolRecord(name);
+	if (!record) throw new Error(`the view declares no '${name}'`);
+	const v = record.value && record.value[record.index];
+	return v ? v.content : undefined;
 };
 
 const script = [
@@ -303,15 +342,32 @@ const script = [
 let program = null;
 try {
 	program = AllSpeak.compileScript(AllSpeak.tokeniseFile(script.split(`\n`)), null, null, null);
-	if (clipFirst) {
-		setViewVar(`VizClipFrom`, clipFirst[0]);
-		setViewVar(`VizClipTo`, clipFirst[1]);
-	}
+	standDownTheWait();
 	program.running = true;
 	const out = process.stdout.write.bind(process.stdout);
 	console.log = (...a) => out(a.join(` `) + `\n`);
+	const at = name => {
+		const record = program.symbols[name];
+		if (!record) throw new Error(`the view exposes no '${name}'`);
+		AllSpeak_Run.run(program, record.pc);
+	};
 	const drawClock = Date.now();
 	AllSpeak_Run.run(program, 0);
+	// The second of the load's drawings is the one the pane's own clock has just written, so it is the
+	// unclipped figure — a redraw with pass one gated, which is what a gesture costs.
+	const whole = Number(readViewVar(`DrawMillis`));
+	if (clipFirst) {
+		// The window is the selector, so the range is chosen by giving the pane a window and calling the
+		// entry: `VizViewXW` is the width, and `VizClip` takes the last step as `from + width - 1`.
+		setViewVar(`VizViewX0`, clipFirst[0]);
+		setViewVar(`VizViewXW`, clipFirst[1] - clipFirst[0] + 1);
+		at(`VizClip`);
+		const clippedFirst = Number(readViewVar(`DrawMillis`));
+		at(`Draw`);
+		const clippedThen = Number(readViewVar(`DrawMillis`));
+		process.stdout.write(`clip ${clipFirst[0]}-${clipFirst[1]}: whole ${whole} ms, `
+			+ `the drawing that applies it ${clippedFirst} ms, and a redrawing of it ${clippedThen} ms\n`);
+	}
 	if (process.env.PLOTVIEW_ONEDRAW) {
 		const ms = Date.now() - drawClock;
 		process.stdout.write(`load and both drawings: ${ms} ms for ${trace.length} bytes = `
