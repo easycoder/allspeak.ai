@@ -829,12 +829,15 @@ Draw:
     ! Built once, every later draw walks only the kept records — and since a walk is quadratic in what it
     ! walks, that is where the saving is. The *draw* builds it rather than the cut, so that a host asking
     ! for a draw — or a test — never has to know how the set is made.
-    if VizSetTag is not VizKeptKey
-    begin
-        gosub to VizKeepRun
-        put VizKept into VizEvents
-    end
-!! @hash ad652eef
+    if VizSetTag is not VizKeptKey gosub to VizKeepRun
+    ! **And the kept set goes back on *every* draw, not only when the filter runs.** The load block above
+    ! has just put the *whole recording's* events into `VizEvents` — that is what its last line does, on
+    ! every draw — so a draw that skipped the filter (every draw after the cut, the cache key being
+    ! unchanged) went on walking the full recording. That is the fault Graham found: the clip was applied
+    ! correctly and then thrown away, so a narrowed picture scrolled as slowly as the whole one. Measured
+    ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
+    put VizKept into VizEvents
+!! @hash 323a2668
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
