@@ -570,7 +570,12 @@ const drawing = () => {
 		// convention and the span below uses the difference for it; the number printed is what it is.
 		lines: (() => {
 			const status = texts.find(t => String(t.attributes.id || ``).startsWith(`ec-VizStatus`));
-			const m = /(\d+)-(\d+)\s*$/.exec(String((status || {}).innerHTML || ``));
+			// **Read by its name and not by its position.** This used to take the last `N-M` on the line,
+			// because the window's range was the last thing the pane wrote there; on 2026-10-07 the pane
+			// gained a count of the records in the current set at the end of the line, at Graham's ask, and
+			// an end-anchored reader went blind — every `lines` reading came back null and the report died
+			// in the handle checks. The field is named `lines`, so the reader names it too.
+			const m = /lines (\d+)-(\d+)/.exec(String((status || {}).innerHTML || ``));
 			return m ? [Number(m[1]), Number(m[2])] : null;
 		})(),
 		// **What the pane says about the mark under the pointer**, on a line of its own under the status
@@ -1875,6 +1880,17 @@ if (!clippedState || !beforeClipState || !unclippedState || !fitAgainState) {
 		? `  OK: and the unclip gives the whole recording back — the picture is the fit again, byte for byte`
 		: `  FAIL: the unclip did not give the whole recording back (${markCount(unclippedState)} marks `
 			+ `against the fit's ${markCount(fitAgainState)})`);
+	// **A cut keeps the lines where the reader put them; giving the whole recording back does not.**
+	// Graham asked for the first on 2026-10-07 — the pane threw the vertical zoom away on every clip,
+	// which "made choosing a range a punishment" — and the second is what `reset` means. The two
+	// together are the claim: the clipped picture's line window differs from the fit's, and the
+	// unclipped one is the fit's again.
+	const fitLines = JSON.stringify(fitAgainState.lines), cutLines = JSON.stringify(clippedState.lines);
+	console.log(cutLines !== fitLines && JSON.stringify(unclippedState.lines) === fitLines
+		? `  OK: and the clip kept the lines where the reader had them (${cutLines} against the fit's `
+			+ `${fitLines}), while giving the whole recording back fitted them again`
+		: `  FAIL: the lines window after a clip is ${cutLines} against the fit's ${fitLines}, and after `
+			+ `the whole recording is back it is ${JSON.stringify(unclippedState.lines)}`);
 	console.log(!/kept the /.test(noticeOf(unclippedState))
 		? `  OK: and the notice is gone`
 		: `  FAIL: the clip notice survived the unclip: "${noticeOf(unclippedState)}"`);

@@ -414,6 +414,7 @@ VizRemember:
     variable VizAllTo         ! the recording's own last step, remembered while the list is empty
     variable VizSetTag        ! bumped by every cut, so the two places that decide a picture see it
     variable VizLastSetTag
+    variable VizNewSet      ! 1 when a cut is what decided this picture, so only the steps are re-fitted
     ! **And a history deep enough to undo.** Every cut saves the list it replaced as one string —
     ! `0-20`, or `0-4;12-20` — so an undo is a split and a draw rather than a re-filter of the recording,
     ! which is what makes it instant. Strings rather than saved sets: the list is a handful of numbers,
@@ -440,6 +441,15 @@ VizRemember:
     variable VizKept
     variable VizKeptKey     ! the clip the kept set was built for, so only a change rebuilds it
     variable VizParsedFrom  ! the recording the parse came from, so it is read once and not per draw
+    ! **The whole recording's records, read from the parse only when a cut needs them.** The picture is
+    ! drawn from `VizEvents`, which a cut replaces with what is left; a cut filters *this*, so the ranges
+    ! are always read against the same thing — which is what makes a second cut narrow a first rather
+    ! than replace it, and what an undo re-filters to rebuild a state the history names.
+    !
+    ! **It is not kept.** Graham's reading was right: the recording is a file, the parse is already here
+    ! keyed by its text, and one parse per *cut* — not per draw — costs nothing beside the walk that
+    ! follows it. Holding a second copy of every record would cost memory for nothing.
+    variable VizAll
     variable VizClipKept
     variable VizClipTotal
     variable VizClipIs        ! 1 while the filter is looking at a record it might keep
@@ -780,7 +790,6 @@ Draw:
             ! A new recording is new objects, so the kept set belongs to the old one.
             put `` into VizKeptKey
         end
-        put property `traceEvents` of VizParsed into VizEvents
     end
     if VizTrace is empty put `` into VizParsedFrom
     ! **A clip is a filter over the records, and it is applied here — before anything else reads
@@ -806,8 +815,11 @@ Draw:
     if VizClipInit is 0
     begin
         put 0 into VizKeepN
+        ! **The two tags start *equal*, or the first draw of a recording reads as a cut.** A cut is the
+        ! only thing allowed to re-fit the steps alone and leave the lines; the first picture must be
+        ! fitted both ways, and a new recording already forces that through `VizNewRun`.
         put 0 into VizSetTag
-        put -1 into VizLastSetTag
+        put 0 into VizLastSetTag
         put -1 into VizSelKey
         put 0 into VizHistN
         put 0 into VizHistAt
@@ -837,7 +849,7 @@ Draw:
     ! correctly and then thrown away, so a narrowed picture scrolled as slowly as the whole one. Measured
     ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
     put VizKept into VizEvents
-!! @hash 323a2668
+!! @hash 8a98cade
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -1509,7 +1521,8 @@ VizFrameDone:
     ! the part that has just been cut away: the extent, `VizFitXW` — which is what the status line
     ! measures the zoom against — and the bars would all still describe the whole run. Both keys are
     ! advanced at this one point, where a picture is decided, so they cannot drift apart.
-    if VizSetTag is not VizLastSetTag put 1 into VizNewRun
+    put 0 into VizNewSet
+    if VizSetTag is not VizLastSetTag put 1 into VizNewSet
     put VizTrace into VizLastTrace
     put VizSetTag into VizLastSetTag
     ! The picture first, because the fit below is over the extent it measured.
@@ -1526,7 +1539,33 @@ VizPictureFresh:
     gosub to VizReset
 VizPictureDone:
     if VizNewRun is 1 gosub to VizReset
+    ! **A cut fits the steps afresh and leaves the lines exactly where the reader put them.** The steps
+    ! are what the cut changed, so the horizontal window is fitted to the new range; the lines are what
+    ! the reader was looking at, and a clip that threw their vertical zoom away each time made choosing a
+    ! range a punishment. `VizFitXW`/`VizFitYH` are still moved, because they are the numbers the status
+    ! line measures the zoom *against* — so the percentage goes on meaning what it says.
+    if VizNewSet is 1
+    begin
+        ! Giving the whole recording back is not a cut: it is fitted *both* ways, so it takes the
+        ! ordinary fit below rather than the steps-only one here. `VizViewFit` is cleared for it because
+        ! the fit being asked for is this one, and the path below is what writes it — leaving it set sent
+        ! the picture to `VizWindow` with the *previous* window, which the harness caught as an unclip
+        ! that left the steps at the clipped range.
+        if VizKeepSet is 0
+        begin
+            put 0 into VizViewFit
+            go to VizPictureFit
+        end
+        put VizMinSteps into VizViewX0
+        put VizSpanSteps into VizViewXW
+        put VizSpanSteps into VizFitXW
+        put VizSpanLines into VizFitYH
+        put 1 into VizViewFit
+        gosub to VizClamp
+        go to VizWindow
+    end
     if VizViewFit is 1 go to VizWindow
+VizPictureFit:
     ! The run starts at `VizMinSteps` — 0 unclipped, the clip's own start when clipped — so a clip
     ! fits the picture to the range the reader chose and not to the whole recording they cut it from.
     put VizMinSteps into VizViewX0
@@ -1558,7 +1597,7 @@ VizWindow:
     multiply VizViewYH by 18 giving VizWindowH
     multiply VizWindowH by VizPlotW giving VizWindowW
     divide VizWindowW by VizPlotH
-!! @hash 0e27806e
+!! @hash 6a71448f
 !! @verified 91fd04ef
 !!!
 !! The source is drawn behind the heat, once, and shown through a window.
@@ -1766,7 +1805,12 @@ VizWindow:
     put VizViewY0 into VizStatusEnd
     add VizViewYH to VizStatusEnd
     take 1 from VizStatusEnd
-    set the text of VizStatus to VizStatusText cat VizViewY0 cat `-` cat VizStatusEnd
+    ! **And how many records the picture is of, because that is what explains the speed of everything
+    ! else.** A reader watching a clipped picture get quicker has no way to see *why*, and the number is
+    ! the reason: every walk in the drawing is proportional to it, and the runtime re-reads the whole
+    ! array per record. Graham asked for it on 2026-10-07 for exactly that — "to help users get a feel
+    ! for why the program gets sluggish".
+    set the text of VizStatus to VizStatusText cat VizViewY0 cat `-` cat VizStatusEnd cat `   ` cat VizClipKept cat ` records`
     ! On the flow key's own row, at the left. It used to sit a row below, and the caption — which
     ! printed the run's line range and step count, both of which are already in this line — sat
     ! opposite the keys. Graham's reading: the caption repeats what is visible elsewhere, so the
@@ -1778,7 +1822,7 @@ VizWindow:
     ! what tells them apart. Set here rather than on a press because a press leaves the picture alone:
     ! the row is fixed for the life of the drawing, and `VizSelect` only changes the words.
     move VizHitStatus to 60 728
-!! @hash 010002b4
+!! @hash 62d40caf
 !! @verified 52b8170a
 !!!
 !! The axis is the picture's yardstick, and it is the same grid as the text.
@@ -3187,6 +3231,12 @@ VizCut:
 
 VizCutWhole:
     ! The whole recording, which is the empty list — both the starting state and what `reset` restores.
+    !
+    ! **It bumps the tag, because the kept set has to be rebuilt and the picture re-fitted.** What it
+    ! does *not* do is ask for a cut's re-fit: it sets `VizKeepSet` to 0, and the fit reads that to tell
+    ! the two apart — a cut re-fits the steps and leaves the lines, while giving the whole recording back
+    ! fits both, which is what `reset` means. Without the bump a reset left the picture clipped: the
+    ! filter's cache key did not change, so the kept set was never rebuilt (found by the harness, 2026-10-07).
     put 0 into VizKeepN
     put 0 into VizKeepSet
     add 1 to VizSetTag
@@ -3314,12 +3364,15 @@ VizKeepRun:
     ! ran rather than a step anything is *at*, so keeping one would stretch the extent back out past the
     ! range the reader chose.
     json set VizKept to array
+    ! **The recording, read once, here and now.** This is the only place it is wanted: the drawing reads
+    ! the set `VizEvents` holds, and only a cut has to look at everything to decide what survives it.
+    put property `traceEvents` of VizParsed into VizAll
     put 0 into VizClipTotal
     put 0 into VizKeepCount
     put 0 into VizIndex
-    while VizEvents has element VizIndex
+    while VizAll has element VizIndex
     begin
-        put element VizIndex of VizEvents into VizEvent
+        put element VizIndex of VizAll into VizEvent
         put property `cat` of VizEvent into VizCategory
         put 0 into VizClipIs
         if VizCategory is `anchor` put 1 into VizClipIs
@@ -3554,5 +3607,5 @@ VizClipMove:
     if VizSlide is 4 set the text of VizClipNotice to `select steps ` cat VizClipOther cat `-` cat VizClipStep
     return
 
-!! @hash 7b5d51ae
+!! @hash ac24b4eb
 !!!
