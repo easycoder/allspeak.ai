@@ -39,7 +39,23 @@
     ! declared here because the code that writes it is up in the module's plumbing, above the shape block,
     ! and the compiler is single-pass: a name has to be declared above the line that uses it.
     svgtext VizBusy
-    variable VizWarned         ! 1 when the warning on the editor's status line was ours to clear
+    ! **The alert panel, which is the editor's page element and not one of the pane's own.** It is
+    ! attached by id, exactly as `VizHost` and `StatusSpan` are, and it is the only thing on this side
+    ! that exists before a single drawing has built anything — which is what makes it the right place
+    ! for a message that has to be read *while* the drawing runs.
+    div AlertPanel
+    div AlertText
+    ! **What the panel says, and the facts it is composed from.** `VizAlertOn` is a drawing that is
+    ! still going, `VizAlertUp` whether the panel has been put on screen yet, and `VizAlertSeconds` how
+    ! long it has been going — read from the drawing's own clock rather than counted, so this number and
+    ! the `drew in X.Y s` that replaces it cannot disagree. `VizAlertWhy` is the reason it is worth
+    ! waiting, written by the prediction and empty when there is no rate to judge by.
+    variable VizAlertOn
+    variable VizAlertUp
+    variable VizAlertWaited
+    variable VizAlertSeconds  ! how long the drawing has been going, in whole seconds
+    variable VizAlertWhy
+    variable VizAlertWords
     variable VizBusyText       ! what the corner says while a drawing is under way, and after it
     variable VizBusySecs       ! the drawing's own seconds, whole part
     variable VizBusyTenths     ! ...and its tenths: the language has no fractions, and a corner that rounded
@@ -71,7 +87,7 @@
     ! nothing is reachable at load.
     variable VizClipInit
     put 0 into VizClipInit
-!! @hash 1f8c29b2
+!! @hash 59f0e30a
 !! @verified a04b40d6
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
@@ -82,6 +98,11 @@
 !   -- the pane, and the line that says what is happening --
     attach VizHost to `se-graph-host`
     attach StatusSpan to `se-status`
+    ! The alert panel is the editor's, named in `asedit.json` beside the pane's own boxes — so the
+    ! module has a handle on it without the editor building anything for it. A project whose page
+    ! predates it would fail here rather than at the first long drawing, which is the honest place.
+    attach AlertPanel to `se-alert`
+    attach AlertText to `se-alert-text`
 !   -- the gestures --
     on pick VizHost
     begin
@@ -93,6 +114,15 @@
         if VizShown is 0 return
         gosub to VizWheel
     end
+    ! **The fifth pointer event, and the one that does not move the window.** A hover says what a control
+    ! would do before it is pressed, so it reads the pointer and writes words — it never draws, and
+    ! `VizHover` says why that is the whole of its design. `mouseleave` arrives here too, with the
+    ! coordinates the pointer crossed the boundary at, so the same arithmetic carries the words away.
+    on hover VizHost
+    begin
+        if VizShown is 0 return
+        gosub to VizHover
+    end
     on drag
     begin
         if VizShown is 1 gosub to VizDrag
@@ -102,7 +132,7 @@
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 06bab40f
+!! @hash 9d7a2eaa
 !! @verified 10f33ffc
 !!!
 !! The boundary: one message in, and the module parks until the next one.
@@ -161,6 +191,8 @@ VizOpen:
     if property `open` of VizRun is 0
         begin
         put 0 into VizShown
+        gosub to VizTipHide
+        gosub to VizAlertHide
         stop
         end
     put property `trace` of VizRun into VizTrace
@@ -181,6 +213,12 @@ GraphNone:
     return
 
 VizPredict:
+    ! **The explanation is cleared on every prediction, or a stale one would outlive the recording it
+    ! was written for.** `VizAlertWhy` is only *set* when the prediction passes its threshold, so a
+    ! recording predicted at fifty-eight seconds would go on explaining itself — with that recording's
+    ! byte count — over a drawing of a two-kilobyte one. Cleared here rather than in `VizAlertStart`,
+    ! because this is where the sentence is written and the tie between the two is what has to hold.
+    put `` into VizAlertWhy
     if TraceSize is 0 return
     put 0 into VizMillisPerKb
     rest get VizCalib from `/read/.viz-calibration.json` or go VizPredictJudged
@@ -206,17 +244,15 @@ VizPredictJudged:
     ! question. What they want is less of *this* recording on screen, and that is the clip bar. Graham's
     ! wording, 2026-10-06.
     !
-    ! **A line on the editor's status bar, not a dialog box, and that is a fix rather than a preference.**
-    ! It used to be `alert`, which the language hands straight to the browser (`Browser.js`, `Alert`) — so
-    ! the box was the browser's own, its button could be neither greyed nor dismissed on cue, and Graham
-    ! had to click it twice: *"either the box should disappear or the button should grey out after being
-    ! clicked, it's not apparent that it took the click"*. Nothing of that is ours to fix in a native
-    ! dialog. The status bar is already the pane's to write to (it names a missing recording there), it is
-    ! visible before the first drawing has built anything, and it needs no acknowledgement — and the
-    ! readout below the picture says `Working - about N seconds` from the moment the drawing starts, so
-    ! the number is not lost with the box.
-    set the content of StatusSpan to `This recording is ` cat TraceSize cat ` bytes - about ` cat VizPredicted cat ` seconds to draw. Drag the clip bar's markers above the picture to narrow the range viewed.`
-    put 1 into VizWarned
+    ! **And it is a sentence for the alert panel, which is the second move of the same fix.** It was
+    ! `alert` first — the browser's own box, whose button could be neither greyed nor dismissed on cue,
+    ! and which Graham had to click twice — and then a line on the editor's status bar. The status line
+    ! worked, but it is one line in a strip at the far end of the window and it says the number once,
+    ! where the panel is what a reader waiting thirty seconds is looking at, and it says the same number
+    ! again, with how long they have been waiting, for as long as the wait lasts. The sentence is
+    ! composed in `VizAlertSay` with the count, so the reason, the estimate and the elapsed seconds
+    ! cannot disagree about what is happening.
+    put `This recording is ` cat TraceSize cat ` bytes - about ` cat VizPredicted cat ` seconds to draw. You may need to narrow the range viewed: drag the two markers on the clip bar above the picture to the part you want to watch.` into VizAlertWhy
     return
 
 !   And remember what it actually cost, so the next prediction is a measurement rather than a guess.
@@ -242,8 +278,90 @@ VizPredictJudged:
 VizBusyNotice:
     put `Working` into VizBusyText
     if VizEstimate is greater than 0 put `Working - about ` cat VizEstimate cat ` seconds` into VizBusyText
+    ! **The panel is armed before the corner readout is written, and the order is not incidental.** The
+    ! readout lives *in the drawing*, so on the first drawing of a run there is no element for it to be
+    ! written into yet; the panel is a page element that has been there since the editor rendered, so
+    ! arming the ticker first means the reader's message survives whatever becomes of the readout. That
+    ! is the whole reason the panel exists, and it is why it is written first rather than last.
+    gosub to VizAlertStart
     set the text of VizBusy to VizBusyText
     wait 20 millis
+    return
+
+!   ---- the alert panel: what is happening, what it may cost, and how long it has been going ----
+!
+!   **The panel appears when the wait turns out to be long, and that is decided by the wait rather than
+!   by a number chosen in advance.** No threshold is invented: the ticker waits a second, and if the
+!   drawing is still going when it wakes, the panel goes up. A drawing that finishes inside that second
+!   never shows anything, which is what keeps a fast gesture from flashing a box — and a *first* drawing,
+!   on which the pane has no learned rate and so nothing measured to say, is told about exactly as any
+!   other. That matters because the first display of a large recording is the case Graham named, and it
+!   is the one the pane could otherwise say least about.
+VizAlertStart:
+    put 1 into VizAlertOn
+    put 0 into VizAlertUp
+    put 0 into VizAlertSeconds
+    fork to VizAlertTick
+    return
+
+VizAlertTick:
+    wait 1 seconds
+    ! The ticker is the only thing holding the panel open, so `VizAlertOn` is how it stops: a drawing that
+    ! has finished clears it, and the next tick returns without writing anything.
+    if VizAlertOn is 0 return
+    if VizAlertUp is 0 gosub to VizAlertShow
+    ! **The count is the drawing's own clock, not the ticker's.** It is measured from `DrawStarted`, the
+    ! moment the drawing began, so `N s so far` and the `drew in X.Y s` that replaces it are the same
+    ! clock read twice — which they were not when this counted from the notice: the ticker's own wait
+    ! cannot fire while the drawing holds the thread, so its origin is a moment the reader never sees,
+    ! and the two numbers disagreed by however long the ticker had been waiting its turn.
+    put 0 into VizAlertSeconds
+    if DrawStarted is greater than 0
+    begin
+        take DrawStarted from now giving VizAlertWaited
+        divide VizAlertWaited by 1000 giving VizAlertSeconds
+    end
+    gosub to VizAlertSay
+    goto VizAlertTick
+
+VizAlertShow:
+    put 1 into VizAlertUp
+    set style `display` of AlertPanel to `flex`
+    return
+
+VizAlertSay:
+    ! **The one place the panel's sentence is composed, so its parts cannot disagree.** What the pane is
+    ! doing, what it expects it to cost (said only when it has a measurement to say it from), how long it
+    ! has been going, and why it is worth waiting at all. `VizAlertWhy` is the explanation the prediction
+    ! wrote and is empty when the pane has no rate to judge by, so a first drawing reports the count and
+    ! says nothing about how long it will take — the honest answer rather than a guess.
+    put `Working` into VizAlertWords
+    if VizEstimate is greater than 0 put VizAlertWords cat ` - about ` cat VizEstimate cat ` seconds` into VizAlertWords
+    if VizAlertSeconds is greater than 0 put VizAlertWords cat ` - ` cat VizAlertSeconds cat ` s so far` into VizAlertWords
+    if VizAlertWhy is not empty put VizAlertWords cat `. ` cat VizAlertWhy into VizAlertWords
+    set the content of AlertText to VizAlertWords
+    return
+
+VizAlertHide:
+    ! The panel out of the way and the ticker told to stop — both, always, because either alone leaves
+    ! one of them running: a hidden panel still being written to once a second, or a ticker stopped with
+    ! the box still standing.
+    put 0 into VizAlertOn
+    put 0 into VizAlertUp
+    set style `display` of AlertPanel to `none`
+    return
+
+VizAlertFinish:
+    ! **What the drawing cost, kept up for a moment and then taken away.** The reader's attention is back
+    ! on the picture and a panel holding a number they have already read is in the way of it — but the
+    ! number is the one they were waiting for, so it is worth a few seconds. A drawing that starts in the
+    ! meantime arms the panel again, and this must not take that one away, which is what `VizAlertOn` is
+    ! tested for on the way out.
+    put 0 into VizAlertOn
+    if VizAlertUp is 1 set the content of AlertText to VizBusyText cat ` s.`
+    wait 4 seconds
+    if VizAlertOn is 1 return
+    gosub to VizAlertHide
     return
 
 !   And what it says when the drawing is done, which is the number the reader wanted in the first place.
@@ -253,16 +371,10 @@ VizBusyNotice:
 !   seven hundred milliseconds would be a worse answer than no corner at all. Whole part and tenth are taken
 !   separately and joined; the tenth is floored, so the number never claims more time than was spent.
 VizBusyDone:
-    ! Only a message of ours: the status bar is the editor's, and a drawing that had nothing to warn about
-    ! must not wipe whatever the editor is saying there.
-    if VizWarned is 1
-    begin
-        put 0 into VizWarned
-        set the content of StatusSpan to ``
-    end
     if DrawMillis is less than 1
     begin
         set the text of VizBusy to ``
+        gosub to VizAlertHide
         return
     end
     divide DrawMillis by 1000 giving VizBusySecs
@@ -272,6 +384,10 @@ VizBusyDone:
     put `drew in ` cat VizBusySecs into VizBusyText
     put VizBusyText cat `.` cat VizBusyTenths into VizBusyText
     set the text of VizBusy to VizBusyText cat ` s`
+    ! The panel's own ending: what it cost, and then away. It is a `fork` because the four seconds it
+    ! waits must not hold up the rest of the run — the picture is finished and the reader's next gesture
+    ! should not be queued behind a message.
+    fork to VizAlertFinish
     return
 
 VizRemember:
@@ -281,7 +397,7 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 2aa45248
+!! @hash 470f56c0
 !! @verified 3fce0448
 !!!
 !! The view itself: everything from here down is the drawing.
@@ -637,6 +753,19 @@ VizRemember:
     variable VizPtrX
     variable VizPtrY
     variable VizPtrA
+    ! **The pointer's own two units, and the tooltip's place and words.** `VizRawX`/`VizRawY` are where a
+    ! press or a hover arrived from — the two gestures that need the pointer turned into the drawing's
+    ! units — and `VizPointerUnits` is the one place that conversion is written, because it is the one
+    ! thing here that has already been got wrong once (the letterbox).
+    variable VizRawX
+    variable VizRawY
+    variable VizHoverPos
+    variable VizHoverShown  ! which control the tip is about: 0 none, 1 keep, 2 outside, 3 reset
+    variable VizCtrlHit     ! which control the pointer is over, from `VizControlAt`
+    variable VizTipText
+    variable VizTipLen
+    variable VizTipW        ! the tip's width in drawing units, from the words it carries
+    variable VizTipX
     ! The window as it was before the gesture now running, so `VizRedraw` can tell whether anything
     ! changed. See `VizNote` for why it is kept rather than re-derived.
     variable VizMoved
@@ -750,15 +879,21 @@ VizRemember:
     ! an `svgtext` drawn centred inside it, which is the reader's half of the same place.
     ! **Three controls: the two cuts and the reset.** The arrow legends are the design's glyphs —
     ! `←--- ---→` keeps the window between the markers, the arrows facing away from it, and `---→ ←---`
-    ! keeps the two parts *outside* it, the arrows facing each other across the gap they remove. A tooltip
-    ! for each is owed and not built yet; until then the notice says what the last cut kept, which is the
-    ! one place a reader can check which button did what.
+    ! keeps the two parts *outside* it, the arrows facing each other across the gap they remove. Each one
+    ! answers to the pointer now: `VizHover` says in words what pressing it would do, which is the half
+    ! `><` and `<>` cannot carry on their own.
     rect VizKeepBox
     svgtext VizKeepText
     rect VizOuterBox
     svgtext VizOuterText
     rect VizResetBox
     svgtext VizResetText
+    ! **The tooltip: a box and its words, drawn over the row below the controls.** They are the last
+    ! elements created, which is what puts them in front of the bar — a tooltip is the one thing in this
+    ! pane that is meant to be on top of what it explains. It is moved and emptied by attribute writes
+    ! only, because a hover arrives at pointer rate: see `VizHover`, which never draws.
+    rect VizTipBox
+    svgtext VizTip
     ! And the readout's own style is set where it is created, in the built-once block below.
 Draw:
     ! **The drawing keeps its own clock, at its own two ends.** Nothing else can measure it honestly: a
@@ -861,7 +996,7 @@ Draw:
     ! correctly and then thrown away, so a narrowed picture scrolled as slowly as the whole one. Measured
     ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
     put VizKept into VizEvents
-!! @hash 163748d6
+!! @hash 53efe24b
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -1206,6 +1341,22 @@ Draw:
     ! The baseline: `VizCtlY` plus thirteen, which sets eleven-unit glyphs inside an eighteen-unit box.
     move VizResetText to VizMove 21
 
+    ! **The tooltip, created last so that it draws in front of everything above.** It is empty at rest —
+    ! a box with nothing in it and its fill taken away — because an empty `svgtext` still draws nothing
+    ! only if its words are empty, and a `rect` is *always* drawn. So the box is the thing switched on
+    ! and off, and the words go with it: see `VizHover`.
+    create VizTipBox in VizCanvas
+    set attribute `rx` of VizTipBox to 3
+    set attribute `fill` of VizTipBox to `none`
+    set attribute `stroke` of VizTipBox to `#9aa4b1`
+    create VizTip in VizCanvas
+    set attribute `text-anchor` of VizTip to `start`
+    set attribute `font-size` of VizTip to 11
+    set attribute `fill` of VizTip to `#40506b`
+    put `` into VizTipText
+    set the text of VizTip to VizTipText
+    put 0 into VizHoverShown
+
     ! **The kept list's holders, and the history's.** `VizKeepCap` is how many ranges a list may hold; the
     ! spare pair is the same size because a cut to the outside builds a whole new list before it replaces
     ! the live one. The history is 32 deep, which is more cuts than anybody makes on one recording, and
@@ -1342,7 +1493,7 @@ Draw:
     put 1 into VizReady
 
 VizBuilt:
-!! @hash 5158a082
+!! @hash bd8a1c95
 !! @verified 20bf4472
 !!!
 !! What a draw does, in order.
@@ -1506,8 +1657,7 @@ VizBuilt:
     ! to stay legible at the pane's scale to be a mark at all. When this view takes the host panel's
     ! size rather than asserting a 1000x700 frame, this is the number that should come from it.
     put 14 into VizDotSize
-VizFrameDone:
-!! @hash d35b38f7
+!! @hash 74df2991
 !! @verified 74df2991
 !!!
 !! The window is held as two ranges in the trace's own units, never as a scale factor.
@@ -1516,7 +1666,8 @@ VizFrameDone:
 !! The window doubles as the reset. Both gestures clamp at the edges of the run, so zooming out returns to the whole picture and panning stops at its ends; there is no reset button to find. The window is fitted once per *recording* and kept across visits, so the pane comes back as it was left; opening a different run is what re-fits it, and `VizReset` is there for a host that wants to force one.
 !!
 !! The zoom stops where the text is drawn at its own size. A source line is eighteen units tall, so a window of fewer than `VizGlyphRows` rows would only blow the text up, and there is nothing more to see. Applied before the clamp to the run, so a recording shorter than that many lines simply has no vertical zoom — the whole run is already legible and there is nothing to zoom into.
-    ! ---- the window on the run ----
+VizFrameDone:
+	! ---- the window on the run ----
     ! Fitted to the whole run the first time that recording is drawn and left alone after that:
     ! a redraw is what a gesture causes, and re-fitting there would undo the gesture that asked for
     ! it. The recording is the key rather than the visit, because leaving the pane and coming back to
@@ -1609,7 +1760,7 @@ VizWindow:
     multiply VizViewYH by 18 giving VizWindowH
     multiply VizWindowH by VizPlotW giving VizWindowW
     divide VizWindowW by VizPlotH
-!! @hash 6a71448f
+!! @hash b8945c8a
 !! @verified 91fd04ef
 !!!
 !! The source is drawn behind the heat, once, and shown through a window.
@@ -2314,28 +2465,15 @@ VizHandleAt:
     ! deliberately not hit — a press there is a pan of the picture, which is the gesture the pane already
     ! had, and a jump-to-page would be a second way to move that dragging back cannot undo.
     !
-    ! So: from the pane's corner, less the letterbox, at the fitted scale. The letterbox is what the pan
-    ! does not care about and this does — the browser fits the canvas inside the pane and centres the
-    ! difference, so the canvas's top-left corner is *not* the pane's, and every unit of that offset is a
-    ! unit a hit test would be wrong by. It is half of what the canvas leaves over on each side, which
-    ! the pane's two sides and the scale between them give.
-    put the left of VizHost into VizPtrX
-    put the top of VizHost into VizPtrY
-    gosub to VizPixelScale
-    take VizPtrX from VizGrabX giving VizPtrX
-    take VizPtrY from VizGrabY giving VizPtrY
-    take VizPixelsK from VizPixelsW giving VizPtrA
-    divide VizPtrA by 2
-    take VizPtrA from VizPtrX
-    multiply VizPixelsK by 740 giving VizPtrA
-    divide VizPtrA by 1000
-    take VizPtrA from VizPixelsH giving VizPtrA
-    divide VizPtrA by 2
-    take VizPtrA from VizPtrY
-    multiply VizPtrX by 1000
-    divide VizPtrX by VizPixelsK
-    multiply VizPtrY by 1000
-    divide VizPtrY by VizPixelsK
+    ! So: from the pane's corner, less the letterbox, at the fitted scale — and that conversion is
+    ! `VizPointerUnits`, shared with `VizHover` rather than written twice. The letterbox is what the pan
+    ! does not care about and a hit test does: the browser fits the canvas inside the pane and centres
+    ! the difference, so the canvas's top-left corner is *not* the pane's, and every unit of that offset
+    ! is a unit a hit test would be wrong by. It is half of what the canvas leaves over on each side,
+    ! which the pane's two sides and the scale between them give.
+    put VizGrabX into VizRawX
+    put VizGrabY into VizRawY
+    gosub to VizPointerUnits
     if VizPtrX is greater than 940 and VizPtrX is less than 958
     begin
         take VizHandleVPos from VizPtrY giving VizPtrA
@@ -2357,19 +2495,13 @@ VizHandleAt:
         end
     end
     ! **The controls, tested before the bar's own strip.** They sit *in* that strip, so a press meant for
-    ! `keep` must not fall through to a marker standing under it. Each is its drawn box exactly: a control
-    ! is small and its box is a number, so there is no forgiveness to add and nothing to guess at — which
-    ! is the whole reason the box is a variable rather than a constant written twice.
-    take VizCtlY from VizPtrY giving VizPtrA
-    if VizPtrA is greater than 0 and VizPtrA is less than VizCtlH
-    begin
-        take VizKeepX from VizPtrX giving VizPtrA
-        if VizPtrA is greater than 0 and VizPtrA is less than VizKeepW put 5 into VizSlide
-        take VizOuterX from VizPtrX giving VizPtrA
-        if VizPtrA is greater than 0 and VizPtrA is less than VizOuterW put 6 into VizSlide
-        take VizResetX from VizPtrX giving VizPtrA
-        if VizPtrA is greater than 0 and VizPtrA is less than VizResetW put 7 into VizSlide
-    end
+    ! `keep` must not fall through to a marker standing under it. The test itself is `VizControlAt`,
+    ! shared with the hover rather than written twice: a control that answered a press and a hover
+    ! differently would be a control whose tooltip named the wrong thing.
+    gosub to VizControlAt
+    if VizCtrlHit is 1 put 5 into VizSlide
+    if VizCtrlHit is 2 put 6 into VizSlide
+    if VizCtrlHit is 3 put 7 into VizSlide
     ! **The clip bar's two markers, in the strip above the plot.** A band of its own, so this test cannot
     ! be confused with anything else on the canvas — the plot begins at 60 and nothing else is drawn above
     ! it — and each marker is the drawn one grown by four units, the same forgiveness the handles get. The
@@ -2390,6 +2522,137 @@ VizHandleAt:
             put VizClipOutX into VizGrabMarker
         end
     end
+    return
+
+VizPointerUnits:
+    ! **The pointer, in the drawing's own units, and the one place that conversion is written.** Two
+    ! scales stand between a pointer and the picture: the pane's pixels against the canvas's viewBox
+    ! units, and the letterbox the browser leaves when it fits a 1000x740 canvas into a panel of another
+    ! shape and centres the difference. A hit test that ignored the letterbox is one this file has
+    ! already had — and a *second* copy of the arithmetic is how it would come back, so the press and
+    ! the hover both come through here.
+    !
+    ! reads `VizRawX`/`VizRawY` (client pixels), leaves `VizPtrX`/`VizPtrY` (viewBox units).
+    put the left of VizHost into VizPtrX
+    put the top of VizHost into VizPtrY
+    gosub to VizPixelScale
+    take VizPtrX from VizRawX giving VizPtrX
+    take VizPtrY from VizRawY giving VizPtrY
+    take VizPixelsK from VizPixelsW giving VizPtrA
+    divide VizPtrA by 2
+    take VizPtrA from VizPtrX
+    multiply VizPixelsK by 740 giving VizPtrA
+    divide VizPtrA by 1000
+    take VizPtrA from VizPixelsH giving VizPtrA
+    divide VizPtrA by 2
+    take VizPtrA from VizPtrY
+    multiply VizPtrX by 1000
+    divide VizPtrX by VizPixelsK
+    multiply VizPtrY by 1000
+    divide VizPtrY by VizPixelsK
+    return
+
+VizControlAt:
+    ! **Which of the three cut controls the pointer is over, if any.** 1 is the window, 2 the outside,
+    ! 3 the reset, 0 none — and it is the *control*, not the code a press puts in `VizSlide`, because
+    ! the hover has no such code and the two must not be able to disagree about which box is which.
+    !
+    ! Each control is its drawn box exactly: a control is small and its box is a number, so there is no
+    ! forgiveness to add and nothing to guess at — which is the whole reason the box is a variable
+    ! rather than a constant written twice.
+    !
+    ! reads `VizPtrX`/`VizPtrY`, leaves `VizCtrlHit`.
+    put 0 into VizCtrlHit
+    take VizCtlY from VizPtrY giving VizPtrA
+    if VizPtrA is greater than 0 and VizPtrA is less than VizCtlH
+    begin
+        take VizKeepX from VizPtrX giving VizPtrA
+        if VizPtrA is greater than 0 and VizPtrA is less than VizKeepW put 1 into VizCtrlHit
+        take VizOuterX from VizPtrX giving VizPtrA
+        if VizPtrA is greater than 0 and VizPtrA is less than VizOuterW put 2 into VizCtrlHit
+        take VizResetX from VizPtrX giving VizPtrA
+        if VizPtrA is greater than 0 and VizPtrA is less than VizResetW put 3 into VizCtrlHit
+    end
+    return
+
+VizHover:
+    ! **What a control says before it is pressed, and the one gesture here that must never draw.** `><`
+    ! and `<>` are two arrow pairs with no key, and the notice line only ever names what the *last* cut
+    ! kept; the tooltip is the reader's half of the controls, and `on hover` was added to the language
+    ! for exactly this.
+    !
+    ! A hover arrives at pointer rate, so this does nothing but attribute writes — the same discipline
+    ! the drag's guide-and-wash feedback follows — and it goes further by saying nothing at all when the
+    ! answer has not changed, because a tip written back in the same words is a layout the browser is
+    ! asked to redo dozens of times a second. `VizHoverShown` is that memo, and it is also what the
+    ! handler consults to know whether anything is on screen.
+    !
+    ! **The pointer leaving arrives as a hover too**, with the coordinates it crossed the boundary at:
+    ! `mouseleave` is what carries the words away again, and the arithmetic finds nothing under a point
+    ! outside the pane, which is why there is no separate "leave" here.
+    if VizShown is 0 return
+    if VizReady is 0 return
+    put the hover position into VizHoverPos
+    put property `x` of VizHoverPos into VizRawX
+    put property `y` of VizHoverPos into VizRawY
+    gosub to VizPointerUnits
+    gosub to VizControlAt
+    if VizCtrlHit is VizHoverShown return
+    put VizCtrlHit into VizHoverShown
+    gosub to VizTipDraw
+    return
+
+VizTipHide:
+    ! Called when the editor says the pane is no longer on screen, so a tip cannot be left standing over
+    ! a picture nobody is looking at. Guarded by `VizReady` because a pane can be left before it was ever
+    ! drawn, and the elements it would clear do not exist then.
+    if VizReady is 0 return
+    put 0 into VizHoverShown
+    gosub to VizTipDraw
+    return
+
+VizTipDraw:
+    ! **The words, and where they go.** The tip is right-aligned with the control it belongs to, because
+    ! all three of them sit at the frame's right end, and it sits on the strip below the controls — the
+    ! only row between them and the bar, which it covers while the pointer is up and uncovers when it
+    ! leaves.
+    !
+    ! The width is a *count*, not a measurement: eleven-unit glyphs at about six units each, plus the
+    ! padding the box wants at each end. The pane cannot measure text, and a box a little too wide reads
+    ! as padding where one too narrow would clip the sentence.
+    !
+    ! reads `VizHoverShown`; writes the tip's words, its box and both their places. `VizHoverShown` 0
+    ! is the resting state, which is an empty box rather than a hidden one.
+    if VizHoverShown is 0
+    begin
+        put `` into VizTipText
+        set the text of VizTip to VizTipText
+        set attribute `fill` of VizTipBox to `none`
+        return
+    end
+    put `Keep the window: the part between the markers` into VizTipText
+    if VizHoverShown is 2 put `Keep the outside: cut the part between the markers` into VizTipText
+    if VizHoverShown is 3 put `Reset: show the whole recording again` into VizTipText
+    set the text of VizTip to VizTipText
+    put the length of VizTipText into VizTipLen
+    multiply VizTipLen by 6 giving VizTipW
+    add 12 to VizTipW
+    put VizKeepX into VizTipX
+    add VizKeepW to VizTipX
+    if VizHoverShown is 2 put VizOuterX into VizTipX
+    if VizHoverShown is 2 add VizOuterW to VizTipX
+    if VizHoverShown is 3 put VizResetX into VizTipX
+    if VizHoverShown is 3 add VizResetW to VizTipX
+    take VizTipW from VizTipX
+    if VizTipX is less than VizMargin put VizMargin into VizTipX
+    set attribute `x` of VizTipBox to VizTipX
+    set attribute `y` of VizTipBox to 32
+    set attribute `width` of VizTipBox to VizTipW
+    set attribute `height` of VizTipBox to 18
+    set attribute `fill` of VizTipBox to `#fffbe6`
+    put VizTipX into VizPtrA
+    add 6 to VizPtrA
+    move VizTip to VizPtrA 45
     return
 
 VizMarkAt:
@@ -2744,7 +3007,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 0e1bde0c
+!! @hash 63e437ec
 !! @verified dc725895
 !!!
 !! And a doc block is not drawn in it.
@@ -3103,7 +3366,6 @@ VizPlaceX:
 !! @hash 3de4d772
 !! @verified 3de4d772
 !!!
-
 !! Keep the picture to a range of steps, and give the whole recording back.
 !!
 !! A recording of a big run is slow to draw and, past a certain size, only useful as an overview: the reader wants one region of it, and everything outside that region is what costs the time. The clip is that, after the fact — nothing is rewritten, so the recording stays the run's own evidence and the same file can be read whole again.

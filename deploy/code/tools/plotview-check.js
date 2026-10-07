@@ -149,6 +149,8 @@ if (viewStart < 0) {
 // first draw then reads a name that was never declared: `Can't get a value`, at *compile* time, which is
 // the whole check failing for a line that is not in it. So the cut carries the declaration *and* the
 // assignment, which is what the plumbing does for real.
+// `VizShown` is the host's (`script`, above) rather than this header's: a statement here is below the
+// host's `stop`, so it would never run — see the note where it is declared.
 const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable VizClipInit\nput 0 into VizClipInit\nvariable DrawMillis\nvariable VizEstimate\nvariable DrawStarted\nsvgtext VizBusy\n`
 	+ moduleSource.slice(viewStart);
 const trace = fs.readFileSync(tracePath, `utf8`);
@@ -333,7 +335,14 @@ const script = [
 	`    div VizHost`,
 	`    variable VizTrace`,
 	`    variable VizSource`,
+	// **`VizShown` is the host's to set, and it is set before `Main:` because the view's hover consults
+	// it.** The module turns it on from the editor's message — the one thing it cannot see for itself —
+	// and a harness that left it empty would compile a `VizHover` that always stands down while every
+	// other check in this file still passed. Setting it here, in the part of the host script that runs,
+	// is what makes the difference visible.
+	`    variable VizShown`,
 	`Main:`,
+	`    put 1 into VizShown`,
 	`    create VizHost in body`,
 	`    put \`${trace}\` into VizTrace`,
 	`    put \`${source}\` into VizSource`,
@@ -601,8 +610,9 @@ const drawing = () => {
 			`ec-VizClipGuideIn`, `ec-VizClipGuideOut`, `ec-VizClipMaskIn`, `ec-VizClipMaskOut`,
 			// **And the two controls, because their boxes are what a press is aimed at.** Reading them out
 			// of the snapshot is what lets the phases press the rectangle the pane *drew* rather than a
-			// coordinate written into this file — see `pressBox`.
-			`ec-VizKeepBox`, `ec-VizOuterBox`, `ec-VizResetBox`].map(id => {
+			// coordinate written into this file — see `pressBox`. The tooltip's box is read the same way,
+			// so the hover checks can say where the tip was put and how wide it is.
+			`ec-VizKeepBox`, `ec-VizOuterBox`, `ec-VizResetBox`, `ec-VizTipBox`].map(id => {
 			const el = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(id));
 			return { id, x: el ? Number(el.attributes.x) : null, w: el ? Number(el.attributes.width) : null };
 		}),
@@ -722,6 +732,21 @@ const noticeOf = st => {
 	const m = /ec-VizClipNotice-\d+ = "(.*)"$/.exec(line);
 	return m ? m[1] : ``;
 };
+// The tooltip's own words, read the same way. An empty string is the resting state — the tip is a box
+// whose fill is taken away and a `svgtext` with nothing in it — so "no tip" and "a tip with no words"
+// are the same answer, and the check is that they are.
+const tipOf = st => {
+	const line = ((st && st.labels) || []).find(l => l.startsWith(`ec-VizTip-`)) || ``;
+	const m = /ec-VizTip-\d+ = "(.*)"$/.exec(line);
+	return m ? m[1] : ``;
+};
+// A tip's box, out of a phase's snapshot: the whole `rect` list is in the snapshot's `clipBar`, and the
+// tip is one of them. `-1` for a box that is not there at all, so a missing element cannot read as a
+// zero-width one.
+const tipBoxW = st => {
+	const box = ((st && st.clipBar) || []).find(m => m.id === `ec-VizTipBox`);
+	return box ? box.w : -1;
+};
 const statusOf = st => {
 	const line = ((st && st.labels) || []).find(l => l.startsWith(`ec-VizStatus-`)) || ``;
 	const m = /ec-VizStatus-\d+ = "(.*)"$/.exec(line);
@@ -800,6 +825,26 @@ const pressBox = id => {
 };
 const pressKeep = () => pressBox(`ec-VizKeepBox`);
 const pressReset = () => pressBox(`ec-VizResetBox`);
+
+// ---- the controls' tooltips, driven the way a reader's pointer drives them ----
+// **A hover is given in the drawing's units and converted here**, for the same reason a press is: the
+// conversion is part of what the view does for itself, and the view's own entry point is what runs.
+// `VizHover` reads the hover position exactly as `VizGrab` reads the pick, so this is the shipped path
+// rather than a private one — and the pane's handler for it is registered on the host, which is the
+// half this harness cannot see (it compiles the view alone; `tools/hover-check.js` proves the runtime's
+// half and `asedit-check` proves the module compiles its registration).
+const hoverAt = (x, y) => {
+	const [cx, cy] = toClient(x, y);
+	global.document.hoverX = cx; global.document.hoverY = cy;
+	entry(`VizHover`);
+};
+// Hovered where the control was *drawn*, so the hover and the claim below are made against the same
+// rectangle rather than against a coordinate typed into this file.
+const hoverBox = id => {
+	const box = boxOf(id);
+	if (!box) throw new Error(`${id} was not drawn, so there is nothing to hover over`);
+	hoverAt(box.x + Math.floor(box.width / 2), box.y + Math.floor(box.height / 2));
+};
 
 const PHASES = [
 	{ name: `fitted`, act: null },
@@ -907,6 +952,12 @@ const PHASES = [
 	{ name: `the clip bar: press the window control, which commits the selection`, act: pressKeep },
 	{ name: `the clip bar: undo, which puts the list back`, act: () => entry(`VizUndo`) },
 	{ name: `the clip bar: press reset, which gives the whole recording back`, act: pressReset },
+	// **The outside control is drawn and not driven here, and that is a stated gap rather than a pass.**
+	// A phase sequence of *drag, then press* cannot yet be made to land twice in one run (the second press
+	// reads the notice's `select steps …` and never reaches the control), and that is a fault in this file
+	// rather than in the pane: the pane cuts correctly for it. `..:` is this harness's own shape for a gap
+	// — the JS recording is noted the same way — and the point of the note is that the next session picks
+	// it up rather than trusting a control nothing asserts. `TODO-viz.md` carries it.
 	// **The outside control is not driven here yet, and the reason is the harness rather than the pane.** The
 	// pane cuts correctly for it — `VizCut` with `VizKeepTail` 2 rewrites the list to the two parts outside
 	// the window, and its own `log` shows the call it makes — but a phase sequence of *drag, then press*
@@ -915,6 +966,16 @@ const PHASES = [
 	// Left as a stated gap rather than an assertion that cannot fail: `..:` is the shape this harness already
 	// uses for the JS recording, and the whole point of the note is that the next session picks it up.
 	// `TODO-viz.md`, "The clip's interaction", carries it.
+	// ---- the controls' own tooltips ----
+	// **The pointer resting on a control, which is the one gesture here that must not draw.** A hover
+	// arrives at pointer rate, so the claim is two-fold: the tip names the box under the pointer, and the
+	// picture does not move while it does. The three controls are hovered where they were *drawn* —
+	// the rectangle comes out of the live DOM here and out of the phase's own snapshot in the checks —
+	// and the last phase moves the pointer off every control, which is the `mouseleave` half.
+	{ name: `hover over the window control`, act: () => hoverBox(`ec-VizKeepBox`) },
+	{ name: `hover over the outside control`, act: () => hoverBox(`ec-VizOuterBox`) },
+	{ name: `hover over the reset control`, act: () => hoverBox(`ec-VizResetBox`) },
+	{ name: `hover away from every control`, act: () => hoverAt(500, 400) },
 ];
 
 // **What each gesture cost.** Reported rather than asserted, because the pane's cost is a property of the
@@ -2067,6 +2128,63 @@ if (!barDragged || !barBefore || !barDropped || !barApplied || !barUndo || !barR
 	console.log(noticeOf(barApplied) && !/kept the /.test(statusOf(barApplied))
 		? `  OK: and the notice has its own line, clear of the status line and the flow key`
 		: `  FAIL: the notice is missing, or is still on the status line ("${noticeOf(barApplied)}")`);
+}
+
+// ---- the controls' tooltips ----
+// **What each control says when the pointer rests on it, and the one thing a hover must never do.** The
+// claim is the words *and* the stillness: a tip that redrew would make the pane unusable at pointer rate,
+// which is the whole reason `VizHover` writes attributes and nothing else. Each control is checked by
+// naming the words only it can produce, so an implementation that showed the same tip for all three
+// fails — and the pointer leaving is checked too, because a tip that outlives the pointer is worse than
+// none.
+const tipAt = indexOf(`hover over the window control`);
+const tipWindow = tipAt >= 0 ? taken[tipAt][1] : null;
+const tipOutside = tipAt >= 0 && taken[tipAt + 1] ? taken[tipAt + 1][1] : null;
+const tipReset = tipAt >= 0 && taken[tipAt + 2] ? taken[tipAt + 2][1] : null;
+const tipAway = tipAt >= 0 && taken[tipAt + 3] ? taken[tipAt + 3][1] : null;
+if (!tipWindow || !tipOutside || !tipReset || !tipAway) {
+	console.log(`  FAIL: the hover phases are missing from the phase list, so nothing about the tooltip `
+		+ `is checked`);
+} else {
+	const windowWords = tipOf(tipWindow), outsideWords = tipOf(tipOutside);
+	const resetWords = tipOf(tipReset), awayWords = tipOf(tipAway);
+	console.log(/^Keep the window/.test(windowWords) && !/outside/.test(windowWords)
+		? `  OK: the pointer on the window control is told what it keeps — "${windowWords}"`
+		: `  FAIL: the window control's tooltip is "${windowWords}"`);
+	console.log(/^Keep the outside/.test(outsideWords) && !/window/.test(outsideWords)
+		? `  OK: and the outside control says the opposite thing — "${outsideWords}"`
+		: `  FAIL: the outside control's tooltip is "${outsideWords}"`);
+	console.log(/^Reset/.test(resetWords)
+		? `  OK: and reset says what it restores — "${resetWords}"`
+		: `  FAIL: the reset control's tooltip is "${resetWords}"`);
+	// **The tip is drawn while the pointer is over a control and not while it is not.** An empty string
+	// and a box with no fill are the resting state, so the tip's box has to be un-filled when the
+	// pointer has left — otherwise a rectangle is left standing over the bar with nothing in it.
+	console.log(awayWords === `` && tipBoxW(tipAway) > 0
+		? `  OK: and moving off the controls takes the words away again, leaving the box drawn and empty`
+		: `  FAIL: after the pointer left, the tip reads "${awayWords}" (width ${tipBoxW(tipAway)})`);
+	// **And it is placed against the control it belongs to, not at a fixed spot.** The three controls
+	// stand at the right-hand end, so the tip is right-aligned with whichever one is under the pointer;
+	// an implementation that pinned it to one x would pass a words check and fail this.
+	const tipX = (st, id) => ((st.clipBar || []).find(m => m.id === id) || {}).x;
+	const tipW = st => tipBoxW(st);
+	console.log(tipX(tipWindow, `ec-VizKeepBox`) + tipW(tipWindow) > tipX(tipReset, `ec-VizResetBox`)
+		? `  OK: and the tip follows the control it belongs to — its right edge moves with it `
+			+ `(${tipX(tipWindow, `ec-VizKeepBox`)} on the window control, `
+			+ `${tipX(tipReset, `ec-VizResetBox`)} on reset)`
+		: `  FAIL: the tip is in the same place for every control`);
+	// **The stillness, which is the design.** A hover does not ask for a drawing, so the *picture* either
+	// side of the three hovers is byte for byte the same one — and that is also what says the hover
+	// cannot have moved the window as a side effect. The comparison is the picture and not the whole DOM:
+	// the tip's own words differ between the phases, which is the point of them, so a whole-DOM
+	// comparison would fail on the feature working.
+	const picture = st => JSON.stringify([st.marks, st.heat, st.flow, st.box, st.steps, st.lines]);
+	const beforeHover = tipAt > 0 ? taken[tipAt - 1][1] : null;
+	console.log(beforeHover && picture(tipWindow) === picture(beforeHover)
+		&& picture(tipOutside) === picture(beforeHover) && picture(tipReset) === picture(beforeHover)
+		? `  OK: and no hover drew anything — the picture is byte-identical across all three of them, `
+			+ `which is what a handler at pointer rate has to be`
+		: `  FAIL: a hover changed the picture, so the tip is not attribute writes alone`);
 }
 
 // What it asked the DOM for, and what the layers actually contain.
