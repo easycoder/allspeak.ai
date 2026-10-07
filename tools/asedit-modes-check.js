@@ -407,6 +407,85 @@ if (!booted) {
 // what the wait is for.
 check(await waitFor(() => !!program.onMessage), `the editor's inbound message handler is registered, not merely written (onMessage=${program.onMessage})`);
 
+// ---- every control says what it does ---------------------------------------------------------
+//
+// **A tooltip is a `title`, and a title exists because a line that sets it ran.** That is the same rule
+// the registration above obeys: this file's flow stops after the startup loops, so a tooltip written
+// beside the code it belongs to at the end of the file would never be set — which is exactly the trap an
+// earlier session hit with a marker word in the wrong place. It is checked here, at boot, for the same
+// reason the registration is.
+//
+// **Every control, and not just the interesting ones.** The ones that matter least — a `Previous block`
+// arrow — are precisely the ones a later change would drop without noticing, and `title` is invisible
+// until a pointer rests on it, so nothing else would complain.
+const titles = {
+	[`se-open`]: `Open a file from this project`,
+	[`se-plusbtn`]: `Start a new file`,
+	[`se-findbtn`]: `Find a block holding the text you have selected`,
+	[`se-blocksbtn`]: `Show this script as blocks, one block at a time`,
+	[`se-graphbtn`]: `Show the run this script recorded, as a picture`,
+	[`se-recordbtn`]: `Run this script and save its recording beside it`,
+	[`se-launchbtn`]: `Open the page this script names with '@app', in a new window`,
+	[`se-closebtn`]: `Close the file browser`,
+	[`se-blocks-prev`]: `Previous block`,
+	[`se-blocks-next`]: `Next block`,
+	[`se-blocks-verify`]: `Mark this block verified, at its present hash`,
+	[`se-blocks-verify-all`]: `Mark every block in this file verified`,
+	[`se-alert-close`]: `Put this message away`,
+};
+const titleOf = id => ((byId[id] || {}).attributes || {}).title;
+// **Waited for, because the renderer builds the page asynchronously and `@` entries lag the element's
+// existence.** An element is in `byId` as soon as its `@id` is applied, while its attributes and styles
+// arrive an await later — so a check that read them the moment the id appeared would report every
+// tooltip missing and be describing the harness rather than the editor. Measured, 2026-10-07: both maps
+// were still empty six hundred milliseconds after `se-alert` existed.
+const untooled = await waitFor(() => Object.keys(titles).every(id => titleOf(id) === titles[id])) ? [] : Object.keys(titles).filter(id => titleOf(id) !== titles[id]);
+check(untooled.length === 0,
+	`every control carries its own tooltip (${Object.keys(titles).length} checked`
+	+ (untooled.length ? `, ${untooled.length} wrong: `
+		+ untooled.map(id => `${id}=${JSON.stringify(titleOf(id))}`).join(`, `) : ``) + `)`);
+
+// ---- the alert panel: one box, named by the page, shared with the Graph pane -------------------
+//
+// **The panel is `asedit.json`'s, and both programs write to the same two elements by id.** The editor's
+// half is what is checked here: that the page named every part of it, that it is hidden until something
+// asks for it, and that the Close button's own entry point puts it away. The editor's callers are the two
+// module-load failures, and `ShowAlert` is what they use, so driving it *is* driving them.
+//
+// **The pane's half is exercised elsewhere and this says so rather than pretending otherwise.** The
+// pane's `VizDrawRun` writes the panel before it draws, from the module's plumbing — which
+// `tools/plotview-check.js` cuts away, because it compiles the view alone — so the long-drawing notice
+// and its ticker are not reachable from a headless harness. They were measured in a browser instead:
+// the panel appears a second into a drawing that is still going, counts the seconds, and reports what it
+// cost, with the learned estimate and the clip-bar advice printed alongside when the pane has a rate to
+// judge by. `TODO.md` records the measurement.
+const panelShown = () => (displayOf(`se-alert`) || {}).display === `flex`;
+// The same wait, and for the same reason: the panel's own `display` is one of the styles that arrives late.
+await waitFor(() => (displayOf(`se-alert`) || {}).display === `none`);
+// **The panel ships hidden, and that is checked against the JSON rather than the DOM.** This harness's
+// DOM stub does not record the styles `asedit.json` applies (measured: `se-status`'s own `font-size` is
+// absent from it too, and the editor's own checks have never depended on them), so `se-alert`'s
+// `display` reads as `undefined` here whether the file says `none` or nothing at all. `asedit.json` is
+// read for this check the same way the page reads it, which is the honest instrument for the question.
+const uiJson = JSON.parse(fs.readFileSync(path.join(root, `asedit.json`), `utf8`));
+check(uiJson.$AlertPanel && uiJson.$AlertPanel[`@id`] === `se-alert`
+	&& uiJson.$AlertPanel.display === `none` && uiJson.$AlertText[`@id`] === `se-alert-text`
+	&& uiJson.$AlertCloseBtn[`@id`] === `se-alert-close`
+	&& Array.isArray(uiJson[`#`]) && uiJson[`#`].includes(`$AlertPanel`),
+	`the alert panel is in the page, hidden until something asks for it, and every part of it is named `
+	+ `(display=${JSON.stringify(uiJson.$AlertPanel && uiJson.$AlertPanel.display)})`);
+check(!!byId[`se-alert`] && !!byId[`se-alert-text`] && !!byId[`se-alert-close`],
+	`and the page has built all three elements from it `
+	+ `(panel=${!!byId[`se-alert`]}, text=${!!byId[`se-alert-text`]}, close=${!!byId[`se-alert-close`]})`);
+const alertWords = `A message a reader has to understand`;
+program.getSymbolRecord(`AlertMsg`).value[0] = { type: `constant`, numeric: false, content: alertWords };
+run(`ShowAlert`);
+check(panelShown() && String(contentOf(`se-alert-text`)) === alertWords,
+	`and showing it puts the message on screen (display=${(displayOf(`se-alert`) || {}).display}, `
+	+ `text=${JSON.stringify(String(contentOf(`se-alert-text`)))})`);
+run(`HideAlert`);
+check(!panelShown(), `and the Close button's own entry point puts it away again`);
+
 // ---- the invariant that failed last time ----------------------------------------------------
 //
 // Every per-tab array has to be as long as there are tabs. A seventh one added to one of the two ways
@@ -475,6 +554,11 @@ let shown = up(panes());
 let text = labels();
 check(shown.length === 1 && shown[0] === `blocks`, `Blocks mode shows one pane, the Blocks one (${shown.join(`,`) || `none`})`);
 check(text.blocks === `Edit` && text.graph === `Graph`, `and only its own button offers the way out (${text.blocks} | ${text.graph} | ${text.find})`);
+// **A control that changes what it does says so in both states.** The label flips to `Edit` while the
+// pane is up, so the tooltip is set beside it — a button that promised to *show* blocks while it actually
+// left them would be worse than no tooltip at all.
+check(titleOf(`se-blocksbtn`) === `Back to the plain editor`,
+	`and its tooltip changes with it (${JSON.stringify(titleOf(`se-blocksbtn`))})`);
 
 // ---- and the file the editor is editing can be the editor's own ------------------------------------
 //
@@ -500,6 +584,9 @@ shown = up(panes());
 text = labels();
 check(shown.length === 1 && shown[0] === `graph`, `Graph mode shows one pane, the Graph one (${shown.join(`,`) || `none`})`);
 check(text.graph === `Edit` && text.blocks === `Blocks`, `and only its own button offers the way out (${text.blocks} | ${text.graph} | ${text.find})`);
+check(titleOf(`se-graphbtn`) === `Back to the plain editor` && titleOf(`se-blocksbtn`) === `Show this script as blocks, one block at a time`,
+	`with both tooltips back to what the buttons now do `
+	+ `(${JSON.stringify(titleOf(`se-graphbtn`))}, ${JSON.stringify(titleOf(`se-blocksbtn`))})`);
 check(panes().blocks === `none`, `with the Blocks pane gone rather than lying under it`);
 
 // ---- the pane is a module, loaded on demand -------------------------------------------------

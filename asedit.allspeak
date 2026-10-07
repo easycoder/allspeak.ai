@@ -24,6 +24,9 @@
     span TabLabel
     span BlocksTitle
     span BlocksBadge
+    div AlertPanel       ! the alert/info panel, near the top of the page and in front of everything
+    div AlertText        ! what it says
+    button AlertCloseBtn ! the one control it carries
     button OpenBtn
     button FindBtn
     button BlocksBtn
@@ -60,6 +63,9 @@
     variable StrRoot
     variable StrUpdated
     variable StrRestart
+    ! What the alert panel is asked to say. A variable rather than an argument, because the language has
+    ! no parameters: `ShowAlert` reads it and nothing else.
+    variable AlertMsg
     variable TabPath       ! array: full file path per tab (relative to project root)
     variable TabName       ! array: display name (basename) per tab
     variable TabSaved      ! array: last content saved to server per tab
@@ -207,7 +213,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 649556b5
+!! @hash de6c79dc
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -250,7 +256,13 @@
     attach BlocksDocPane to `se-blocks-doc`
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
-!! @hash 414ea5b9
+    attach AlertPanel to `se-alert`
+    attach AlertText to `se-alert-text`
+    attach AlertCloseBtn to `se-alert-close`
+    ! Every control is named while the UI is still being built: see `SetTips`, below the startup
+    ! loops, for what a tooltip is here and why it is a subroutine rather than lines in this block.
+    gosub to SetTips
+!! @hash b1e477ad
 !! @verified 414ea5b9
 !!!
 !! Some general initialisation
@@ -421,6 +433,7 @@ VersionDone:
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
     on click BlocksVerifyAll go to MarkAllVerified
+    on click AlertCloseBtn go to HideAlert
 
     on pick BlocksDivider
     begin
@@ -506,7 +519,7 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash 3efa1530
+!! @hash 9c062d6d
 !! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
@@ -527,6 +540,54 @@ on message go to SideMarkLine
     stop
 !! @hash f86feb98
 !! @verified f86feb98
+!!!
+!! What each control says when the pointer rests on it.
+!!
+!! **A `title` is the browser's own rollover, and this file already uses it** — the Graph sidebar's tabs are named the same way, in `asedit-side.allspeak`. It costs no element of ours, needs no positioning, and cannot be left standing by a pointer that has moved on, which is the whole of what a hand-drawn tip would have to solve for itself.
+!!
+!! **A control that changes what it does is named in both of its states.** `Blocks` and `Graph` are toggles whose label flips to `Edit` while their pane is up, so each tooltip is set beside its label — see `EnterBlocks`, `DoExitBlocks`, `EnterGraph` and `DoExitGraph` — and this block is the state a freshly opened editor is in.
+!!
+!! **The words are English, and that is the standing gap rather than a choice made here.** Only the chrome in `SetStrings` is translated; the status line and every message in this file are English already, so a tooltip localised on its own would read as a third language. The batch that closes it is in `TODO.md`.
+SetTips:
+    set attribute `title` of OpenBtn to `Open a file from this project`
+    set attribute `title` of PlusBtn to `Start a new file`
+    set attribute `title` of FindBtn to `Find a block holding the text you have selected`
+    set attribute `title` of BlocksBtn to `Show this script as blocks, one block at a time`
+    set attribute `title` of GraphBtn to `Show the run this script recorded, as a picture`
+    set attribute `title` of RecordBtn to `Run this script and save its recording beside it`
+    set attribute `title` of LaunchBtn to `Open the page this script names with '@app', in a new window`
+    set attribute `title` of BlocksPrev to `Previous block`
+    set attribute `title` of BlocksNext to `Next block`
+    set attribute `title` of BlocksVerify to `Mark this block verified, at its present hash`
+    set attribute `title` of BlocksVerifyAll to `Mark every block in this file verified`
+    set attribute `title` of CloseBtn to `Close the file browser`
+    set attribute `title` of AlertCloseBtn to `Put this message away`
+    return
+!! @hash 21476b47
+!!!
+!! The alert panel: one box that says what is happening and stays until it is read.
+!!
+!! **Why a panel rather than the status line, which is where messages go now.** The status line is a strip at the far end of the window, one line wide, and every message on it is cleared after three seconds whether or not anybody read it. That is right for `Saved` and wrong for anything a reader has to *understand* — the two module-load failures below are the ones that were worst served by it, because the editor also leaves the mode they belong to, so the explanation and the symptom arrived a line apart and both went. A panel near the top, in front of everything, with a Close button, is the shape Graham asked for.
+!!
+!! **The same panel is the Graph pane's.** `asedit-graph.allspeak` attaches to `se-alert` and `se-alert-text` by the same ids this file uses and writes its own message there — the long-drawing notice and the number it counts while it waits — so there is one place on the page a message of this kind appears, and neither program has to know about the other's text. The Close button is this file's (`HideAlert`), because the panel is named in `asedit.json` beside the editor's own elements and a page element's controls belong to whoever rendered them.
+!!
+!! **A message is written with `set the content of`, so it must not carry markup.** That is the trap the Launch message fell into — a `<page>` placeholder in angle brackets was parsed as a tag and never rendered — so anything meant to be read as a literal wants a concrete example rather than a placeholder. The pane's messages are its own and obey the same rule.
+ShowAlert:
+    ! Reads `AlertMsg`; the panel's visibility is the whole of the state it keeps. A subroutine rather
+    ! than an entry point, because the two callers below are in the middle of their own flow — the
+    ! sidebar's failure in particular must let `EnterGraph` carry on, since a missing sidebar is not a
+    ! reason to stop showing a picture.
+    set the content of AlertText to AlertMsg
+    set style `display` of AlertPanel to `flex`
+    return
+
+HideAlert:
+    ! The Close button's own entry, and the one place the panel is put away. `on click` reaches a label
+    ! rather than a subroutine, so this ends the flow it started instead of returning to a caller that
+    ! does not exist.
+    set style `display` of AlertPanel to `none`
+    stop
+!! @hash 5b38b66f
 !!!
 !! Every half-second, changes to the content are saved.
 !!
@@ -971,12 +1032,13 @@ RebuildTabBar:
         index TabClose to N
         create TabClose in TabBtn
         set attribute `src` of TabClose to `https://allspeak.ai/icon/stop.png`
+        set attribute `title` of TabClose to `Close this tab`
         set the style of TabClose to `width:12px;height:12px;opacity:0.6;cursor:pointer`
         on click TabClose go to CloseTab
         add 1 to N
     end
     return
-!! @hash 1347598c
+!! @hash 2ade580b
 !! @verified 1347598c
 !!!
 !! Here are some utility functions.
@@ -1405,6 +1467,7 @@ EnterBlocks:
     put 1 into BlocksMode
     ! The toggle button now leaves Blocks mode, so relabel it.
     set the content of BlocksBtn to `Edit`
+    set attribute `title` of BlocksBtn to `Back to the plain editor`
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `flex`
     ! Restore divider position from previous session if persisted.
@@ -1434,6 +1497,7 @@ DoExitBlocks:
     put 0 into BlocksMode
     ! Back in flat mode the toggle button re-enters Blocks mode.
     set the content of BlocksBtn to `Blocks`
+    set attribute `title` of BlocksBtn to `Show this script as blocks, one block at a time`
     set style `display` of BlocksArea to `none`
     set style `display` of EditorArea to `block`
     ! Scroll the flat editor so the start of the block just viewed is visible.
@@ -1513,7 +1577,7 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash 4464102e
+!! @hash 991be32a
 !! @verified 4464102e
 !!!
 !! Blocks save.
@@ -1863,6 +1927,7 @@ EnterGraph:
     gosub to DoExitPanes
     put 1 into GraphMode
     set the content of GraphBtn to `Edit`
+    set attribute `title` of GraphBtn to `Back to the plain editor`
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `none`
     set style `display` of GraphArea to `flex`
@@ -1985,22 +2050,24 @@ SideModuleHosted:
     go to SideModuleHere
 
 SideLoadFailed:
-    ! **Not cleared after three seconds, unlike every other message here.** A module that will not load is
-    ! a fault in the page rather than news about the work, and the reader needs it to still be there when
-    ! they look up from the pointer — which is exactly what went wrong the first time this path was hit:
-    ! the sidebar was not beside the editor, the line flashed and went, and the only symptom was that
-    ! nothing happened when a mark was clicked.
-    set the content of StatusSpan to `The Graph sidebar could not be loaded`
+    ! **The panel rather than the status line, and that is the fix this path always needed.** A module
+    ! that will not load is a fault in the page rather than news about the work, and the reader needs it
+    ! to still be there when they look up from the pointer — which is exactly what went wrong the first
+    ! time this path was hit: the sidebar was not beside the editor, the line flashed and went, and the
+    ! only symptom was that nothing happened when a mark was clicked. The status line could not hold it
+    ! (everything there is cleared after three seconds); the panel stays until it is closed.
+    put `The Graph sidebar could not be loaded. Without it the picture still works — the sidebar is a reading aid beside the drawing. Rebuild the editor payload with ./build-allspeak, or start the dev server from the repository root.` into AlertMsg
     log `sidebar: could not fetch ` cat `asedit-side.allspeak` cat ` — is it beside the editor?`
+    gosub to ShowAlert
     return
 
-!   A page served without the pane beside it, which is the one way this can fail. Said on the status
-!   line and rectified in the same breath: the editor goes back to the flat view rather than leaving
-!   a pane up that nothing will ever draw in.
+!   A page served without the pane beside it, which is the one way this can fail. Said in the panel and
+!   rectified in the same breath: the editor goes back to the flat view rather than leaving a pane up
+!   that nothing will ever draw in.
 VizLoadFailed:
-    set the content of StatusSpan to `The Graph pane could not be loaded`
-    fork to ClearStatus
+    put `The Graph pane could not be loaded, so the editor has gone back to the plain view. Rebuild the editor payload with ./build-allspeak, or start the dev server from the repository root.` into AlertMsg
     gosub to DoExitGraph
+    gosub to ShowAlert
     stop
 
 !   The run, as one dict — the whole of the interface in this direction. Built here rather than
@@ -2035,6 +2102,7 @@ DoExitGraph:
     ! otherwise be offered to a splitter nobody can see.
     put 0 into GripPicked
     set the content of GraphBtn to `Graph`
+    set attribute `title` of GraphBtn to `Show the run this script recorded, as a picture`
     set style `display` of GraphArea to `none`
     set style `display` of EditorArea to `block`
     if VizLoaded is 1 gosub to TellVizClosed
@@ -2060,7 +2128,7 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash ecd231d6
+!! @hash 87bc979c
 !! @verified ecd231d6
 !!!
 !! The sidebar: what the pane reports back, and what the sidebar is shown.
