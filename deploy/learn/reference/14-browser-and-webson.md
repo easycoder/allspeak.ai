@@ -105,9 +105,12 @@ Element events register with `on <event> <element> gosub Handler`:
 on click Save gosub HandleSave
 on change NameField gosub NameChanged
 on submit Form gosub Submit
+on hover Save gosub ShowSaveTip
 ```
 
 The handler is a thread; the cursor on the element variable is set to the firing instance before the handler runs. See [event-handlers-and-array-index](../idioms/event-handlers-and-array-index.md) for the canonical pattern with arrays of elements.
+
+`on hover` is the rollover: it fires while the pointer is merely *over* the element, so a control can say what it does before it is pressed, and `<element>` must be a browser element (not a plain `variable`). It arrives at pointer rate — every move, not once on arrival — so a handler should write attributes rather than redraw the page, and it reads `the hover position` (as json, like `the pick position`). Leaving the element fires it once more with the coordinates the pointer crossed at, which is what lets a tooltip be taken away again; a touch has no hover, so there is no touch counterpart.
 
 ## Native browser dialogs
 

@@ -64,7 +64,14 @@
     ! because the handlers below are the first thing in the file to read it, and a variable has to be
     ! declared before the code that uses it.
     variable VizSlide          ! 0 the picture, 1 the lines bar, 2 the steps bar
-!! @hash 2c3989b5
+    ! **A flag for the clip's own state, declared and set here because the plumbing can do that.** The
+    ! clip's own names are declared far below — after the module has already stopped — so the *first* draw
+    ! is the earliest place they can be given values, and this flag is how it knows it is the first.
+    ! Setting it here is legal exactly because its declaration is here too; after the plumbing's `stop`,
+    ! nothing is reachable at load.
+    variable VizClipInit
+    put 0 into VizClipInit
+!! @hash 1f8c29b2
 !! @verified a04b40d6
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
@@ -377,16 +384,49 @@ VizRemember:
     variable VizViewFit
     variable VizFitXW
     variable VizFitYH
-    ! The clip: the range of steps the reader has narrowed the recording to. It is the *window*
-    ! they chose it with — `VizClip` takes `VizViewX0` and the window's width into these two — and
-    ! it is stored nowhere else, because the recording is re-read on every draw: clearing the range
-    ! puts these back and the whole of the run returns with the next one. `VizClipKey` is the range
-    ! as one string, which is what the two tests that decide a new picture compare; without it a
-    ! clip would change nothing, since it does not touch the recording's text.
-    variable VizClipFrom
-    variable VizClipTo
-    variable VizClipKey
-    variable VizLastClipKey
+    ! **The clip is a *list of kept step ranges*, not one range.** That is what lets a reader keep either
+    ! the window between the markers *or* the two parts outside it: keeping the inside intersects every
+    ! range with the window, and keeping the outside subtracts it, which splits a range in two. The list
+    ! can only ever cover less — a cut narrows, and nothing but `reset` widens — which is the rule the
+    ! whole control is built on.
+    !
+    ! **A pair of holders rather than a json value, and that is a cost decision.** This list is walked
+    ! once per record, and a json access costs a parse of the whole array (~15ms on a 435KB trace), while
+    ! two array reads and two integer compares are the cheapest thing in this file. `VizKeepN` is how many
+    ! ranges are live; the spare room past it is there because keeping the outside can split one range
+    ! into two, and a list that is rebuilt needs somewhere to be built.
+    variable VizKeepFrom      ! array: each kept range's first step
+    variable VizKeepTo        ! array: each kept range's last step
+    variable VizKeepN         ! how many of them are live
+    variable VizKeepFrom2     ! array: the list being built by a cut, before it replaces the live one
+    variable VizKeepTo2
+    variable VizKeepN2
+    variable VizKeepI         ! scratch: the index over the ranges
+    variable VizKeepA         ! scratch: one range's start, while it is being rewritten
+    variable VizKeepB
+    variable VizKeepKept      ! 1 while a record is inside one of the ranges
+    variable VizKeepTail      ! what a cut keeps: 0 the whole recording, 1 the window, 2 the two parts outside it
+    variable VizKeepSet       ! and what the last cut kept, which is what the notice names
+    variable VizRangeFrom     ! scratch: one range, on its way into the list being built
+    variable VizRangeTo
+    variable VizKeepCount     ! records kept, which is the notice's first figure
+    variable VizKeepCap       ! how many ranges the holders hold: past it a splitting cut keeps less
+    variable VizAllTo         ! the recording's own last step, remembered while the list is empty
+    variable VizSetTag        ! bumped by every cut, so the two places that decide a picture see it
+    variable VizLastSetTag
+    ! **And a history deep enough to undo.** Every cut saves the list it replaced as one string —
+    ! `0-20`, or `0-4;12-20` — so an undo is a split and a draw rather than a re-filter of the recording,
+    ! which is what makes it instant. Strings rather than saved sets: the list is a handful of numbers,
+    ! while a set would be a copy of the recording. `VizHistN` is how many are on it, and it is the
+    ! redo's depth as well, which is why `VizHistAt` is kept beside it rather than being the top.
+    variable VizHist           ! array: the kept list before each cut, as text
+    variable VizHistN
+    variable VizHistAt
+    variable VizHistI          ! scratch over it
+    variable VizHistText       ! scratch: the list as text, and the piece being read back
+    variable VizHistPiece
+    variable VizHistParts     ! scratch: the list split on `;` by the loader
+    variable VizHistPair      ! scratch: one range split on `-` by it
     ! **The run the picture shows need not start at step 0.** Unclipped it does, which is why these
     ! read as they always did; clipped, the picture's steps are the clip's own range, so the first
     ! step is the clip's start and the width is its span. Two names rather than a subtraction at
@@ -555,6 +595,7 @@ VizRemember:
     variable VizClipOutX
     variable VizClipInXW    ! the selection's ends in the picture's own x, for the guides and the washes
     variable VizClipOutXW
+    variable VizClipWash    ! a wash's width, needing its own name: `take A from B` assigns to B
     variable VizClipPos     ! one step's x, or one x's step, while the mapping runs
     variable VizClipSpan    ! the axis's width in steps, which the mapping divides by
     variable VizClipStep
@@ -572,8 +613,10 @@ VizRemember:
     ! than its absence.
     variable VizCtlY        ! the strip the controls sit in, above the bar
     variable VizCtlH
-    variable VizKeepX       ! `<> keep` — make the window between the markers the run
+    variable VizKeepX       ! `←--- ---→` — make the window between the markers the run
     variable VizKeepW
+    variable VizOuterX      ! `---→ ←---` — make the two parts *outside* the window the run
+    variable VizOuterW
     variable VizResetX      ! `reset` — the whole recording back, above the bar's end
     variable VizResetW
     variable VizPtrX
@@ -690,8 +733,15 @@ VizRemember:
     ! **And the controls, which are boxes with their words drawn in them.** They cannot be buttons — a
     ! pane element takes no click — so each is a `rect` whose box the hit test matches arithmetically and
     ! an `svgtext` drawn centred inside it, which is the reader's half of the same place.
+    ! **Three controls: the two cuts and the reset.** The arrow legends are the design's glyphs —
+    ! `←--- ---→` keeps the window between the markers, the arrows facing away from it, and `---→ ←---`
+    ! keeps the two parts *outside* it, the arrows facing each other across the gap they remove. A tooltip
+    ! for each is owed and not built yet; until then the notice says what the last cut kept, which is the
+    ! one place a reader can check which button did what.
     rect VizKeepBox
     svgtext VizKeepText
+    rect VizOuterBox
+    svgtext VizOuterText
     rect VizResetBox
     svgtext VizResetText
     ! And the readout's own style is set where it is created, in the built-once block below.
@@ -740,33 +790,51 @@ Draw:
     ! sidebar reads all follow from the same set. That is what makes the notice on the status line a
     ! fact rather than a decoration — the picture really is of the part of the run that is left.
     !
-    ! The two tests below are the re-fit key, and both are needed. `VizClipKey` is the range as one
-    ! string, so a clip is *visible* to the two places that decide a picture; without it a clip would
-    ! change nothing, because it does not touch the recording's text or the script, which is what
-    ! those places compare. `VizMinSteps` is the run's first step in the picture — 0, or the clip's
-    ! own start — and it is what the fit, the clamp and the bars read instead of a hard 0.
-    ! **A clip is a range over *this* recording, so a new recording clears it.** That also keeps the
-    ! clip bar's axis honest: the axis is the run's own step extent, taken from pass one, which measures
-    ! the *range* once a clip is on — so it is taken while there is no clip and would otherwise go stale
-    ! against a re-recorded run.
+    ! The tests below are the re-fit key, and it is `VizSetTag` rather than the list itself: a cut bumps it,
+    ! so a cut is *visible* to the two places that decide a picture — without that it would change nothing,
+    ! because it does not touch the recording's text or the script, which is what those places compare.
+    ! `VizMinSteps` is the run's first step in the picture — 0, or the first step the reader kept — and it
+    ! is what the fit, the clamp and the bars read instead of a hard 0.
+    ! **A cut is a set of ranges over *this* recording, so a new recording drops it.** That also keeps the
+    ! bar's axis honest: the axis is the working set's own step extent, taken from pass one, which measures
+    ! the *set* once a cut is on — so a list carried over would be an axis against a run it never saw.
+    ! **The clip's state, the first time a draw happens and only then.** None of it can be declared-and-set
+    ! in the plumbing, because its names are declared below the plumbing's `stop` — where nothing runs at
+    ! load — and none of it can be read before it has been given a value, since reading an unset variable is
+    ! a runtime error rather than a zero. So it is born at the top of the first draw, behind a flag that the
+    ! plumbing *can* set. `VizClipInit` is declared and set up there.
+    if VizClipInit is 0
+    begin
+        put 0 into VizKeepN
+        put 0 into VizSetTag
+        put -1 into VizLastSetTag
+        put -1 into VizSelKey
+        put 0 into VizHistN
+        put 0 into VizHistAt
+        put -1 into VizKeptKey
+        put 1 into VizClipInit
+    end
     if VizTrace is not VizLastTrace
     begin
-        put 0 into VizClipFrom
-        put 0 into VizClipTo
+        gosub to VizCutWhole
+        ! A new recording takes the history with it: those ranges are steps in a run that is no longer on
+        ! screen, so an undo into them would cut the picture to a set nobody asked for.
+        put 0 into VizHistN
+        put 0 into VizHistAt
     end
     put 0 into VizMinSteps
-    put VizClipFrom cat `-` cat VizClipTo into VizClipKey
-    ! **And the kept set is built when the *clip* changes, not on every draw.** This is the whole of why
+    ! **And the kept set is built when the *list* changes, not on every draw.** This is the whole of why
     ! the clip did not pay at first: rebuilding it per draw cost more than the records it left out, so a
-    ! clipped gesture was slower than an unclipped one (measured on a 435KB trace: 41s a draw against
-    ! 16s). Built once, every later draw walks only the kept records — and since a walk is quadratic in
-    ! what it walks, that is where the saving is.
-    if VizClipFrom is not 0 or VizClipTo is not 0
+    ! clipped gesture was slower than an unclipped one (measured on a 435KB trace: 41s a draw against 16s).
+    ! Built once, every later draw walks only the kept records — and since a walk is quadratic in what it
+    ! walks, that is where the saving is. The *draw* builds it rather than the cut, so that a host asking
+    ! for a draw — or a test — never has to know how the set is made.
+    if VizSetTag is not VizKeptKey
     begin
-        if VizClipKey is not VizKeptKey gosub to VizClipKeep
+        gosub to VizKeepRun
         put VizKept into VizEvents
     end
-!! @hash 1d0b9360
+!! @hash ad652eef
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -1043,16 +1111,20 @@ Draw:
     put VizPlotRight into VizClipOutX
     put VizMargin into VizClipInXW
     put VizPlotRight into VizClipOutXW
-    ! **The controls above the bar, drawn from the numbers the hit test uses.** They sit in their own strip
-    ! above the rail and against its right end, laid out from `VizPlotRight` rather than from constants so
-    ! they follow the frame if it ever stops being 1000 wide. Their words are drawn *in* them, because `<>`
-    ! and `><` on their own are ambiguous and a reader should not have to be told which is which.
+    ! **The three controls above the bar, drawn from the numbers the hit test uses.** They sit in their own
+    ! strip above the rail and against its right end, laid out from `VizPlotRight` rather than from
+    ! constants so they follow the frame if it ever stops being 1000 wide. Their legends are the arrow
+    ! pairs of the design, drawn *in* them; the words that explain each one belong to a tooltip, which is
+    ! owed and not built yet — until then the notice names what the last cut kept.
     put 8 into VizCtlY
     put 18 into VizCtlH
     put 84 into VizResetW
+    put 84 into VizOuterW
     put 84 into VizKeepW
     take VizResetW from VizPlotRight giving VizResetX
-    take VizKeepW from VizResetX giving VizKeepX
+    take VizOuterW from VizResetX giving VizOuterX
+    take 8 from VizOuterX
+    take VizKeepW from VizOuterX giving VizKeepX
     take 8 from VizKeepX
     create VizKeepBox in VizCanvas style `cursor:pointer`
     set attribute `x` of VizKeepBox to VizKeepX
@@ -1066,11 +1138,28 @@ Draw:
     set attribute `text-anchor` of VizKeepText to `middle`
     set attribute `font-size` of VizKeepText to 11
     set attribute `fill` of VizKeepText to `#40506b`
-    set the text of VizKeepText to `<> keep`
+    set the text of VizKeepText to `←--- ---→`
     put VizKeepW into VizMove
     divide VizMove by 2
     add VizKeepX to VizMove
     move VizKeepText to VizMove 21
+    create VizOuterBox in VizCanvas style `cursor:pointer`
+    set attribute `x` of VizOuterBox to VizOuterX
+    set attribute `y` of VizOuterBox to VizCtlY
+    set attribute `width` of VizOuterBox to VizOuterW
+    set attribute `height` of VizOuterBox to VizCtlH
+    set attribute `rx` of VizOuterBox to 3
+    set attribute `fill` of VizOuterBox to `#e6e2d8`
+    set attribute `stroke` of VizOuterBox to `#9aa4b1`
+    create VizOuterText in VizCanvas style `cursor:pointer`
+    set attribute `text-anchor` of VizOuterText to `middle`
+    set attribute `font-size` of VizOuterText to 11
+    set attribute `fill` of VizOuterText to `#40506b`
+    set the text of VizOuterText to `---→ ←---`
+    put VizOuterW into VizMove
+    divide VizMove by 2
+    add VizOuterX to VizMove
+    move VizOuterText to VizMove 21
     create VizResetBox in VizCanvas style `cursor:pointer`
     set attribute `x` of VizResetBox to VizResetX
     set attribute `y` of VizResetBox to VizCtlY
@@ -1089,6 +1178,17 @@ Draw:
     add VizResetX to VizMove
     ! The baseline: `VizCtlY` plus thirteen, which sets eleven-unit glyphs inside an eighteen-unit box.
     move VizResetText to VizMove 21
+
+    ! **The kept list's holders, and the history's.** `VizKeepCap` is how many ranges a list may hold; the
+    ! spare pair is the same size because a cut to the outside builds a whole new list before it replaces
+    ! the live one. The history is 32 deep, which is more cuts than anybody makes on one recording, and
+    ! each entry is a few bytes of text.
+    put 16 into VizKeepCap
+    set the elements of VizKeepFrom to VizKeepCap
+    set the elements of VizKeepTo to VizKeepCap
+    set the elements of VizKeepFrom2 to VizKeepCap
+    set the elements of VizKeepTo2 to VizKeepCap
+    set the elements of VizHist to 32
 
     ! A mark is a *stroked* hairline with a round cap, not a filled one: `M x y h0.01` alone fills to
     ! nothing at all, and stroked without the cap it is a 0.01-long rectangle — so the cap belongs to
@@ -1215,7 +1315,7 @@ Draw:
     put 1 into VizReady
 
 VizBuilt:
-!! @hash 42810d27
+!! @hash 5158a082
 !! @verified 20bf4472
 !!!
 !! What a draw does, in order.
@@ -1269,7 +1369,7 @@ VizBuilt:
     ! not change the recording's text, so without this test the guard would let a clipped draw
     ! through on the previous picture's measurements — its extent, its rule set, its busiest line.
     ! The same test is made at the fit below; the two decide the same thing and must not disagree.
-    if VizClipKey is not VizLastClipKey put 1 into VizPictureNew
+    if VizSetTag is not VizLastSetTag put 1 into VizPictureNew
     if VizPictureNew is 0 go to VizFrameDone
     ! A leading and trailing space, so that every entry added is padded on both sides and ` 15 ` can
     ! never match inside ` 115 `. Cleared with the pass that fills it rather than with the paths above,
@@ -1344,17 +1444,22 @@ VizBuilt:
     ! is what walking 2,300 records at 15ms a record costs.
     put VizMinSteps into VizRunFrom
     put VizMaxSteps into VizRunTo
+    ! **The recording's own last step, remembered while nothing has been cut.** A cut to the *outside* has
+    ! to name the far end of the run, and this is the one place that measures it: pass one over the whole
+    ! recording, which is what the set is until the first cut. Kept rather than measured again, because
+    ! measuring it separately is a walk of every record — 37 seconds on a 435KB trace.
+    if VizKeepN is 0 put VizMaxSteps into VizAllTo
     ! **And the selection goes home whenever the applied range changes**, which is the reader's expectation:
     ! the bar says where the selection sits in what is on screen, and a cut has just changed what that is.
     ! Keyed on the range rather than reset every draw, or a pan — which redraws — would throw away a
     ! selection the reader had just made.
-    if VizClipKey is not VizSelKey
+    if VizSetTag is not VizSelKey
     begin
         put VizRunFrom into VizSelFrom
         put VizRunTo into VizSelTo
-        put VizClipKey into VizSelKey
+        put VizSetTag into VizSelKey
     end
-!! @hash dd026c14
+!! @hash 6e051bfd
 !! @verified 92278436
 !!!
 !! A mark has to stay legible at the pane's scale, or it is not a mark.
@@ -1401,9 +1506,9 @@ VizFrameDone:
     ! the part that has just been cut away: the extent, `VizFitXW` — which is what the status line
     ! measures the zoom against — and the bars would all still describe the whole run. Both keys are
     ! advanced at this one point, where a picture is decided, so they cannot drift apart.
-    if VizClipKey is not VizLastClipKey put 1 into VizNewRun
+    if VizSetTag is not VizLastSetTag put 1 into VizNewRun
     put VizTrace into VizLastTrace
-    put VizClipKey into VizLastClipKey
+    put VizSetTag into VizLastSetTag
     ! The picture first, because the fit below is over the extent it measured.
     if VizNewRun is 1 go to VizPictureFresh
     if VizSource is not VizLastSource go to VizPictureFresh
@@ -1450,7 +1555,7 @@ VizWindow:
     multiply VizViewYH by 18 giving VizWindowH
     multiply VizWindowH by VizPlotW giving VizWindowW
     divide VizWindowW by VizPlotH
-!! @hash 687c4353
+!! @hash 0e27806e
 !! @verified 91fd04ef
 !!!
 !! The source is drawn behind the heat, once, and shown through a window.
@@ -1972,9 +2077,15 @@ VizGrab:
     ! drag only selects and a press is what commits, so the two are different gestures with different
     ! consequences rather than one gesture with a side effect. `VizGrabbed` stays 0, so no drag follows a
     ! control press and the drop that ends it finds nothing to release.
-    if VizSlide is 5 gosub to VizKeepApply
-    if VizSlide is 6 gosub to VizUnclip
-    if VizSlide is 5 or VizSlide is 6 return
+    !
+    ! 5 is the window, 6 is the outside, 7 is the whole recording — and the first two are the same call,
+    ! `VizCut`, with `VizKeepTail` saying which. That is what keeps three controls from being three
+    ! answers to one question.
+    if VizSlide is 5 put 1 into VizKeepTail
+    if VizSlide is 6 put 2 into VizKeepTail
+    if VizSlide is 5 or VizSlide is 6 gosub to VizCut
+    if VizSlide is 7 gosub to VizUnclip
+    if VizSlide is 5 or VizSlide is 6 or VizSlide is 7 return
     ! A press on the picture is also a *selection*. The bars are tested first because a press on one of
     ! those is a grab rather than a pointing at a mark, which is why this sits behind the test above
     ! rather than beside it — and a press that names no mark leaves the last selection alone.
@@ -2195,8 +2306,10 @@ VizHandleAt:
     begin
         take VizKeepX from VizPtrX giving VizPtrA
         if VizPtrA is greater than 0 and VizPtrA is less than VizKeepW put 5 into VizSlide
+        take VizOuterX from VizPtrX giving VizPtrA
+        if VizPtrA is greater than 0 and VizPtrA is less than VizOuterW put 6 into VizSlide
         take VizResetX from VizPtrX giving VizPtrA
-        if VizPtrA is greater than 0 and VizPtrA is less than VizResetW put 6 into VizSlide
+        if VizPtrA is greater than 0 and VizPtrA is less than VizResetW put 7 into VizSlide
     end
     ! **The clip bar's two markers, in the strip above the plot.** A band of its own, so this test cannot
     ! be confused with anything else on the canvas — the plot begins at 60 and nothing else is drawn above
@@ -2572,7 +2685,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 77681513
+!! @hash 0e1bde0c
 !! @verified dc725895
 !!!
 !! And a doc block is not drawn in it.
@@ -2947,51 +3060,259 @@ VizPlaceX:
 !! **The bar's axis is the working set's own extent**, so a cut brings both markers home to the ends of what is now on screen — the picture above them is a new total range, and the bar says where the selection sits within it. The guides and the washes are placed in the *picture's* mapping instead, so they are drawn at any zoom and with a clip on, which is what a reader pointing at the picture is looking with. `VizClip` — the window as the range — remains, and puts the markers on the window's ends so that a range chosen with the wheel shows on the bar too.
     ! ---- the clip ----
 VizClip:
-    ! The range is the window, exactly as it stands. `VizViewX0` is the first step in view and the
-    ! window's width is how many of them there are, so the last one is one short of their sum — the
-    ! same convention the status line prints.
-    put VizViewX0 into VizClipFrom
-    put VizViewX0 into VizClipTo
-    add VizViewXW to VizClipTo
-    take 1 from VizClipTo
-    ! The selection follows a range chosen *from the window*, so the markers show a window-driven clip as
-    ! readily as a dragged one — and so that pressing `keep` straight afterwards is a no-op rather than a
-    ! cut to somewhere else.
-    put VizClipFrom into VizSelFrom
-    put VizClipTo into VizSelTo
-    gosub to VizRequest
+    ! **Keep the window** — the host's own way in, and the same operation as the `in` control. The range is
+    ! the window exactly as it stands: `VizViewX0` is the first step in view and the window's width is how
+    ! many of them there are, so the last one is one short of their sum, the convention the status line
+    ! prints. The selection is moved onto it too, so the markers show a range chosen with the wheel and
+    ! pressing `keep` straight afterwards is a no-op rather than a cut to somewhere else.
+    put VizViewX0 into VizSelFrom
+    put VizViewX0 into VizSelTo
+    add VizViewXW to VizSelTo
+    take 1 from VizSelTo
+    put 1 into VizKeepTail
+    gosub to VizCut
     return
 
 VizUnclip:
-    ! Give the whole recording back. The recording itself was never touched, so this is the two
-    ! numbers and nothing more — the next draw re-reads `VizTrace` and finds all of it. The range is
-    ! also what the re-fit key is made of, so clearing it fits the window to the whole run again.
-    put 0 into VizClipFrom
-    put 0 into VizClipTo
-    ! No selection work here: clearing the range changes the key the draw compares, and the markers go home
-    ! to the ends of the whole run in that same pass. One place puts them home, and this is not it.
+    ! **The whole recording back** — `reset`, and the only operation that widens. Nothing is un-done
+    ! record by record, because nothing was ever rewritten: the empty list means no narrowing, and the next
+    ! draw's filter keeps every record again.
+    put 0 into VizKeepTail
+    gosub to VizCut
+    return
+
+VizCut:
+    ! **`add 0 to` the four numbers before any arithmetic on them.** A step read out of a parsed recording is
+    ! *text*, and text compares lexically — an unconverted `10` is less than `9` — so the ranges this makes
+    ! would cut the wrong records: measured in isolation before the filter was written, `10 is less than 9`
+    ! is 1 without the conversion and 0 with it. This is where the selection, the remembered recording end
+    ! and the range arithmetic all meet, so it is where the conversion belongs.
+    add 0 to VizSelFrom
+    add 0 to VizSelTo
+    add 0 to VizAllTo
+    ! **The one operation the controls share: rewrite the list to what the reader chose to keep.**
+    ! `VizKeepTail` says which part of the window that is — 0 the whole recording, 1 the window itself,
+    ! 2 the two parts outside it — and the selection (`VizSelFrom`/`VizSelTo`) is the window the markers
+    ! make. Keeping the inside intersects each live range with the window; keeping the outside subtracts
+    ! it, and a subtraction can split one range into two, which is why the list is a list and why the new
+    ! one is built in the spare pair before it replaces the live one.
+    !
+    ! **Nothing is rewritten but the list.** The recording is re-read on every draw, so a cut is a handful
+    ! of numbers and the next draw's filter, and `reset` is the empty list. That also means a cut does not
+    ! survive leaving the pane — the same deal the window itself makes, and the honest one: a recording is
+    ! a file, and a set of ranges over it is a way of looking, not a property of the run.
+    if VizKeepTail is 0 go to VizCutWhole
+    ! The list the cut replaces, so `undo` can put it back, and the tag, which is what makes a cut
+    ! *visible* to the two places that decide a picture.
+    put VizKeepTail into VizKeepSet
+    gosub to VizHistPush
+    put 0 into VizKeepN2
+    put 0 into VizKeepI
+    ! With nothing kept yet, the window *is* the answer — no range to intersect.
+    if VizKeepN is 0 and VizKeepTail is 1
+    begin
+        put VizSelFrom into VizRangeFrom
+        put VizSelTo into VizRangeTo
+        gosub to VizCutAdd
+    end
+    ! And with nothing kept yet, the outside is the two ends of the recording. `0` is where the fit starts,
+    ! and `VizAllTo` is the recording's own last step, remembered in pass one while the list is still empty.
+    if VizKeepN is 0 and VizKeepTail is 2
+    begin
+        put 0 into VizRangeFrom
+        take 1 from VizSelFrom giving VizRangeTo
+        if VizRangeTo is not less than 0 gosub to VizCutAdd
+        add 1 to VizSelTo giving VizRangeFrom
+        put VizAllTo into VizRangeTo
+        if VizRangeFrom is not greater than VizRangeTo gosub to VizCutAdd
+    end
+    ! Otherwise every live range is rewritten.
+    while VizKeepI is less than VizKeepN
+    begin
+        index VizKeepFrom to VizKeepI
+        put VizKeepFrom into VizKeepA
+        index VizKeepTo to VizKeepI
+        put VizKeepTo into VizKeepB
+        if VizKeepTail is 1
+        begin
+            if VizSelFrom is greater than VizKeepA put VizSelFrom into VizKeepA
+            if VizSelTo is less than VizKeepB put VizSelTo into VizKeepB
+            if VizKeepA is not greater than VizKeepB
+            begin
+                put VizKeepA into VizRangeFrom
+                put VizKeepB into VizRangeTo
+                gosub to VizCutAdd
+            end
+        end
+        if VizKeepTail is 2
+        begin
+            ! What is left of this range on each side of the window.
+            if VizKeepA is less than VizSelFrom
+            begin
+                put VizKeepA into VizRangeFrom
+                put VizSelFrom into VizRangeTo
+                take 1 from VizRangeTo
+                if VizRangeFrom is not greater than VizRangeTo gosub to VizCutAdd
+            end
+            if VizKeepB is greater than VizSelTo
+            begin
+                put VizSelTo into VizRangeFrom
+                add 1 to VizRangeFrom
+                put VizKeepB into VizRangeTo
+                if VizRangeFrom is not greater than VizRangeTo gosub to VizCutAdd
+            end
+        end
+        add 1 to VizKeepI
+    end
+    ! **A cut that would keep nothing is refused, and the reader is told why.** Subtracting a selection from
+    ! a list it already covers leaves nothing, and an empty list means "the whole recording" — so the pane
+    ! would *widen* at a press, which is the one thing this control must never do. The history entry the
+    ! cut had already saved goes back, and the notice says what happened rather than leaving a reader to
+    ! work out which button was ignored. It is the notice and not the status line for the reason the
+    ! design gives: an explanation of a control belongs where the controls are.
+    if VizKeepN2 is 0
+    begin
+        take 1 from VizHistN
+        put VizHistN into VizHistAt
+        set the text of VizClipNotice to `nothing left to keep — the whole recording stands`
+        return
+    end
+    gosub to VizCutSwap
+    add 1 to VizSetTag
     gosub to VizRequest
     return
 
-VizClipKeep:
-    ! **Keep the records the range covers, and count what was kept and seen.** Called from `Draw`
-    ! before anything reads the events, so what it leaves in `VizEvents` is what the whole draw —
-    ! the extent, the rule set, the busiest line over the ramp and the hit test's `visit N of T` —
-    ! is built from. That is what makes the notice on the status line a fact rather than a label.
+VizCutWhole:
+    ! The whole recording, which is the empty list — both the starting state and what `reset` restores.
+    put 0 into VizKeepN
+    put 0 into VizKeepSet
+    add 1 to VizSetTag
+    gosub to VizRequest
+    return
+
+VizCutAdd:
+    ! One range into the list being built. Ranges go in in order — a live list is ordered and the two
+    ! halves of a split are added left first — so the built list is ordered too, which is what lets the
+    ! axis take its ends from the first and last entries and lets the filter's walk stay a walk.
     !
-    ! **`add 0 to` before the comparison is not tidiness.** A number that arrived as text compares
-    ! *lexically*, so an unconverted `10` is less than `9` and the filter would keep the wrong
-    ! records — measured in isolation before this was written: `10 is less than 9` is 1 without the
-    ! conversion and 0 with it. The step comes out of a parsed recording, so it is text until
-    ! something makes it a number.
+    ! **`VizKeepCap` is a ceiling and not a promise.** At it, a cut that would split a range further
+    ! simply keeps less of it than it should — sixteen outer cuts, on one recording, without resetting.
+    ! Said rather than hidden: an overrun here would be a wrong picture with no sign that anything was
+    ! dropped.
+    if VizKeepN2 is not less than VizKeepCap return
+    index VizKeepFrom2 to VizKeepN2
+    put VizRangeFrom into VizKeepFrom2
+    index VizKeepTo2 to VizKeepN2
+    put VizRangeTo into VizKeepTo2
+    add 1 to VizKeepN2
+    return
+
+VizCutSwap:
+    ! The built list becomes the live one. A loop rather than a swap, because a swap would need a third
+    ! pair of holders, and either way this is a handful of numbers.
+    put VizKeepN2 into VizKeepN
+    put 0 into VizKeepI
+    while VizKeepI is less than VizKeepN
+    begin
+        index VizKeepFrom2 to VizKeepI
+        put VizKeepFrom2 into VizRangeFrom
+        index VizKeepFrom to VizKeepI
+        put VizRangeFrom into VizKeepFrom
+        index VizKeepTo2 to VizKeepI
+        put VizKeepTo2 into VizRangeTo
+        index VizKeepTo to VizKeepI
+        put VizRangeTo into VizKeepTo
+        add 1 to VizKeepI
+    end
+    return
+
+VizHistPush:
+    ! **The list a cut is about to replace, as one string** — `0-20`, or `0-4;12-20`. The whole history in
+    ! a handful of bytes is what makes an undo worth having: a saved *set* would be a copy of the
+    ! recording, while this is a few numbers however big the run is, so keeping thirty of them costs
+    ! nothing. An empty list is the recording unreduced, which is what undoing past the first cut restores.
+    put `` into VizHistText
+    put 0 into VizHistI
+    while VizHistI is less than VizKeepN
+    begin
+        if VizHistText is not empty put VizHistText cat `;` into VizHistText
+        index VizKeepFrom to VizHistI
+        put VizKeepFrom into VizHistPiece
+        put VizHistText cat VizHistPiece into VizHistText
+        put VizHistText cat `-` into VizHistText
+        index VizKeepTo to VizHistI
+        put VizKeepTo into VizHistPiece
+        put VizHistText cat VizHistPiece into VizHistText
+        add 1 to VizHistI
+    end
+    index VizHist to VizHistN
+    put VizHistText into VizHist
+    add 1 to VizHistN
+    put VizHistN into VizHistAt
+    return
+
+VizHistLoad:
+    ! The text back into the list. Empty text is the recording unreduced — undo, past the first cut, is the
+    ! whole run again. `split` fills a slot per piece, so the walk is `index` and `has element`, the same
+    ! shape the editor's own buffer walk uses.
+    put 0 into VizKeepN2
+    if VizHistText is empty go to VizCutSwap
+    split VizHistText by `;` into VizHistParts
+    put 0 into VizHistI
+    while VizHistParts has element VizHistI
+    begin
+        index VizHistParts to VizHistI
+        put VizHistParts into VizHistPiece
+        split VizHistPiece by `-` into VizHistPair
+        index VizHistPair to 0
+        put VizHistPair into VizRangeFrom
+        index VizHistPair to 1
+        put VizHistPair into VizRangeTo
+        ! **And back to numbers.** A list read out of the history is *text*, and the next cut's arithmetic on
+        ! it would compare lexically — `10 is less than 9` — so an undo followed by a cut would keep the
+        ! wrong records. The same conversion the filter makes per record, made here for the same reason.
+        add 0 to VizRangeFrom
+        add 0 to VizRangeTo
+        gosub to VizCutAdd
+        add 1 to VizHistI
+    end
+    go to VizCutSwap
+
+VizUndo:
+    ! **Back to the list the last cut replaced**, and it is instant because it is a parse and a draw rather
+    ! than a re-filter of the recording: the tag is bumped so the next draw rebuilds the set from the
+    ! restored list, which is the same path a cut takes and is why an undo cannot drift from cutting.
+    if VizHistAt is less than 1 return
+    take 1 from VizHistAt
+    index VizHist to VizHistAt
+    put VizHist into VizHistText
+    gosub to VizHistLoad
+    add 1 to VizSetTag
+    gosub to VizRequest
+    return
+
+VizKeepRun:
+    ! **Keep the records the list covers, and count what was kept and seen.** Called from `Draw` before
+    ! anything reads the events, so what it leaves in `VizEvents` is what the whole draw — the extent, the
+    ! rule set, the busiest line over the ramp and the hit test's `visit N of T` — is built from. That is
+    ! what makes the notice a fact rather than a label.
     !
-    ! Only `anchor` and `transfer` records are counted or kept. They are the two kinds the picture is
-    ! made of; the metadata entries in a Chrome trace name the process and the thread and are read by
-    ! nothing here. The `window` records are deliberately dropped with the rest: their `steps` is how
-    ! long a window ran rather than a step anything is *at*, so keeping one would stretch the extent
-    ! back out past the range the reader chose.
+    ! **An empty list means no narrowing**, which is what makes `reset` a state rather than an operation:
+    ! there is nothing to remember about the whole recording, and every record is kept.
+    !
+    ! **`add 0 to` before a comparison is not tidiness.** A number that arrived as text compares *lexically*,
+    ! so an unconverted `10` is less than `9` and the filter would keep the wrong records — measured in
+    ! isolation before this was written: `10 is less than 9` is 1 without the conversion and 0 with it. A
+    ! step comes out of a parsed recording, so it is text until something makes it a number.
+    !
+    ! Only `anchor` and `transfer` records are counted or kept. They are the two kinds the picture is made
+    ! of; the metadata entries in a Chrome trace name the process and the thread and are read by nothing
+    ! here. The `window` records are deliberately dropped with the rest: their `steps` is how long a window
+    ! ran rather than a step anything is *at*, so keeping one would stretch the extent back out past the
+    ! range the reader chose.
     json set VizKept to array
     put 0 into VizClipTotal
+    put 0 into VizKeepCount
     put 0 into VizIndex
     while VizEvents has element VizIndex
     begin
@@ -3006,23 +3327,37 @@ VizClipKeep:
             put property `args` of VizEvent into VizArgs
             put property `steps` of VizArgs into VizSteps
             add 0 to VizSteps
-            if VizSteps is not less than VizClipFrom and VizSteps is not greater than VizClipTo
+            put 0 into VizKeepKept
+            if VizKeepN is 0 put 1 into VizKeepKept
+            put 0 into VizKeepI
+            while VizKeepI is less than VizKeepN
+            begin
+                index VizKeepFrom to VizKeepI
+                put VizKeepFrom into VizKeepA
+                index VizKeepTo to VizKeepI
+                put VizKeepTo into VizKeepB
+                if VizSteps is not less than VizKeepA and VizSteps is not greater than VizKeepB put 1 into VizKeepKept
+                add 1 to VizKeepI
+            end
+            if VizKeepKept is 1
             begin
                 json add VizEvent to VizKept
+                ! The picture's own first step is the first *kept* record's, not the list's first range's:
+                ! a range can hold no records at all, and a picture that began in the blank between two
+                ! ranges would move the axis and the bars for nothing.
+                if VizKeepCount is 0 and VizKeepN is not 0 put VizSteps into VizMinSteps
+                add 1 to VizKeepCount
             end
         end
         add 1 to VizIndex
     end
-    put the json count of VizKept into VizClipKept
+    put VizKeepCount into VizClipKept
     put VizKept into VizEvents
-    ! The run the picture is of now begins here, so the fit, the clamp and the bars are bounded by
-    ! the clip rather than by the recording it was cut from.
-    put VizClipFrom into VizMinSteps
-    ! **And the key it was built for, so that only a *change* of clip rebuilds it.** The walk this
-    ! makes is the expensive one — it reads every record, and reading a record costs about 15ms on a
-    ! 435KB recording, because the runtime re-parses the whole array per access — so it is a cost to
-    ! pay once when the range is chosen and never again while that range stands.
-    put VizClipKey into VizKeptKey
+    ! **And the tag it was built for, so that only a *change* of list rebuilds it.** The walk this makes
+    ! is the expensive one — it reads every record, and reading a record costs about 15ms on a 435KB
+    ! recording, because the runtime re-parses the whole array per access — so it is a cost to pay once
+    ! when the reader cuts and never again while that list stands.
+    put VizSetTag into VizKeptKey
     return
 
 VizClipBar:
@@ -3097,19 +3432,23 @@ VizClipEdge:
     if VizMove is less than VizMargin put VizMargin into VizMove
     if VizMove is greater than VizPlotRight put VizPlotRight into VizMove
     set attribute `x` of VizClipMaskIn to VizMargin
-    take VizMargin from VizMove
-    set attribute `width` of VizClipMaskIn to VizMove
+    take VizMargin from VizMove giving VizClipWash
+    set attribute `width` of VizClipMaskIn to VizClipWash
     put VizClipOutXW into VizMove
     if VizMove is less than VizMargin put VizMargin into VizMove
     if VizMove is greater than VizPlotRight put VizPlotRight into VizMove
     set attribute `x` of VizClipMaskOut to VizMove
-    take VizMove from VizPlotRight
-    set attribute `width` of VizClipMaskOut to VizMove
-    ! And the notice, in the recording's own numbers. The counts are the filter's, so they are only known
-    ! once a clip has been applied — which is why a range being dragged is named without them.
+    take VizMove from VizPlotRight giving VizClipWash
+    set attribute `width` of VizClipMaskOut to VizClipWash
+    ! And the notice, in the recording's own numbers. The counts come from the filter, so they are only
+    ! known once a cut has been applied — which is why a window being dragged is named without them, in
+    ! `VizClipMove`. **What the last cut kept is said in words**, because that is the one thing a reader
+    ! cannot read off the picture: `the window` and `the outside` are different sets of records, and the
+    ! marks alone do not say which was asked for.
     set the text of VizClipNotice to ``
-    if VizClipFrom is not 0 or VizClipTo is not 0
-        set the text of VizClipNotice to `clipped to steps ` cat VizClipFrom cat `-` cat VizClipTo cat `: ` cat VizClipKept cat ` of ` cat VizClipTotal cat ` records`
+    if VizKeepN is 0 return
+    set the text of VizClipNotice to `kept the window: ` cat VizClipKept cat ` of ` cat VizClipTotal cat ` records`
+    if VizKeepSet is 2 set the text of VizClipNotice to `kept the outside: ` cat VizClipKept cat ` of ` cat VizClipTotal cat ` records`
     return
 
 VizClipToPos:
@@ -3212,23 +3551,5 @@ VizClipMove:
     if VizSlide is 4 set the text of VizClipNotice to `select steps ` cat VizClipOther cat `-` cat VizClipStep
     return
 
-VizKeepApply:
-    ! **The window between the markers becomes the run.** This is the committing half of the bar: the
-    ! selection is the reader's — a drag makes it and nothing else touches it — and pressing `<> keep` is
-    ! what turns it into a clip. It is already in steps, so there is nothing to read back from where the
-    ! markers are drawn, and therefore no second answer that could disagree with the picture.
-    !
-    ! **And a selection that is the whole run is no clip at all.** Clearing the range keeps the filter, the
-    ! notice and the fit all meaning the same thing by the word, and it is what makes `keep` with the
-    ! markers at both ends the same gesture as `reset`.
-    put VizSelFrom into VizClipFrom
-    put VizSelTo into VizClipTo
-    if VizClipFrom is not greater than VizRunFrom and VizClipTo is not less than VizRunTo
-    begin
-        put 0 into VizClipFrom
-        put 0 into VizClipTo
-    end
-    gosub to VizRequest
-    return
-!! @hash f60cc521
+!! @hash 7b5d51ae
 !!!

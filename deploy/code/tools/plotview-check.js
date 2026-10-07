@@ -574,7 +574,11 @@ const drawing = () => {
 		// read off the DOM at the check, because the phases after this one move the markers again and
 		// the live DOM is then a different picture — the same reason the press checks keep their phase.
 		clipBar: [`ec-VizClipMarkIn`, `ec-VizClipMarkOut`, `ec-VizClipBand`,
-			`ec-VizClipGuideIn`, `ec-VizClipGuideOut`, `ec-VizClipMaskIn`, `ec-VizClipMaskOut`].map(id => {
+			`ec-VizClipGuideIn`, `ec-VizClipGuideOut`, `ec-VizClipMaskIn`, `ec-VizClipMaskOut`,
+			// **And the two controls, because their boxes are what a press is aimed at.** Reading them out
+			// of the snapshot is what lets the phases press the rectangle the pane *drew* rather than a
+			// coordinate written into this file — see `pressBox`.
+			`ec-VizKeepBox`, `ec-VizResetBox`].map(id => {
 			const el = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(id));
 			return { id, x: el ? Number(el.attributes.x) : null, w: el ? Number(el.attributes.width) : null };
 		}),
@@ -750,9 +754,9 @@ const markerStepX = which => {
 	return box ? box.x + 2 : null;
 };
 const CLIP_STRIP_Y = 41;   // inside the strip above the plot: the markers are drawn 31..51
-// Press a marker, drag it to a place on the bar, and **let go** — and the release is the whole of it.
-// `VizRelease` is what applies the range: a drag on its own moves the marker and nothing else, which is
-// why the phases above hold the two halves apart rather than hiding them in here.
+// Press a marker and drag it to a place on the bar. **The drop that ends it commits nothing** — the
+// markers only select, and a *control* is what applies the range — so this is the drag a reader makes
+// while choosing, and the phases below press the control afterwards.
 const dragClipMarker = (which, toX) => {
 	const cx = markerStepX(which);
 	if (cx === null) throw new Error(`the ${which} clip marker was not drawn`);
@@ -761,6 +765,17 @@ const dragClipMarker = (which, toX) => {
 	dragTo(dx, dy);
 	entry(`VizRelease`);
 };
+// **A control, pressed where it was *drawn*.** The box comes out of the live DOM here and out of the
+// snapshot in the checks below, so the press and the claim are made against the same rectangle. The
+// withdrawn attempt at this hard-coded the Reset's position — so when the press did not take, there was
+// no way to tell a missed hit test from a phase that never ran, and the attempt was withdrawn.
+const pressBox = id => {
+	const box = boxOf(id);
+	if (!box) throw new Error(`${id} was not drawn, so there is nothing to press`);
+	pressAt(box.x + Math.floor(box.width / 2), box.y + Math.floor(box.height / 2));
+};
+const pressKeep = () => pressBox(`ec-VizKeepBox`);
+const pressReset = () => pressBox(`ec-VizResetBox`);
 
 const PHASES = [
 	{ name: `fitted`, act: null },
@@ -859,8 +874,9 @@ const PHASES = [
 		const [dx, dy] = toClient(400, CLIP_STRIP_Y);
 		dragTo(dx, dy);
 	} },
-	{ name: `the clip bar: let go, which applies the range`, act: () => entry(`VizRelease`) },
-	{ name: `the clip bar: drag the marker home and let go, which clears the clip`, act: () => dragClipMarker(`Out`, 940) },
+	{ name: `the clip bar: let go — a drag only selects, so nothing is committed`, act: () => entry(`VizRelease`) },
+	{ name: `the clip bar: press <> keep, which is what commits the selection`, act: pressKeep },
+	{ name: `the clip bar: press reset, which gives the whole recording back`, act: pressReset },
 ];
 
 // **What each gesture cost.** Reported rather than asserted, because the pane's cost is a property of the
@@ -1846,20 +1862,22 @@ if (!clippedState || !beforeClipState || !unclippedState || !fitAgainState) {
 }
 
 // ---- the clip bar ----
-// **The control, and the three claims it makes.** A marker dragged inward clips the recording with no
-// zoom at all — the expensive gesture the bar exists to replace — and the notice, the picture and the
-// markers must agree about the range. Dragged home again there is no clip, because a range that *is*
-// the recording is not a range.
+// **The control, and the four claims it makes.** A marker dragged inward selects a window with no zoom at
+// all — the expensive gesture the bar exists to replace — and pressing `<> keep` is what commits it: the
+// notice, the picture and the markers must agree about the range afterwards. Then `reset` gives the whole
+// recording back, which is the way out that a bar which only ever narrows has to have.
 //
-// And the claim in between, which is the design rather than a detail: **the drag itself draws
-// nothing.** The picture between the grab and the drop has to be byte-identical to the one before it
-// while the marker has visibly moved — that is what makes choosing a range cost one drawing instead
-// of five or six, and it is the one thing about this control that a later change could quietly lose.
+// And the claim in between, which is the design rather than a detail: **the drag itself draws nothing, and
+// commits nothing.** The picture between the grab and the drop has to be byte-identical to the one before
+// it while the marker has visibly moved — that is what makes choosing a range cost one drawing instead of
+// five or six, and it is the one thing about this control that a later change could quietly lose. The
+// drop's own claim is that it leaves the picture *unchanged*: a drag only selects.
 const barAt = indexOf(`the clip bar: grab the OUT marker`);
 const barDragged = barAt >= 0 ? taken[barAt][1] : null;
 const barBefore = barAt > 0 ? taken[barAt - 1][1] : null;
-const barApplied = barAt >= 0 && taken[barAt + 1] ? taken[barAt + 1][1] : null;
-const barHome = barAt >= 0 && taken[barAt + 2] ? taken[barAt + 2][1] : null;
+const barDropped = barAt >= 0 && taken[barAt + 1] ? taken[barAt + 1][1] : null;
+const barApplied = barAt >= 0 && taken[barAt + 2] ? taken[barAt + 2][1] : null;
+const barReset = barAt >= 0 && taken[barAt + 3] ? taken[barAt + 3][1] : null;
 // The recording's steps, as the view holds them. Read *here* rather than inside one of the branches
 // below, because the guard itself needs them — and a name read before its declaration is a ReferenceError
 // that takes the whole report with it, silently if the harness's own stderr is being dropped.
@@ -1871,7 +1889,7 @@ const barRunTo = Number(viewVar(`VizRunTo`));
 // that spans neither. On the fixture this harness is tuned to, the two agree and every claim below is
 // made; on the JS recording of the same script they do not, and *saying so* is the honest answer rather
 // than failing the pane for the recording's own fault.
-if (!barDragged || !barBefore || !barApplied || !barHome) {
+if (!barDragged || !barBefore || !barDropped || !barApplied || !barReset) {
 	console.log(`  ..: the clip bar phases did not run, so the bar cannot be checked`);
 } else if (barRunTo !== traceMaxSteps) {
 	console.log(`  ..: the clip bar's claims need a picture whose steps axis is the recording's, and this `
@@ -1918,39 +1936,63 @@ if (!barDragged || !barBefore || !barApplied || !barHome) {
 		: `  FAIL: the picture is washed before any range is chosen (${barW(barBefore, `ec-VizClipMaskIn`)} `
 			+ `and ${barW(barBefore, `ec-VizClipMaskOut`)})`);
 
-	// The range, cross-checked: what the notice says against where the markers are drawn, read back through
-	// the bar's own mapping. `VizRunFrom`/`VizRunTo` are the view's, so this is one claim about the picture
-	// and the recording rather than a number compared with itself.
+	// **The drop, which must leave the picture exactly as it was.** This is the settled interaction's own
+	// claim: a drag only selects, so letting go is not a commit — and if that ever becomes true again, the
+	// gesture that chooses and the gesture that acts are one gesture once more.
+	console.log(barDropped.raw === barDragged.raw
+		? `  OK: and letting go commits nothing — the picture after the drop is byte-identical to the one the `
+			+ `drag left, so a drag only selects`
+		: `  FAIL: letting go changed the picture, so the drop is still a commit`);
+
+	// **What the `<> keep` press committed**, cross-checked: the notice's range against where the markers
+	// were drawn when the press was made, read back through the bar's own mapping. `VizRunFrom`/`VizRunTo`
+	// are the view's, so this is one claim about the picture and the recording rather than a number compared
+	// with itself.
 	const stepAtX = x => barRunFrom + Math.floor((x - 60) * (barRunTo - barRunFrom) / 880);
 	const barRange = /clipped to steps (-?\d+)-(-?\d+): (\d+) of (\d+) records/.exec(noticeOf(barApplied));
 	console.log(barRange && Number(barRange[1]) === stepAtX(inStep) && Number(barRange[2]) === stepAtX(outStep)
 		&& Number(barRange[4]) === recordCount
-		? `  OK: and the notice agrees with the markers — steps ${barRange[1]}-${barRange[2]}, which is where `
-			+ `the bar puts x=${inStep} and x=${outStep}, of the recording's ${recordCount} records`
-		: `  FAIL: the notice and the bar disagree ("${noticeOf(barApplied)}", markers at x=${inStep} and `
-			+ `x=${outStep}, whose steps are ${stepAtX(inStep)} and ${stepAtX(outStep)}, ${recordCount} records)`);
+		? `  OK: and pressing <> keep commits what the markers marked — steps ${barRange[1]}-${barRange[2]}, `
+			+ `which is where the bar puts x=${inStep} and x=${outStep}, of the recording's ${recordCount} records`
+		: `  FAIL: the keep press committed something else ("${noticeOf(barApplied)}", markers at x=${inStep} `
+			+ `and x=${outStep}, whose steps are ${stepAtX(inStep)} and ${stepAtX(outStep)}, ${recordCount} records)`);
 	console.log(barRange && Number(barRange[3]) > 0 && Number(barRange[3]) < Number(barRange[4])
 		? `  OK: and it kept some of the recording and not all of it (${barRange[3]} of ${barRange[4]} records)`
-		: `  FAIL: the range the bar marked kept ${barRange && barRange[3]} of ${barRange && barRange[4]} records, `
+		: `  FAIL: the range committed kept ${barRange && barRange[3]} of ${barRange && barRange[4]} records, `
 			+ `so it is not a narrowing of the recording`);
 	console.log(markCount(barApplied) < markCount(fitAgainState)
-		? `  OK: and the clip the bar applied really is narrower — fewer marks than the whole recording `
+		? `  OK: and the clipped picture really is narrower — fewer marks than the whole recording `
 			+ `(${markCount(barApplied)} against ${markCount(fitAgainState)})`
-		: `  FAIL: the clip the bar applied kept the whole recording (${markCount(barApplied)} marks)`);
+		: `  FAIL: the clipped picture kept the whole recording (${markCount(barApplied)} marks)`);
 
-	// And when a clip *is* on, the picture is the range — so the guides and the wash go. They are placed in
-	// the recording's steps, and there is no longer any part of the recording off the picture to point at.
-	console.log(barW(barApplied, `ec-VizClipMaskIn`) === 0 && barW(barApplied, `ec-VizClipMaskOut`) === 0
-		? `  OK: and once the clip is on they are gone, because the picture is the range`
-		: `  FAIL: a clipped picture is still washed`);
+	// **And the markers come home, which is the first fault this change was made for.** After a cut the
+	// picture is of a new total range, so the bar's axis is that range and both markers stand at its ends.
+	// They used to stay where they had been chosen, on a bar that still spanned the whole recording.
+	console.log(barInX(barApplied) === 60 && barOutX(barApplied) === 940
+		? `  OK: and both markers come home to the ends of the new range (IN ${barInX(barApplied)}, `
+			+ `OUT ${barOutX(barApplied)})`
+		: `  FAIL: after the cut the markers stand at ${barInX(barApplied)} and ${barOutX(barApplied)} rather `
+			+ `than at the bar's ends`);
 
-	console.log(barHome.raw === fitAgainState.raw
-		? `  OK: and dragging the marker home clears the clip — the picture is the fit again, byte for byte`
-		: `  FAIL: dragging the marker home left a clip behind (${markCount(barHome)} marks against the `
-			+ `fit's ${markCount(fitAgainState)})`);
-	console.log(barOutX(barHome) === 940
-		? `  OK: with the marker back at the end of the bar (x=${barOutX(barHome)})`
-		: `  FAIL: the marker came home to x=${barOutX(barHome)} rather than the bar's end`);
+	// **And the guides and the washes are still drawn with a clip on**, placed in the picture's own mapping
+	// — the second fault this change was made for. They used to stand aside the moment the plot stopped
+	// being the whole recording, which is exactly when a reader is most likely to want them.
+	console.log(boxX(barApplied, `ec-VizClipGuideIn`) === 60 && boxX(barApplied, `ec-VizClipGuideOut`) === 940
+		? `  OK: and the guides still run down the plot with the clip on, at the ends of the range `
+			+ `(${boxX(barApplied, `ec-VizClipGuideIn`)} and ${boxX(barApplied, `ec-VizClipGuideOut`)})`
+		: `  FAIL: the guides are not drawn with a clip on (${boxX(barApplied, `ec-VizClipGuideIn`)} and `
+			+ `${boxX(barApplied, `ec-VizClipGuideOut`)})`);
+
+	// **And `reset` gives the whole recording back** — the way out that a bar which only ever narrows has
+	// to have, and the reason the withdrawn attempt at this was withdrawn: without it a cut is a one-way
+	// door, which is why it could not be left in the tree unverified.
+	console.log(barReset.raw === fitAgainState.raw
+		? `  OK: and pressing reset gives the whole recording back — the picture is the fit again, byte for byte`
+		: `  FAIL: reset left a clip behind (${markCount(barReset)} marks against the fit's `
+			+ `${markCount(fitAgainState)})`);
+	console.log(barInX(barReset) === 60 && barOutX(barReset) === 940
+		? `  OK: with both markers home again (IN ${barInX(barReset)}, OUT ${barOutX(barReset)})`
+		: `  FAIL: after reset the markers stand at ${barInX(barReset)} and ${barOutX(barReset)}`);
 
 	// The notice is on the bar's own line, not the status row: it used to lead the status line and ran into
 	// the flow key's words, which is what moved it.
