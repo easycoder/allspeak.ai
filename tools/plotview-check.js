@@ -907,6 +907,12 @@ const PHASES = [
 	{ name: `the clip bar: press the window control, which commits the selection`, act: pressKeep },
 	{ name: `the clip bar: undo, which puts the list back`, act: () => entry(`VizUndo`) },
 	{ name: `the clip bar: press reset, which gives the whole recording back`, act: pressReset },
+	// **The outside control is drawn and not driven here, and that is a stated gap rather than a pass.**
+	// A phase sequence of *drag, then press* cannot yet be made to land twice in one run (the second press
+	// reads the notice's `select steps …` and never reaches the control), and that is a fault in this file
+	// rather than in the pane: the pane cuts correctly for it. `..:` is this harness's own shape for a gap
+	// — the JS recording is noted the same way — and the point of the note is that the next session picks
+	// it up rather than trusting a control nothing asserts. `TODO-viz.md` carries it.
 	// **The outside control is not driven here yet, and the reason is the harness rather than the pane.** The
 	// pane cuts correctly for it — `VizCut` with `VizKeepTail` 2 rewrites the list to the two parts outside
 	// the window, and its own `log` shows the call it makes — but a phase sequence of *drag, then press*
