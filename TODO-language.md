@@ -180,6 +180,14 @@ once already.
 
 **And it is not needed for the clip to work.** The pane's own fixes — read the recording once, cache the filtered set — make the clip pay today; this is the change that would make the *unclipped* picture quick as well.
 
+## `on hover` — [your call], wanted 2026-10-07, and it would serve two places
+
+**What is missing.** The runtime's pointer events are `pick`, `drag`, `drop` and `wheel` (`Browser.js`, the four cases in both the compile and the run halves) and there is no *rollover* — so a control cannot say what it does while the pointer is over it. The visualiser needs it twice: **the clip bar's two cut controls** (arrow pairs, which are ambiguous without a key) and **the sidebar's tooltips**, already queued in `TODO-viz.md` as "rollover tooltips, on the sidebar's hit test, once the sidebar is settled".
+
+**What it costs.** A fifth event: a listener in the `pick` shape (`pointermove`/`mouseover` on the attached element), the word in all four language packs (a *translation* job, and the word matters — "hover" is not a word every language wants), the Python runtime's counterpart for parity, and a line in the reference beside the other four. **It is vocabulary, not a keyword**, so the grammar needs nothing.
+
+**And what it does not need.** Nothing about *drawing* an icon: the pane's shapes are the plugin's own (`path`, `rect`, `svgtext`) and both cut controls are drawn from those. So the icons are free and only the tooltips wait on this.
+
 ## Language proposals, carried and not started — [your call], and none of them urgent
 
 Both come from friction points in the chat/forum project, April 2026.

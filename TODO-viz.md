@@ -453,3 +453,23 @@ So the clip pays, by roughly the square of the fraction kept, exactly as the sec
 **6. The ETA popup told the reader to edit the script.** *"Better would be 'You may need to narrow the range viewed'"* — and it was worse than a wording slip: it sent them to narrow `viz start`/`viz stop`, which means editing and re-running, and answers a different question. It now says: *You may need to narrow the range viewed: drag the two markers on the clip bar above the picture to the part you want to watch.*
 
 **And a fault of mine that the harness had been hiding.** Dragging a marker home did not clear the clip on a 441-step recording, while it happened to work on the 24-step fixture the harness uses: the drag's x round-trips through pixels and truncates, so the marker stopped a step or two short and `VizClipApply` then saw a range that was not quite the recording. A marker now **snaps** to an end within one floor's width — what every scrollbar does, for the same reason — and the harness reads the guides, the wash, and the notice's own line.
+
+## The clip's interaction, settled 2026-10-07 — a design, not a build
+
+**Graham's account of the first real use, and what each part of it is.** Drawn after the expected long wait; then *"grab the left-hand clip marker and drag it partway to the right. The shade follows"* — the wash working; on release, a redraw *"still slow, but faster than before"*, with **the left marker staying where he left it where he expects it to return to the left edge**, *"as we're now seeing a new total range"*; then *"grab the right-hand marker and drag it left. No vertical line nor shade appears, but the clip goes ahead."*
+
+**His points 3 and 4 are one design gap, and his expectation is the fix.** The bar is measured in the *recording's* steps (`Draw`: `if VizClipFrom is 0 and VizClipTo is 0 put VizMaxSteps into VizRunTo`, so it keeps the recording's extent once a clip is on) while the picture is measured in the *range's* (`VizMinSteps`/`VizSpanSteps`); the guides and the wash are drawn only while the two coincide (`if VizViewX0 is VizRunFrom and VizViewXW is VizRunTo put 1 into VizClipWide`). So after a cut they are parked and the markers stay in recording coordinates. **The fix is narrowing-only** (§1c-bis): the bar *is* the current range, the two axes are then always the same, `VizClipWide` and the harness's `..:` guard both go, and the markers return to the edges by themselves — which is what he expected to see.
+
+**And the interaction he proposes is better than what is there**, because it removes a conflation: today a *drop* applies the clip, so a reader can never adjust a range without paying for a cut.
+
+| gesture | meaning |
+|---|---|
+| drag either marker | **select** — no drawing at all; the guides follow and both shades move |
+| the two shaded regions | **what a cut would remove** — the window between the markers is the selection |
+| press `<>` (arrows facing away) | **keep the window** — the contiguous set between the markers becomes the run |
+| press `><` (arrows facing together) | **remove the window** — and this is the operation he had not considered and wants for *"condensing very long loops"*: the kept set is then the two outer parts, **with a gap where the middle was**, which the picture shows honestly as a blank stretch because the steps are the run's own |
+| press Reset, above the end of the bar | the whole recording back — the only way to widen, and there is no single-cut undo because the set a cut came from is gone |
+
+**The controls want words, not just glyphs, and that is where the language answer lives.** `><` and `<>` are ambiguous without a key. A rollover tooltip would be the neat answer, and **AllSpeak does not have `on hover`** — the runtime's pointer events are `pick`, `drag`, `drop` and `wheel` (`Browser.js`), and an event is vocabulary (`on {event}` in the packs), so a tooltip means a new event in both runtimes and the four packs. That is worth doing for its own sake because **the sidebar's queued tooltips need the same event**; until then the controls carry their words (`keep` / `cut`) drawn in them.
+
+**The order to build it in, and the thing that defeated the last attempt.** The controls first and proved on their own — a press on each, driven by the harness reading **the rectangle the control was drawn at out of its snapshot**, never a coordinate typed into the test. The withdrawn attempt hard-coded the Reset's press position, and when it did not take I could not tell whether the hit test, the phase or the flag was wrong; driving the drawn box removes that whole class of doubt, and it is how the *markers* have been driven all along.
