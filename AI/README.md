@@ -22,6 +22,12 @@ Purpose:
 
 For the language itself, `learn/` holds the reference and idiom collections (per language), and `codex/<lang>/code/` holds the tutorial scripts.
 
+## Where the project is going, and what to check a proposal against
+
+`STRATEGY.md` at the repository root is the internal aim, the plan and the constraints — **read it before proposing a feature**, and check the proposal against its invariants: *make complex things simple*, the constraint that the onboarding must not grow with the tooling, and "a published name is a contract". It is a work in progress with dated revisions, and it is deliberately *not* a status list — the state is `TODO.md` and its three companions.
+
+The user-facing half of the same direction is `why/intent.md`, the umbrella piece aimed at people who do not read code, with `why/article.md` kept as the visualiser deep-dive it already is. Both are drafts, and a checkable claim in either is expected to be listed in a review log against what would make it stale; `why/REVIEW-LOG.md` is the model.
+
 ## Primer Selection
 
 Use the primer that matches the user's intent:

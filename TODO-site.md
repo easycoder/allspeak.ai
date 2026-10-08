@@ -28,6 +28,8 @@ Synopsis at `deploy/<lang>/why.html`, the long read linked from it, one shared s
 
 ## Done, and what is next — [mine, queued], the four in that order
 
+**Done: `why/intent.md`** — 2026-10-07, Graham's call: the **umbrella piece** for the new direction, aimed at people who do not read code, mechanism-first, with §4 ("what this is not") and §5 ("the bargain") doing the load-bearing work. `why/article.md` is **kept as it is** as the visualiser deep-dive it already is, and the umbrella points at it. Two consequences for this file: the site path now has **two** long reads rather than one, so the synopsis has two doors to offer and each piece needs a page; and **the umbrella needs its own review log** before it goes anywhere, because a claim in a persuasion piece is a promise the tooling has to keep. It is a draft, with a four-item header of what must be true first.
+
 **Done: `why/article.md`** — the long read, ~5,000 words, **draft and deliberately not published** while the visualiser is still moving. It is not too early by design: Graham's steer is that there are major features still to land, and the article is reviewed as they do. Eleven sections; three figures marked to produce; all its numbers taken from the `H₂O` run of `examples/chemical/parser.allspeak`.
 
 **Done: `why/REVIEW-LOG.md`** — every checkable claim in the article against what it depends on and what would make it stale, the dated record of each review, and the named triggers for the next pass. Graham asked for a regular review while the visualiser keeps moving, so the log exists to make a review a checklist rather than a re-read. **Review 1 (2026-10-04) found nine errors in the draft**, six of them real factual mistakes, all fixed. Read the log's trigger list before any revision.
