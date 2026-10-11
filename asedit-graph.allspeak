@@ -644,12 +644,16 @@ VizRemember:
     variable VizGlyphEm           ! the em of the text, which is the gap a rule clears before it begins
     variable VizGlyphRows         ! a window may not go below this: past it the text is at its own size
     variable VizGlyphMax
-    ! The redaction's own scratch: the path data for the bars, one line's width in document units, and
-    ! where that line's row begins. Built in the same pass as the text it covers, for the reason the text
-    ! is built there at all.
+    ! The redaction's own scratch: the path data for the bars, one line's text in document units, where
+    ! that line's bar begins, and where its row begins. Built in the same pass as the text it covers, for
+    ! the reason the text is built there at all.
     variable VizRedactD
     variable VizRedactW
+    variable VizRedactX
     variable VizRedactY
+    ! And the two the indent walk needs: the line being trimmed, and how much came off it.
+    variable VizIndentWork
+    variable VizIndentLen
     ! And the scale that pins the bars' width while the zoom moves: the document's own shrinkage, inverted,
     ! as thousandths and then as a decimal an SVG `transform` can read.
     variable VizRedactScale
@@ -1049,7 +1053,7 @@ Draw:
     ! correctly and then thrown away, so a narrowed picture scrolled as slowly as the whole one. Measured
     ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
     put VizKept into VizEvents
-!! @hash ab83e5d2
+!! @hash a3760a27
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -3154,21 +3158,37 @@ VizSourceMeasure:
         ! keeps its number and the pane's numbering still matches the editor's. Skipping it would
         ! renumber the file from its first doc block onwards, which is the one thing this must not do.
         if VizSourceLine starts with `!!` put `` into VizSourceLine
-        ! **This row's bar, and it is measured off the text rather than chosen.** Its width is the line's
-        ! own length at the document's eight units a column — the same measure the rules use for the code
-        ! they lead away from, so the two agree by construction about where a line ends. Its `y` is the
-        ! *top* of the row and its height is the whole eighteen units, which is what puts the leading above
-        ! and below the glyphs inside the bar as well as the glyphs themselves.
+        ! **This row's bar, and it is measured off the text rather than chosen.** Its left edge is where
+        ! the line's *first character* is and its width is what is left of the line from there, at the
+        ! document's eight units a column — the same measure the rules use for the code they lead away
+        ! from, so the two agree by construction about where a line ends. Its `y` is the *top* of the row
+        ! and its height is the whole eighteen units, which is what puts the leading above and below the
+        ! glyphs inside the bar as well as the glyphs themselves.
+        !
+        ! **The indent is part of the shape, and leaving it out was the fault.** A bar that began at the
+        ! margin said every line started at column zero: true of `Main:` and false of every line under it,
+        ! so the silhouette was of a file whose code was flush left. Graham's correction, 2026-10-08 —
+        ! *"they should show code indentation, instead of starting at the margin they should start on the
+        ! first character of the script"* — and it is the same argument the blanking already makes: the
+        ! bars are the code, so they have to have the code's shape.
         !
         ! A row that draws nothing gets no bar, and gets none rather than a zero-width one: the blanked
         ! doc blocks are most of a file written to this convention, and a zero-width rectangle per one of
-        ! them would be several hundred pieces of path data saying nothing at all.
+        ! them would be several hundred pieces of path data saying nothing at all. A line of nothing but
+        ! spaces has no characters either, and takes the same road.
         if VizSourceLine is not empty
         begin
-            multiply the length of VizSourceLine by 8 giving VizRedactW
-            take VizMinLine from VizSourceIndex giving VizRedactY
-            multiply VizRedactY by 18
-            put VizRedactD cat `M0 ` cat VizRedactY cat `h` cat VizRedactW cat `v18h-` cat VizRedactW cat `z` into VizRedactD
+            gosub to VizLineIndent
+            put the length of VizSourceLine into VizRedactW
+            take VizIndentLen from VizRedactW
+            multiply VizRedactW by 8
+            if VizRedactW is greater than 0
+            begin
+                multiply VizIndentLen by 8 giving VizRedactX
+                take VizMinLine from VizSourceIndex giving VizRedactY
+                multiply VizRedactY by 18
+                put VizRedactD cat `M` cat VizRedactX cat ` ` cat VizRedactY cat `h` cat VizRedactW cat `v18h-` cat VizRedactW cat `z` into VizRedactD
+            end
         end
         ! A line the run names but the file does not have is left as an empty row rather than skipped:
         ! the rows are what lines up with the axis, so a missing one has to keep its place.
@@ -3215,7 +3235,7 @@ VizSourceMeasure:
     return
 
 VizLabelNames:
-!! @hash da070898
+!! @hash 779f1fae
 !! @verified da070898
 !!!
 !! Every label is named at the right-hand edge, and the rules make room for it.
@@ -3324,8 +3344,33 @@ VizLabelShape:
     take 1 from VizLabelLen giving VizLabelLen
     return
 
+VizLineIndent:
+    ! **How far a line is indented, which is part of the shape the bars draw.** The redaction is the
+    ! *code's* silhouette rather than the file's — the blanking says that already — and indentation is
+    ! part of a code shape: a bar beginning at the margin says every line starts at column zero, which is
+    ! true of `Main:` and false of everything under it.
+    !
+    ! Counted by *trimming*, because the language has no `trim` and no `position of`: `from 1 of` gives
+    ! everything after the first character, so the walk shortens its own copy until the copy no longer
+    ! begins with a space. That ends on an empty line and on a line of nothing but spaces as well as on
+    ! one that is only indented, so no flag and no length test is needed.
+    !
+    ! Cost is bounded by the indentation and paid once per line, in the pass that builds the picture —
+    ! which happens once per recording and not once per draw, because the bars are a function of the
+    ! *source* rather than of the window.
+    !
+    ! reads `VizSourceLine`, leaves `VizIndentLen`.
+    put VizSourceLine into VizIndentWork
+    put 0 into VizIndentLen
+    while VizIndentWork starts with ` `
+    begin
+        put from 1 of VizIndentWork into VizIndentWork
+        add 1 to VizIndentLen
+    end
+    return
+
 VizSourcePicture:
-!! @hash 2d741f7c
+!! @hash c3ecb99d
 !! @verified 2d741f7c
 !!!
 !! The picture never changes; the window over it does.

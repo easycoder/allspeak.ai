@@ -264,6 +264,12 @@ const source = Array.from({ length: 260 }, (_, i) => {
 	if (n === 32) return `!! a doc block line:`;                 // drawn as an empty row: not a label
 	if (n === 33) return `    ` + `x`.repeat(160);               // 164 columns: wider than the pane can show
 	if (n === 34) return `    ! a note beside the code`;         // a bare comment: drawn as it is
+	// **Two more indentation levels, so the bars' left edges are exercised at more than one column.**
+	// The ordinary line is indented four spaces, so a fixture of those alone would pass a check on the
+	// indent with two values in it — 0 and 32 units — and would not notice an arithmetic that is right at
+	// one level and wrong at three. These are the rows the indent claim is actually tested against.
+	if (n === 38) return `        eight columns in`;            // a second level
+	if (n === 40) return `            twelve columns in`;       // and a third
 	if (n === 150) return `ChooseUnit:`;                         // a label: named at the frame's edge
 	if (n === 151) return `    not a label, indented:`;          // ends in a colon, but not at the margin
 	if (n === 152) return `! not a label, a comment ends in a colon:`;    // and neither is a comment
@@ -1569,25 +1575,45 @@ if (withPicture.length === 0) {
 		// of the text" means once it is written down. **And the zoom cannot spoil it**: the bars are in the
 		// document's units, beside the glyphs, so the two are scaled by one `viewBox` and no zoom can move
 		// one without the other — which is why this is a check on geometry and not on a rendered frame.
-		const bars = [...String(withPicture[0][1].redact || ``).matchAll(/M0 (-?\d+)h(\d+)v18h-\d+z/g)]
-			.map(m => ({ top: Number(m[1]), w: Number(m[2]) }));
+		// **Each bar is matched to the row it belongs to, and matched by *where it starts* as well as by
+		// how wide it is.** A bar's left edge is where its line's first character is — the indent is drawn
+		// as an indent — and its width is what is left of the line from there at eight units a column. The
+		// two used to be one number from the margin, and the check that only measured width passed on a
+		// file whose bars claimed every line began at column zero; so it measures both, against the text
+		// the picture actually drew.
+		const bars = [...String(withPicture[0][1].redact || ``).matchAll(/M(\d+) (-?\d+)h(\d+)v18h-\d+z/g)]
+			.map(m => ({ x: Number(m[1]), top: Number(m[2]), w: Number(m[3]) }));
 		// **The row's text is the text a reader sees, not the document's transport encoding.** An SVG
 		// document cannot spell `&`, `<` or `>` for itself, so the picture writes `&amp;`, `&lt;` and
 		// `&gt;` — and the fixture deliberately carries a line with all three, which is how this was
 		// caught: the bar was measured against forty-one characters where thirty are drawn. `&amp;` goes
 		// last, because unescaping the other two first cannot invent one for it to eat.
 		const shown = text => text.replace(/&lt;/g, `<`).replace(/&gt;/g, `>`).replace(/&amp;/g, `&`);
+		// The indent as a count of leading spaces, which is the view's own rule (`VizLineIndent` trims the
+		// line until it no longer begins with a space, and a tab is not a space in either place).
+		const indentOf = text => text.length - text.replace(/^ +/, ``).length;
 		const drawnRows = rows.map((text, i) => ({ text: shown(text), y: rowYs[i] }))
-			.filter(r => r.text !== `` && r.y !== undefined);
+			.filter(r => r.text !== `` && r.y !== undefined)
+			.map(r => ({ ...r, indent: indentOf(r.text), body: r.text.replace(/^ +/, ``) }));
 		const wrong = drawnRows.filter(r => {
 			const bar = bars.find(b => b.top === r.y - 14);
-			return !bar || bar.w !== r.text.length * 8;
+			return !bar || bar.w !== r.body.length * 8 || bar.x !== r.indent * 8;
 		});
 		console.log(bars.length === drawnRows.length && wrong.length === 0
-			? `  OK: every line's redaction is its own row exactly — ${bars.length} bar(s), each spanning the full `
-				+ `18-unit row and as wide as its text at 8 units a column`
+			? `  OK: every line's redaction is its own row exactly, starting on that line's first character — `
+				+ `${bars.length} bar(s), each spanning the full 18-unit row, indented to the line's own indent `
+				+ `and as wide as what follows it at 8 units a column`
 			: `  FAIL: ${bars.length} bar(s) for ${drawnRows.length} drawn row(s), ${wrong.length} mismatched`
 				+ (wrong.length ? ` — first "${wrong[0].text}" on row y=${wrong[0].y}, bar ${JSON.stringify(bars.find(b => b.top === wrong[0].y - 14))}` : ``));
+		// **And the indents are really there to be checked.** The claim above is only worth making if the
+		// fixture has lines that start at different columns: a file of flush-left lines would pass it with
+		// every bar at the margin, which is exactly the build this change replaced. So the phase says how
+		// many distinct left edges it found.
+		const leftEdges = [...new Set(bars.map(b => b.x))].sort((a, b) => a - b);
+		console.log(leftEdges.length > 1
+			? `  OK: and the bars do not all begin at the same place — ${leftEdges.length} distinct left edge(s), `
+				+ `at ${leftEdges.join(`, `)} units`
+			: `  FAIL: every bar begins at ${leftEdges[0]} units, so the indent is not being drawn at all`);
 
 		// **The width is pinned and the height is not, which is the whole of the ask.** What a reader sees is
 		// two numbers multiplied: the `transform` that widens the bars inside the document, and the pane's
@@ -1598,9 +1624,9 @@ if (withPicture.length === 0) {
 		// their width would pass this too — and the check above, that the path is unchanged across the
 		// phases, is what tells the two apart.
 		const pinnedAcross = withPicture
-			.filter(([, s]) => s.redactScale && /M0 /.test(String(s.redact)))
+			.filter(([, s]) => s.redactScale && /M\d+ /.test(String(s.redact)))
 			.map(([name, s]) => {
-				const bar = /M0 (-?\d+)h(\d+)v18h-\d+z/.exec(String(s.redact));
+				const bar = /M\d+ (-?\d+)h(\d+)v18h-\d+z/.exec(String(s.redact));
 				const shrink = 580 / s.box[3];          // the pane's viewBox height against the frame's
 				return {
 					name,
