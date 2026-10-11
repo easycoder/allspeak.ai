@@ -41,10 +41,11 @@
     "cursor": "pointer",
     "flex-shrink": "0"
   },
-  "$GraphBtn": {
+  "$LaunchBtn": {
     "#element": "button",
-    "@id": "se-graphbtn",
-    "#content": "Graph",
+    "@id": "se-launchbtn",
+    "#content": "Launch",
+    "display": "inline-block",
     "padding": "4px 12px",
     "cursor": "pointer",
     "flex-shrink": "0"
@@ -57,10 +58,10 @@
     "cursor": "pointer",
     "flex-shrink": "0"
   },
-  "$LaunchBtn": {
+  "$GraphBtn": {
     "#element": "button",
-    "@id": "se-launchbtn",
-    "#content": "Launch",
+    "@id": "se-graphbtn",
+    "#content": "Graph",
     "padding": "4px 12px",
     "cursor": "pointer",
     "flex-shrink": "0"
@@ -100,7 +101,7 @@
     "background": "#2d2d2d",
     "padding": "4px",
     "gap": "4px",
-    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$GraphBtn", "$RecordBtn", "$LaunchBtn", "$FindBtn"]
+    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$LaunchBtn", "$RecordBtn", "$GraphBtn", "$FindBtn"]
   },
   "$ContentEditor": {
     "#element": "textarea",

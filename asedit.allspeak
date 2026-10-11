@@ -128,6 +128,9 @@
     variable AppPage         ! the page this script's `@app` attribute names, if it has one
     variable TabFlavour      ! this tab's script: `py` or `js`, as the plugin resolved it — the script's own
                              ! marker, then the project's `#editor-runtime`, then `js`
+    variable LaunchHide     ! 1 when the Launch button does not belong on this tab's bar, which is when the tab
+                            ! is Python-side; resolved per parse, like `TabFlavour` itself
+    variable LaunchHidden   ! what the button is currently set to, so a parse that changes nothing writes nothing
     variable RecordReply     ! what the server says after it ran a Python script and recorded the run
     variable TraceText      ! the recording, as read — the `trace` field of that dict
     variable SourceText     ! the script, as read — the `source` field of it
@@ -213,7 +216,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash de6c79dc
+!! @hash eaf2f9ee
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'asedit-ui',
@@ -1227,6 +1230,9 @@ ParseSource:
         if MarkRecord starts with `flavour | ` gosub to NoteFlavour
         add 1 to K
     end
+    ! Last, because it is the one thing here that is not a parse result: the flavour decides whether the
+    ! Launch button belongs on the bar at all. See `LaunchButton`.
+    gosub to LaunchButton
     return
 
 !   One attribute, as the model reports it: `attr | line=N | <text>`.
@@ -1254,6 +1260,37 @@ NoteFlavour:
     if the elements of MarkRecord is less than 3 return
     index MarkRecord to 1
     put MarkRecord into TabFlavour
+    return
+
+LaunchButton:
+    ! **A `@py` script cannot be launched, so its Launch button is hidden.** Launching hands the script to the
+    ! page's JavaScript runtime, and `@py` is by definition a script that runtime cannot compile — `dictionary`
+    ! and `list` are Python's — so the button would open a window that does nothing, which is worse than a
+    ! button that is not there. Graham asked for it on 2026-10-11, in the same breath as the tab order.
+    !
+    ! **Whose flavour it follows is the *tab's*, and this is called from the parse**, so adding or deleting the
+    ! marker moves the button on the next keystroke. That is the same rule `AppPage` and `TabFlavour` already
+    ! follow: a cleared value re-resolved per parse, never a memory of the last script. A tab the model says
+    ! nothing about is not `py` — the plugin's own answer is `js` when neither the script nor the project says
+    ! otherwise — so an empty `TabFlavour` shows the button.
+    !
+    ! The value written back is the one `asedit.json` states for the button, and it states it rather than
+    ! leaving it to the browser's default for a `<button>`: a hide has to know what it is hiding *from*, and a
+    ! stylesheet that names the value is one the button can be put back to. Launch is the only button that
+    ! carries it, because it is the only one ever hidden.
+    !
+    ! **Written only when it changes, because the auto-save loop parses twice a second.** The editor rewrites
+    ! a good deal per keystroke; this is one write that can simply not happen.
+    put 0 into LaunchHide
+    if TabFlavour is `py` put 1 into LaunchHide
+    if LaunchHide is LaunchHidden return
+    put LaunchHide into LaunchHidden
+    if LaunchHide is 0
+    begin
+        set style `display` of LaunchBtn to `inline-block`
+        return
+    end
+    set style `display` of LaunchBtn to `none`
     return
 
 OutsideDispatch:
@@ -1421,7 +1458,7 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash 5795434c
+!! @hash da944c9a
 !! @verified d37980ab
 !!!
 !! Blocks view.

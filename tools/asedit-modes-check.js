@@ -831,6 +831,87 @@ check(shown.length === 1 && shown[0] === `editor`, `and the flat editor is the o
 check(await waitFor(() => vizValue(`VizShown`) === 0),
 	`and the pane is told it is off screen, and not told otherwise by a late reply (VizShown=${vizValue(`VizShown`)})`);
 
+// ---- the bar's order, and the one button that is not always on it -------------------------------
+//
+// **This is deliberately placed above the Record section, and that placement is the message.** The Record
+// section's first act — running the buffer and then reading the recording back — draws in the pane, and the
+// pane's first draw throws on `VizBusy` (its element is written before the picture builds it; see TODO-viz.md).
+// Everything from there to the end of this file therefore does not run at all: 22 of its 75 checks never
+// execute, and these two would have been among them. Measured 2026-10-11. **A check that cannot run is worse
+// than no check**, because it reads as coverage.
+
+// **The order asked for, read from the one place that decides it.** `asedit.json`'s `$TopBar` `#` list is what
+// the page renders, in that order — so that list *is* the bar, and asking it is asking what a reader sees. (The
+// seeded DOM above cannot answer: it registers every id in the file but builds no hierarchy, so the top bar it
+// knows has no children. A check on that would have been a check on this harness, not on the page.)
+//
+// Graham, 2026-10-11: *"the order of the buttons in edit mode should be Blocks - Launch - Record - Graph -
+// Find"*. This was the first change to the bar since it was built, which is why the order had never been
+// asserted at all. The button *definitions* in the file were put in the same order as the list, so the file
+// reads the way the bar does — a courtesy to the next reader, and not something this check rests on.
+const TOP_ORDER = [`Blocks`, `Launch`, `Record`, `Graph`, `Find`];
+const FIVE_IDS = [`se-blocksbtn`, `se-launchbtn`, `se-recordbtn`, `se-graphbtn`, `se-findbtn`];
+const byIdOf = Object.fromEntries(Object.entries(UI_JSON)
+	.filter(([, v]) => v && typeof v === `object` && typeof v[`@id`] === `string`)
+	.map(([, v]) => [v[`@id`], v]));
+const listed = (UI_JSON[`$TopBar`][`#`] || []).map(k => (UI_JSON[k] || {})[`@id`])
+	.filter(id => FIVE_IDS.includes(id))
+	.map(id => ({ id, label: (byIdOf[id] || {})[`#content`] }));
+check(JSON.stringify(listed.map(t => t.id)) === JSON.stringify(FIVE_IDS)
+	&& JSON.stringify(listed.map(t => t.label)) === JSON.stringify(TOP_ORDER),
+	`the bar's tabs are in the order asked for — ${listed.map(t => t.label).join(`, `)} `
+	+ `— which is what '$TopBar' renders, so it is what a reader sees (${JSON.stringify(listed.map(t => t.id))})`);
+
+// **And Launch is put away for a script this page cannot run.** Launching hands the script to the JavaScript
+// runtime, and a `@py` script is by definition one it cannot compile — so the button would open a window that
+// does nothing. The flavour is the parse's, so the button follows the tab's script rather than a memory of it:
+// the marker is *added and taken away below*, and the button has to move with it both ways.
+//
+// The project is set to `js` for both halves, so the only thing that can make the script Python-side is its
+// own `@py` marker, which is the case Graham described. The value the button goes back to is the one
+// `asedit.json` states for it, read from there rather than written a second time in this file.
+//
+// **The two fixtures, and the Python one has to be a script this runtime cannot compile.** `dictionary` is
+// Python's, so the marker lands on a script whose only visible fault *is* Python vocabulary — which is the
+// case the flavour reader exists for, and the case the Record section's own note records as having passed on a
+// fixture that was compilable and therefore proved nothing. The buffer is saved and put back, because
+// everything below the Record section reviews the file this check was run with.
+//
+// The check asserts the flavour it got, so a fixture that stopped being Python-side fails the check rather
+// than passing it quietly.
+const PY_TAB = [
+	`    @py`,
+	`    script LaunchTabIsPython`,
+	`    variable Lookup`,
+	`Main:`,
+	`    dictionary Lookup`,
+	`    stop`,
+].join(`\n`) + `\n`;
+const JS_TAB = [
+	`    script LaunchTabIsJavaScript`,
+	`    variable N`,
+	`Main:`,
+	`    put 0 into N`,
+	`    stop`,
+].join(`\n`) + `\n`;
+const bufferWas = scriptElement.innerText;
+runtimeElement.innerHTML = `js`;
+runtimeElement.textContent = `js`;
+const launchShown = () => ((displayOf(`se-launchbtn`) || {}).display) || ``;
+const launchStyle = (UI_JSON[`$LaunchBtn`] || {}).display;
+scriptElement.innerText = PY_TAB;
+run(`ParseSource`);
+check(String(valueOf(`TabFlavour`)) === `py` && launchShown() === `none`,
+	`a tab whose script is Python-side has no Launch button, because launching it would do nothing `
+	+ `(flavour ${JSON.stringify(String(valueOf(`TabFlavour`)))}, display ${JSON.stringify(launchShown())})`);
+scriptElement.innerText = JS_TAB;
+run(`ParseSource`);
+check(String(valueOf(`TabFlavour`)) === `js` && launchShown() === launchStyle,
+	`and taking the marker away puts it back, so the button follows the tab's script rather than remembering `
+	+ `one (flavour ${JSON.stringify(String(valueOf(`TabFlavour`)))}, display ${JSON.stringify(launchShown())}, `
+	+ `which is what asedit.json states for it)`);
+scriptElement.innerText = bufferWas;
+
 // ---- and the Record button does what it says ------------------------------------------------
 //
 // **The trigger, end to end through the editor's own path.** `RecordRun` is what the button runs: it reads the
