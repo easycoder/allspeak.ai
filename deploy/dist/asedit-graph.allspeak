@@ -642,20 +642,46 @@ VizRemember:
     variable VizGlyphWidth        ! the document's natural size, in the units the text is drawn at
     variable VizGlyphHeight
     variable VizGlyphEm           ! the em of the text, which is the gap a rule clears before it begins
+    variable VizGlyphEmText       ! ...and the same em as the `<text>` element spells it, to two places
     variable VizGlyphRows         ! a window may not go below this: past it the text is at its own size
     variable VizGlyphMax
-    ! The redaction's own scratch: the path data for the bars, one line's width in document units, and
-    ! where that line's row begins. Built in the same pass as the text it covers, for the reason the text
-    ! is built there at all.
+    ! The ruler's scratch: the hidden element that measures the font, the string it measures, how long
+    ! that string is, and the em it works out. The element is a page element rather than an svg one —
+    ! it is created in the host and never drawn.
+    div VizRuler
+    variable VizRulerText
+    variable VizRulerCount
+    variable VizRulerWidth
+    variable VizRulerEm
+    variable VizRulerFrac
+    ! The redaction's own scratch: the path data for the bars, one line's bar width, where that bar begins,
+    ! and where its row begins.
     variable VizRedactD
     variable VizRedactW
+    variable VizRedactX
     variable VizRedactY
-    ! And the scale that pins the bars' width while the zoom moves: the document's own shrinkage, inverted,
-    ! as thousandths and then as a decimal an SVG `transform` can read.
+    ! **Every drawn row's own two measures, kept so the bars can be rebuilt when the zoom moves.** A bar's
+    ! left edge is where its line's *first character* is, at the document's eight units a column — so it
+    ! scales with the text and the indentation stays on the text at every zoom. Its width is the line's own
+    ! length for *reading*, pinned, so that narrowing the window does not shrink the whole redaction into
+    ! the margin. Those two are the same value at the floor, where the text is at its own size, and differ
+    ! at every other zoom — so the path cannot be built once and left, and it must not be rebuilt from the
+    ! *source* either, because reading the file's lines back is the walk that costs seconds. Hence two
+    ! numbers a row, kept from the pass that reads the source anyway, and one string built from them per
+    ! zoom. Graham's specification, 2026-10-11: *"the right end should never change — it's always fixed at
+    ! the end of the text at normal size. The left end should move with the starting position at all zoom
+    ! levels"*, and its purpose in his words: *"to keep the indents visible but prevent the entire
+    ! redaction shrinking"*.
+    variable VizBarIndents     ! array: each drawn line's indentation, in columns
+    variable VizBarBodies      ! array: ...and the length of its text after that indentation
+    variable VizBarAt          ! the row the rebuild is on
+    variable VizBarCount       ! how many rows were kept
+    variable VizRedactPin      ! the pin the bars were last built at, in thousandths; 0 forces a rebuild
+    ! And the pin itself: the document's own shrinkage, inverted, in thousandths.
     variable VizRedactScale
-    variable VizRedactFactor
-    variable VizRedactText
-    variable VizRedactLength
+    ! And the two the indent walk needs: the line being trimmed, and how much came off it.
+    variable VizIndentWork
+    variable VizIndentLen
     variable VizWindowY
     variable VizWindowW
     variable VizWindowH
@@ -1049,7 +1075,7 @@ Draw:
     ! correctly and then thrown away, so a narrowed picture scrolled as slowly as the whole one. Measured
     ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
     put VizKept into VizEvents
-!! @hash ab83e5d2
+!! @hash 30e5aeb0
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -1095,6 +1121,30 @@ Draw:
     set attribute `preserveAspectRatio` of VizCanvas to `xMidYMid meet`
     set attribute `font-size` of VizCanvas to 15
     set attribute `fill` of VizCanvas to `#8b93a1`
+
+    ! **The ruler: the pane's own way of asking the browser how wide a character is.** The picture's
+    ! geometry is in whole units — a column is eight of them, and the rules, the label names, the
+    ! document's width and the bars all multiply by that — while the *text* is laid out by the browser
+    ! at whatever advance the monospace font it picks actually has. Those two only agree by luck: the
+    ! font the pane names is `monospace`, and no font promises an advance of eight thirteenths of an em.
+    ! Measured 2026-10-11 in chromium on this machine: `monospace` at 13 has an advance of **7.827**
+    ! units, so every column of text sat 2.2% left of the column the pane drew — and the error
+    ! *accumulates with depth*, which is how it was found: Graham, looking at a deeply nested block,
+    ! *"the offsets are too much"*.
+    !
+    ! So the pane measures the advance and stretches the *font* to the geometry rather than the other way
+    ! round. **Why this way and not the alternatives**: the geometry's eight units a column is the
+    ! number the rules, the label widths, the document's size and the bars are all built from, and the
+    ! prose says so in three files. Moving the measurement into the geometry would touch five sites and
+    ! every one of those claims; moving it into the font touches one attribute, and the font is the
+    ! thing that was wrong. **And it cannot break when the measurement fails** — a page with no layout
+    ! gives a nonsense width, the guard below rejects it, and the em stays at thirteen, which is exactly
+    ! the picture this pane drew before.
+    !
+    ! `visibility:hidden` keeps it laid out; `left:-10000px` keeps it out of the host's own layout, which
+    ! a wide child would otherwise push a scrollbar into.
+    create VizRuler in VizHost
+    set the style of VizRuler to `position:absolute;left:-10000px;top:0;visibility:hidden;white-space:pre;font-family:monospace;font-size:13px`
 
     create VizFrame in VizCanvas
     set attribute `x` of VizFrame to 60
@@ -1546,7 +1596,7 @@ Draw:
     put 1 into VizReady
 
 VizBuilt:
-!! @hash bd8a1c95
+!! @hash f99c111e
 !! @verified 20bf4472
 !!!
 !! What a draw does, in order.
@@ -3091,6 +3141,7 @@ VizSourceMeasure:
     ! into the `<text>` element below as a number, because the rules' arithmetic is a second reader of
     ! it: two spellings of one measurement is how a gap drifts.
     put 13 into VizGlyphEm
+    gosub to VizMeasureEm
     ! **The picture is the whole file, and the recording is a window over it.** Drawing only the lines
     ! the run touched made the pane a picture of the run with no way to see it in context, and it left
     ! the window unable to travel past the last line that happened to execute — a scroll that stops
@@ -3125,14 +3176,24 @@ VizSourceMeasure:
     ! built; the drift is the number of empty rows above a line, which is why blanking the doc blocks
     ! made an invisible fault visible. `y="-4"` on the element keeps the first row's descenders off the
     ! document's edge for a reader of the source; the rows themselves name their own place.
-    put `<text x="0" y="-4" xml:space="preserve" font-family="monospace" font-size="` cat VizGlyphEm cat `" fill="#5b6472">` into VizGlyphBody
-    ! **The redaction is built here, in the same pass, and that is not an economy — it is the design.**
-    ! The bars are a function of the *source*, not of the window, so they belong with the picture that is
-    ! built once per run rather than with the marks and rules that are rebuilt on every draw. A zoom or a
-    ! pan therefore costs nothing for them, and the `d` string is written once. Had they been drawn in the
-    ! frame's units instead they would have had to be re-laid-out on every zoom — which is where the cost
-    ! Graham expected would have come from, and why it does not arise.
-    put `` into VizRedactD
+    put `<text x="0" y="-4" xml:space="preserve" font-family="monospace" font-size="` cat VizGlyphEmText cat `" fill="#5b6472">` into VizGlyphBody
+    ! **The redaction's *measures* are taken here, in the same pass, and the bars themselves are built from
+    ! them on every zoom.** The two are not the same job. What belongs with the picture built once per run
+    ! is the reading of the *source* — each row's indentation and each row's length, which is what the walk
+    ! below already has in its hand. What belongs with the window is where a bar is drawn, because that is
+    ! the only part that the zoom moves: a bar's left edge is on its line's first character, which scales
+    ! with the text, and its width is pinned so the redaction is not shrunk into the margin by narrowing the
+    ! window. Keeping one number a row is what makes rebuilding affordable — reading the file's lines back
+    ! instead would be a second walk of `VizSourceLines` on every zoom, and `element N of` on a json array
+    ! re-parses the whole array, which is the cost that made this a once-per-picture job to begin with.
+    ! **One element per *line number*, the last one included**, because these are indexed by the line's own
+    ! number rather than by its place in the walk: the arrays are as long as the file's last drawn line, so
+    ! an index is a line and no arithmetic stands between the two.
+    add 1 to VizMaxLine giving VizBarCount
+    set the elements of VizBarIndents to VizBarCount
+    set the elements of VizBarBodies to VizBarCount
+    ! A pin no window can have, so the first `VizRedactBuild` of this picture always builds.
+    put 0 into VizRedactPin
     put VizMinLine into VizSourceIndex
     while VizSourceIndex is not greater than VizMaxLine
     begin
@@ -3154,21 +3215,40 @@ VizSourceMeasure:
         ! keeps its number and the pane's numbering still matches the editor's. Skipping it would
         ! renumber the file from its first doc block onwards, which is the one thing this must not do.
         if VizSourceLine starts with `!!` put `` into VizSourceLine
-        ! **This row's bar, and it is measured off the text rather than chosen.** Its width is the line's
-        ! own length at the document's eight units a column — the same measure the rules use for the code
-        ! they lead away from, so the two agree by construction about where a line ends. Its `y` is the
-        ! *top* of the row and its height is the whole eighteen units, which is what puts the leading above
-        ! and below the glyphs inside the bar as well as the glyphs themselves.
+        ! **This row's measures, and they are taken off the text rather than chosen.** Its indentation is
+        ! where the line's *first character* is, and its body is what is left of the line from there — in
+        ! columns, because the bar is built from these at the zoom in force and the document's eight units a
+        ! column is what turns them into the units the rules use, so the two agree by construction about
+        ! where a line ends.
+        !
+        ! **The indent is part of the shape, and leaving it out was the fault.** A bar that began at the
+        ! margin said every line started at column zero: true of `Main:` and false of every line under it,
+        ! so the silhouette was of a file whose code was flush left. Graham's correction, 2026-10-08 —
+        ! *"they should show code indentation, instead of starting at the margin they should start on the
+        ! first character of the script"* — and it is the same argument the blanking already makes: the
+        ! bars are the code, so they have to have the code's shape. It is also why the left edge cannot be
+        ! pinned with the width: a bar drawn from a fixed left edge would step in from the text as soon as
+        ! the window narrowed.
         !
         ! A row that draws nothing gets no bar, and gets none rather than a zero-width one: the blanked
         ! doc blocks are most of a file written to this convention, and a zero-width rectangle per one of
-        ! them would be several hundred pieces of path data saying nothing at all.
+        ! them would be several hundred pieces of path data saying nothing at all. A line of nothing but
+        ! spaces has no characters either, and takes the same road. Its measures are written as zeroes
+        ! first, so the row needs no second test when the bars are built.
+        index VizBarIndents to VizSourceIndex
+        put 0 into VizBarIndents
+        index VizBarBodies to VizSourceIndex
+        put 0 into VizBarBodies
         if VizSourceLine is not empty
         begin
-            multiply the length of VizSourceLine by 8 giving VizRedactW
-            take VizMinLine from VizSourceIndex giving VizRedactY
-            multiply VizRedactY by 18
-            put VizRedactD cat `M0 ` cat VizRedactY cat `h` cat VizRedactW cat `v18h-` cat VizRedactW cat `z` into VizRedactD
+            gosub to VizLineIndent
+            put the length of VizSourceLine into VizRedactW
+            take VizIndentLen from VizRedactW
+            if VizRedactW is greater than 0
+            begin
+                put VizIndentLen into VizBarIndents
+                put VizRedactW into VizBarBodies
+            end
         end
         ! A line the run names but the file does not have is left as an empty row rather than skipped:
         ! the rows are what lines up with the axis, so a missing one has to keep its place.
@@ -3200,9 +3280,9 @@ VizSourceMeasure:
         add 1 to VizSourceIndex
     end
     put VizGlyphBody cat `</text>` into VizGlyphBody
-    ! The bars go up in one attribute, which is the same economy the marks live under: an AllSpeak element
-    ! is a declared symbol, so N bars are one path rather than N elements.
-    set attribute `d` of VizRedact to VizRedactD
+    ! The bars themselves are built from those measures in `VizRedactBuild`, which the window calls: it is
+    ! one `d` attribute, the same economy the marks live under — an AllSpeak element is a declared symbol,
+    ! so N bars are one path rather than N elements.
 
     ! Encoded once, here, because the picture is never redrawn: a data URL has two characters an SVG
     ! document cannot spell for it, and `%` goes first or the `#` replacement would have its own `%`
@@ -3215,7 +3295,7 @@ VizSourceMeasure:
     return
 
 VizLabelNames:
-!! @hash da070898
+!! @hash efac97e5
 !! @verified da070898
 !!!
 !! Every label is named at the right-hand edge, and the rules make room for it.
@@ -3324,8 +3404,145 @@ VizLabelShape:
     take 1 from VizLabelLen giving VizLabelLen
     return
 
+VizMeasureEm:
+    ! **A column of the picture is eight units, and this is what makes the text agree with them.** The
+    ! geometry's eight units a column is assumed by the rules, the label names, the document's width and
+    ! the bars; the text is laid out by the browser at whatever advance the font it picks actually has.
+    ! So read the advance off a hidden element and solve for the em whose advance *is* eight units:
+    !
+    !     advance = ratio x em,   ratio = width / (count x 13)     (measured at 13px)
+    !     em      = 8 x 13 x count / width
+    !
+    ! held in hundredths, because the language has no fractions and the value is wanted to two places —
+    ! 13.28 rather than 13 is the whole difference between a staircase and a fan.
+    !
+    ! **The string is doubled up from nine characters rather than typed out**, so the count is `the
+    ! length of` it rather than a number a reader would have to count in a run of spaces. A monospace
+    ! font's advance is the same for every character, which is why an `x` measures the column a space
+    ! occupies.
+    !
+    ! reads nothing; leaves `VizGlyphEm` (whole units, for the rules' gap) and `VizGlyphEmText` (the
+    ! two-place spelling the `<text>` element carries).
+    put `xxxxxxxxx` into VizRulerText
+    put VizRulerText cat VizRulerText into VizRulerText
+    put VizRulerText cat VizRulerText into VizRulerText
+    put VizRulerText cat VizRulerText into VizRulerText
+    put VizRulerText cat VizRulerText into VizRulerText
+    put the length of VizRulerText into VizRulerCount
+    set the content of VizRuler to VizRulerText
+    put the width of VizRuler into VizRulerWidth
+    ! **A width that is not a font's is not a measurement.** A pane with no layout — a hidden host, a stub
+    ! DOM under a harness — answers with a box of its own rather than with the text's width, and solving
+    ! the em from that gives a nonsense size. Outside these bounds the em stays as it is, and the picture
+    ! is the one this pane drew before the ruler existed: worse than a measured one, and far better than
+    ! a broken one.
+    if VizRulerWidth is less than 1 go to VizEmKeep
+    put 1497600 into VizRulerEm
+    divide VizRulerEm by VizRulerWidth
+    if VizRulerEm is less than 800 go to VizEmKeep
+    if VizRulerEm is greater than 3000 go to VizEmKeep
+    divide VizRulerEm by 100 giving VizGlyphEm
+    multiply VizGlyphEm by 100 giving VizRulerFrac
+    take VizRulerFrac from VizRulerEm giving VizRulerFrac
+    if VizRulerFrac is less than 10 put `0` cat VizRulerFrac into VizRulerFrac
+    put VizGlyphEm cat `.` cat VizRulerFrac into VizGlyphEmText
+    return
+VizEmKeep:
+    put VizGlyphEm into VizGlyphEmText
+    return
+
+VizLineIndent:
+    ! **How far a line is indented, which is part of the shape the bars draw.** The redaction is the
+    ! *code's* silhouette rather than the file's — the blanking says that already — and indentation is
+    ! part of a code shape: a bar beginning at the margin says every line starts at column zero, which is
+    ! true of `Main:` and false of everything under it.
+    !
+    ! Counted by *trimming*, because the language has no `trim` and no `position of`: `from 1 of` gives
+    ! everything after the first character, so the walk shortens its own copy until the copy no longer
+    ! begins with a space. That ends on an empty line and on a line of nothing but spaces as well as on
+    ! one that is only indented, so no flag and no length test is needed.
+    !
+    ! Cost is bounded by the indentation and paid once per line, in the pass that builds the picture —
+    ! which happens once per recording and not once per draw, because the bars are a function of the
+    ! *source* rather than of the window.
+    !
+    ! reads `VizSourceLine`, leaves `VizIndentLen`.
+    put VizSourceLine into VizIndentWork
+    put 0 into VizIndentLen
+    while VizIndentWork starts with ` `
+    begin
+        put from 1 of VizIndentWork into VizIndentWork
+        add 1 to VizIndentLen
+    end
+    return
+
+    ! ---- the bars, at the zoom in force ----
+    ! **The bars are a redaction of the text and they are read with it, so the text is what they are
+    ! measured against.** A bar's left edge is its line's own first character, in the document's units —
+    ! the `viewBox` puts it on that character at whatever the zoom is. Its width is the line's length *as a
+    ! reader reads it*, pinned, so that narrowing the window does not shrink the whole redaction into the
+    ! margin. Those two are the same value at the legible floor, where the text is at its own size, and
+    ! differ at every other zoom — which is why the bars are built here rather than with the picture.
+    !
+    ! Graham's specification, 2026-10-11: *"the right end should never change — it's always fixed at the
+    ! end of the text at normal size. The left end should move with the starting position at all zoom
+    ! levels"*, and its purpose in his words: *"to keep the indents visible but prevent the entire
+    ! redaction shrinking"*. The left edge used to be scaled by the pin along with the width, so a deep
+    ! indent began to the right of the text it belongs to, and the gap grew as the window narrowed.
+    !
+    ! **Two measures a row and one string per zoom, because the obvious routes are both closed.** The path
+    ! cannot be built once and left, since its width depends on the window; it must not be built from the
+    ! *source* either, because that means a second walk of `VizSourceLines` on every zoom, and `element N
+    ! of` on a json array re-parses the whole array — the cost that made this a once-per-picture job to
+    ! begin with. So the pass that reads the source anyway keeps each row's indentation and each row's body
+    ! length, in two number arrays, and this builds the path from them.
+    !
+VizRedactBuild:
+    ! ---- the bars, at the zoom in force ----
+    ! **The gate is the pin, not the draw.** A pan moves the window without changing its height, so the pin
+    ! is what it was and the bars are already right; a zoom changes it and they are built again. The picture
+    ! leaves the pin at zero, a value no window can have, so the first draw after a new source always builds.
+    if VizRedactPin is VizRedactScale return
+    put VizRedactScale into VizRedactPin
+    put `` into VizRedactD
+    put VizMinLine into VizBarAt
+    while VizBarAt is not greater than VizMaxLine
+    begin
+        index VizBarBodies to VizBarAt
+        put VizBarBodies into VizRedactW
+        if VizRedactW is greater than 0
+        begin
+            ! The left edge is the line's own first column, in document units, so the `viewBox` puts it on
+            ! the first character at whatever the zoom is — which is the whole of the change: the indent
+            ! used to be scaled by the pin like the width, so a deep indent began to the right of the text
+            ! it belongs to and the gap grew as the window narrowed.
+            index VizBarIndents to VizBarAt
+            put VizBarIndents into VizIndentLen
+            multiply VizIndentLen by 8 giving VizRedactX
+            ! Its top is the row's, and its height is the whole eighteen units, which is what puts the
+            ! leading above and below the glyphs inside the bar as well as the glyphs themselves. The height
+            ! is *not* pinned: it follows the row, and that is the "zooms with it, but only in Y".
+            take VizMinLine from VizBarAt giving VizRedactY
+            multiply VizRedactY by 18
+            ! **The width is the line's length as a reader reads it, and only the pin makes it that.**
+            ! Eight units a column is the document's own measure, so that part would shrink with the text;
+            ! multiplying by the pin puts the width back at the size the text is read at, which is what
+            ! stops the whole redaction shrinking into the margin. Integer throughout, so a bar can come out
+            ! a unit short of its exact length, which is under a pixel on any zoom this pane draws.
+            multiply VizRedactW by 8
+            multiply VizRedactW by VizRedactScale
+            divide VizRedactW by 1000
+            put VizRedactD cat `M` cat VizRedactX cat ` ` cat VizRedactY cat `h` cat VizRedactW cat `v18h-` cat VizRedactW cat `z` into VizRedactD
+        end
+        add 1 to VizBarAt
+    end
+    ! One attribute, which is the same economy the marks live under: an AllSpeak element is a declared
+    ! symbol, so N bars are one path rather than N elements.
+    set attribute `d` of VizRedact to VizRedactD
+    return
+
 VizSourcePicture:
-!! @hash 2d741f7c
+!! @hash cf6e1925
 !! @verified 2d741f7c
 !!!
 !! The picture never changes; the window over it does.
@@ -3346,48 +3563,22 @@ VizSourcePicture:
     ! what that costs, and the frame is not narrow: it shows about a hundred and ten columns at the
     ! legible floor, which is more than most lines and less than a few.
     set attribute `viewBox` of VizPane to `0 ` cat VizWindowY cat ` ` cat VizWindowW cat ` ` cat VizWindowH
-    ! **The redaction's width is pinned here, and one attribute is the whole of it.** Its bars are stored at
-    ! the width the text would be at its own size, so that a bar is as wide as its line *is* when a reader can
-    ! read it; the document is then shrunk to fit whatever is in view, and without this it would shrink the
-    ! bars with it. The `transform` widens them by exactly what the `viewBox` above narrows the document by,
-    ! so the two cancel and a bar occupies the same width at every zoom — which is the shape Graham asked to
-    ! be kept: *"so that at all zoom levels the bars still occupy the same width"*. Their **height** is left
-    ! alone, so it still follows the row, and that is the "zooms with it, but only in Y".
-    !
-    ! **And it is why there is nothing to defer.** The obvious way to keep a width while the zoom changes is
-    ! to rebuild the bars at each zoom, which is the load Graham expected; a `transform` says the same thing
-    ! in one number, so a notch costs one attribute and no string at all. The path itself is still built once
-    ! per run, with the text.
-    !
-    ! The factor is thousandths, written as a decimal by string arithmetic, because the language has integers
-    ! and an SVG number wants a point. **It is never allowed below one, and that is where the reference comes
-    ! from**: at the deepest zoom the document is drawn at its own size, the factor is one, and the bars are
-    ! exactly as wide as the text they redact — Graham's "the length of its text at maximum zoom". Every other
-    ! zoom is within a tenth of a per cent of that, which is under a unit on a two-hundred-unit bar, and the
-    ! harness pins the width across forty-seven phases at a 0.75% spread.
+    ! **The pin: how much the window has shrunk the document, inverted, in thousandths.** At the legible
+    ! floor the document is drawn at its own size and the pin is one, which is the reference the bars are
+    ! measured against — the length of a line *as a reader reads it*. Every narrower window has a larger
+    ! pin, so the bars keep that length while the text they sit on gets smaller, which is what stops the
+    ! redaction shrinking away with the zoom. It is never allowed below one: past the floor the text is at
+    ! its own size and there is nothing left to compensate for.
     multiply VizWindowH by 1000 giving VizRedactScale
     divide VizRedactScale by VizPlotH
     if VizRedactScale is less than 1000 put 1000 into VizRedactScale
-    ! Through a string, because `the length of` a *number* is undefined in this runtime — the same trap the
-    ! source's measure dodges by counting characters rather than digits.
-    !
-    ! **Built in steps rather than one expression, and that is not a style choice.**
-    ! `left 1 of X cat '.' cat right 3 of X` reads as the three parts it looks like, and the runtime reads it as
-    ! `left 1 of (X cat '.' cat right 3 of X)`: `cat`'s right-hand side is the whole rest of the expression,
-    ! so the first part takes the leading digit of everything that follows. It compiles, it runs, and the
-    ! factor came out as `8` where `8.068` was meant — which the harness caught as a width that still moved
-    ! with the zoom, and is exactly the kind of fault a check earns its keep on.
-    put `` cat VizRedactScale into VizRedactText
-    put the length of VizRedactText into VizRedactLength
-    take 3 from VizRedactLength
-    put left VizRedactLength of VizRedactText into VizRedactFactor
-    put VizRedactFactor cat `.` into VizRedactFactor
-    put right 3 of VizRedactText into VizRedactText
-    put VizRedactFactor cat VizRedactText into VizRedactFactor
-    set attribute `transform` of VizRedact to `scale(` cat VizRedactFactor cat ` 1)`
+    ! **And the bars, rebuilt from the picture's measures when that pin has moved** — not on every draw,
+    ! because a pan does not change the window's height and so does not change the pin: a pan costs nothing
+    ! for them, and a zoom costs one string.
+    gosub to VizRedactBuild
     set attribute `href` of VizGlyphs to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="` cat VizGlyphWidth cat `" height="` cat VizGlyphHeight cat `">` cat VizGlyphBody cat `</svg>`
     return
-!! @hash 78dcffaf
+!! @hash dc572580
 !! @verified 78dcffaf
 !!!
 !! The mappings: the one place a line's y and a step's x are worked out.

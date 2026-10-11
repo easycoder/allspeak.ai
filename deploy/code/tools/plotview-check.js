@@ -264,6 +264,12 @@ const source = Array.from({ length: 260 }, (_, i) => {
 	if (n === 32) return `!! a doc block line:`;                 // drawn as an empty row: not a label
 	if (n === 33) return `    ` + `x`.repeat(160);               // 164 columns: wider than the pane can show
 	if (n === 34) return `    ! a note beside the code`;         // a bare comment: drawn as it is
+	// **Two more indentation levels, so the bars' left edges are exercised at more than one column.**
+	// The ordinary line is indented four spaces, so a fixture of those alone would pass a check on the
+	// indent with two values in it — 0 and 32 units — and would not notice an arithmetic that is right at
+	// one level and wrong at three. These are the rows the indent claim is actually tested against.
+	if (n === 38) return `        eight columns in`;            // a second level
+	if (n === 40) return `            twelve columns in`;       // and a third
 	if (n === 150) return `ChooseUnit:`;                         // a label: named at the frame's edge
 	if (n === 151) return `    not a label, indented:`;          // ends in a colon, but not at the margin
 	if (n === 152) return `! not a label, a comment ends in a colon:`;    // and neither is a comment
@@ -436,6 +442,21 @@ if (program) {
 		process.exit(1);
 	}
 	hostEl.box = PANEL;
+	// **And the ruler's box, which stands in for a laid-out font.** The pane asks the page how wide a
+	// run of characters is, and a stub DOM cannot lay text out — every element here answers with the
+	// same default box. `1127` is what the ruler measures for 144 characters at `font-size:13px
+	// monospace` in a real browser (chromium, 2026-10-11: an advance of 7.827 units a column), so the
+	// arithmetic below is checked against a *real font's* number rather than against a coincidence. The
+	// measurement itself is a browser matter and is checked there; what is checked here is what the pane
+	// *does* with a width.
+	const rulerRecord = program.getSymbolRecord(`VizRuler`);
+	const rulerEl = rulerRecord && rulerRecord.element && rulerRecord.element[0];
+	if (!rulerEl) {
+		process.stderr.write(`plotview-check: the view has no ruler element — the em measurement would `
+			+ `be skipped, so the column claims below would not mean what they say.\n`);
+		process.exit(1);
+	}
+	rulerEl.box = { left: 0, top: 0, width: 1127, height: 700 };
 }
 
 // Report once the drawing has stopped changing, not when `run` returns.
@@ -470,9 +491,11 @@ const drawing = () => {
 	// **A third coordinate system, and it is the source's own.** `VizPane` is a nested viewport whose
 	// `viewBox` is the *document* — eighteen units to a row and eight to a column — so anything drawn
 	// inside it is in document units and scaled by the browser into the frame. The redaction lives there,
-	// beside the very text it covers, which is exactly why it needs no re-rendering on a zoom. The frame's
-	// test can therefore say nothing about it, and asking it to would have failed on a picture that is
-	// right: the whole point of the layer is that its coordinates are the file's, not the canvas's.
+	// beside the very text it covers, so its left edge lands on a column of the text at every zoom by
+	// construction; its *width* is the one part the pane has to correct, and it does so in the path itself
+	// rather than by a `transform`. The frame's test can therefore say nothing about it, and asking it to
+	// would have failed on a picture that is right: the whole point of the layer is that its coordinates
+	// are the file's, not the canvas's.
 	const paneEl = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizPane`));
 	const insidePane = p => !!paneEl && (paneEl.children || []).includes(p);
 	for (const p of paths) {
@@ -577,14 +600,16 @@ const drawing = () => {
 		ruleYs,
 		markYs,
 		rows: (href.match(/<tspan/g) || []).length,
-		// The redaction, as drawn: one bar per line that shows anything, in the document's own units —
-		// plus the `transform` that pins its width while the zoom moves.
+		// The redaction, as drawn: one bar per line that shows anything, in the document's own units.
+		// **Its width carries the pin, and the pin is the pane's own number** — the document's shrinkage
+		// inverted, in thousandths. It used to be an SVG `transform` on this element, applied to bars
+		// stored at their unpinned length; on 2026-10-11 it became part of the geometry, because a
+		// `scale()` about the origin scaled the *left* edge along with the width and so pulled the indent
+		// off the text at every zoom but the floor. Reading the pane's variable rather than an attribute
+		// is the honest instrument either way: it is the number the bars were built from.
 		redact: dOf(`ec-VizRedact`),
-		redactScale: (() => {
-			const el = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizRedact`));
-			const m = el && /scale\(([0-9.]+) 1\)/.exec(String(el.attributes.transform || ``));
-			return m ? Number(m[1]) : null;
-		})(),
+		redactPin: Number(viewVar(`VizRedactScale`)),
+		redactScale: Number(viewVar(`VizRedactScale`)) / 1000,
 		ticks,
 		// The status line is the one that says which lines the *window* is on; the caption says which
 		// lines the *recording* covered, and they are different things — a check that read the caption
@@ -1454,22 +1479,31 @@ if (withPicture.length === 0) {
 		? `  OK: one picture, drawn once, and all ${steady.length} phases still point at it`
 		: `  FAIL: the picture was rebuilt ${hrefs.size} times, which is the redraw this was meant to remove`);
 
-	// **And the redaction is built once with it, which is what makes a zoom free.** The bars are a
-	// function of the *source*, not of the window, so they belong with the document and not with the marks
-	// and rules that every draw rebuilds — and the check is the same instrument: their path data has to be
-	// byte-identical across every phase before the source changes. That is the whole of the claim Graham
-	// expected to cost something: *"rendering this costs more CPU time, so if it becomes too slow let's
-	// defer rendering while zooming"*. There is nothing to defer, because a zoom does not rebuild it — and
-	// this is the check that would fail if that ever stopped being true.
-	const redactions = new Set(steady.map(([, s]) => s.redact));
-	console.log(redactions.size === 1 && String(steady[0][1].redact || ``).length > 0
-		? `  OK: the redaction rides with the picture rather than being rebuilt — one path of `
-			+ `${(String(steady[0][1].redact).match(/M0 /g) || []).length} bar(s) across all ${steady.length} `
-			+ `phases, unchanged by every zoom and pan in them`
-		: redactions.size === 1
-			? `  FAIL: the redaction is empty in every phase (${String(steady[0][1].redact).length} chars)`
-			: `  FAIL: the redaction was rebuilt ${redactions.size} times across ${steady.length} phases, `
-				+ `so a zoom is rebuilding it`);
+	// **And the redaction follows the window's *height*, which is the whole of what "pinned" means now.**
+	// The bars are a function of the source *and* of the pin, so they are rebuilt when the zoom changes and
+	// left alone when it does not: a pan moves the window without changing its height, so a pan costs
+	// nothing for them, and a zoom costs one string. The claim is exact and checkable both ways — the path
+	// data is identical across every phase sharing a pin, and differs between pins. It replaced the claim
+	// that the bars were built once with the picture (2026-10-11), which was true while the pinning was an
+	// SVG `transform` on the element: that kept the width but scaled the *left* edge with it, so the indent
+	// drifted off the text at every zoom but the floor, which is the fault Graham found in the picture.
+	const steadyPins = steady.map(([, s]) => s.redactPin);
+	const pins = [...new Set(steadyPins)];
+	const rebuilt = new Map();
+	pins.forEach(pin => {
+		const group = steady.filter(([, s]) => s.redactPin === pin);
+		rebuilt.set(pin, new Set(group.map(([, s]) => s.redact)).size);
+	});
+	const steadySame = [...rebuilt.values()].every(n => n === 1);
+	console.log(steadySame && pins.length > 1 && String(steady[0][1].redact || ``).length > 0
+		? `  OK: the redaction is rebuilt by the zoom and by nothing else — one path per pin, `
+			+ `${(String(steady[0][1].redact).match(/M0 /g) || []).length} bar(s) in it, across ${pins.length} `
+			+ `distinct pin(s) and ${steady.length} phase(s), so a pan leaves it alone and a zoom does not`
+		: steadySame
+			? `  FAIL: the redaction is the same at ${pins.length} different pin(s), so nothing is pinning `
+				+ `its width — the pane would shrink it with the document`
+			: `  FAIL: the redaction changed inside a group of phases at the same pin (${pins.map(p => p + `: ` + rebuilt.get(p)).join(`, `)}), `
+				+ `so something other than the zoom is rebuilding it`);
 	// And it does follow the source: an edit has to change it, or the bars would be the shape of a file
 	// that is no longer on screen.
 	const after = withPicture.slice(swapAt);
@@ -1569,42 +1603,118 @@ if (withPicture.length === 0) {
 		// of the text" means once it is written down. **And the zoom cannot spoil it**: the bars are in the
 		// document's units, beside the glyphs, so the two are scaled by one `viewBox` and no zoom can move
 		// one without the other — which is why this is a check on geometry and not on a rendered frame.
-		const bars = [...String(withPicture[0][1].redact || ``).matchAll(/M0 (-?\d+)h(\d+)v18h-\d+z/g)]
-			.map(m => ({ top: Number(m[1]), w: Number(m[2]) }));
+		// **Each bar is matched to the row it belongs to, and matched by *where it starts* as well as by
+		// how wide it is.** A bar's left edge is where its line's first character is — the indent is drawn
+		// as an indent — and its width is what is left of the line from there at eight units a column,
+		// multiplied by the pin so that the length is the length *as read*. The two used to be one number
+		// from the margin, and the check that only measured width passed on a file whose bars claimed every
+		// line began at column zero; so it measures both, against the text the picture actually drew.
+		//
+		// **And it is the left edge that must not carry the pin.** That is the fault Graham found on
+		// 2026-10-11 — *"the offsets are too much"*, then *"the right end should never change... The left
+		// end should move with the starting position at all zoom levels"* — and it is exactly what the
+		// arithmetic here says: the width is pinned and the `x` is the line's own column, at the zoom the
+		// phase is showing. A pane that pinned its left edges too would pass the width test and fail the
+		// `x` one, which is the check earning its keep a second time.
+		const pin = withPicture[0][1].redactScale;
+		const bars = [...String(withPicture[0][1].redact || ``).matchAll(/M(\d+) (-?\d+)h(\d+)v18h-\d+z/g)]
+			.map(m => ({ x: Number(m[1]), top: Number(m[2]), w: Number(m[3]) }));
 		// **The row's text is the text a reader sees, not the document's transport encoding.** An SVG
 		// document cannot spell `&`, `<` or `>` for itself, so the picture writes `&amp;`, `&lt;` and
 		// `&gt;` — and the fixture deliberately carries a line with all three, which is how this was
 		// caught: the bar was measured against forty-one characters where thirty are drawn. `&amp;` goes
 		// last, because unescaping the other two first cannot invent one for it to eat.
 		const shown = text => text.replace(/&lt;/g, `<`).replace(/&gt;/g, `>`).replace(/&amp;/g, `&`);
+		// The indent as a count of leading spaces, which is the view's own rule (`VizLineIndent` trims the
+		// line until it no longer begins with a space, and a tab is not a space in either place).
+		const indentOf = text => text.length - text.replace(/^ +/, ``).length;
 		const drawnRows = rows.map((text, i) => ({ text: shown(text), y: rowYs[i] }))
-			.filter(r => r.text !== `` && r.y !== undefined);
+			.filter(r => r.text !== `` && r.y !== undefined)
+			.map(r => ({ ...r, indent: indentOf(r.text), body: r.text.replace(/^ +/, ``) }));
 		const wrong = drawnRows.filter(r => {
 			const bar = bars.find(b => b.top === r.y - 14);
-			return !bar || bar.w !== r.text.length * 8;
+			return !bar || bar.w !== Math.trunc(r.body.length * 8 * pin) || bar.x !== r.indent * 8;
 		});
 		console.log(bars.length === drawnRows.length && wrong.length === 0
-			? `  OK: every line's redaction is its own row exactly — ${bars.length} bar(s), each spanning the full `
-				+ `18-unit row and as wide as its text at 8 units a column`
+			? `  OK: every line's redaction is its own row exactly, starting on that line's first character — `
+				+ `${bars.length} bar(s), each spanning the full 18-unit row, indented to the line's own indent `
+				+ `and as wide as what follows it at 8 units a column, times the pin of ${pin}`
 			: `  FAIL: ${bars.length} bar(s) for ${drawnRows.length} drawn row(s), ${wrong.length} mismatched`
 				+ (wrong.length ? ` — first "${wrong[0].text}" on row y=${wrong[0].y}, bar ${JSON.stringify(bars.find(b => b.top === wrong[0].y - 14))}` : ``));
+		// **And the indents are really there to be checked.** The claim above is only worth making if the
+		// fixture has lines that start at different columns: a file of flush-left lines would pass it with
+		// every bar at the margin, which is exactly the build this change replaced. So the phase says how
+		// many distinct left edges it found.
+		const leftEdges = [...new Set(bars.map(b => b.x))].sort((a, b) => a - b);
+		console.log(leftEdges.length > 1
+			? `  OK: and the bars do not all begin at the same place — ${leftEdges.length} distinct left edge(s), `
+				+ `at ${leftEdges.join(`, `)} units`
+			: `  FAIL: every bar begins at ${leftEdges[0]} units, so the indent is not being drawn at all`);
+		// **And the em, which is what makes the *text*'s columns land on the bars'.** The bars are eight
+		// units a column because that is what the geometry says; the text is laid out by the browser at
+		// whatever advance the font it picks has, and measured 2026-10-11 that is 7.827 units at an em of
+		// 13 — 2.2% narrow, and the error grows with the indent. So the pane measures the advance on a
+		// hidden element and solves for the em whose advance *is* eight units: 8 x 13 x 144 / width.
+		//
+		// The fixture gives the ruler a real font's width, so this is a known-answer check of the
+		// arithmetic rather than a rendering test; and the second claim is the guard, which matters more
+		// than it looks — a pane with no layout answers with a box of its own, and solving an em from that
+		// would draw the picture at a nonsense size.
+		const ruler = program.getSymbolRecord(`VizRuler`).element[0];
+		entry(`VizMeasureEm`);
+		const emText = String(viewVar(`VizGlyphEmText`)), emWhole = Number(viewVar(`VizGlyphEm`));
+		console.log(emText === `13.28` && emWhole === 13
+			? `  OK: the em is solved from the measured font rather than assumed — 8 x 13 x 144 / 1127 is `
+				+ `${emText}, so a column of text is the eight units a column of geometry is`
+			: `  FAIL: the em came out as "${emText}" (whole ${emWhole}) where 8 x 13 x 144 / 1127 is 13.28`);
+		ruler.box = { left: 0, top: 0, width: 100, height: 700 };
+		entry(`VizMeasureEm`);
+		const keptText = String(viewVar(`VizGlyphEmText`));
+		ruler.box = { left: 0, top: 0, width: 1127, height: 700 };
+		entry(`VizMeasureEm`);
+		console.log(keptText === `13`
+			? `  OK: and a width that cannot be a font's leaves the em alone instead of solving it — asked `
+				+ `with 100 units of text it kept "${keptText}"`
+			: `  FAIL: a nonsense width produced an em of "${keptText}" instead of keeping 13`);
+		// The boundary: the picture the pane *drew* has to carry that em, not merely the variable. Read out
+		// of the document the image is made of, which is where the text's own layout happens.
+		const glyphs = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizGlyphs`));
+		const glyphDoc = (() => {
+			const href = String((glyphs && glyphs.attributes.href) || ``);
+			try { return decodeURIComponent(href.slice(href.indexOf(`,`) + 1)); } catch (err) { return ``; }
+		})();
+		console.log(new RegExp(`font-size="13\\.28"`).test(glyphDoc)
+			? `  OK: and the document was drawn at that em — the picture's own text carries `
+				+ `font-size="13.28"`
+			: `  FAIL: the picture's text carries ${JSON.stringify((/font-size="[^"]*"/.exec(glyphDoc) || [])[0])} `
+				+ `where the measured em is 13.28`);
 
 		// **The width is pinned and the height is not, which is the whole of the ask.** What a reader sees is
-		// two numbers multiplied: the `transform` that widens the bars inside the document, and the pane's
-		// `viewBox` that shrinks the document into the frame. Their product is the width on screen, and the
-		// claim is that it *does not move* while the zoom does — the same bar at the same width at every
-		// notch, so the file's shape reads the same however far in the reader is. The height is the other half
-		// of the claim: it follows the row, so it does move. A build that rebuilt the bars per zoom to keep
-		// their width would pass this too — and the check above, that the path is unchanged across the
-		// phases, is what tells the two apart.
+		// the bar's stored width through the pane's `viewBox`, which shrinks the document into the frame, and
+		// the claim is that the width *does not move* while the zoom does — the same bar at the same length
+		// at every notch, so the file's shape reads the same however far in the reader is. The height is the
+		// other half of the claim: it follows the row, so it does move. A build that pinned the bars' *left
+		// edges* as well — which is what the `transform` of 2026-10-08 to 2026-10-11 did — passes this and
+		// fails the indent check above, which is why that one measures the `x` as well as the width.
 		const pinnedAcross = withPicture
-			.filter(([, s]) => s.redactScale && /M0 /.test(String(s.redact)))
+			.filter(([, s]) => s.redactPin && /M\d+ /.test(String(s.redact)))
 			.map(([name, s]) => {
-				const bar = /M0 (-?\d+)h(\d+)v18h-\d+z/.exec(String(s.redact));
+				// **The widest bar, because it is the one identity the phases share.** A bar's place in the
+				// path and its `y` both follow the window, so neither can identify a line across a zoom; the
+				// longest line's bar can, and it is the bar whose width a reader would notice shrinking.
+				// The pattern also holds the rectangle's two `h` values together, so a bar that did not close
+				// on itself would not be measured at all.
+				const widths = [...String(s.redact).matchAll(/M\d+ -?\d+h(\d+)v18h-\1z/g)].map(m => Number(m[1]));
 				const shrink = 580 / s.box[3];          // the pane's viewBox height against the frame's
+				// **The pin is in the geometry now, not in a `transform`.** The bar's stored width is
+				// already the reading length, so what the frame shows is that width through the `viewBox`
+				// alone — one multiplication. While the pinning was a `transform` this had to multiply by
+				// the factor as well, and the two cancelled: the same constant, arrived at from two
+				// attributes. Now there is one place for it, and this is the check that it is applied
+				// there: the width must *not* move as the zoom does.
 				return {
 					name,
-					width: Number(bar[2]) * s.redactScale * shrink,
+					width: Math.max(...widths) * shrink,
 					height: 18 * shrink,
 					view: s.viewBox,
 				};
