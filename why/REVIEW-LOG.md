@@ -17,6 +17,7 @@ How to use it: when any of the features named in **Review triggers** changes, re
 | §1 | **Six claims in the pasted draft were corrected on 2026-10-04** — see Review 2. The one that matters: a Python or JavaScript debugger *can* answer the four questions, so the claim is not that AllSpeak can and others cannot | `coverage`, `viztracer`, DevTools | A reader who knows `viztracer` dismisses the piece — this is the row to re-read first |
 | §2 | The bars are the **code**; doc-block lines are blanked and get no bar, so the silhouette is of the code rather than the file | `asedit-graph.allspeak` `VizRedact`, the `!!` test | The blanking changes, or the bars start being drawn for prose |
 | §2 | Each bar runs **from its line's first character to its last** — the left edges are the block structure and the right edges are the lines' own ends, so the shape carries the nesting as well as the length | `asedit-graph.allspeak` `VizLineIndent`, and the `M<x> <y>h<w>` the pass writes | The indent stops being drawn, or the eight units a column changes — **this one was false in the code until 2026-10-08: see Review 3** |
+| §2 | A column of text is the same eight units as a column of geometry, because the pane **measures the font** and sets the em from it — so the text's own columns land on the bars' | `asedit-graph.allspeak` `VizMeasureEm` + the `VizRuler` element, and the `font-size` the `<text>` carries | The ruler stops measuring, the em stops being written, or the guard's bounds stop covering a real monospace — **measured 7.984 units a column against the pane's 8.000; it was 7.827 before, see Review 4** |
 | §2 | Dots mark four kinds of place — label, `while`, event handler, `return` — plus the two markers | `js/plugins/asviz.js` `kind=label\|loop\|event\|viz` | The anchor kinds change |
 | §2 | The three transfer colours are call/jump/return, keyed `gosub`/`go`/`return`; an arriving arrow does not imply a call | `asedit-graph.allspeak` `VizColourCall`/`Jump`/`Return` | A fourth transfer kind, or the colours move |
 | §2 | Values appear in the **existing** Docs tab's bar, chosen by `@show`, with no effect on the run | `asedit-side.allspeak`, `asviz.js` | A second tab is added, or the values move out of the bar |
@@ -126,6 +127,25 @@ Three smaller ones went with them: the dots mark **four** kinds of place (label,
 **And the check that would have caught it now exists.** `plotview-check`'s bar claim compares each bar's **left edge** as well as its width against the row the picture drew, and a second claim counts the distinct left edges so that a fixture of flush-left lines cannot pass an indent check by accident (the fixture gained a second and a third indentation level for it: **four distinct left edges, at 0, 32, 64 and 96 units**). Teeth demonstrated by reverting the pane's one line: `219 of 221 bars mismatched` and *"every bar begins at 0 units, so the indent is not being drawn at all"*.
 
 **The lesson, which is new here.** The article's claims are checked against the *code* in the rows above; this is the first time the code has been checked against a claim in the article and found wanting. **A design that is written down and prototyped in two places can still be absent from the product**, and the third place — the shipped one — is the only one nobody compared.
+
+## Review 4 — 2026-10-11, and the fault was in the *font* rather than in either prose
+
+**Graham used the picture again, and the indent was right but too far.** After Review 3 put the indent in, his next look was: *"the offsets are too much — see `various/redaction.png`. Can we determine the actual width of a space in the current font and indent by 4 of them?"* He was describing the same fault from the other side, and the answer was in the second half of his sentence.
+
+**What was wrong.** The geometry is in whole units — **a column is eight of them**, and the rules, the label names, the document's width and the bars are all built from that number — while the *text* is laid out by the browser at whatever advance the monospace font it picks actually has. Those two only agree by luck, and the luck does not hold: **measured in chromium on this machine, `monospace` at an em of 13 has an advance of 7.827 units.** So every column of text sat 2.2% left of the column the pane drew — and because the error is *per column*, it grows with the indent and with the length of the line, which is exactly what a deeply nested block shows and what "too much" means.
+
+**Measured, in the pane's own output.** The document the pane builds for `plotview-check`'s fixture — a 164-column row at an indent of 4, rendered and read pixel by pixel at 2×:
+
+| | ink starts | ink ends | advance a column |
+|---|---|---|---|
+| before | 32.00 | 1283.00 | **7.8187** |
+| after | 32.50 | 1310.00 | **7.9844** |
+
+The pane's claim is 8.0000. So the text ends **29 units** — three and a half characters — short of the bar at 164 columns before, and **2 units** (the glyph's own right bearing) after.
+
+**The fix keeps the geometry and moves the font**, which is the whole of the decision: eight units a column is the number the rules, the label names, the document's size and the bars are built from, and the prose says so in three files. Correcting it in the geometry would touch five sites and every one of those claims; correcting it in the font touches one attribute. So `VizMeasureEm` reads the advance off a hidden element (`VizRuler`), solves `em = 8 × 13 × count / width`, and the `<text>` is written at that em to two places — 13.28 here. **Two alternatives were tried and rejected on measurement**: `textLength` on a `<tspan>`, which would have forced the columns exactly and which **Blink ignores** (measured: 281.8 either way), and correcting the *column* rather than the font, for the reason above. A guard rejects a width that cannot be a font's — a pane with no layout answers with a box of its own, and solving an em from that would draw a puzzle — which is also what keeps the harness honest: its stub has no text layout, so the fixture gives the ruler a real font's width (1127) and the arithmetic is checked against a known input, with the fallback checked by asking the same routine for a nonsense one.
+
+**Where this leaves the lesson from Review 3, and it is the same lesson twice.** That one found the *prose and the prototype* agreeing while the product did not; this one found **the product naming a font whose metrics it had never asked about** — a constant assumed rather than measured, in a place where both the assumption and the thing assumed are invisible until somebody looks at the picture. Twice in four days the answer came from rendering the thing and reading it, and once from Graham's own eye.
 
 ## Review triggers for the next pass
 

@@ -642,8 +642,18 @@ VizRemember:
     variable VizGlyphWidth        ! the document's natural size, in the units the text is drawn at
     variable VizGlyphHeight
     variable VizGlyphEm           ! the em of the text, which is the gap a rule clears before it begins
+    variable VizGlyphEmText       ! ...and the same em as the `<text>` element spells it, to two places
     variable VizGlyphRows         ! a window may not go below this: past it the text is at its own size
     variable VizGlyphMax
+    ! The ruler's scratch: the hidden element that measures the font, the string it measures, how long
+    ! that string is, and the em it works out. The element is a page element rather than an svg one —
+    ! it is created in the host and never drawn.
+    div VizRuler
+    variable VizRulerText
+    variable VizRulerCount
+    variable VizRulerWidth
+    variable VizRulerEm
+    variable VizRulerFrac
     ! The redaction's own scratch: the path data for the bars, one line's text in document units, where
     ! that line's bar begins, and where its row begins. Built in the same pass as the text it covers, for
     ! the reason the text is built there at all.
@@ -1053,7 +1063,7 @@ Draw:
     ! correctly and then thrown away, so a narrowed picture scrolled as slowly as the whole one. Measured
     ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
     put VizKept into VizEvents
-!! @hash a3760a27
+!! @hash 3f16005c
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -1099,6 +1109,30 @@ Draw:
     set attribute `preserveAspectRatio` of VizCanvas to `xMidYMid meet`
     set attribute `font-size` of VizCanvas to 15
     set attribute `fill` of VizCanvas to `#8b93a1`
+
+    ! **The ruler: the pane's own way of asking the browser how wide a character is.** The picture's
+    ! geometry is in whole units — a column is eight of them, and the rules, the label names, the
+    ! document's width and the bars all multiply by that — while the *text* is laid out by the browser
+    ! at whatever advance the monospace font it picks actually has. Those two only agree by luck: the
+    ! font the pane names is `monospace`, and no font promises an advance of eight thirteenths of an em.
+    ! Measured 2026-10-11 in chromium on this machine: `monospace` at 13 has an advance of **7.827**
+    ! units, so every column of text sat 2.2% left of the column the pane drew — and the error
+    ! *accumulates with depth*, which is how it was found: Graham, looking at a deeply nested block,
+    ! *"the offsets are too much"*.
+    !
+    ! So the pane measures the advance and stretches the *font* to the geometry rather than the other way
+    ! round. **Why this way and not the alternatives**: the geometry's eight units a column is the
+    ! number the rules, the label widths, the document's size and the bars are all built from, and the
+    ! prose says so in three files. Moving the measurement into the geometry would touch five sites and
+    ! every one of those claims; moving it into the font touches one attribute, and the font is the
+    ! thing that was wrong. **And it cannot break when the measurement fails** — a page with no layout
+    ! gives a nonsense width, the guard below rejects it, and the em stays at thirteen, which is exactly
+    ! the picture this pane drew before.
+    !
+    ! `visibility:hidden` keeps it laid out; `left:-10000px` keeps it out of the host's own layout, which
+    ! a wide child would otherwise push a scrollbar into.
+    create VizRuler in VizHost
+    set the style of VizRuler to `position:absolute;left:-10000px;top:0;visibility:hidden;white-space:pre;font-family:monospace;font-size:13px`
 
     create VizFrame in VizCanvas
     set attribute `x` of VizFrame to 60
@@ -1550,7 +1584,7 @@ Draw:
     put 1 into VizReady
 
 VizBuilt:
-!! @hash bd8a1c95
+!! @hash f99c111e
 !! @verified 20bf4472
 !!!
 !! What a draw does, in order.
@@ -3095,6 +3129,7 @@ VizSourceMeasure:
     ! into the `<text>` element below as a number, because the rules' arithmetic is a second reader of
     ! it: two spellings of one measurement is how a gap drifts.
     put 13 into VizGlyphEm
+    gosub to VizMeasureEm
     ! **The picture is the whole file, and the recording is a window over it.** Drawing only the lines
     ! the run touched made the pane a picture of the run with no way to see it in context, and it left
     ! the window unable to travel past the last line that happened to execute — a scroll that stops
@@ -3129,7 +3164,7 @@ VizSourceMeasure:
     ! built; the drift is the number of empty rows above a line, which is why blanking the doc blocks
     ! made an invisible fault visible. `y="-4"` on the element keeps the first row's descenders off the
     ! document's edge for a reader of the source; the rows themselves name their own place.
-    put `<text x="0" y="-4" xml:space="preserve" font-family="monospace" font-size="` cat VizGlyphEm cat `" fill="#5b6472">` into VizGlyphBody
+    put `<text x="0" y="-4" xml:space="preserve" font-family="monospace" font-size="` cat VizGlyphEmText cat `" fill="#5b6472">` into VizGlyphBody
     ! **The redaction is built here, in the same pass, and that is not an economy — it is the design.**
     ! The bars are a function of the *source*, not of the window, so they belong with the picture that is
     ! built once per run rather than with the marks and rules that are rebuilt on every draw. A zoom or a
@@ -3235,7 +3270,7 @@ VizSourceMeasure:
     return
 
 VizLabelNames:
-!! @hash 779f1fae
+!! @hash e2abe80d
 !! @verified da070898
 !!!
 !! Every label is named at the right-hand edge, and the rules make room for it.
@@ -3344,6 +3379,53 @@ VizLabelShape:
     take 1 from VizLabelLen giving VizLabelLen
     return
 
+VizMeasureEm:
+    ! **A column of the picture is eight units, and this is what makes the text agree with them.** The
+    ! geometry's eight units a column is assumed by the rules, the label names, the document's width and
+    ! the bars; the text is laid out by the browser at whatever advance the font it picks actually has.
+    ! So read the advance off a hidden element and solve for the em whose advance *is* eight units:
+    !
+    !     advance = ratio x em,   ratio = width / (count x 13)     (measured at 13px)
+    !     em      = 8 x 13 x count / width
+    !
+    ! held in hundredths, because the language has no fractions and the value is wanted to two places —
+    ! 13.28 rather than 13 is the whole difference between a staircase and a fan.
+    !
+    ! **The string is doubled up from nine characters rather than typed out**, so the count is `the
+    ! length of` it rather than a number a reader would have to count in a run of spaces. A monospace
+    ! font's advance is the same for every character, which is why an `x` measures the column a space
+    ! occupies.
+    !
+    ! reads nothing; leaves `VizGlyphEm` (whole units, for the rules' gap) and `VizGlyphEmText` (the
+    ! two-place spelling the `<text>` element carries).
+    put `xxxxxxxxx` into VizRulerText
+    put VizRulerText cat VizRulerText into VizRulerText
+    put VizRulerText cat VizRulerText into VizRulerText
+    put VizRulerText cat VizRulerText into VizRulerText
+    put VizRulerText cat VizRulerText into VizRulerText
+    put the length of VizRulerText into VizRulerCount
+    set the content of VizRuler to VizRulerText
+    put the width of VizRuler into VizRulerWidth
+    ! **A width that is not a font's is not a measurement.** A pane with no layout — a hidden host, a stub
+    ! DOM under a harness — answers with a box of its own rather than with the text's width, and solving
+    ! the em from that gives a nonsense size. Outside these bounds the em stays as it is, and the picture
+    ! is the one this pane drew before the ruler existed: worse than a measured one, and far better than
+    ! a broken one.
+    if VizRulerWidth is less than 1 go to VizEmKeep
+    put 1497600 into VizRulerEm
+    divide VizRulerEm by VizRulerWidth
+    if VizRulerEm is less than 800 go to VizEmKeep
+    if VizRulerEm is greater than 3000 go to VizEmKeep
+    divide VizRulerEm by 100 giving VizGlyphEm
+    multiply VizGlyphEm by 100 giving VizRulerFrac
+    take VizRulerFrac from VizRulerEm giving VizRulerFrac
+    if VizRulerFrac is less than 10 put `0` cat VizRulerFrac into VizRulerFrac
+    put VizGlyphEm cat `.` cat VizRulerFrac into VizGlyphEmText
+    return
+VizEmKeep:
+    put VizGlyphEm into VizGlyphEmText
+    return
+
 VizLineIndent:
     ! **How far a line is indented, which is part of the shape the bars draw.** The redaction is the
     ! *code's* silhouette rather than the file's — the blanking says that already — and indentation is
@@ -3370,7 +3452,7 @@ VizLineIndent:
     return
 
 VizSourcePicture:
-!! @hash c3ecb99d
+!! @hash 3a26916f
 !! @verified 2d741f7c
 !!!
 !! The picture never changes; the window over it does.

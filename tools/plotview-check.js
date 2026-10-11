@@ -442,6 +442,21 @@ if (program) {
 		process.exit(1);
 	}
 	hostEl.box = PANEL;
+	// **And the ruler's box, which stands in for a laid-out font.** The pane asks the page how wide a
+	// run of characters is, and a stub DOM cannot lay text out — every element here answers with the
+	// same default box. `1127` is what the ruler measures for 144 characters at `font-size:13px
+	// monospace` in a real browser (chromium, 2026-10-11: an advance of 7.827 units a column), so the
+	// arithmetic below is checked against a *real font's* number rather than against a coincidence. The
+	// measurement itself is a browser matter and is checked there; what is checked here is what the pane
+	// *does* with a width.
+	const rulerRecord = program.getSymbolRecord(`VizRuler`);
+	const rulerEl = rulerRecord && rulerRecord.element && rulerRecord.element[0];
+	if (!rulerEl) {
+		process.stderr.write(`plotview-check: the view has no ruler element — the em measurement would `
+			+ `be skipped, so the column claims below would not mean what they say.\n`);
+		process.exit(1);
+	}
+	rulerEl.box = { left: 0, top: 0, width: 1127, height: 700 };
 }
 
 // Report once the drawing has stopped changing, not when `run` returns.
@@ -1614,6 +1629,44 @@ if (withPicture.length === 0) {
 			? `  OK: and the bars do not all begin at the same place — ${leftEdges.length} distinct left edge(s), `
 				+ `at ${leftEdges.join(`, `)} units`
 			: `  FAIL: every bar begins at ${leftEdges[0]} units, so the indent is not being drawn at all`);
+		// **And the em, which is what makes the *text*'s columns land on the bars'.** The bars are eight
+		// units a column because that is what the geometry says; the text is laid out by the browser at
+		// whatever advance the font it picks has, and measured 2026-10-11 that is 7.827 units at an em of
+		// 13 — 2.2% narrow, and the error grows with the indent. So the pane measures the advance on a
+		// hidden element and solves for the em whose advance *is* eight units: 8 x 13 x 144 / width.
+		//
+		// The fixture gives the ruler a real font's width, so this is a known-answer check of the
+		// arithmetic rather than a rendering test; and the second claim is the guard, which matters more
+		// than it looks — a pane with no layout answers with a box of its own, and solving an em from that
+		// would draw the picture at a nonsense size.
+		const ruler = program.getSymbolRecord(`VizRuler`).element[0];
+		entry(`VizMeasureEm`);
+		const emText = String(viewVar(`VizGlyphEmText`)), emWhole = Number(viewVar(`VizGlyphEm`));
+		console.log(emText === `13.28` && emWhole === 13
+			? `  OK: the em is solved from the measured font rather than assumed — 8 x 13 x 144 / 1127 is `
+				+ `${emText}, so a column of text is the eight units a column of geometry is`
+			: `  FAIL: the em came out as "${emText}" (whole ${emWhole}) where 8 x 13 x 144 / 1127 is 13.28`);
+		ruler.box = { left: 0, top: 0, width: 100, height: 700 };
+		entry(`VizMeasureEm`);
+		const keptText = String(viewVar(`VizGlyphEmText`));
+		ruler.box = { left: 0, top: 0, width: 1127, height: 700 };
+		entry(`VizMeasureEm`);
+		console.log(keptText === `13`
+			? `  OK: and a width that cannot be a font's leaves the em alone instead of solving it — asked `
+				+ `with 100 units of text it kept "${keptText}"`
+			: `  FAIL: a nonsense width produced an em of "${keptText}" instead of keeping 13`);
+		// The boundary: the picture the pane *drew* has to carry that em, not merely the variable. Read out
+		// of the document the image is made of, which is where the text's own layout happens.
+		const glyphs = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizGlyphs`));
+		const glyphDoc = (() => {
+			const href = String((glyphs && glyphs.attributes.href) || ``);
+			try { return decodeURIComponent(href.slice(href.indexOf(`,`) + 1)); } catch (err) { return ``; }
+		})();
+		console.log(new RegExp(`font-size="13\\.28"`).test(glyphDoc)
+			? `  OK: and the document was drawn at that em — the picture's own text carries `
+				+ `font-size="13.28"`
+			: `  FAIL: the picture's text carries ${JSON.stringify((/font-size="[^"]*"/.exec(glyphDoc) || [])[0])} `
+				+ `where the measured em is 13.28`);
 
 		// **The width is pinned and the height is not, which is the whole of the ask.** What a reader sees is
 		// two numbers multiplied: the `transform` that widens the bars inside the document, and the pane's
