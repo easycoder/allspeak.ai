@@ -4,7 +4,7 @@
 // where control flow is not simply the next line: labels, `while` tests, and the
 // points where an event handler is entered. It also derives just enough of the
 // control-flow graph to say whether each anchor can be reached at all. Nothing is
-// executed and nothing is drawn; the AllSpeak framework (viz.allspeak) presents it.
+// executed and nothing is drawn; the AllSpeak framework (vizframe.allspeak) presents it.
 //
 // Host contract (this is the seam that later becomes the dev server's /read):
 //
@@ -171,8 +171,8 @@ const AllSpeak_Viz = {
 	//
 	// The *name*: a compile registers the program under the name the script declares, and this runtime refuses
 	// a name a running program already holds — rightly, since two running copies of one script are
-	// indistinguishable. And the likeliest collision is the reviewed file's own: recording `asedit.allspeak`
-	// while `ASEditor` is the program doing the recording. So the declared name is stepped aside for the
+	// indistinguishable. And the likeliest collision is the reviewed file's own: recording `viz.allspeak`
+	// while `Viz` is the program doing the recording. So the declared name is stepped aside for the
 	// compile, the recording's program is re-keyed to a number of its own, and the name is handed back —
 	// exactly what `tools/asviz-run.js` does, and for the same reason.
 	//
@@ -560,7 +560,7 @@ const AllSpeak_Viz = {
 		//
 		// Measured 2026-10-05, through `tools/asviz-run.js`: the recording itself came back correct and in
 		// French, and then the host's framework compile failed with `I don't understand 'put'` at line 30 of
-		// `viz.allspeak`. Restored in a `finally`, so a refusal and a runtime error restore it too.
+		// `vizframe.allspeak`. Restored in a `finally`, so a refusal and a runtime error restore it too.
 		const savedPack = AllSpeak_Language.pack;
 		// **The flavour is asked before the compile, and it has to be.** A script written for the Python
 		// runtime is exactly the script that will not compile here, so a check on the compiled program could
@@ -681,8 +681,8 @@ const AllSpeak_Viz = {
 		// program per declared name and refuses a name it already has, because two running copies of one script
 		// would be indistinguishable — a sound rule, applied here to a compile that will never run. And the name
 		// it collides with is usually the reviewed file's own: Blocks mode models the *buffer*, so with
-		// `asedit.allspeak` open it compiles a second `ASEditor` while the first is running, the compile is
-		// refused, and the file is reported as broken on the status line — *"Script 'ASEditor' is already
+		// `viz.allspeak` open it compiles a second `Viz` while the first is running, the compile is
+		// refused, and the file is reported as broken on the status line — *"Script 'Viz' is already
 		// running."* — which is a fault it does not have. So the name is stepped aside for the pass and put back
 		// after it: the running program keeps it, and the pass leaves nothing behind (see the diff below).
 		const declared = AllSpeak_Viz.declaredScript(source.tokens);

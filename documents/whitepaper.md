@@ -177,7 +177,7 @@ Several minor internationalisation gaps have been identified and documented. Non
 
 - **Compiler diagnostic strings:** Some error messages bypass the language pack's diagnostics system and emit English text (`Compile error in '...'`, `Warnings:`, `Unrecognised syntax in '...'`). These are known and tracked for resolution.
 
-- **Starter-zip UI strings:** The per-language starter zips bundle three shared files (`server.allspeak`, `asedit.allspeak`, `asedit.json`) whose user-visible strings are currently English across all language packs. This is non-blocking because the agent-facing `AGENTS.md` guide—which is what instructs the AI coding assistant—is fully translated.
+- **Starter-zip UI strings:** The per-language starter zips bundle three shared files (`server.allspeak`, `viz.allspeak`, `viz.json`) whose user-visible strings are currently English across all language packs. This is non-blocking because the agent-facing `AGENTS.md` guide—which is what instructs the AI coding assistant—is fully translated.
 
 ---
 

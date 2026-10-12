@@ -66,17 +66,17 @@
 !!!
 
 !! UI bootstrap. The page provides a filename input, a Check button, and
-!! a <pre> for the report. We default to asedit.allspeak because that is the
+!! a <pre> for the report. We default to viz.allspeak because that is the
 !! file we're dogfooding the doc-block convention on.
 !!
     attach Body to body
     attach FilenameInput to `asdoc-filename`
     attach CheckBtn to `asdoc-check-btn`
     attach Output to `asdoc-output`
-    set the content of FilenameInput to `asedit.allspeak`
+    set the content of FilenameInput to `viz.allspeak`
     on click CheckBtn go to RunCheck
     stop
-!! @hash 262fb5cc
+!! @hash c8b4eada
 !!!
 
 !! Main entry point. A click flushes the previous run's state, fetches

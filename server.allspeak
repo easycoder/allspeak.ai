@@ -389,12 +389,12 @@
                 ! over the language and the dist base. A server-side fetch is not the browser's, so the
                 ! missing header does not matter here. Empty on failure, which leaves the editor's own
                 ! fallback to try and fail as it did before — no worse than not trying.
-                get GraphText from url DistBase cat `asedit-graph.allspeak`
+                get GraphText from url DistBase cat `viz-graph.allspeak`
                     on failure
                     begin
                         put empty into GraphText
                     end
-                get SideText from url DistBase cat `asedit-side.allspeak`
+                get SideText from url DistBase cat `viz-side.allspeak`
                     on failure
                     begin
                         put empty into SideText

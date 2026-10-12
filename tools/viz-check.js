@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 //
-// Compile asedit.allspeak the way the editor page does, and report what came out.
+// Compile viz.allspeak the way the editor page does, and report what came out.
 //
 // Two things this exists for.
 //
@@ -12,22 +12,22 @@
 //
 // **A non-zero command count, not just the analyser's clean bill.** `asdoc-check.py` reports doc
 // blocks, not compilability, and a broken editor still analyses clean. Compiling is the check the
-// repo's own notes assume somebody runs after editing asedit.
+// repo's own notes assume somebody runs after editing viz.
 //
-// Usage:  node tools/asedit-check.js [script.allspeak]     (default asedit.allspeak)
+// Usage:  node tools/viz-check.js [script.allspeak]     (default viz.allspeak)
 //
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const root = path.resolve(__dirname, `..`);
 
-const target = process.argv[2] || `asedit.allspeak`;
+const target = process.argv[2] || `viz.allspeak`;
 
 // The truth about what the editor loads: its own page.
 const page = fs.readFileSync(path.join(root, `edit.html`), `utf8`);
 const listed = page.match(/const bundles = \[([\s\S]*?)\]/);
 if (!listed) {
-	process.stderr.write(`asedit-check: no 'bundles' list in edit.html — has the page changed shape?\n`);
+	process.stderr.write(`viz-check: no 'bundles' list in edit.html — has the page changed shape?\n`);
 	process.exit(1);
 }
 const bundles = [...listed[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
@@ -74,8 +74,8 @@ for (const f of plugins) {
 	}
 }
 
-console.log(`asedit-check: runtime ${runtime.join(`, `)}`);
-console.log(`asedit-check: plugins ${plugins.join(`, `)}`);
+console.log(`viz-check: runtime ${runtime.join(`, `)}`);
+console.log(`viz-check: plugins ${plugins.join(`, `)}`);
 for (const note of skipped) console.log(`  not loaded headlessly: ${note}`);
 
 const text = fs.readFileSync(path.join(root, target), `utf8`);
@@ -85,12 +85,12 @@ try {
 	const symbols = Object.keys(program.symbols || {}).length;
 	console.log(`  ${target}: commands=${commands} symbols=${symbols}`);
 	if (commands === 0) {
-		process.stderr.write(`ASEDITCHECK-FAIL: compiled to nothing — the editor is broken\n`);
+		process.stderr.write(`VIZCHECK-FAIL: compiled to nothing — the editor is broken\n`);
 		process.exitCode = 1;
 	} else {
 		console.log(`  OK`);
 	}
 } catch (err) {
-	process.stderr.write(`ASEDITCHECK-FAIL: ${String(err.message || err).split(`\n`)[0]}\n`);
+	process.stderr.write(`VIZCHECK-FAIL: ${String(err.message || err).split(`\n`)[0]}\n`);
 	process.exitCode = 1;
 }

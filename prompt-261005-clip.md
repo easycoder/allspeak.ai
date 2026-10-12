@@ -46,7 +46,7 @@ pane already reads `.traceEvents`.
 
 ## The check, and how NOT to pose it — this is what cost the evening
 
-The reverted attempt passed `asedit-check` (1368 commands, 284 symbols) and then failed its check with:
+The reverted attempt passed `viz-check` (1368 commands, 284 symbols) and then failed its check with:
 
     FAIL: a clip drew as many marks as the whole recording (242 then 242)
 
@@ -90,12 +90,12 @@ editor's buttons work because they are `div`/`button`. Two ways out, and the sec
 1. **The entries, by name**, in the harness: clip to a *narrow* window, assert fewer marks and the notice on the
    status line; unclip, assert the marks come back.
 2. **The unclipped picture unchanged**, by the `PLOTVIEW=` diff — a clip that is off must alter nothing.
-3. **`asedit-check` and `asdoc-check`**, and the harness green on `tools/trace-run.allspeak`'s trace with only
+3. **`viz-check` and `asdoc-check`**, and the harness green on `tools/trace-run.allspeak`'s trace with only
    the two known window expectations failing.
 4. **Then the controls**, as a separate slice, with the entries already proved.
 
 ## Deploy, no release
 
 The pane is payload, and the `json` commands it needs already ship. `./build-allspeak` rebuilds
-`deploy/dist/asedit.js` and the pane's own copy; the four `deploy/dist/asedit.*` files are restored afterwards
+`deploy/dist/viz.js` and the pane's own copy; the four `deploy/dist/viz.*` files are restored afterwards
 if the build overwrites them. Nothing in the runtimes changes for the clip.

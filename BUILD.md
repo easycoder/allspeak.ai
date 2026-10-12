@@ -16,9 +16,9 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 | `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
 | Any of the above, shipping to allspeak.ai | `./deploy-allspeak` (local) **or** trigger the GitHub `Deploy to allspeak.ai` workflow |
 
-Editing either of the two `asedit` files needs no build — what it needs is a check:
-`node tools/asedit-check.js asedit.allspeak`, `node tools/asedit-check.js asedit-graph.allspeak`,
-`node tools/asedit-check.js asedit-side.allspeak`, `node tools/asedit-modes-check.js` (which runs the editor,
+Editing the editor's three files needs no build — what it needs is a check:
+`node tools/viz-check.js viz.allspeak`, `node tools/viz-check.js viz-graph.allspeak`,
+`node tools/viz-check.js viz-side.allspeak`, `node tools/viz-modes-check.js` (which runs the editor,
 drives both modules' load and the pane's report to the sidebar), `node tools/plotview-check.js <trace>`
 (which drives the drawing, cutting the view out of the module) and `node tools/guard-check.js` (which drives
 both run hosts on two deliberately bad scripts, to prove the recorder's guard still guards) and
@@ -48,7 +48,7 @@ Bundles the per-language starter zip `deploy/allspeak-<lang>.zip`, auto-discover
 - This is why `.code-version` is gone. It existed to keep *a project's copy* of this script current, and the number was a number nobody remembered to bump — and any difference fetched, so a copy ahead of the publish was dragged backwards. There is nothing left to keep current: the CLI asks for the published script every start.
 - `/version` compares **content** rather than a number: is the published script the one this process is running? It answers `OK` or `updated`, which is what the editor's restart offer needs. `/restart` re-execs `allspeak server <port>`.
 
-The editor, its two modules and `asedit.json` are still not in a project: they arrive as `dist/asedit.js` in the page.
+The editor, its two modules and `viz.json` are still not in a project: they arrive as `dist/viz.js` in the page.
 
 ### What a project holds, and where everything else comes from
 A project made from a pack carries its own code, `AGENTS.md`, `CLAUDE.md` and `.allspeak-init` — and **no tooling at all**:
@@ -57,7 +57,7 @@ A project made from a pack carries its own code, `AGENTS.md`, `CLAUDE.md` and `.
 |---|---|
 | `server.allspeak` | fetched by the CLI at every `allspeak server` start, cached in `~/.cache/allspeak/` |
 | `edit.html` | fetched by that server from `/code/`, with the project's language filled in from its `.allspeak-init` |
-| the editor, its two modules, `asedit.json` | the page's payload, `dist/asedit.js`, written by `./build-allspeak` |
+| the editor, its two modules, `viz.json` | the page's payload, `dist/viz.js`, written by `./build-allspeak` |
 | the checks (`asdoc-check.py`, `plotview-check.js`, `viz-align-measure.py`, `guard-check.js`, `capture-check.js`, `encoding-check.js`, `flush-check.js`) | fetched from `/code/tools/` by whoever wants one, into scratch space rather than the project |
 
 The point is that none of it can be stale without that being obvious: there is no copy to notice. A project that *wants* to pin one of them keeps a file of that name and it is used in preference — which is also how this repository runs its own server and its own page.

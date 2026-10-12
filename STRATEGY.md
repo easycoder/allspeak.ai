@@ -54,28 +54,17 @@ Three mechanisms carry it, and each is already in the tree rather than planned:
 
 ## The plan, in the order it has to happen
 
-### 1. The name: `asedit` becomes `viz` — decided 2026-10-07
+### 1. The name: `asedit` becomes `viz` — **done 2026-10-12**
 
-**Why now, and why first.** The tool is no longer an editor, and a name that says "editor" sets the wrong expectation before anybody opens it. It is first because the name is *in the artefact names*, and doing it later means doing everything else twice.
+**Why it was first.** The tool is no longer an editor, and a name that says "editor" sets the wrong expectation before anybody opens it. It went first because the name is *in the artefact names*, and doing it later meant doing everything else twice.
 
-**The collision that decides the shape.** `viz.allspeak` is **already taken** — it is the *visualiser framework*: the AllSpeak half of the recorder contract, which a plugin's records arrive in and which turns them into a narrative. It runs under both runtimes and it is loaded by `tools/asviz-run.js` and `tools/asviz-run.py`. Graham's call: **the framework is renamed so the editor can have the name.**
+**The collision, and how it was resolved.** `viz.allspeak` was **already taken** — it is the *visualiser framework*: the AllSpeak half of the recorder contract, which a plugin's records arrive in and which turns them into a narrative, loaded by `tools/asviz-run.js` and `tools/asviz-run.py`. Graham's call: the framework moves so the tool can have the name, and it is **`vizframe.allspeak`**. Everything else followed the plan: the tool's four files, the payload (`dist/viz.js`), the DOM id (`viz-ui`), the two harnesses (`tools/viz-check.js`, `tools/viz-modes-check.js`), and — Graham's later call — the editor's own three program names (`script Viz`, `script VizGraph`, `script VizSide`). Graham's rule was *rename it "everywhere it appears"*, and that reached the dated records too (the whitepaper, the `prompt-*.md` briefs, `why/REVIEW-LOG.md`), which the first plan had expected to leave alone. Two things were deliberately not touched, and neither is code: `various/backup-261001/` (a backup of an older tree — renaming it would stop it being one) and `conversation/` (the session log).
 
-| now | becomes |
-|---|---|
-| `asedit.allspeak` / `asedit-graph.allspeak` / `asedit-side.allspeak` / `asedit.json` | `viz.allspeak` / `viz-graph.allspeak` / `viz-side.allspeak` / `viz.json` |
-| `viz.allspeak` — the framework | **`vizframe.allspeak`** (proposed; `vizreport.allspeak` is the alternative, and it is Graham's to change) |
-| `dist/asedit.js` — the page payload | `dist/viz.js` |
-| the DOM id `asedit-ui` | `viz-ui` |
-| `tools/asedit-check.js`, `tools/asedit-modes-check.js` | `tools/viz-check.js`, `tools/viz-modes-check.js` |
+**The one rule that shaped the change, and it is an invariant below.** The payload name is a *published* contract — a page asks for `dist/asedit.js` and the site serves it by rsync — so the rename was **additive first**: the new name and the old one are both served, the payload still answers to the old part names, and `edit.html` and the payload land together. The *other* half of that window — dropping the old names — is open work in `TODO-viz.md`; it is safe once no browser cache holds a pre-rename page and no `~/.cache/allspeak/server.allspeak` asks for the old module names.
 
-**Two things this rename must not do.**
+**The consequence that was stated rather than discovered, and it still stands:** the *language* keeps `viz start` / `viz stop` and the `@viz` attribute. One word now names both the tool and the marker written inside it. That is defensible — the tool is where you see what your markers recorded — but it is a choice, not an accident, and a reader's first confusion will be exactly here.
 
-- **It must not break a project that did not change.** The payload name is a *published* contract: a page — the pack's, or a project's own copy — asks for `dist/asedit.js`, and the site serves it by rsync. So the rename is **additive first**: publish the new name, keep serving the old one for a window, and only then drop it. `edit.html` is fetched by the dev server from `/code/` at every start, so the page and the payload have to land **together** — a page naming a payload that is not there is a blank editor, which is a fault this project has already had once.
-- **It must not rename a record.** `various/backup-261001/` is a backup of an older tree and `conversation/` is the session log; both contain the old word and neither is code. A blind replace would edit history. (This is also why the sweep is *by file list*, not by grep-and-replace.)
-
-**One consequence to state deliberately rather than discover:** the *language* keeps `viz start` / `viz stop` and the `@viz` attribute. After this rename one word names both the tool and the marker written inside it. That is defensible — the tool is where you see what your markers recorded — but it is a choice, not an accident, and a reader's first confusion will be exactly here.
-
-**The framework's rename is small and measured:** `tools/asviz-run.js` (one `readFileSync` and two comments), `tools/asviz-run.py` (one path constant and three comments), `js/plugins/asviz.js` (two comments), `allspeak-py/allspeak/plugins/as_viz.py` (one docstring), and four `TODO*.md`/`language-pack-issues.md` mentions. It is not published and no CLI command names it.
+**What is left of this step is not this step.** The decisions are made and carried out; the detail lives in `TODO-viz.md`, and the reasoning that produced them is in the dated entries at the foot of this file. A step that is finished leaves this one — but §1 keeps its place and this paragraph, because the question "why is the tool called `viz` when the language says `viz start`" is one every new session asks.
 
 ### 2. The toolchain, and no new concepts to use it
 
@@ -123,7 +112,7 @@ Every step in the plan is justified by how much of that sentence it makes true.
 
 ## Risks, named
 
-- **The rename's blast radius.** The payload name is published. Mitigation is in step 1: additive first, and the page and the payload land together.
+- **The rename's blast radius — closed 2026-10-12, and the rule outlives it.** The payload name was published, so the rename went **additive first**, with the old name still served and the page and payload landing together. The rule it tested is invariant 3, and the *other* half of the window — dropping the old names — is open work in `TODO-viz.md`.
 - **"Code without coding" over-promising.** The phrase is Graham's and it is a good door; the honest bound is in "What is actually being sold", and it has to survive into the user-facing piece or the first disagreement between prose and code becomes the story.
 - **The two documents drifting.** The umbrella makes claims; the strategy sequences them; `why/REVIEW-LOG.md` checks them. Three files, one subject — the mitigation is that each has a stated job and none repeats another's.
 - **The learning curve.** Every addition to the tool is a step for somebody. The counterweight is the invariants above, and it needs a person to enforce it — ideally the same person who notices they have stopped using the flat editor.
@@ -141,5 +130,7 @@ Every step in the plan is justified by how much of that sentence it makes true.
 ---
 
 ## Revisions
+
+**2026-10-12 — step 1 is done, and it is the only step that leaves a residue.** Graham took two calls the plan had left open and one it had not. The framework is **`vizframe.allspeak`** (the proposal, not `vizreport.allspeak`); the editor's three program names moved with the tool — `script Viz`, `script VizGraph`, `script VizSide`, **`Viz`** chosen over `VizEditor` and over leaving `ASEditor` alone; and the sweep Graham's rule demanded (*rename it "everywhere it appears"*) reached the **dated records** — `documents/whitepaper.*`, the `prompt-*.md` briefs, `prompts/prompt-260509.md`, `why/REVIEW-LOG.md` and the dated entry in `language-pack-issues.md` — which the original section had expected to leave alone. `various/backup-261001/` and `conversation/` were still left untouched: neither is code, and renaming the first would stop it being a backup. **The section above is rewritten rather than removed**, against the file's own rule that a finished step leaves, because it is the one step whose *result* is a word every reader of the tool will wonder about — "why `viz` when the language says `viz start`" — and the answer belongs where the plan is. What leaves is the decision list: the classes, the table and the "two things it must not do" are now description of a shipped state. **Invariant 3 was the load-bearing one and it held**: the rename is additive — `dist/asedit.js`, the four `asedit.*` copies at `/dist/`, the four part-name aliases and a second payload global all still answer — so a cached page and a cached `server.allspeak` both keep working. Dropping that window is open work in `TODO-viz.md`, not a loose end here. Measured, in `TODO-viz.md`: three files compile (1704 / 2179 / 152 commands), `viz-modes-check` reports the same 56 of its 74 checks with the same two long-standing failures, `plotview-check` 79 OK / 6 FAIL — byte-for-byte the same six as before the rename — and `guard-check` and `capture-check` green.
 
 **2026-10-07 — the file is started.** Written from Graham's two messages of that evening, which asked for an internal strategy and a user-facing piece, and which fixed two things by his decision: the tool is renamed **`viz`**, with the *framework* renamed so the name is free, and the user-facing half is a **new umbrella piece** with `why/article.md` left as the deep dive. The rename's collision, its published-payload problem and the framework's reference list are measured above rather than assumed; no rename has been performed yet.

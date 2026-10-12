@@ -315,9 +315,9 @@ Ask your agent to add filtering, CSV parsing, summary statistics, or output to a
 
 ## The AllSpeak Editor
 
-For writing and editing AllSpeak scripts there is a dedicated web-based editor — **asedit** — included in the starter pack. It provides syntax highlighting, a file browser with directory navigation, multiple tabs, and auto-save — all running in your browser against a local file server.
+For writing and editing AllSpeak scripts there is a dedicated web-based editor — **viz** — included in the starter pack. It provides syntax highlighting, a file browser with directory navigation, multiple tabs, and auto-save — all running in your browser against a local file server.
 
-![asedit editor with a file open and the file browser popup displayed](/ai-article/3%20scripted.png)
+![viz editor with a file open and the file browser popup displayed](/ai-article/3%20scripted.png)
 
 The screenshot above shows a script open in the editor — note the syntax highlighting — with the file browser popup in front, listing the available files in the project.
 
@@ -406,13 +406,13 @@ The `or` clause runs if the request fails — for any reason. No try/catch, no p
 
 ---
 
-## Inside asedit: an editor built for review
+## Inside viz: an editor built for review
 
-asedit is worth understanding how it is built, because nearly every decision in it follows from a single purpose — **reviewing code written by an AI, as much as writing it**. That purpose explains what the editor does, and, more tellingly, what it refuses to do.
+viz is worth understanding how it is built, because nearly every decision in it follows from a single purpose — **reviewing code written by an AI, as much as writing it**. That purpose explains what the editor does, and, more tellingly, what it refuses to do.
 
 ### Purpose: review first
 
-asedit has tabs, a file browser with directory navigation, find, syntax colouring, auto-save, and Blocks mode. That is the whole feature list. There is no git integration, no debugger, no test runner, no package manager, no autocomplete, no build step, and no settings file.
+viz has tabs, a file browser with directory navigation, find, syntax colouring, auto-save, and Blocks mode. That is the whole feature list. There is no git integration, no debugger, no test runner, no package manager, no autocomplete, no build step, and no settings file.
 
 The absences are the design. Each of those is something that would have to be learned, and the person this editor is for has just asked an agent to write them a program and now wants to know whether the program is right. In that moment an extra panel is not a convenience; it is one more thing standing between the reader and the code. The tool that gets used is the one whose learning curve ends at "click Open, click Blocks".
 
@@ -425,8 +425,8 @@ The editor is itself an AllSpeak application, split the way any AllSpeak applica
 | Piece | Runtime | Role |
 |---|---|---|
 | `edit.html` | — | About fifty lines of bootstrap: fetch the UI and the script as text, load the runtime and plugins, call `AllSpeak_Startup()` |
-| `asedit.json` | — | The Webson layout — the fixed shape of the page |
-| `asedit.allspeak` | JS, in the browser | ~1500 lines: the editor's entire behaviour |
+| `viz.json` | — | The Webson layout — the fixed shape of the page |
+| `viz.allspeak` | JS, in the browser | ~1500 lines: the editor's entire behaviour |
 | `server.allspeak` | Python, on your machine | ~200 lines: serves the project files and the editor |
 
 One language, two runtimes, two processes. The browser half runs on the same JavaScript runtime as the applications this editor is used to write; the server half is an ordinary AllSpeak script using the `server` plugin.
@@ -435,9 +435,9 @@ One language, two runtimes, two processes. The browser half runs on the same Jav
 
 Two properties follow from "the editor is an AllSpeak script".
 
-**The editor is its own worked example.** `asedit.allspeak` is written under the documentation convention from end to end — 22 doc blocks across 1500 lines — and it is reviewed in the Blocks mode it implements, which also makes it the largest script in the project that follows the convention. If you want to show an agent what the convention looks like at scale, that file is the reference. (`server.allspeak`, by contrast, has no doc blocks at all: the convention is adopted file by file, and that file hasn't been.)
+**The editor is its own worked example.** `viz.allspeak` is written under the documentation convention from end to end — 22 doc blocks across 1500 lines — and it is reviewed in the Blocks mode it implements, which also makes it the largest script in the project that follows the convention. If you want to show an agent what the convention looks like at scale, that file is the reference. (`server.allspeak`, by contrast, has no doc blocks at all: the convention is adopted file by file, and that file hasn't been.)
 
-**There is no build step.** `edit.html` fetches `asedit.json` and `asedit.allspeak` as text, hands the markup to the Webson renderer and the script to the runtime, and that is the whole apparatus. Compilation takes tens of milliseconds in the browser. Changing the editor is editing a text file and reloading the page — and, as described below, the editor will even pick up its own updates without you doing that.
+**There is no build step.** `edit.html` fetches `viz.json` and `viz.allspeak` as text, hands the markup to the Webson renderer and the script to the runtime, and that is the whole apparatus. Compilation takes tens of milliseconds in the browser. Changing the editor is editing a text file and reloading the page — and, as described below, the editor will even pick up its own updates without you doing that.
 
 ### CodeMirror does the text, AllSpeak does the behaviour
 
@@ -484,7 +484,7 @@ What lets the editor sit alongside an agent is that it treats the file on disk a
 - **Disk changed, editor dirty** — the editor *does not* clobber the buffer. It reports "External change detected" and leaves the resolution to the human, who can copy out what they need and reload. Silent last-writer-wins would destroy work; the editor declines to guess.
 - **Nothing changed** — nothing happens.
 
-**Itself, at startup.** The editor asks `/version`; if a newer `asedit.allspeak` has been published since the copy on disk, it offers to restart, and `/restart` re-execs the server so the next page load fetches the new code. The server makes the same check for its own files when it starts, comparing a `.code-version` stamp against the published one. This is a development tool that is being changed while people are using it, so the update path is part of the tool rather than an instruction in a README.
+**Itself, at startup.** The editor asks `/version`; if a newer `viz.allspeak` has been published since the copy on disk, it offers to restart, and `/restart` re-execs the server so the next page load fetches the new code. The server makes the same check for its own files when it starts, comparing a `.code-version` stamp against the published one. This is a development tool that is being changed while people are using it, so the update path is part of the tool rather than an instruction in a README.
 
 There is one exception. **Blocks mode suspends the inward poll**, because inside Blocks mode the parsed section array is the source of truth and the CodeMirror buffer is being rebuilt from it; a silent reload part-way through would clobber the pane edits. The editor waits until you leave Blocks mode. This is the kind of thing that is invisible until it eats half an hour of somebody's work.
 
@@ -538,7 +538,7 @@ Two values rather than one, because they answer different questions:
 
 Neither prevents an edit. What they prevent is *forgetting* — the specific failure of AI-assisted development where the code is regenerated, the prose quietly goes on describing the previous version, and the documentation becomes worse than useless because it is confidently wrong. A stale hash is a small, local question — does this paragraph still describe this block? — and it is a question a non-programmer can answer, which is the whole point.
 
-The convention is validated in three places: `tools/asdoc-check.py` (a Python CLI, recursive over a directory, with `--write` to refresh hashes and never touching `@verified`), `tools/asdoc-check-cli.allspeak` (the same logic running under the Python runtime), and asedit itself, in the editor, as you type.
+The convention is validated in three places: `tools/asdoc-check.py` (a Python CLI, recursive over a directory, with `--write` to refresh hashes and never touching `@verified`), `tools/asdoc-check-cli.allspeak` (the same logic running under the Python runtime), and viz itself, in the editor, as you type.
 
 #### Prose that describes the code, rather than restating it
 
@@ -580,7 +580,7 @@ So the convention lives or dies on the reviewer insisting: that the agent writes
 ### Other things worth knowing
 
 - **No build, and nothing to install beyond the runtime.** The runtime, the plugins and CodeMirror come from a CDN; the editor's own files are fetched as text. Nothing is compiled ahead of time, and nothing needs updating by hand.
-- **The layout is declarative, the data is scripted.** `asedit.json` holds the fixed shape of the page — chrome, panes, buttons, divider — and the script creates the rows that come from data: the file list, the tabs, the block sidebar. The layout knows nothing about how many files there are. This split is worth copying for any AllSpeak screen with a list in it.
+- **The layout is declarative, the data is scripted.** `viz.json` holds the fixed shape of the page — chrome, panes, buttons, divider — and the script creates the rows that come from data: the file list, the tabs, the block sidebar. The layout knows nothing about how many files there are. This split is worth copying for any AllSpeak screen with a list in it.
 - **Find works in both modes, and searches the prose too.** In flat mode it is CodeMirror's dialog. In Blocks mode you select a term in either pane, press Find, and the editor walks forward through the blocks, wrapping at the end, to the first block whose *code or prose* contains it — so the documentation can be searched as a document.
 - **The toolbar counts blocks** — "Block 7 of 23" — which is how a reviewer keeps track of how much of a file they have actually read.
 - **The divider position is remembered** in browser storage, so a working layout survives a reload.

@@ -76,7 +76,7 @@ Un hash obsoleto significa che il codice è cambiato senza che la prosa sia stat
 
 `@verified` è un'affermazione più forte del solo `@hash`: un segnale deliberato che un umano ha letto il codice e la prosa insieme e ha approvato l'abbinamento. L'hash verificato viene poi bloccato. Le modifiche successive al codice rompono la verifica (`verified-stale`), richiedendo un nuovo passaggio umano.
 
-Il modo Blocchi di Asedit fornisce un pulsante «Segna verificato» in un clic per questo.
+Il modo Blocchi di Viz fornisce un pulsante «Segna verificato» in un clic per questo.
 
 ## Fuori dalla convenzione: file senza blocchi
 
@@ -91,7 +91,7 @@ Due strumenti validano la stessa convenzione:
 - `tools/asdoc-check.py` — CLI Python; ricorsiva su una directory. Esegui con `--write` per aggiornare gli hash.
 - `tools/asdoc-check-cli.allspeak` — gira sotto il runtime Python di AllSpeak, esercitando la stessa logica dall'interno di AllSpeak stesso.
 
-Anche il modo Blocchi di Asedit esegue la validazione nell'editor mentre scrivi.
+Anche il modo Blocchi di Viz esegue la validazione nell'editor mentre scrivi.
 
 ## Revisione mentre documenti
 

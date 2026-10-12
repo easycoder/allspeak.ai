@@ -27,7 +27,12 @@ jobs:
           cp server.allspeak edit.html deploy/code/
           # The tools an agent uses are published, not shipped in a pack: a project fetches the one it
           # needs from https://allspeak.ai/code/tools/. Kept in step with ./deploy-allspeak.
-          cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json deploy/dist/
+          cp viz.allspeak viz-graph.allspeak viz-side.allspeak viz.json deploy/dist/
+          # The old names, served beside the new ones for a window — see ./deploy-allspeak for why.
+          cp viz.allspeak deploy/dist/asedit.allspeak
+          cp viz-graph.allspeak deploy/dist/asedit-graph.allspeak
+          cp viz-side.allspeak deploy/dist/asedit-side.allspeak
+          cp viz.json deploy/dist/asedit.json
           mkdir -p deploy/code/tools
           cp -p tools/plotview-check.js tools/guard-check.js tools/capture-check.js tools/encoding-check.js tools/flush-check.js deploy/code/tools/
 # **The Python tools are published with no `py` in the name at all, because the site *executes* one.**

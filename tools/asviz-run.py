@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Node-host counterpart for the Python runtime: run viz.allspeak against a script.
+"""Node-host counterpart for the Python runtime: run vizframe.allspeak against a script.
 
-The framework (viz.allspeak) is the same file the JS side uses. What differs is the
+The framework (vizframe.allspeak) is the same file the JS side uses. What differs is the
 host: this one registers the plugin domain and points it at a target, exactly as
 a browser page would load the plugin and hand it the editor buffer.
 
@@ -48,7 +48,7 @@ from allspeak import Program          # noqa: E402
 import as_viz                         # noqa: E402
 from as_viz import Viz, VizState, Recorder      # noqa: E402
 
-FRAMEWORK = os.path.join(ROOT, 'viz.allspeak')
+FRAMEWORK = os.path.join(ROOT, 'vizframe.allspeak')
 ANALYSER = os.path.join(ROOT, 'tools', 'asdoc-check.py')
 
 
@@ -93,7 +93,7 @@ def runTarget(target, budget=None, ceiling=None):
     VizState.trace[program.scriptName] = program.recorder
     # **A target that declares its own language must not take the host with it.** `language français` at the top
     # of a script is the ordinary case for a project that is not English, and the pack is global state — so
-    # without this the *framework* is compiled in French afterwards, and `viz.allspeak` is English.
+    # without this the *framework* is compiled in French afterwards, and `vizframe.allspeak` is English.
     try:
         program.start()
     finally:
@@ -210,7 +210,7 @@ def main(argv):
                     f'{len(windows)} window(s))\n')
 
         program = Program(FRAMEWORK, testMode=True)
-        program.useClass(Viz)          # the domain must exist before viz.allspeak compiles
+        program.useClass(Viz)          # the domain must exist before vizframe.allspeak compiles
         # testMode keeps the compile quiet; this keeps its end-of-run test summary
         # quiet too, so the only thing on stdout is the model.
         program.summaryPrinted = True

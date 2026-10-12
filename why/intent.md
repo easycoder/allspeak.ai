@@ -6,7 +6,7 @@
 > 2. **One worked story, and it has to be real.** §3 is written as a short narrative on purpose. It should be replaced by something that actually happened, with a figure, once the debugger exists. A story the tooling cannot demonstrate is the first thing a sceptic will pull on.
 > 3. **The title.** *Code without coding* is Graham's phrase and it is the door. Alternatives that carry the same argument without the slogan: *Intent, with the code beside it*, *Reading intent without reading code*. Test whichever goes on the page against §4, because the slogan and the honesty have to survive each other.
 > 4. **The honest half is not optional.** §4 and §5 are the load-bearing sections. If the piece ever gets trimmed for the site, trim §6, not those.
-> 5. **The tool's name.** It is being renamed to **Viz** (decided 2026-10-07; the plan and the compatibility problem are in `STRATEGY.md`, step 1). Once the rename has shipped, this piece should *use* the name — a product nobody has named reads as a prototype — and until then it deliberately says "the tool", because a published page naming something that does not exist yet is worse than a page that is plain.
+> 5. **The tool's name.** It is renamed to **Viz** — the change is in the repository as of 2026-10-12 (`STRATEGY.md` §1; the detail and the open window are in `TODO-viz.md`) and it is **not yet published**: the publish is `./deploy-allspeak`. Once it is live this piece should *use* the name — a product nobody has named reads as a prototype — and until then it deliberately says "the tool", because a published page naming something that does not exist yet is worse than a page that is plain.
 
 ---
 

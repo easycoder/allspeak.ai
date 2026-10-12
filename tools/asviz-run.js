@@ -4,7 +4,7 @@
 //
 // It loads the JS runtime in the bundle order documented in build-allspeak,
 // loads the viz plugin, registers the requested source files as the host side of
-// the plugin contract, and then runs viz.allspeak exactly as a browser page would.
+// the plugin contract, and then runs vizframe.allspeak exactly as a browser page would.
 // Nothing here draws: it is the same "text first" increment, just with a
 // command line instead of a page.
 //
@@ -184,7 +184,7 @@ const runTarget = function (target) {
 	// of a target switches the pack *while compiling*, so a save taken after the compile would save the French
 	// pack as if it were the host's own and restore nothing — and a compile that *fails* leaves it switched just
 	// as surely, which is why the restore wraps the compile as well as the run. Measured 2026-10-05: without it
-	// the framework was compiled in French afterwards and `viz.allspeak` refused with `I don't understand 'put'`
+	// the framework was compiled in French afterwards and `vizframe.allspeak` refused with `I don't understand 'put'`
 	// at a line of a file the caller never mentioned.
 	const savedPack = AllSpeak_Language.pack;
 	try {
@@ -229,7 +229,7 @@ const runTarget = function (target) {
 	}
 };
 
-const framework = fs.readFileSync(path.join(root, `viz.allspeak`), `utf8`);
+const framework = fs.readFileSync(path.join(root, `vizframe.allspeak`), `utf8`);
 
 // A failing target is a finding, not a reason to stop: keep going so a whole
 // corpus can be swept in one pass, and report each failure against its name.

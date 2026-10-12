@@ -93,7 +93,7 @@ sentence in the starter packs' `AGENTS.md` currently carries.
    person does not have to write a probe. `tools/` is where a *tool's* checks live.
 4. **The sweep still compiles.** `python3 /tmp/compile-sweep.py`-style: the tracked `.allspeak` set must compile
    identically before and after, since the keyword is additive.
-5. **`./build-allspeak`** afterwards (the JS bundle carries the new opcode), and the four `deploy/dist/asedit.*`
+5. **`./build-allspeak`** afterwards (the JS bundle carries the new opcode), and the four `deploy/dist/viz.*`
    files restored if the build overwrites them.
 6. **The reference**: `learn/reference/` has no chapter for `join`; the string/variable chapter it belongs to
    should list it beside `split`, with the half-open range stated. Check which chapter that is — the reference

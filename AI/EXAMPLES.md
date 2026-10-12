@@ -3,7 +3,7 @@
 Patterns that are already used in this repo. For the rules behind them, see `AI/ALLSPEAK_CODING_GUIDELINES.md`; for the doc-block convention that new `.allspeak` code is expected to follow, see the root `AGENTS.md`.
 
 ## Example: Webson for shape, script for data
-Use Webson for the parts whose shape is fixed at template time, and the script for the parts whose shape comes from the data. `asedit` does this for its file list: a Webson-attached scroller container, with the rows created by the script inside it. The layout knows nothing about how many files there might be. The same split applies to table bodies, list items, and repeated cards.
+Use Webson for the parts whose shape is fixed at template time, and the script for the parts whose shape comes from the data. `viz` does this for its file list: a Webson-attached scroller container, with the rows created by the script inside it. The layout knows nothing about how many files there might be. The same split applies to table bodies, list items, and repeated cards.
 
 ## Example: one array, one handler
 For repeated UI items — a grid of cells, a row of buttons:
@@ -26,7 +26,7 @@ end
 The clause runs on any failure, for any reason.
 
 ## Example: explicit state, recompute the derived UI
-Keep one explicit state variable per concern, and recompute the labels, badges and enabled/disabled states after every transition that can change them, rather than setting them where the change happened. `asedit` does this for its toolbar: one badge and one sidebar colour are derived from the current block's hash and verification states, and every transition re-derives them.
+Keep one explicit state variable per concern, and recompute the labels, badges and enabled/disabled states after every transition that can change them, rather than setting them where the change happened. `viz` does this for its toolbar: one badge and one sidebar colour are derived from the current block's hash and verification states, and every transition re-derives them.
 
 ## Example: the dist/debug pattern
 - Use the unminified `allspeak.js` while diagnosing runtime errors; switch to `allspeak-min.js` once stable.

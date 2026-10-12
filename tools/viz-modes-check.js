@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 //
-// Run asedit.allspeak headlessly, click its buttons, and say what state the editor is in.
+// Run viz.allspeak headlessly, click its buttons, and say what state the editor is in.
 //
 // **Why this exists.** The editor's UI state — which pane is up, what the three buttons say, how many
-// slots each per-tab array has — is invisible to every other check in this repo. `asedit-check.js`
+// slots each per-tab array has — is invisible to every other check in this repo. `viz-check.js`
 // compiles the editor without running it, and the view harnesses drive the drawing. Two faults in one
 // afternoon came out of that gap: `EnterBlocks` never turned the Graph pane off (so two buttons both
 // read `Edit` and the graph lay under the Blocks pane), and `TabCursor`/`TabView` were grown in the
@@ -15,7 +15,7 @@
 // engine. It stubs the DOM and CodeMirror just far enough to *run*, and then reads the editor's own
 // variables and the elements it wrote. So it asks "is the state consistent", not "does it look right".
 //
-// Usage:  node tools/asedit-modes-check.js
+// Usage:  node tools/viz-modes-check.js
 //
 const fs = require('fs');
 const path = require('path');
@@ -23,14 +23,14 @@ const vm = require('vm');
 const root = path.resolve(__dirname, `..`);
 // Which editor to run. An older revision can be pointed at to put a number on how much the editor's
 // compile time — its load time — has moved since, which is the one thing worth watching as it grows.
-const target = process.argv[2] || `asedit.allspeak`;
+const target = process.argv[2] || `viz.allspeak`;
 
 const noop = () => {};
 
 // ---- a DOM just real enough ----------------------------------------------------------------
 //
 // Elements are looked up by id, and an element registers itself when its id is set — which is how the
-// page's own UI is built: the editor renders `asedit.json` into the body, the renderer makes elements
+// page's own UI is built: the editor renders `viz.json` into the body, the renderer makes elements
 // and gives them ids, and the editor then attaches its variables to those ids. A stub that returned
 // fresh objects on every lookup would lose that, and every `attach` would fail.
 const byId = {};
@@ -79,8 +79,8 @@ const mk = tag => {
 // The two elements the page fills before the runtime starts: the UI to render, and the script to run.
 // Read from the same files the page fetches, so a check runs what the page runs.
 const uiElement = mk(`pre`);
-uiElement.setAttribute(`id`, `asedit-ui`);
-uiElement.innerHTML = fs.readFileSync(path.join(root, `asedit.json`), `utf8`);
+uiElement.setAttribute(`id`, `viz-ui`);
+uiElement.innerHTML = fs.readFileSync(path.join(root, `viz.json`), `utf8`);
 
 const scriptElement = mk(`pre`);
 scriptElement.setAttribute(`id`, `allspeak-script`);
@@ -183,7 +183,7 @@ global.CodeMirror = { fromTextArea: () => fakeEditor, version: `stub` };
 // anything else, which is the honest thing for a check to do.
 //
 // A path with no `/read/` in it is a *static* fetch, which is how the editor loads its own companion
-// module (`asedit-graph.allspeak`), and the dev server serves those by name from the same directory —
+// module (`viz-graph.allspeak`), and the dev server serves those by name from the same directory —
 // so the stub strips the cache-busting query and looks the file up. Without this the module load takes
 // its `or go` failure path, the Graph pane never appears, and the checks about the pane would pass on
 // an editor that had quietly gone back to flat mode.
@@ -255,11 +255,11 @@ global.fetch = (url, opts) => {
 
 // ---- the runtime and the page's plugins ------------------------------------------------------
 // The list comes from the editor's own page, not from a list here: a check that loads every plugin
-// verifies a program nobody runs. That mistake has been made once already, in asedit-check.js.
+// verifies a program nobody runs. That mistake has been made once already, in viz-check.js.
 const page = fs.readFileSync(path.join(root, `edit.html`), `utf8`);
 const listed = page.match(/const bundles = \[([\s\S]*?)\]/);
 if (!listed) {
-	process.stderr.write(`asedit-modes-check: no 'bundles' list in edit.html — has the page changed shape?\n`);
+	process.stderr.write(`viz-modes-check: no 'bundles' list in edit.html — has the page changed shape?\n`);
 	process.exit(1);
 }
 const plugins = [...listed[1].matchAll(/'([^']+)'/g)].map(m => m[1])
@@ -289,7 +289,7 @@ for (const f of plugins) {
 
 // ---- the renderer, stubbed ----------------------------------------------------------------
 //
-// **The renderer is stubbed; the editor is not.** The page builds its elements out of `asedit.json`
+// **The renderer is stubbed; the editor is not.** The page builds its elements out of `viz.json`
 // through Webson, and Webson's build is asynchronous all the way down — which is fine in a browser and
 // stalls headlessly somewhere inside, on an await that never settles. Chasing that would make this file
 // about the renderer, and the renderer is not what it asks about: it asks what the editor's *state* is,
@@ -299,7 +299,7 @@ for (const f of plugins) {
 // The consequence, stated honestly: **a fault in the UI's markup is invisible to this check.** What it
 // covers is every mode, every button label and every per-tab array — the state, which is where both of
 // this afternoon's faults were.
-const UI_JSON = JSON.parse(fs.readFileSync(path.join(root, `asedit.json`), `utf8`));
+const UI_JSON = JSON.parse(fs.readFileSync(path.join(root, `viz.json`), `utf8`));
 const seed = (items, parent) => {
 	if (Array.isArray(items)) {
 		items.forEach(i => seed(i, parent));
@@ -318,7 +318,7 @@ const seed = (items, parent) => {
 	}
 	Object.values(items).forEach(v => seed(v, parent));
 };
-// The script arrives as the *text* of `#asedit-ui`, which is what the editor hands over, so it is
+// The script arrives as the *text* of `#viz-ui`, which is what the editor hands over, so it is
 // parsed here exactly as the real renderer parses it.
 AllSpeak_Webson.render = async (parent, name, script) => {
 	seed(typeof script === `string` ? JSON.parse(script) : script, parent);
@@ -339,14 +339,14 @@ const check = (ok, message) => {
 try {
 	AllSpeak.start(scriptElement.innerText);
 } catch (err) {
-	process.stderr.write(`asedit-modes-check: the editor threw: ${String(err.message || err).split(`\n`)[0]}\n`);
+	process.stderr.write(`viz-modes-check: the editor threw: ${String(err.message || err).split(`\n`)[0]}\n`);
 	process.exit(1);
 }
 
 const scriptName = Object.keys(AllSpeak.scripts)[0];
 const program = AllSpeak.scripts[scriptName];
 if (!program) {
-	process.stderr.write(`asedit-modes-check: the editor did not register a program\n`);
+	process.stderr.write(`viz-modes-check: the editor did not register a program\n`);
 	process.exit(1);
 }
 // **The boot is asynchronous, and that is the first thing to know about driving this editor.**
@@ -382,7 +382,7 @@ const sizeOf = name => {
 const displayOf = id => (byId[id] || {}).style || null;
 const contentOf = id => (byId[id] || {}).innerHTML;
 
-console.log(`\nasedit-modes-check: ${scriptName}, ${skipped.length} plugin(s) not loadable`);
+console.log(`\nviz-modes-check: ${scriptName}, ${skipped.length} plugin(s) not loadable`);
 for (const note of skipped) console.log(`  not loaded: ${note}`);
 
 (async () => {
@@ -447,7 +447,7 @@ check(untooled.length === 0,
 
 // ---- the alert panel: one box, named by the page, shared with the Graph pane -------------------
 //
-// **The panel is `asedit.json`'s, and both programs write to the same two elements by id.** The editor's
+// **The panel is `viz.json`'s, and both programs write to the same two elements by id.** The editor's
 // half is what is checked here: that the page named every part of it, that it is hidden until something
 // asks for it, and that the Close button's own entry point puts it away. The editor's callers are the two
 // module-load failures, and `ShowAlert` is what they use, so driving it *is* driving them.
@@ -463,11 +463,11 @@ const panelShown = () => (displayOf(`se-alert`) || {}).display === `flex`;
 // The same wait, and for the same reason: the panel's own `display` is one of the styles that arrives late.
 await waitFor(() => (displayOf(`se-alert`) || {}).display === `none`);
 // **The panel ships hidden, and that is checked against the JSON rather than the DOM.** This harness's
-// DOM stub does not record the styles `asedit.json` applies (measured: `se-status`'s own `font-size` is
+// DOM stub does not record the styles `viz.json` applies (measured: `se-status`'s own `font-size` is
 // absent from it too, and the editor's own checks have never depended on them), so `se-alert`'s
-// `display` reads as `undefined` here whether the file says `none` or nothing at all. `asedit.json` is
+// `display` reads as `undefined` here whether the file says `none` or nothing at all. `viz.json` is
 // read for this check the same way the page reads it, which is the honest instrument for the question.
-const uiJson = JSON.parse(fs.readFileSync(path.join(root, `asedit.json`), `utf8`));
+const uiJson = JSON.parse(fs.readFileSync(path.join(root, `viz.json`), `utf8`));
 check(uiJson.$AlertPanel && uiJson.$AlertPanel[`@id`] === `se-alert`
 	&& uiJson.$AlertPanel.display === `none` && uiJson.$AlertText[`@id`] === `se-alert-text`
 	&& uiJson.$AlertCloseBtn[`@id`] === `se-alert-close`
@@ -562,10 +562,10 @@ check(titleOf(`se-blocksbtn`) === `Back to the plain editor`,
 
 // ---- and the file the editor is editing can be the editor's own ------------------------------------
 //
-// **Blocks mode models the *buffer*, and here the buffer is `asedit.allspeak`** — the harness loads the
+// **Blocks mode models the *buffer*, and here the buffer is `viz.allspeak`** — the harness loads the
 // editor's own source into the page, as the page does. So this is the real path for a fault Graham met with
-// the message *"problem | script=asedit.allspeak | Script 'ASEditor' is already running."* on the status
-// line: the model compile ran `script ASEditor` while the editor was running under that very name, the
+// the message *"problem | script=viz.allspeak | Script 'Viz' is already running."* on the status
+// line: the model compile ran `script Viz` while the editor was running under that very name, the
 // runtime's duplicate guard refused it — a rule about *running* two copies, applied to a compile that never
 // runs — and the plugin reported the refusal as a problem with the file, which it was not. The registry is
 // the witness: the editor is still registered, under its own name, after a pass that borrowed it.
@@ -575,9 +575,9 @@ check(valueOf(`SecCount`) > 0 && complaints.length === 0,
 	`the editor's own file models cleanly while the editor is running under the name it declares `
 	+ `(sections=${valueOf(`SecCount`)}, ${complaints.length} problem record(s)`
 	+ (complaints.length ? `: ${JSON.stringify(complaints.slice(0, 2))}` : ``) + `)`);
-check(!!AllSpeak.scripts[`ASEditor`] && AllSpeak.scripts[`ASEditor`] === program,
+check(!!AllSpeak.scripts[`Viz`] && AllSpeak.scripts[`Viz`] === program,
 	`and the running program still owns its name after the pass borrowed it `
-	+ `(ASEditor=${AllSpeak.scripts[`ASEditor`] === program ? `this program` : JSON.stringify(!!AllSpeak.scripts[`ASEditor`])})`);
+	+ `(Viz=${AllSpeak.scripts[`Viz`] === program ? `this program` : JSON.stringify(!!AllSpeak.scripts[`Viz`])})`);
 
 run(`ToggleGraph`);
 shown = up(panes());
@@ -591,7 +591,7 @@ check(panes().blocks === `none`, `with the Blocks pane gone rather than lying un
 
 // ---- the pane is a module, loaded on demand -------------------------------------------------
 //
-// The drawing lives in `asedit-graph.allspeak`, fetched and compiled on this first click and messaged
+// The drawing lives in `viz-graph.allspeak`, fetched and compiled on this first click and messaged
 // from then on. Each of these can fail on its own, which is why they are separate: the module loads (a
 // static fetch of a file beside the page), it takes the pane over (an `attach` by id, in a program
 // that never declared that element), and the dict arrives — its own `VizShown`, and the run's own
@@ -600,7 +600,7 @@ check(panes().blocks === `none`, `with the Blocks pane gone rather than lying un
 // **The status line is deliberately not what is checked here.** It is the page's one status line and it
 // has two writers: the pane says "no recording beside this script" and the analysis says its piece, and
 // which lands last is timing. What is checked is the boundary — the values that could only have crossed.
-const viz = () => AllSpeak.scripts[`ASEditorGraph`];
+const viz = () => AllSpeak.scripts[`VizGraph`];
 const vizRecord = name => (viz() && viz().getSymbolRecord(name)) || null;
 const vizValue = name => {
 	const record = vizRecord(name);
@@ -621,7 +621,7 @@ check(String(vizValue(`TracePath`)).endsWith(`.viz.json`),
 
 // ---- the sidebar, the pane's co-module ------------------------------------------------------
 //
-// The panel is `asedit-side.allspeak`, loaded the same way and for the same reason: the editor needs none
+// The panel is `viz-side.allspeak`, loaded the same way and for the same reason: the editor needs none
 // of it until somebody looks at a run, and the panel is bulky enough to want its own file. What is checked
 // here is the **relay**, because the relay is the editor's — the pane reports the line under a clicked
 // mark, this file looks it up in the doc-block model it already holds for Blocks mode, and the sidebar is
@@ -631,7 +631,7 @@ check(String(vizValue(`TracePath`)).endsWith(`.viz.json`),
 // engine, so no mark has a place to point at; `tools/plotview-check.js` is where a press on a mark is
 // checked, against the picture's own axis. And the line arrives here the way `send … to parent` delivers
 // it — as `message`, with the handler run — rather than by reaching into any module's internals.
-const side = () => AllSpeak.scripts[`ASEditorSide`];
+const side = () => AllSpeak.scripts[`VizSide`];
 const sideRecord = name => (side() && side().getSymbolRecord(name)) || null;
 const sideValue = name => {
 	const record = sideRecord(name);
@@ -707,8 +707,8 @@ const floored = gripDrag(1100, 3000);
 check(floored === 200, `and a drag past the limit stops at the floor rather than inverting (${floored})`);
 const chosen = gripDrag(1100, 940);
 gripDrop();
-check(chosen === 500 && store[`asedit-graph-side-width`] === `500`,
-	`and the width the reader chose is kept (${chosen}, stored ${JSON.stringify(store[`asedit-graph-side-width`])})`);
+check(chosen === 500 && store[`viz-graph-side-width`] === `500`,
+	`and the width the reader chose is kept (${chosen}, stored ${JSON.stringify(store[`viz-graph-side-width`])})`);
 run(`ToggleGraph`); run(`ToggleGraph`);
 check(sideWidth() === 500, `and put back when the pane is opened again (${sideWidth()})`);
 
@@ -718,7 +718,7 @@ check(sideWidth() === 500, `and put back when the pane is opened again (${sideWi
 // fixture supplies the structure and the editor's own parser supplies the model.
 //
 // **The fixture is not the editor's own source, on purpose.** The editor does parse itself in Blocks mode,
-// and the temptation is to point the look-up at it too and pick line numbers out of `asedit.allspeak` — a
+// and the temptation is to point the look-up at it too and pick line numbers out of `viz.allspeak` — a
 // check that would then fail whenever this file was edited, for a reason of its own making.
 const SIDEFIX = [
 	`!! The first block, and this line is its title.`,
@@ -739,7 +739,7 @@ const SIDEFIX = [
 // `EnterGraph` parses the buffer with the same `ParseSource` Blocks mode uses. That is not decoration: the
 // first version of this check set the buffer and called the handler, so it read the model left behind by
 // whatever was parsed last (the editor's own source, from the Blocks checks), and *two of the three checks
-// passed anyway* — lines 5 and 12 of `asedit.allspeak` happen to fall inside its first two sections. Hence
+// passed anyway* — lines 5 and 12 of `viz.allspeak` happen to fall inside its first two sections. Hence
 // the exact titles below: a title that could belong to the wrong file is not a check.
 run(`ToggleGraph`);                    // out — the pane is already up from the checks above
 scriptElement.innerText = SIDEFIX;
@@ -840,7 +840,7 @@ check(await waitFor(() => vizValue(`VizShown`) === 0),
 // execute, and these two would have been among them. Measured 2026-10-11. **A check that cannot run is worse
 // than no check**, because it reads as coverage.
 
-// **The order asked for, read from the one place that decides it.** `asedit.json`'s `$TopBar` `#` list is what
+// **The order asked for, read from the one place that decides it.** `viz.json`'s `$TopBar` `#` list is what
 // the page renders, in that order — so that list *is* the bar, and asking it is asking what a reader sees. (The
 // seeded DOM above cannot answer: it registers every id in the file but builds no hierarchy, so the top bar it
 // knows has no children. A check on that would have been a check on this harness, not on the page.)
@@ -869,7 +869,7 @@ check(JSON.stringify(listed.map(t => t.id)) === JSON.stringify(FIVE_IDS)
 //
 // The project is set to `js` for both halves, so the only thing that can make the script Python-side is its
 // own `@py` marker, which is the case Graham described. The value the button goes back to is the one
-// `asedit.json` states for it, read from there rather than written a second time in this file.
+// `viz.json` states for it, read from there rather than written a second time in this file.
 //
 // **The two fixtures, and the Python one has to be a script this runtime cannot compile.** `dictionary` is
 // Python's, so the marker lands on a script whose only visible fault *is* Python vocabulary — which is the
@@ -909,7 +909,7 @@ run(`ParseSource`);
 check(String(valueOf(`TabFlavour`)) === `js` && launchShown() === launchStyle,
 	`and taking the marker away puts it back, so the button follows the tab's script rather than remembering `
 	+ `one (flavour ${JSON.stringify(String(valueOf(`TabFlavour`)))}, display ${JSON.stringify(launchShown())}, `
-	+ `which is what asedit.json states for it)`);
+	+ `which is what viz.json states for it)`);
 scriptElement.innerText = bufferWas;
 
 // ---- and the Record button does what it says ------------------------------------------------
@@ -973,7 +973,7 @@ check(!!posted && /"cat":\s*"window"/.test(posted.body),
 check(/\b7 visits in 1 window\b/.test(String(valueOf(`RecordVerdict`))),
 	`and what the recording amounted to is reported rather than only that a file was written `
 	+ `(verdict ${JSON.stringify(String(valueOf(`RecordVerdict`)))})`);
-check(!!AllSpeak.scripts[`ASEditor`] && AllSpeak.scripts[`ASEditor`] === program,
+check(!!AllSpeak.scripts[`Viz`] && AllSpeak.scripts[`Viz`] === program,
 	`with the editor still registered under its own name afterwards, the recording having borrowed it`);
 
 // **And Record opens an app rather than running it** — one button, two acts, and the *script* says which. The
@@ -1235,7 +1235,7 @@ check(secondLook.asked.some(u => /trace-wide\.allspeak\.viz\.json/.test(u)),
 	`and it is fetched again rather than remembered, so an edited and re-recorded script is not shown stale `
 	+ `(${JSON.stringify(secondLook.asked)})`);
 
-const otherLook = await enterWith(`asedit-side.allspeak`);
+const otherLook = await enterWith(`viz-side.allspeak`);
 // **And here is the answer to "does each tab keep its own", which is not quite what it looked like.** The tab
 // does ask for its own recording — but the pane is a panel, not a tab: it holds what it was last told, so a tab
 // whose recording is missing would go on showing the previous tab's unless the editor clears it. So the check
@@ -1243,7 +1243,7 @@ const otherLook = await enterWith(`asedit-side.allspeak`);
 // The cleared pane holds an **empty list** of arrivals (`[]`), not an absent one — that is what the draw sets
 // when there is no recording to read, and asserting the spelling rather than "no events" is what made this
 // check red for a round after the fault itself was fixed.
-check(otherLook.asked.some(u => /asedit-side\.allspeak\.viz\.json/.test(u))
+check(otherLook.asked.some(u => /viz-side\.allspeak\.viz\.json/.test(u))
 	&& (otherLook.events === `` || otherLook.events === `[]`),
 	`and another tab asks for its own recording and the pane is cleared to no arrivals rather than left `
 	+ `showing the last one (asked ${JSON.stringify(otherLook.asked)}, events=${JSON.stringify(otherLook.events)})`);
@@ -1253,7 +1253,7 @@ check(backLook.events === firstLook.events,
 	`so returning to the first tab shows that tab's recording again (${backLook.events.length} bytes)`);
 
 console.log(failures.length === 0
-	? `\nasedit-modes-check: all checks passed`
-	: `\nasedit-modes-check: ${failures.length} check(s) failed`);
+	? `\nviz-modes-check: all checks passed`
+	: `\nviz-modes-check: ${failures.length} check(s) failed`);
 process.exit(failures.length === 0 ? 0 : 1);
 })();

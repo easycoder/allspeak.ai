@@ -1,4 +1,4 @@
-!! asedit-graph.allspeak — the editor's Graph pane, as a companion module.
+!! viz-graph.allspeak — the editor's Graph pane, as a companion module.
 !! **The vocabulary the picture is built from is the script's own, where the script offers one.** An attribute is a note a script writes about itself and the runtime ignores — text for a tool — so the recorder reads two keys and the pane shows what they collect: `@viz start` / `@viz stop` name the window in the script's own words, and `@show Total, Row` says which values are worth watching at that arrival, which reach the sidebar beside the line and visit of the mark they belong to. Nothing else is read, so a note written for a person or for another tool passes both by.
 !!
 !!
@@ -11,13 +11,13 @@
 !! Acquisition stays with the editor. The recording and the script are fetched there, because the editor is the one that knows which tab is open; this module fetches only what is its own, the calibration file, and never executes anything in order to draw a run.
 !   -- the module, and the pane it owns --
 
-    script ASEditorGraph
-!! @hash a078a83d
+    script VizGraph
+!! @hash ff50e871
 !! @verified a078a83d
 !!!
 !! What the module holds from the editor's page, and the state the boundary is kept in.
 !!
-!! The pane and the status line are attached **by id** — `asedit.json` names both, and the editor does the same `attach` for its own elements — so the module has handles on the page without the editor declaring or creating a single element for it. Everything else here is either the run as it arrived, a number learned by drawing, or the three localised flow words the editor's string table holds.
+!! The pane and the status line are attached **by id** — `viz.json` names both, and the editor does the same `attach` for its own elements — so the module has handles on the page without the editor declaring or creating a single element for it. Everything else here is either the run as it arrived, a number learned by drawing, or the three localised flow words the editor's string table holds.
 !   -- the page, by id --
     div VizHost
     span StatusSpan
@@ -99,7 +99,7 @@
 !   -- the pane, and the line that says what is happening --
     attach VizHost to `se-graph-host`
     attach StatusSpan to `se-status`
-    ! The alert panel is the editor's, named in `asedit.json` beside the pane's own boxes — so the
+    ! The alert panel is the editor's, named in `viz.json` beside the pane's own boxes — so the
     ! module has a handle on it without the editor building anything for it. A project whose page
     ! predates it would fail here rather than at the first long drawing, which is the honest place.
     attach AlertPanel to `se-alert`
@@ -133,7 +133,7 @@
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 9d7a2eaa
+!! @hash b34c4656
 !! @verified 10f33ffc
 !!!
 !! The boundary: one message in, and the module parks until the next one.

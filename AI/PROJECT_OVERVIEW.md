@@ -6,7 +6,7 @@ AllSpeak is a high-level scripting language for an age where AI writes most of t
 This repository is the primary source of truth for:
 - `js/allspeak/` — the JavaScript (browser) runtime and the language packs
 - `allspeak-py/` — the Python (CLI and desktop) runtime
-- `asedit.allspeak`, `asedit.json`, `edit.html`, `server.allspeak` — the review editor and its dev server
+- `viz.allspeak`, `viz.json`, `edit.html`, `server.allspeak` — the review editor and its dev server
 - `tools/asdoc-check*.py`, `tools/asdoc-check*.allspeak` — the doc-block analysers
 - `learn/` — the language reference and idiom collections, per language
 

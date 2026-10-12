@@ -1,19 +1,19 @@
-!! asedit-side.allspeak — the editor's Graph sidebar, as a companion module.
+!! viz-side.allspeak — the editor's Graph sidebar, as a companion module.
 !!
-!! The sidebar is the reading aid beside the picture: a tabbed panel down the right-hand edge of the Graph pane, whose first tab shows the doc block that the line under a clicked mark belongs to. It is a module for the same reason the drawing is — the editor needs none of it until somebody opens a run — and it is a *separate* module from the drawing for a reason worth stating: the two are about different things, a picture and a reading, they attach to different elements, and either can grow without the other's file growing with it. Each is given its own box by `asedit.json`, so neither lays the other out.
+!! The sidebar is the reading aid beside the picture: a tabbed panel down the right-hand edge of the Graph pane, whose first tab shows the doc block that the line under a clicked mark belongs to. It is a module for the same reason the drawing is — the editor needs none of it until somebody opens a run — and it is a *separate* module from the drawing for a reason worth stating: the two are about different things, a picture and a reading, they attach to different elements, and either can grow without the other's file growing with it. Each is given its own box by `viz.json`, so neither lays the other out.
 !!
 !! What it owns, and what it does not. Everything inside its panel: the tab strip, the body, the heading, the prose and the hint that stands in for them before anything is clicked. **It does not find the block.** Which doc block holds a line is a question about the script's structure, and the editor already answers it for Blocks mode; a second answer here would be a second parser to keep in step. So the editor sends the block — its heading and its prose — and this module is a pane. That is also why nothing is read from disk here: the run, the path, and every block all arrive by message.
 !!
 !! What crosses. One dict in, and it is one of two kinds, so the message says which: a `run` carries the script's path and whether the pane is still on screen, and a `block` carries the line that was clicked, whether any block holds it, and the heading and prose to show if one does. Nothing goes back — this module has no gestures and nothing to report — and it never needs to know that a picture exists.
 !   -- the module, and the panel it owns --
 
-    script ASEditorSide
-!! @hash 62b44485
+    script VizSide
+!! @hash 5424350d
 !! @verified 62b44485
 !!!
 !! What the module holds from the editor's page, and the state the boundary is kept in.
 !!
-!! The panel is attached **by id** — `asedit.json` names it, the same way the editor names every element it owns — so the module has a handle on the page without the editor creating anything for it. Everything the panel is made of is built inside that one element, so the page names one box for the sidebar and no more.
+!! The panel is attached **by id** — `viz.json` names it, the same way the editor names every element it owns — so the module has a handle on the page without the editor creating anything for it. Everything the panel is made of is built inside that one element, so the page names one box for the sidebar and no more.
 !   -- the page, by id --
     div SideHost
 !   -- the panel's own elements, built once --

@@ -5,7 +5,7 @@
 # Steps:
 #   1. ./build-allspeak       — rebuild deploy/dist/allspeak.js + minified bundle
 #   2. ./deploy-sync          — mirror codex/, docs/, primer/ → deploy/
-#   3. Refresh deploy/code/   — asedit, server, edit, version
+#   3. Refresh deploy/code/ and deploy/dist/ — server, edit, the editor and its modules
 #   4. ./build-starters       — rebuild deploy/allspeak-<lang>.zip
 #   5. rsync deploy/ → server (with --delete; protects snapshot dirs)
 #   6. rsync deploy/dist/ → server's dist/<YYMMDD>/ (additive snapshot)
@@ -45,10 +45,20 @@ echo "==> 3/6 prepare deploy/code/ and deploy/dist/"
 # the page (that server fetches it). The editor's own four files belong at `/dist/`, which is where both the
 # page and the editor look for them — a page fetches the editor's source as *text*, and a text fetch is
 # governed by CORS where a `<script>` is not, and the site answers `access-control-allow-origin: *` for `.js`
-# and `.css` only (measured, per file type). So they travel wrapped in `dist/asedit.js` as well, and they sit
+# and `.css` only (measured, per file type). So they travel wrapped in `dist/viz.js` as well, and they sit
 # beside it as the fallback for a payload that did not arrive.
+#
+# **The old name is published beside the new one for a window, and it is not a second copy of anything.** The
+# tool was `asedit` until 2026-10-12: a page from a browser cache asks for `dist/asedit.js`, and a cached
+# `server.allspeak` (the CLI keeps one at `~/.cache/allspeak/`, and runs it when a fetch fails) asks for
+# `asedit-graph.allspeak` and `asedit-side.allspeak` by name. Serving both is what keeps a project that did not
+# change working; drop the four `asedit.*` copies once no page and no cached server asks for them.
 cp server.allspeak edit.html deploy/code/
-cp asedit.allspeak asedit-graph.allspeak asedit-side.allspeak asedit.json deploy/dist/
+cp viz.allspeak viz-graph.allspeak viz-side.allspeak viz.json deploy/dist/
+cp viz.allspeak deploy/dist/asedit.allspeak
+cp viz-graph.allspeak deploy/dist/asedit-graph.allspeak
+cp viz-side.allspeak deploy/dist/asedit-side.allspeak
+cp viz.json deploy/dist/asedit.json
 # **The tools an agent uses are published, not shipped in a pack.** A project fetches the one it needs —
 # https://allspeak.ai/code/tools/asdoc-check.py and friends — so it holds no copy that could go stale, and
 # one published set serves every project. `build-starters` checks that all nine exist before a pack is built.

@@ -92,7 +92,7 @@ nothing**: events are not opcodes, and `spec/opcodes.json`'s one `pick` is a fil
    words appear while the pointer is over a cut control and go when it leaves.
 3. **The 323-script sweep is unchanged**, because nothing in it registers a hover.
 4. **`./sync-language-packs` passes** (four packs, each with the pattern and the word, `reverse_word` clean).
-5. **`./build-allspeak`** for the bundle, and **`node tools/asedit-check.js` for each editor file** if the
+5. **`./build-allspeak`** for the bundle, and **`node tools/viz-check.js` for each editor file** if the
    pane is touched.
 
 ## The two consumers this unblocks

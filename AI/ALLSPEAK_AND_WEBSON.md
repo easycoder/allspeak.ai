@@ -17,7 +17,7 @@
 - AllSpeak binds to those IDs with `attach <Element> to <id>`, and `create <Element> in <Parent>` adds children at run time.
 - Renaming an ID requires matching changes in the `.allspeak` that attaches to it. Renaming only a Webson object key is safe, provided the `@id` stays stable.
 - Use `@id` for element IDs — a plain `id` property is not the directive.
-- The editor's own layout is `asedit.json`; a starter project's is `project.json`. Both are worth reading as worked examples of the split between fixed chrome and scripted content.
+- The editor's own layout is `viz.json`; a starter project's is `project.json`. Both are worth reading as worked examples of the split between fixed chrome and scripted content.
 
 ## Markdown rendering
 - Markdown conversion is delegated from `Browser.js` to `MarkdownRenderer.js`.

@@ -33,14 +33,14 @@ The question a reader brings to a run is of one of two kinds, and the second is 
 
 | what | where | what it gives the debugger |
 |---|---|---|
-| a second program in the same page | `asedit.allspeak`: `run VizSrc as VizModule`, and `run SideSrc as SideModule` | the editor, the pane and the sidebar are **three AllSpeak programs in one realm today** — so a probe needs no new engine, only a host |
+| a second program in the same page | `viz.allspeak`: `run VizSrc as VizModule`, and `run SideSrc as SideModule` | the editor, the pane and the sidebar are **three AllSpeak programs in one realm today** — so a probe needs no new engine, only a host |
 | the recording, as text | the message field `trace`; the pane holds it as `VizTrace` | a probe can be *given* the run as a json variable |
 | naming variables to watch, already | `@show Total, Row` — read by the recorder, shown by the sidebar | the first useful probe needs no language change at all |
 | an annotation carrying names, already | `@viz start on Work` | "a label carrying an annotation" is not a proposal, it exists |
-| fetching and running a script from a file | `asedit.allspeak`'s `LoadVizModule` — `rest get … or go`, then `run … as …` | the runner's plumbing is written; it fetches the pane this way |
+| fetching and running a script from a file | `viz.allspeak`'s `LoadVizModule` — `rest get … or go`, then `run … as …` | the runner's plumbing is written; it fetches the pane this way |
 | a bounded run | `js/plugins/asviz.js`'s recorder: a **time budget** and a **wall ceiling**, with `stopped: "work"｜"wall"` reaching the trace | the precedent for the probe's own budget, and it argues the case: *"a loop that waits or has to be set so high that a genuinely busy loop runs for minutes"* |
-| the panel | `asedit.json`'s `se-alert`, `ShowAlert`/`HideAlert`, and the pane writing the same two elements by id | the place an answer can be shown, and copied |
-| a tabbed panel whose body is filled by a message | `asedit-side.allspeak` — `SideTabName`, the `SideTab` pool, `SideRender` | a Debug tab is one more name and one more branch |
+| the panel | `viz.json`'s `se-alert`, `ShowAlert`/`HideAlert`, and the pane writing the same two elements by id | the place an answer can be shown, and copied |
+| a tabbed panel whose body is filled by a message | `viz-side.allspeak` — `SideTabName`, the `SideTab` pool, `SideRender` | a Debug tab is one more name and one more branch |
 
 **And one cost that governs the whole design.** `element N of X` parses the whole array and stringifies the element it returns — **~15 ms an access on a 435 KB recording**, measured 2026-10-06, so every loop over a recording is *quadratic in what it walks* and the **records walked** are the cost, not the work done. A probe therefore has to be a thing that reads the recording **once**, and a probe that walks a big recording twice is not a slow probe, it is an unusable one.
 
@@ -78,8 +78,8 @@ The question a reader brings to a run is of one of two kinds, and the second is 
 
 Four steps, each with the check that says it is done. Nothing here touches the language, the packs or the trace format.
 
-1. **The runner, headless.** A subroutine in `asedit.allspeak` that takes a text and a recording and runs the text with the recording available, under a budget, returning either the answer or the compiler's sentence. *Check:* `asedit-modes-check` drives it with a probe that is deliberately broken (the sentence comes back), one that walks the recording once (the answer comes back), and one that loops forever (the budget stops it and says so). This is the whole feature's spine and it can be tested before any UI exists.
-2. **The Debug tab.** One more name in `SideTabName`, one more branch in `SideRender`, a `textarea` and a `Run` for the probe, and the answer in the panel. *Check:* `asedit-modes-check` asserts the tab exists, that Run reaches the runner, and that a failure lands in the panel rather than on the status line; a browser measurement shows the round trip.
+1. **The runner, headless.** A subroutine in `viz.allspeak` that takes a text and a recording and runs the text with the recording available, under a budget, returning either the answer or the compiler's sentence. *Check:* `viz-modes-check` drives it with a probe that is deliberately broken (the sentence comes back), one that walks the recording once (the answer comes back), and one that loops forever (the budget stops it and says so). This is the whole feature's spine and it can be tested before any UI exists.
+2. **The Debug tab.** One more name in `SideTabName`, one more branch in `SideRender`, a `textarea` and a `Run` for the probe, and the answer in the panel. *Check:* `viz-modes-check` asserts the tab exists, that Run reaches the runner, and that a failure lands in the panel rather than on the status line; a browser measurement shows the round trip.
 3. **The file route** (this is shape 2's mechanism, whatever his answer about keeping probes turns out to be). The probe's text may come from a file the editor fetches, with the path remembered so nobody types it twice. *Check:* the same harness, with the probe served by the stub rather than typed.
 4. **Shape 3's output**, and this one needs a decision first: derived records the pane can draw want a **document shape**, and the cheapest honest version is a *second* json beside the recording with its own small section in `spec/` — **not** a revision of the trace format, so that a probe can be added without moving the contract the two recorders and the sidebar share. Then the pane draws it as a layer, and `tools/check-trace.py` gains a sibling rather than a new rule.
 
