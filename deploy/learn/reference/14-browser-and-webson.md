@@ -104,13 +104,40 @@ Element events register with `on <event> <element> gosub Handler`:
 ```as
 on click Save gosub HandleSave
 on change NameField gosub NameChanged
-on submit Form gosub Submit
+on pick Canvas gosub Grab
 on hover Save gosub ShowSaveTip
 ```
 
-The handler is a thread; the cursor on the element variable is set to the firing instance before the handler runs. See [event-handlers-and-array-index](../idioms/event-handlers-and-array-index.md) for the canonical pattern with arrays of elements.
+The handler is a thread; the cursor on the element variable is set to the firing instance before the handler runs. An `<element>` must be a browser element rather than a plain `variable`. See [event-handlers-and-array-index](../idioms/event-handlers-and-array-index.md) for the canonical pattern with arrays of elements.
 
-`on hover` is the rollover: it fires while the pointer is merely *over* the element, so a control can say what it does before it is pressed, and `<element>` must be a browser element (not a plain `variable`). It arrives at pointer rate — every move, not once on arrival — so a handler should write attributes rather than redraw the page, and it reads `the hover position` (as json, like `the pick position`). Leaving the element fires it once more with the coordinates the pointer crossed at, which is what lets a tooltip be taken away again; a touch has no hover, so there is no touch counterpart.
+### Pointer and touch events
+
+| statement | fires when | what the handler reads |
+|--|--|--|
+| `on pick <element>` | the left button is pressed on the element | `the pick position` |
+| `on drag` | the pointer moves while a pick is held, anywhere on the page | `the drag position` |
+| `on drop` | that press is released | `the drag position` |
+| `on hover <element>` | the pointer moves *over* the element, and once more as it leaves | `the hover position` |
+| `on wheel <element>` | the wheel turns over the element | `the wheel amount`, `the wheel position`, `the wheel shift`, `the wheel control` |
+| `on right click <element>` | the right button is pressed on the element | `the pick position` |
+| `on swipe left` / `on swipe right` | a touch drags that way across the page | — the direction is in the statement |
+
+A position is a json pair, `{"x": …, "y": …}` in client pixels:
+
+```as
+on pick Canvas gosub Grab
+
+Grab:
+    put the pick position into Pos
+    put property `x` of Pos into StartX
+    return
+```
+
+`the wheel amount` is a signed number — down and right are positive — and `the wheel shift` and `the wheel control` are `1` or `0` rather than true/false, so they can be multiplied.
+
+**Three things to know before registering one.** `pick` is the left button alone, so the press that asks for a menu never also moves a selection. `drag` and `drop` name no element, because a drag that begins on one thing continues wherever the pointer goes: `pick` starts the gesture, and the other two are document-level and run for every program that asked for one. And `wheel` and `right click` take the gesture over from the browser — the wheel's default scroll is cancelled, and so is the browser's own menu — so a pane can zoom and a page can offer its own menu without the browser doing both.
+
+**`hover` arrives at pointer rate** — every move, not once on arrival — so its handler should write attributes rather than redraw the page. Leaving the element fires it once more with the coordinates the pointer crossed at, which is what lets a tooltip be taken away again; a touch has no hover, so there is no touch counterpart.
 
 ## Native browser dialogs
 

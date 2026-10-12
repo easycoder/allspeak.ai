@@ -104,10 +104,40 @@ Element-Ereignisse registrieren sich mit `bei <ereignis> <element> gosub Handler
 ```as
 bei klick Save gosub HandleSave
 bei änderung NameField gosub NameChanged
-bei submit Form gosub Submit
+bei wähle Canvas gosub Grab
+bei schwebe Save gosub ShowSaveTip
 ```
 
-Der Handler ist ein Thread; der Cursor auf der Elementvariable wird vor dem Handler-Lauf auf das auslösende Exemplar gesetzt. Siehe [Ereignishandler und Array-Index](../idioms/event-handlers-and-array-index.md) für das kanonische Muster mit Arrays von Elementen.
+Der Handler ist ein Thread; der Cursor auf der Elementvariable wird vor dem Handler-Lauf auf das auslösende Exemplar gesetzt. Ein `<element>` muss ein Browser-Element sein, keine bloße `variable`. Siehe [Ereignishandler und Array-Index](../idioms/event-handlers-and-array-index.md) für das kanonische Muster mit Arrays von Elementen.
+
+### Zeiger- und Berührungsereignisse
+
+| Anweisung | löst aus, wenn | was der Handler liest |
+|--|--|--|
+| `bei wähle <element>` | die linke Taste auf dem Element gedrückt wird | `der wähle position` |
+| `bei ziehe` | der Zeiger sich bewegt, solange ein `wähle` gehalten wird — überall auf der Seite | `der ziehe position` |
+| `bei ablege` | diese Taste losgelassen wird | `der ziehe position` |
+| `bei schwebe <element>` | der Zeiger sich *über* dem Element bewegt, und einmal mehr beim Verlassen | `der schwebe position` |
+| `bei Mausrad <element>` | das Mausrad über dem Element dreht | `der Mausrad Menge`, `der Mausrad position`, `der Mausrad Umschalt`, `der Mausrad Strg` |
+| `bei Rechtsklick <element>` | die rechte Taste auf dem Element gedrückt wird | `der wähle position` |
+| `bei wische links` / `bei wische rechts` | eine Berührung in diese Richtung über die Seite zieht | — die Richtung steht in der Anweisung |
+
+Eine Position ist ein json-Paar, `{"x": …, "y": …}` in Client-Pixeln:
+
+```as
+bei wähle Canvas gosub Grab
+
+Grab:
+    lege der wähle position in Pos
+    lege eigenschaft `x` von Pos in StartX
+    retourniere
+```
+
+`der Mausrad Menge` ist eine vorzeichenbehaftete Zahl — nach unten und nach rechts sind positiv — und `der Mausrad Umschalt` und `der Mausrad Strg` sind `1` oder `0` statt wahr/falsch, damit man sie multiplizieren kann.
+
+**Drei Dinge, die man vor dem Registrieren wissen sollte.** `wähle` ist allein die linke Taste, sodass der Druck, der ein Menü anfordert, nie zugleich eine Auswahl verschiebt. `ziehe` und `ablege` nennen kein Element, weil ein Ziehen, das auf einer Sache beginnt, überall weitergeht, wohin der Zeiger kommt: `wähle` beginnt die Geste, und die beiden anderen sind dokumentweit und laufen für jedes Programm, das eines angefordert hat. Und `Mausrad` und `Rechtsklick` übernehmen die Geste vom Browser — das Standard-Scrollen des Mausrads wird abgebrochen, ebenso das eigene Menü des Browsers — damit ein Bereich zoomen und eine Seite ihr eigenes Menü anbieten kann, ohne dass der Browser beides tut.
+
+**`schwebe` kommt mit Zeigerrate** — bei jeder Bewegung, nicht einmal beim Ankommen — daher sollte sein Handler Attribute schreiben statt die Seite neu zu zeichnen. Das Verlassen des Elements löst ihn noch einmal aus, mit den Koordinaten, an denen der Zeiger die Grenze überquert hat, was das Entfernen eines Tooltips erlaubt; eine Berührung hat kein Schweben, also gibt es keine Berührungs-Entsprechung.
 
 ## Native Browser-Dialoge
 

@@ -104,10 +104,40 @@ Les événements d'élément s'enregistrent avec `sur <événement> <élément> 
 ```as
 sur clic Save vasous à HandleSave
 sur changement NameField vasous à NameChanged
-sur submit Form vasous à Submit
+sur choisi Canvas vasous à Grab
+sur survole Save vasous à ShowSaveTip
 ```
 
-Le gestionnaire est un fil ; le curseur sur la variable d'élément est positionné sur l'instance qui a déclenché avant que le gestionnaire ne s'exécute. Voir [gestionnaires d'événements et index de tableau](../idioms/event-handlers-and-array-index.md) pour le motif canonique avec des tableaux d'éléments.
+Le gestionnaire est un fil ; le curseur sur la variable d'élément est positionné sur l'instance qui a déclenché avant que le gestionnaire ne s'exécute. Un `<élément>` doit être un élément du navigateur, et non une simple `variable`. Voir [gestionnaires d'événements et index de tableau](../idioms/event-handlers-and-array-index.md) pour le motif canonique avec des tableaux d'éléments.
+
+### Événements de pointeur et tactiles
+
+| instruction | se déclenche quand | ce que le gestionnaire lit |
+|--|--|--|
+| `sur choisi <élément>` | le bouton gauche est pressé sur l'élément | `le choisi position` |
+| `sur glisse` | le pointeur bouge pendant un `choisi`, n'importe où sur la page | `le glisse position` |
+| `sur dépose` | ce bouton est relâché | `le glisse position` |
+| `sur survole <élément>` | le pointeur passe *au-dessus* de l'élément, et une fois encore quand il le quitte | `le survole position` |
+| `sur molette <élément>` | la molette tourne au-dessus de l'élément | `le molette quantité`, `le molette position`, `le molette maj`, `le molette ctrl` |
+| `sur clic droit <élément>` | le bouton droit est pressé sur l'élément | `le choisi position` |
+| `sur balaye gauche` / `sur balaye droite` | un toucher glisse dans ce sens sur la page | — le sens est dans l'instruction |
+
+Une position est une paire json, `{"x": …, "y": …}` en pixels client :
+
+```as
+sur choisi Canvas vasous à Grab
+
+Grab:
+    mets le choisi position dans Pos
+    mets propriété `x` de Pos dans StartX
+    retourne
+```
+
+`le molette quantité` est un nombre signé — vers le bas et vers la droite sont positifs — et `le molette maj` et `le molette ctrl` valent `1` ou `0` plutôt que vrai/faux, pour qu'on puisse les multiplier.
+
+**Trois choses à savoir avant d'en enregistrer un.** `choisi` est le bouton gauche uniquement, donc le `choisi` qui demande un menu ne déplace jamais aussi une sélection. `glisse` et `dépose` ne nomment aucun élément, parce qu'un glisser qui commence sur une chose continue où que le pointeur aille : `choisi` démarre le geste, et les deux autres sont au niveau du document et s'exécutent pour chaque programme qui en a demandé un. Et `molette` et `clic droit` reprennent le geste au navigateur — le défilement par défaut de la molette est annulé, tout comme le menu du navigateur — pour qu'un volet puisse zoomer et qu'une page puisse offrir son propre menu sans que le navigateur fasse les deux.
+
+**`survol` arrive au rythme du pointeur** — à chaque mouvement, pas une fois à l'arrivée — donc son gestionnaire doit écrire des attributs plutôt que redessiner la page. Quitter l'élément le déclenche une fois de plus avec les coordonnées auxquelles le pointeur a franchi la limite, ce qui permet de retirer une infobulle ; un toucher n'a pas de survol, donc il n'a pas de contrepartie tactile.
 
 ## Les boîtes de dialogue natives du navigateur
 
