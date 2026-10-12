@@ -13,6 +13,23 @@
     div TabBar
     div TabBtn
     div Overlay
+    div MenuMask            ! the sheet that takes the click that closes the menu
+    div Menu                ! the popup itself, placed where the right-click was
+    div MenuItem            ! a pool: one row per item
+    div GraphPic            ! the picture's host, for its own right-click
+    div GraphSidePane       ! and the sidebar's box, for its
+!   -- the menu's own state --
+    variable MenuBuilt      ! 1 once the rows exist
+    variable MenuItemCount  ! how many there are
+    variable MenuItemName   ! array: the label on each
+    variable MenuI          ! scratch: index over them
+    variable MenuItemLabel  ! scratch: one label
+    variable MenuPick       ! which row was clicked, from `the index of MenuItem`
+    variable MenuFrozen     ! 1 while the picture's hover is held still, so that row reads `Cancel`
+    variable MenuAt         ! what `the pick position` gave the right-click
+    variable MenuX          ! scratch: where the menu goes, in client pixels
+    variable MenuY
+    variable MenuPad        ! scratch: a title, before it is shown
     div Scroller
     div FileRow
     div EditorArea       ! flat-mode pane (CodeMirror-wrapped textarea)
@@ -127,6 +144,7 @@
     variable SideSrc        ! its source, as fetched
     variable SideLoaded     ! 1 once it is running
     variable SideIn         ! the dict the pane reported, as it arrived
+    variable SideInKind     ! which report it is: the line under the pointer, or the freeze lifting
     variable SideSel        ! the line the pane last reported, which is what the sidebar is about
     variable SideVisit      ! which arrival on that line the clicked dot was
     variable SideValues     ! what that arrival captured, passed on untouched
@@ -231,7 +249,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash b4074474
+!! @hash 75fafb64
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'viz-ui',
@@ -253,6 +271,14 @@
     attach FindBtn to `se-findbtn`
     attach PlusBtn to `se-plusbtn`
     attach Overlay to `se-overlay`
+    attach MenuMask to `se-menu-mask`
+    attach Menu to `se-menu`
+    ! **The two surfaces the menu answers on, each attached by the id its own module also uses.** A symbol
+    ! and an element are not one to one — a module attaches its own name to the same box — and that is what
+    ! makes this possible without either program knowing about the other: `on right click GraphPic` registers
+    ! a handler on `se-graph-host`, and the pane's `VizHost`, attached to the same element, is untouched.
+    attach GraphPic to `se-graph-host`
+    attach GraphSidePane to `se-graph-side`
     attach Scroller to `se-scroller`
     attach CloseBtn to `se-closebtn`
     attach BlocksBtn to `se-blocksbtn`
@@ -290,7 +316,7 @@
     ! Every control is named while the UI is still being built: see `SetTips`, below the startup
     ! loops, for what a tooltip is here and why it is a subroutine rather than lines in this block.
     gosub to SetTips
-!! @hash eb4eaadf
+!! @hash d61f049f
 !! @verified 414ea5b9
 !!!
 !! Some general initialisation
@@ -484,6 +510,14 @@ VersionDone:
     ! new button has to carry its own `gosub`**, which a list of handlers cannot be made to imply: the check
     ! below runs all seven and insists that each one puts the panel away.
     on click Welcome go to DismissWelcome
+    on click MenuMask go to HideMenu
+    ! **The menu opens where the pointer's other button was pressed, on each of the two surfaces it is
+    ! about.** `GraphPic` and `GraphSidePane` are this file's own handles on the pane's box and the
+    ! sidebar's — the pane attaches `VizHost` to the same element under its own name and the sidebar
+    ! `SideHost` to the other, so one box carries two symbols and neither module has to know the editor
+    ! exists. The press's own coordinates arrive in `the pick position`, which is what places the menu.
+    on right click GraphPic go to ShowMenu
+    on right click GraphSidePane go to ShowMenu
 
     on pick BlocksDivider
     begin
@@ -569,16 +603,16 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash c214aaca
+!! @hash 988c70a6
 !! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
 !!
 !! **A handler is registered by *executing* the line, and this file stops in the block below.** Everything after `fork to AutoSave` is a subroutine, so a registration written beside its own handler at the end of the file would never run: the pane's report would arrive at a program with no handler and be dropped in silence. The rule that falls out of it is worth keeping — in this editor a handler goes where the flow reaches it, and only its *body* may live at the end.
 !!
-!! It is named here with its body for that reason: the handler is `SideMarkLine`, in the Graph sidebar section, and the two are one thing split by the shape of the file rather than by design.
-on message go to SideMarkLine
-!! @hash f327f0fa
+!! It is named here with its body for that reason: the handler is `VizInbound`, in the Graph sidebar section, and the two are one thing split by the shape of the file rather than by design. `VizInbound` is a front door rather than the body itself because the pane now reports two kinds of news — the line under the pointer, and the freeze lifting — and one registration has to answer for both.
+on message go to VizInbound
+!! @hash 3e648bef
 !! @verified f327f0fa
 !!!
 !! While editor is running it periodically saves changes made by the user
@@ -2202,6 +2236,11 @@ DoExitGraph:
     ! but a press that ended outside the window leaves it set, and the next drag in the flat editor would
     ! otherwise be offered to a splitter nobody can see.
     put 0 into GripPicked
+    ! **And so does the freeze**, on both sides of it: the pane clears its own copy as it stands down (it
+    ! is told `open` 0), and this one goes with the mode for the reason the grip's does — a pane nobody is
+    ! looking at cannot be holding the pointer still, and a menu that read `Cancel` over an unfrozen pane
+    ! would be offering to cancel something that is not happening.
+    put 0 into MenuFrozen
     set the content of GraphBtn to `Graph`
     set attribute `title` of GraphBtn to `Show the run this script recorded, as a picture`
     ! Back to the sequence `viz.json` states — `EnterGraph` has the reasoning for these four numbers.
@@ -2234,14 +2273,31 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash 9730e80c
+!! @hash 2777205f
 !! @verified ecd231d6
 !!!
+!! The front door for what arrives from the pane, which is now two kinds of news and one registration.
+!!
+!! **The pane reports a line, and it reports the freeze lifting.** Both arrive at this file because both are about things this file owns the answers to: which block holds a line is the model Blocks mode is built from, and the word on the menu's last row is the menu's. The message's own `kind` is what tells them apart, so a field can be added to either without the other being read wrongly — the same rule the sidebar's boundary uses for its three.
+!!
+!! **The freeze's report is the pane correcting this file, and it is the only way that state can be right.** The editor sets the freeze when the row is pressed and cannot see a pointer, while the pane lifts it by itself the moment the pointer comes back over the picture; so the pane says so, and this is where that lands. Nothing else happens on it: the pause it was holding is over and the sidebar is left showing what it was showing.
+VizInbound:
+    put the message into SideIn
+    put property `kind` of SideIn into SideInKind
+    if SideInKind is `freeze` go to VizFreezeReport
+    go to SideMarkLine
+
+VizFreezeReport:
+    put property `frozen` of SideIn into MenuFrozen
+    stop
+!! @hash bab238ee
+!!!
+
 !! The sidebar: what the pane reports back, and what the sidebar is shown.
 !!
 !! **The pane cannot look a line up, and this file already can.** A doc block is prose about a *line*; the click names the line; and the model that knows which block holds it is the one Blocks mode is built from. So the click travels here rather than the model travelling there — which is also why the editor, and not the pane, knows that a sidebar exists at all.
 !!
-!! **`on message` is this file's first inbound message.** Everything else here is driven by the reader clicking one of the editor's own buttons; this is the one path that arrives from another program, and it arrives on the pane's pick. **The registration itself is not here** — a handler runs only if its line is executed, this file stops before this block, and the registration is in its own block above, where the flow reaches it.
+!! **This is the body of the inbound line report, entered from `VizInbound` above.** Everything else here is driven by the reader clicking one of the editor's own buttons; this is the one path that arrives from another program, and it arrives on the pane's pick — or, for the other kind, on the pane's freeze lifting. **The registration itself is not here** — a handler runs only if its line is executed, this file stops before this block, and the registration is in its own block above, where the flow reaches it.
 !!
 !! **The line is looked up rather than the block searched for.** `SecStart` and `SecEnd` already bound every section, so "which block holds line N" is a walk over them. A line in *no* block is an answer too, and the sidebar is told so rather than being left showing the last block it had. **And the model is built on the way in**, by the same `ParseSource` Blocks mode uses, because it used to be built *only* there: a reader who opened a run without ever opening Blocks had no sections at all — or, worse, the ones left behind by the last file that was blocked, which is the kind of stale answer that reads as a working panel.
 SideMarkLine:
@@ -2481,13 +2537,143 @@ LaunchApp:
 !! @verified 0faead49
 !!!
 
+!! The popup menu: where the pointer's other button is answered, what it offers, and what closes it again.
+!!
+!! **One menu, owned here, for two surfaces.** The picture and the sidebar are separate programs in separate boxes, and a menu is neither's: it must be able to appear over either, and what it lists is the *editor's* to know — the sidebar's tabs and the pane's freeze. So the editor listens for the right-click on both boxes and draws the box itself, and each module is told what the item meant without ever learning that a menu exists.
+!!
+!! **A right-click is answered wherever it lands**, and the browser's own menu is suppressed where ours is offered (`on right click` cancels the default) so the reader is never shown two menus stacked on one another.
+!!
+!! **The mask is what makes a click-away close it.** The sheet covers the window and takes the click, and `HideMenu` is its handler; the menu itself is above the sheet and takes its own clicks. It is the same shape the file browser uses, and for the same reason: a popup closed by a click *anywhere* would need an `on click document`, which the runtime does not have and must not grow — a document handler fires for internal links and nothing else.
+!!
+!! **Two rows of this menu are the sidebar's and one is the pane's**, and neither module is told that a menu exists: each is sent the same kind of message it already answers, so the menu is a way of asking for something the two programs could both already do. Which row was pressed is `the index of MenuItem` — see `MenuItemClick` for the three of them.
+ShowMenu:
+    if MenuBuilt is 0 gosub to MenuBuild
+    put the pick position into MenuAt
+    put property `x` of MenuAt into MenuX
+    put property `y` of MenuAt into MenuY
+    set style `left` of Menu to MenuX cat `px`
+    set style `top` of Menu to MenuY cat `px`
+    ! **The last row's word is read every time the menu is opened, because it is the one word that
+    ! changes.** The freeze is the pane's state, not this file's, and the pane lifts it by itself the
+    ! moment the pointer comes back over the picture — so the label has to be taken at the moment the
+    ! reader looks, which is here, rather than left as whatever it was the last time.
+    gosub to MenuFreezeRow
+    set style `display` of MenuMask to `block`
+    set style `display` of Menu to `block`
+    return
+
+HideMenu:
+    set style `display` of Menu to `none`
+    set style `display` of MenuMask to `none`
+    return
+!! @hash 73041cd8
+!!!
+
+!! The menu's rows, built once from a list of names.
+!!
+!! **A row is a symbol, so the list is a name in `MenuItemName` and a row in the pool** — the same constraint the sidebar's tabs live under, and the same shape it uses to get round it: `MenuItem` is declared in this file and every row is *created* here, which is why `se-menu` is an empty box in `viz.json` rather than a list of rows. **The styles are set here for the same reason**, exactly as the tab strip sets its own: an element the runtime creates is a bare `div` of that kind, so a row that carried no padding or colour would be a row a reader could not read — measured in a browser on 2026-10-12, where the rows sat flush against one another in the browser's default colour on the menu's own dark ground. `MenuPad` holds that one styling for every row; nothing in it changes per row, so it is written once.
+!!
+!! **The first two names are the sidebar's tab names and its order**, which is the one thing here that has to agree with another file: `MenuItemClick` sends a row's index *as* a tab's index, so a tab added to the sidebar's strip has to be added here too.
+!!
+!! **The labels are English, and so are the sidebar's tabs** — that module has no language pack, deliberately, and neither has this: it owns the box and it owns the words on it. The one word that is not in this list is `Cancel`, which replaces `Freeze` while the picture is being held still.
+MenuBuild:
+    put 1 into MenuBuilt
+    put 3 into MenuItemCount
+    set the elements of MenuItemName to MenuItemCount
+    index MenuItemName to 0
+    put `Doc block` into MenuItemName
+    index MenuItemName to 1
+    put `Code` into MenuItemName
+    index MenuItemName to 2
+    put `Freeze` into MenuItemName
+    put `font-size:12px;color:#d7d7d7;padding:6px 18px 6px 12px;cursor:pointer;text-align:left;white-space:nowrap` into MenuPad
+    set the elements of MenuItem to MenuItemCount
+    put 0 into MenuI
+    while MenuI is less than MenuItemCount
+    begin
+        index MenuItem to MenuI
+        create MenuItem in Menu
+        index MenuItemName to MenuI
+        put MenuItemName into MenuItemLabel
+        set the content of MenuItem to MenuItemLabel
+        set the style of MenuItem to MenuPad
+        ! **A handler per row, registered as the row is made.** A pool's elements do not exist until
+        ! `create` has made them and `on click` registers on the elements the symbol has *at that
+        ! moment*, so a registration written once before this loop would register nothing at all. This is
+        ! the sidebar's tab strip's own shape, and for its own reason.
+        on click MenuItem go to MenuItemClick
+        add 1 to MenuI
+    end
+    return
+!! @hash 09499d4a
+!!!
+
+!! What each row does when it is pressed.
+!!
+!! **One handler for three rows, and which row it was comes from the row.** A row is an element of the `MenuItem` pool, so `the index of MenuItem` is the whole of what tells them apart — the shape the sidebar's tab strip already uses. **The rows are the sidebar's two tabs in the sidebar's own order, then the pane's freeze**, so for the first two a row's index *is* a tab's index and nothing maps between them; the third is the row that is not a tab. That is the one coupling in this menu, and it is why both lists are in that order and each says so.
+!!
+!! **The menu is put away first, whatever the row does.** Every row here changes what the reader is looking at, and a menu left standing over the thing it just changed is a menu in the way of its own answer.
+!!
+!! **Neither rung is this file's to hold.** A tab is the sidebar's state and the freeze is the pane's, so both are *told* and neither is *asked*: `MenuFrozen` exists only so a row can be labelled, and the pane corrects it the moment it lifts the freeze itself — see `VizFreezeReport`, which is that correction arriving.
+MenuItemClick:
+    put the index of MenuItem into MenuPick
+    gosub to HideMenu
+    if MenuPick is 2 go to MenuFreezeToggle
+    gosub to MenuTabSelect
+    stop
+
+!   The freeze, which is a toggle rather than two rows: the pane is told to hold where it is, or to let
+!   go, and the row will read the other word the next time the menu is opened.
+MenuFreezeToggle:
+    if MenuFrozen is 1 put 0 into MenuFrozen
+    else put 1 into MenuFrozen
+    if VizLoaded is 0
+    begin
+        log `menu: the pane is not loaded, so freeze=` cat MenuFrozen cat ` has nowhere to go`
+        stop
+    end
+    put `{}` into VizRun
+    set property `kind` of VizRun to `freeze`
+    set property `frozen` of VizRun to MenuFrozen
+    send VizRun to VizModule
+    stop
+
+!   The tab switch: the sidebar takes the tab up and re-shows the line it is already holding. Nothing of
+!   the line is re-sent, and that is what makes this both cheap and correct — the menu may have been
+!   opened over a picture whose last report arrived some time ago, and a re-sent line would be an
+!   *arrival* the reader never named, with a visit number and a set of captured values to go with it.
+MenuTabSelect:
+    if SideLoaded is 0
+    begin
+        log `menu: the sidebar is not loaded, so tab ` cat MenuPick cat ` has nowhere to go`
+        return
+    end
+    put `{}` into SideMsg
+    set property `kind` of SideMsg to `tab`
+    set property `sel` of SideMsg to MenuPick
+    send SideMsg to SideModule
+    return
+
+!   The last row's words, assembled where they are written. The name comes from the one list that holds
+!   it, so a renamed row is renamed here too; `Cancel` is the one word that is not in that list, because
+!   it is not a name but a state.
+MenuFreezeRow:
+    take 1 from MenuItemCount giving MenuI
+    index MenuItemName to MenuI
+    put MenuItemName into MenuItemLabel
+    if MenuFrozen is 1 put `Cancel` into MenuItemLabel
+    index MenuItem to MenuI
+    set the content of MenuItem to MenuItemLabel
+    return
+!! @hash e277ef59
+!!!
+
 !! Puts the welcome panel away, and is the only thing that does.
 !!
-!! **Registered on the document, so *any* click dismisses it** — a button, the picture, the prose, the empty page around them. The panel is the first thing a new reader sees and exists to be read once, so the click that means "I have started" is not a click on any particular control: a design that watched the buttons would need one line per button, and the seventh button added later would silently not dismiss it. Registering it is what makes it work at all — see the note at the registration, near the top of the flow — and the panel is *shown* by `viz.json` rather than by this file, so there is nothing here that puts it back.
+!! **The panel goes on the first click of anything that works, and there is no single line that says so.** `on click document` reads as "any click anywhere" and is not: the runtime runs a document click handler only for an `<a href>` into this same page (`Browser.js`, `clickDocument` — the editor's own file links are what it exists for). Measured in a browser, 2026-10-12, a click on `Blocks` left the panel standing. So the dismissal is a `gosub to DismissWelcome` as the first line of each of the bar's handlers — `ShowBrowser`, `NewFile`, `DoFind`, `ToggleBlocks`, `ToggleGraph`, `RecordRun` and `LaunchApp` — with the panel itself clickable too, for a reader who clicks the prose rather than a button. **The cost is that a new button has to carry its own `gosub`**, which no list can imply: `tools/viz-modes-check.js` asks the *source* of all seven, because running them for real opened the file browser and broke the checks below it.
 !   -- Put the welcome panel away --
 DismissWelcome:
     set style `display` of Welcome to `none`
     return
-
 !! @hash 3c88926c
 !!!

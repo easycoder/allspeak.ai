@@ -77,6 +77,16 @@
 !   -- the boundary's own state --
     variable VizRun            ! the dict the editor sent, as it arrived
     variable VizShown          ! 1 while the editor has this pane on screen
+    ! **The freeze, which is the menu's other row and this module's own state.** While it is set no line
+    ! is reported at all, so the sidebar keeps the reading the reader asked it to keep. It lifts on the
+    ! first hover that finds the pointer back over the picture *having been outside it* — `VizAway` is that
+    ! second half, and `VizFrozenLook` has why it is needed. Declared here rather than with the row's own
+    ! state because `VizOpen` reads the message the freeze arrives in, and a variable has to be declared
+    ! above the statement that writes it.
+    variable VizFrozen
+    variable VizAway           ! 1 once a pointer has been seen *outside* the pane, so a return is a return
+    variable VizMsgKind        ! which kind of message it was: a run, or the freeze
+    variable VizFreezeMsg      ! the dict sent back when the pane lifts the freeze itself
     ! What a drag is holding. Declared with the gestures rather than with the rest of the view's state
     ! because the handlers below are the first thing in the file to read it, and a variable has to be
     ! declared before the code that uses it.
@@ -88,7 +98,7 @@
     ! nothing is reachable at load.
     variable VizClipInit
     put 0 into VizClipInit
-!! @hash 6e7303bc
+!! @hash 9030b091
 !! @verified a04b40d6
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
@@ -182,16 +192,24 @@ ClearStatus:
 !! @hash 06d18b21
 !! @verified 5b1f9f95
 !!!
-!! The module's one message: take the run, or stand down.
+!! The module's messages: take the run, stand down, or hold the picture still.
 !!
 !! `open` 0 is the editor saying the pane is no longer on screen, which is the module's cue to leave the pointer alone; 1 carries the run itself. The flow words arrive with it because they are the editor's string table's, localised for the file's language, and the path arrives so that a recording that is not there can be named rather than merely missed.
+!!
+!! **The freeze comes through the same door, told apart by the message's own `kind`.** It is not a run — it carries no text and nothing is redrawn — so a message that fell through to the run's branch would be read as an *empty* recording and clear the picture; hence the test before `open` is looked at. That is the whole reason this boundary has a `kind` at all.
 !!
 !! This is the only place the two programs meet, and the dict is the whole of the interface — so a field added here is the whole of the change on both sides.
 VizOpen:
     put the message into VizRun
+    put property `kind` of VizRun into VizMsgKind
+    if VizMsgKind is `freeze` go to VizFreeze
     if property `open` of VizRun is 0
         begin
         put 0 into VizShown
+        ! The freeze goes with the pane: a picture nobody is looking at cannot be holding the pointer
+        ! still, and the editor clears its own copy as it leaves (see `DoExitGraph`).
+        put 0 into VizFrozen
+        put 0 into VizAway
         gosub to VizTipHide
         gosub to VizAlertHide
         stop
@@ -204,6 +222,16 @@ VizOpen:
     put property `return` of VizRun into StrFlowReturn
     put 1 into VizShown
     gosub to VizDrawRun
+    stop
+
+!   The menu's freeze, arriving as a `kind` of its own: the pane is told to hold where it is or to let
+!   go, and it says nothing back here — the only thing it ever reports about the freeze is the lift it
+!   makes itself, in `VizFrozenLook`.
+VizFreeze:
+    put property `frozen` of VizRun into VizFrozen
+    ! A freeze begins with the pointer where the menu was, which is inside the picture: the journey that
+    ! lifts it has not happened yet, so the memory of one goes with the flag that starts it.
+    put 0 into VizAway
     stop
 !   Nothing to draw, and the message names the file that was missing rather than what a marker is.
 !   A `return` rather than a `stop`: the entry called it with `gosub`, and the pane is left on screen
@@ -441,7 +469,7 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 9bd6583e
+!! @hash e24be747
 !! @verified 3fce0448
 !!!
 !! The view itself: everything from here down is the drawing.
@@ -839,6 +867,15 @@ VizRemember:
     variable VizRowSent
     variable VizRowTmp
     variable VizRowMsg
+    ! **The freeze, which is the menu's other row and the pane's own state.** While it is set no line is
+    ! reported at all, so the sidebar keeps the reading the reader asked it to keep — and the first hover
+    ! back *over the picture* lifts it, which is what makes the freeze a pause rather than a mode. The four
+    ! `VizFrz…` are the pane's own box in client pixels, which is the whole of how a return is told from a
+    ! departure: `mouseleave` arrives with the pointer already outside it (measured, 2026-10-12).
+    variable VizFrzX
+    variable VizFrzX2
+    variable VizFrzY
+    variable VizFrzY2
     variable VizTipText
     variable VizTipLen
     variable VizTipW        ! the tip's width in drawing units, from the words it carries
@@ -1082,7 +1119,7 @@ Draw:
     ! correctly and then thrown away, so a narrowed picture scrolled as slowly as the whole one. Measured
     ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
     put VizKept into VizEvents
-!! @hash 30e5aeb0
+!! @hash e9a06a05
 !! @verified 1ae42b87
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -2708,21 +2745,36 @@ VizHover:
     ! `mouseleave` is what carries the words away again, and the arithmetic finds nothing under a point
     ! outside the pane, which is why there is no separate "leave" here.
     if VizShown is 0 return
-    if VizReady is 0 return
+    ! **`is not 1`, and not the `is 0` this guard was written as, because a declared variable with nothing
+    ! in it is not zero.** The pane is on screen from the moment the editor's message arrives and is not
+    ! *built* until the drawing's own build pass has run — and the first draw of a run announces itself and
+    ! waits (`VizBusyNotice`) before that happens, so a pointer already over the picture has a real window
+    ! in which to arrive here. Read as `is 0` the guard never fired: `VizTipDraw` then wrote `VizTip`, an
+    ! element that did not exist yet, and threw on every pointer move. `VizTipHide` carries the same guard
+    ! with the same hole; that one is reported rather than changed, because nothing here depends on it.
+    if VizReady is not 1 return
     put the hover position into VizHoverPos
     put property `x` of VizHoverPos into VizRawX
     put property `y` of VizHoverPos into VizRawY
     gosub to VizPointerUnits
-    ! **The line under the pointer, which every sidebar tab is a view of** — reported here rather than on a
-    ! press alone, which is what this gesture now exists for: the reader moves the pointer over the script
-    ! and the panel says what that part of it was for. It is two comparisons and a message when the line
-    ! changes, and nothing at all while the pointer stays inside one row.
-    !
-    ! It comes *before* the tip's memo below, and that is a real order rather than a style: the memo returns
-    ! as soon as the control under the pointer is the one already described, so the row would only ever be
-    ! reported on the events that happened to change the tip.
-    gosub to VizRowAt
-    gosub to VizRowTell
+    ! **A frozen pane reports no line, and the pointer coming back over the picture is what unfreezes
+    ! it.** The test is before the row is worked out rather than inside `VizRowTell`, because frozen means
+    ! the *whole* of the row machinery stands down — and the lift itself is decided in `VizFrozenLook`,
+    ! which is the state machine in one place.
+    if VizFrozen is 1 gosub to VizFrozenLook
+    if VizFrozen is 0
+    begin
+        ! **The line under the pointer, which every sidebar tab is a view of** — reported here rather than
+        ! on a press alone, which is what this gesture exists for: the reader moves the pointer over the
+        ! script and the panel says what that part of it was for. It is two comparisons and a message when
+        ! the line changes, and nothing at all while the pointer stays inside one row.
+        !
+        ! It comes *before* the tip's memo below, and that is a real order rather than a style: the memo
+        ! returns as soon as the control under the pointer is the one already described, so the row would
+        ! only ever be reported on the events that happened to change the tip.
+        gosub to VizRowAt
+        gosub to VizRowTell
+    end
     gosub to VizControlAt
     if VizCtrlHit is VizHoverShown return
     put VizCtrlHit into VizHoverShown
@@ -3134,7 +3186,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 63e437ec
+!! @hash 0f1ac9ba
 !! @verified dc725895
 !!!
 !! And a doc block is not drawn in it.
@@ -3687,8 +3739,49 @@ VizRowTell:
     set property `line` of VizRowMsg to VizRowLine
     send VizRowMsg to parent
     return
-!! @hash 3de4d772
+!! @hash f74b0721
 !! @verified 3de4d772
+!!!
+
+!! Holding the picture still while the pointer goes across to the sidebar, and letting go when it comes back.
+!!
+!! **What the freeze is for.** A reader points at a line, the sidebar shows the block it belongs to, and then they move the pointer across to *read* that block — and the journey itself changes the answer, because the pointer crosses rows on the way out. The freeze is the journey's protection: while it is set the pane reports nothing at all, so the sidebar keeps the block the reader chose. It is set from the editor's popup menu and cleared here, because the gesture that ends it is a pointer's.
+!!
+!! **The two halves of the state machine, and the measurement the whole of it rests on.** A `mouseleave` must *not* lift the freeze — the pointer leaving the picture is exactly the journey the freeze exists for — while the first hover back inside it must (Graham's own words: *"on re-entering to the graph the mouseover actions resume"*). So the only question ever asked is "is the pointer over the pane", and it is put to the pane's own box in client pixels against `the hover position`, which is the same pair of numbers. **One box test is enough because a leave's coordinates are already outside the box it left** — measured in chromium, 2026-10-12, on a 400×300 box at (100,50): leaving it to the right reports `x=505` and leaving it downward reports `y=360` — so a departure and a return can never read the same, and no separate "leave" event is needed anywhere in this file.
+!!
+!! **A pointer inside the box is not by itself a return, and the browser is what showed it: `VizAway` is the second half.** The menu is drawn *over* the picture, so the pointer that presses `Freeze` is inside the pane's box while it is over a box the pane does not own — and the first version, which lifted the freeze on any pointer inside the box, lifted it the moment the pointer moved a pixel. So the freeze lifts only on a hover that finds the pointer inside the box **having been seen outside it**, which is what a journey out to the sidebar and back is. **That is exactly why the row reads `Cancel`**: a reader who froze and never left has no journey to come back from, and `Cancel` is the way back — Graham's own sentence for the row, and this is the case it covers.
+!!
+!! **The pane tells the editor when it lifts the freeze, and that is the only reason it speaks.** The editor set the freeze and labels the menu's last row from it, and the editor cannot see a pointer; so a lift made here on the pane's own initiative would otherwise leave that row reading `Cancel` over a picture that had already resumed — and a reader who pressed it would be cancelling nothing. `VizFreezeTell` is that correction, and it is the one message in this file that is not about a line.
+VizFrozenLook:
+    put the left of VizHost into VizFrzX
+    put the top of VizHost into VizFrzY
+    add the width of VizHost to VizFrzX giving VizFrzX2
+    add the height of VizHost to VizFrzY giving VizFrzY2
+    ! The box is compared half-open — a coordinate exactly on the right or bottom edge counts as outside —
+    ! because a leave is a coordinate *past* the edge rather than on it, and a move that names the very
+    ! last pixel of the pane is not a journey anywhere.
+    if VizRawX is not less than VizFrzX and VizRawX is less than VizFrzX2 and VizRawY is not less than VizFrzY and VizRawY is less than VizFrzY2 go to VizFrozenBack
+    ! Outside it, so the reader is on their way somewhere and the freeze is doing its job. This is the half
+    ! that remembers the journey, and it is why a pointer merely moving about *inside* the picture cannot
+    ! lift the freeze: nothing below runs until a hover finds it outside first.
+    put 1 into VizAway
+    return
+
+VizFrozenBack:
+    ! Back inside, and whether that is a return or just a pointer that never left is the whole question.
+    if VizAway is 0 return
+    put 0 into VizAway
+    put 0 into VizFrozen
+    gosub to VizFreezeTell
+    return
+
+VizFreezeTell:
+    put `{}` into VizFreezeMsg
+    set property `kind` of VizFreezeMsg to `freeze`
+    set property `frozen` of VizFreezeMsg to 0
+    send VizFreezeMsg to parent
+    return
+!! @hash c2162976
 !!!
 !! Keep the picture to a range of steps, and give the whole recording back.
 !!

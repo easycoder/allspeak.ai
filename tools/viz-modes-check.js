@@ -926,6 +926,97 @@ check(valuesCleared,
 	`and a mark with no captured values clears the last one's rather than leaving them standing `
 	+ `(${JSON.stringify(String(sideElText(`ec-SideStatus`)))})`);
 
+// ---- the popup menu: what opens it, what it offers, and what its rows do --------------------------
+//
+// **This section sits here rather than with the Graph pane's own work, and the placement is the point.**
+// The menu is the editor's box: `viz.json` renders it, the editor's registration opens it, and the
+// editor's handler answers its rows. So it needs no drawing at all — it needs both modules *loaded*, to
+// say what its two kinds of row do, and that is exactly where this is: inside Graph mode, with the pane
+// and the sidebar both running. **This file stops in the Record section** (the pane's first draw throws
+// on `VizBusy`; see TODO-viz.md), so a menu check written below that line would never run and would still
+// read as coverage — which is how this file came to report fewer checks than it contains.
+//
+// The gesture is driven the way a browser drives it: the runtime attaches `contextmenu` as a *property*
+// on the element the registration named, so calling that property is a right-click — coordinates,
+// prevention and all — and the handler's own `the pick position` then reads what the event carried. The
+// rows are driven one step in from that, and the same way: `on click` sets the pool's `index` and runs the
+// handler, so setting the index and running `MenuItemClick` is the body of a row's click with nothing
+// invented.
+const rightClick = (element, x, y) => {
+	if (!element || typeof element.oncontextmenu !== `function`) return null;
+	let prevented = false;
+	element.oncontextmenu({ clientX: x, clientY: y, preventDefault: () => { prevented = true; } });
+	return prevented;
+};
+const menuRows = () => Object.values(byId)
+	.filter(e => String((e.attributes && e.attributes.id) || ``).startsWith(`ec-MenuItem-`))
+	.sort((a, b) => Number(a.attributes.id.replace(/\D+/g, ``)) - Number(b.attributes.id.replace(/\D+/g, ``)));
+const menuLabels = () => menuRows().map(e => String(e.innerHTML));
+const pickRow = i => {
+	const rec = program.getSymbolRecord(`MenuItem`);
+	rec.index = i;
+	run(`MenuItemClick`);
+};
+
+const pictureClick = rightClick(byId[`se-graph-host`], 300, 200);
+check(pictureClick === true,
+	`a right-click on the picture opens the menu and cancels the browser's own (preventDefault=${pictureClick})`);
+check(displayOf(`se-menu`).display === `block` && displayOf(`se-menu-mask`).display === `block`,
+	`and what comes up is the menu and its click-away sheet together `
+	+ `(menu=${displayOf(`se-menu`).display}, mask=${displayOf(`se-menu-mask`).display})`);
+check(displayOf(`se-menu`).left === `300px` && displayOf(`se-menu`).top === `200px`,
+	`and it opens where the pointer was rather than in a corner `
+	+ `(${displayOf(`se-menu`).left}, ${displayOf(`se-menu`).top})`);
+check(JSON.stringify(menuLabels()) === JSON.stringify([`Doc block`, `Code`, `Freeze`]),
+	`and its rows are the sidebar's two tabs and the freeze, in that order (${JSON.stringify(menuLabels())})`);
+
+// The click-away, checked as the *wiring* rather than by driving it: the runtime attaches `onclick` to the
+// sheet when `on click MenuMask go to HideMenu` is executed, so a function being there is that registration
+// having run — and `HideMenu` is the two-line subroutine above. **It is not driven, because this file is on
+// borrowed time in exactly this way**: the pane's first draw arms a one-second tick that writes into the
+// drawing before the build that creates its element (Graham's open item), so every extra `await` here spends
+// the interval this file's live portion has left. What the sheet's click *does* — putting the menu away —
+// is asserted where a row does the same thing, on the check below.
+check(typeof byId[`se-menu-mask`].onclick === `function`,
+	`and the sheet carries its own dismiss handler, which is the whole of a click-away here `
+	+ `(onclick=${typeof byId[`se-menu-mask`].onclick})`);
+
+// The sidebar is the other surface it answers on, and the two are separate boxes with separate
+// registrations: the fault this catches is one of them registered and the other forgotten, which is
+// invisible until somebody right-clicks the half that does nothing.
+const sideClick = rightClick(byId[`se-graph-side`], 900, 400);
+check(sideClick === true && displayOf(`se-menu`).left === `900px`,
+	`and the sidebar answers it too, with the menu moved to that pointer `
+	+ `(preventDefault=${sideClick}, ${displayOf(`se-menu`).left}, ${displayOf(`se-menu`).top})`);
+
+// A row acts by *message*, because the tab is the sidebar's state and the freeze is the pane's — so what
+// is checked is the round trip: the editor's own row handler, the message it sends, and the state that
+// ends up changed on the other side. The report comes first, so the panel has a block in hand either way.
+program.message = report(12, 3, 7);
+run(`SideMarkLine`);
+await waitFor(() => Number(sideValue(`SideLine`)) === 12);
+pickRow(1);
+const switched = await waitFor(() => Number(sideValue(`SideTabSel`)) === 1);
+check(switched && displayOf(`se-menu`).display === `none`,
+	`choosing Code puts the menu away and switches the sidebar's tab `
+	+ `(SideTabSel=${sideValue(`SideTabSel`)}, menu=${displayOf(`se-menu`).display})`);
+check(String(sideElText(`ec-SideCode`)).includes(`return`),
+	`and the tab it switched to is showing the section's code `
+	+ `(${JSON.stringify(String(sideElText(`ec-SideCode`)).slice(0, 48))})`);
+
+// **The freeze is deliberately not driven from here, and the reason is worth the paragraph.** Its row
+// sends a message to the *pane*, and this harness cannot survive one: the pane's first draw arms a ticker
+// and a `wait` (see `VizBusyNotice`), and the ticker writes into the drawing before the build that creates
+// its element — so a message that arrives while that ticker is armed lets it fire, and the run dies on
+// `Cannot set properties of null`. That is Graham's open item, the same one that stops this file in the
+// Record section, and it is *not* the menu's: what the menu does with the pane is set a flag through
+// `VizFreeze`, which is three statements. So the freeze's crossing, its row reading `Cancel`, and the lift
+// the pane makes when the pointer comes back are measured in a browser — `various/menu-measure.js`, the
+// rig this change was verified with — and the headless claims for them are owed with the `VizBusy` fix.
+//
+// What is checked here is what the editor owns and can be asked without waking the pane: that the row is
+// there, in the right place, named for the state it would change.
+
 // The caret and the view, remembered on the way in and put back on the way out — as a pair, and with
 // the caret written before the view so that neither can drag the other.
 //

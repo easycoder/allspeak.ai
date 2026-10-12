@@ -92,7 +92,9 @@ Each of these was decided by Graham and is not to be re-opened without him.
 
 **The readout moved into the drawing on 2026-10-06 and the line that writes it did not move with it.** `VizBusy` is created by the build block inside `Draw`; `VizBusyNotice` — which writes it — runs *before* `VizRequest` calls `Draw`, so on the first drawing of a run `the text of VizBusy` reaches a `null` target and throws (`Cannot set properties of null (setting 'innerHTML')`). **Measured, not reasoned**: reproduced in a browser by calling `VizBusyNotice` directly (`busyEl: []`, the throw), and by instrumenting the module (`VizBusyNotice entered` … and nothing after). **It is invisible in practice, and that is why it has survived**: with no recording the flow stops at `GraphNone` before the draw and the message is all that is shown, and with a recording the build has happened by the time the notice is reached (`VizReady` is `1`, the canvas is in the page, no error). **The fix is yours to call**: either split `Draw` so the elements are built before the notice, or build them from the notice itself — and the panel work above deliberately does not depend on it.
 
-**⚠ 2026-10-11, and this is no longer only a live-pane curiosity: it costs 22 checks.** `tools/viz-modes-check.js` reports **56 of the 74 checks it contains**, because the Record section's first act draws in the pane and throws here — so everything below that line never runs, including the whole Python-flavour section and the sidebar's tab checks, and a reader of the check output would take them as covered. Measured by writing a check into the dead part and watching it not run. Reviving those 22 checks is now the reason to fix the line; the lesson is a trap in `AGENTS.md`.
+**⚠ 2026-10-11, and this is no longer only a live-pane curiosity: it costs checks.** `tools/viz-modes-check.js` reports only the checks above the Record section, because the Record section's first act draws in the pane and throws here — so everything below that line never runs, and a reader of the check output would take it as covered. Measured by writing a check into the dead part and watching it not run. Reviving them is now the reason to fix the line; the lesson is a trap in `AGENTS.md`.
+
+**⚠ 2026-10-12, and this pass adds the measurement that makes it a budget rather than a cliff: the tick is one second long.** `VizBusyNotice` arms the alert panel's ticker before it writes the readout, so a message to the pane — any message — starts a one-second clock, and when it fires the ticker writes `VizBusy` and throws. **The consequence is that `viz-modes-check`'s coverage depends on how much wall time its checks spend**: while the file's live portion finishes inside that second everything runs, and a few extra `await`s near the pane push it over and take the checks further down with it. That is exactly what happened when the popup menu's freeze checks were written: its row sends a message *to the pane*, the run died at the point the tick fired, and the fix was to measure the freeze in a browser instead (`various/menu-measure.js`) and leave the claim owed here. **So this fault is now the thing standing between the menu's freeze and a headless check** — the first claim to move back when it is fixed.
 
 ---
 
@@ -343,6 +345,17 @@ view), or left as the recording's fact. Not changed — the evidence went first.
   pane's new line; the sidebar has no harness of its own.
 - **The pane's mark line is English-only** (`line ...   visit ... of ...`), as the sidebar's wording was before it
   moved — the editor's string table has the flow words but not these. It moved the gap rather than widening it.
+
+- **The menu's freeze has no headless check, and it is the one thing this pass left owed.** Its row sends a
+  message *to the pane*, and a message to the pane is what lets the `VizBusyNotice` tick fire inside a second and
+  kill the run (see "A fault left for you") — so the freeze's crossing, the `Freeze`/`Cancel` row and the lift the
+  pane makes are measured in a browser instead: `various/menu-measure.js`, 17 checks, all green, no page errors.
+  Everything the editor owns about the menu *is* asserted by `viz-modes-check` (8 claims). **These claims come
+  home when the tick is moved out of the drawing**, and they are the first thing to move.
+
+- **The menu's rows have no rollover.** The sidebar's tabs, the bar's buttons and the pane's three clip controls
+  all say what they are before they are pressed; the menu's rows are the one control in the editor that do not.
+  It is the same `on hover` work as the sidebar's own rollover, on a third surface, and neither is built.
 
 - **Half the corner readout is code the pane's harness never runs.** `VizBusyNotice` is called from `Draw`, which
   `plotview-check` runs, so the notice is checked there; `VizBusyDone` is called from `VizDrawRun` in the module's
@@ -609,9 +622,27 @@ So the clip pays, by roughly the square of the fraction kept, exactly as the sec
 
 ---
 
-## Where to start, if you are picking up `viz` next — written 2026-10-12
+## Where to start, if you are picking up `viz` next — written 2026-10-12, after the popup menu was wired
 
-**`TODO.md`'s "Where this stands" block is the brief: read it first.** In one paragraph: the sidebar's **popup menu is built and nothing opens it**, because `on right click` does not compile yet — that is a separate session's job, briefed at the foot of `TODO-language.md`. When it lands: restore the two parked registrations in `viz.allspeak`'s registration block (that shows the menu, which is all Graham asked for first), then make the items act — the **tab switch** (a new message `kind`, since the sidebar cannot be told anything today) and the **freeze**, whose state machine is settled from Graham's own words at the foot of `TODO-language.md`. After that, the queue is the `VizBusy` fault that costs `viz-modes-check` 22 of its checks, the sidebar's own rollover, and the "line outside any doc block" question — all listed in `TODO.md`.
+**`TODO.md`'s "Where this stands" block is the brief: read it first.** In one paragraph: **the right-click menu is built, opens, and its rows act** — `Doc block` / `Code` switch the sidebar's tab, `Freeze` holds the picture (and reads `Cancel` while it is on), and the whole gesture was verified in a browser because two of its faults were invisible to every harness here. The menu's own section is below.
+
+**The order from here, and the first item is not a feature.** (1) **`VizBusy`** — it is written by a pass that runs *before* the build that creates its element, and it is what kills `viz-modes-check` part way through, so every check written near the pane costs the file checks further down (see "A fault left for you", where this pass adds a measurement: **the tick it arms is one second long**). Fixing it buys back the menu's freeze claims, which are in a browser rig for exactly that reason. (2) **The sidebar's own rollover** — the other half of the `on hover` work, a tip surface over its tabs and its marked rows. (3) **The "line outside any doc block" question** — one line either way, and it now interacts with the `Code` tab. Then the rest of "Open work".
+
+**And one finding from this pass that is Graham's, one line**: `VizReady is 0` never fired (a declared variable with nothing in it is not zero), so the pane's "not built yet" guard did not guard — a pointer over the pane during the first draw wrote into the tip before `Draw` created it. The `VizHover` guard is fixed, because the freeze sits in it; **`VizTipHide` carries the same hole**.
+
+---
+
+## The popup menu — built 2026-10-12, wired the same day, and the two faults a browser found
+
+**Graham's ask.** *"The first thing is to be able to switch tabs by right-clicking and selecting from a popup menu. To avoid losing the current position, the menu will also offer an option to freeze on the current position. This allows the mouse to move across to the sidebar and scroll it. On re-entering to the graph the mouseover actions resume. Also, the freeze can be cancelled in the same menu; right-clicking when the freeze is active changes the menu item to Cancel."* He also settled that the menu opens over **both** surfaces — the picture and the sidebar — since a menu opening only where the tabs are would put `Freeze` somewhere the position is not.
+
+**What it is.** `ShowMenu`/`HideMenu`/`MenuBuild` are the editor's, as they were built; the rows are `MenuItem` — a symbol declared in `viz.allspeak` and created in a loop, exactly as the sidebar's tabs are — and each row carries its own `on click`, registered *as the row is created*, because a pool's elements do not exist until `create` has made them. `MenuItemClick` reads `the index of MenuItem` and sends one of two messages: a **`tab`** kind to the sidebar, or a **`freeze`** kind to the pane. The sidebar answers a `tab` through `SideTabShow`, which a click on its own strip goes through too, so a tab has one answer however it was chosen. The pane owns the freeze, in `VizFrozen`, and reports the lift back (`VizFreezeTell`) — the editor keeps `MenuFrozen` only so the row can be labelled, and the pane is what corrects it.
+
+**The freeze's state machine, and the half the first version got wrong.** It holds while the pointer is *outside* the picture — the journey to the sidebar — and lifts on the first hover that finds the pointer back inside **having been seen outside it** (`VizAway`). That second half is not decoration: **the menu is drawn over the picture**, so the pointer that presses `Freeze` is inside the pane's box while it is over a box the pane does not own, and a lift keyed only on "inside the box" resumed the moment the reader moved a pixel — measured in the browser. **A pointer moving about inside the picture does not lift it either**, and that is the whole reason the row reads `Cancel`: a reader who froze and never left has no journey to come back from.
+
+**Two faults, and both were invisible to every harness in this repository.** (1) **The menu had never been seen rendered** — `se-menu` was an empty box with `$MenuItem` instantiated inside it by the page renderer, and an element the runtime *creates* carries none of a template's styles, so the rows sat flush against each other in the browser's default colour under a 12-pixel blank row. `$MenuItem` is gone from `viz.json`; the rows are styled in `MenuBuild` as the sidebar styles its tabs. `various/menu-before.png` and `various/menu-look.png` are the two states. (2) **The freeze lifted the moment it was set** — the paragraph above. Both came out of one run of `various/menu-measure.js` against the dev server, which is the third time a browser has caught what a harness could not (the welcome panel and the hover intent are the other two).
+
+**Checked, and what is owed.** `tools/viz-modes-check.js` gained **8 claims — 75 OK / 2 FAIL against a baseline of 67 OK / 2 FAIL**: the right-click opens it and cancels the browser's own; the sheet comes with it; it opens at the pointer; the three rows in order; the sheet carries its dismiss handler; the sidebar answers the right button; and `Code` puts the menu away, switches the tab through the message and shows the code. **The freeze's claims are in `various/menu-measure.js` instead — 17 checks, all green, no page errors** — because its row sends a message *to the pane*, and a message to the pane is what lets the one-second tick fire and kills `viz-modes-check`. **They come back here when `VizBusy` is fixed, and that is the first thing to move.**
 
 ---
 

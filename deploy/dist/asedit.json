@@ -1,461 +1,554 @@
 {
-  "$OpenBtn": {
-    "#element": "button",
-    "@id": "se-open",
-    "#content": "Open",
-    "padding": "4px 12px",
-    "cursor": "pointer"
-  },
-  "$TabBar": {
-    "#element": "div",
-    "@id": "se-tabbar",
-    "display": "flex",
-    "gap": "2px",
-    "overflow-x": "auto",
-    "min-width": "0"
-  },
-  "$PlusBtn": {
-    "#element": "img",
-    "@id": "se-plusbtn",
-    "@src": "https://allspeak.ai/icon/plus.png",
-    "width": "20px",
-    "height": "20px",
-    "cursor": "pointer",
-    "padding": "4px",
-    "flex-shrink": "0"
-  },
-  "$TabGroup": {
-    "#element": "div",
-    "@id": "se-tabgroup",
-    "display": "flex",
-    "flex": "1",
-    "align-items": "center",
-    "min-width": "0",
-    "#": ["$TabBar", "$PlusBtn"]
-  },
-  "$BlocksBtn": {
-    "#element": "button",
-    "@id": "se-blocksbtn",
-    "#content": "Blocks",
-    "order": "4",
-    "padding": "4px 12px",
-    "cursor": "pointer",
-    "flex-shrink": "0"
-  },
-  "$LaunchBtn": {
-    "#element": "button",
-    "@id": "se-launchbtn",
-    "#content": "Launch",
-    "order": "5",
-    "display": "inline-block",
-    "padding": "4px 12px",
-    "cursor": "pointer",
-    "flex-shrink": "0"
-  },
-  "$RecordBtn": {
-    "#element": "button",
-    "@id": "se-recordbtn",
-    "#content": "Record",
-    "order": "6",
-    "padding": "4px 12px",
-    "cursor": "pointer",
-    "flex-shrink": "0"
-  },
-  "$GraphBtn": {
-    "#element": "button",
-    "@id": "se-graphbtn",
-    "#content": "Graph",
-    "order": "7",
-    "padding": "4px 12px",
-    "cursor": "pointer",
-    "flex-shrink": "0"
-  },
-  "$FindBtn": {
-    "#element": "button",
-    "@id": "se-findbtn",
-    "#content": "Find",
-    "order": "8",
-    "padding": "4px 12px",
-    "cursor": "pointer",
-    "flex-shrink": "0"
-  },
-  "$StatusSpan": {
-    "#element": "span",
-    "@id": "se-status",
-    "color": "lightgreen",
-    "font-size": "0.85em",
-    "padding": "0 8px",
-    "white-space": "nowrap",
-    "min-width": "6em",
-    "text-align": "right"
-  },
-  "$Logo": {
-    "#element": "a",
-    "@id": "se-logo",
-    "@href": "https://allspeak.ai",
-    "@target": "_blank",
-    "@title": "AllSpeak.ai — the website, the Primer and the documentation",
-    "display": "flex",
-    "flex-shrink": "0",
-    "#": ["$LogoImg"]
-  },
-  "$LogoImg": {
-    "#element": "img",
-    "@src": "https://allspeak.ai/icon/duckthink.png",
-    "width": "28px",
-    "height": "28px",
-    "border-radius": "6px",
-    "flex-shrink": "0"
-  },
-  "$TopBar": {
-    "#element": "div",
-    "@id": "se-topbar",
-    "display": "flex",
-    "align-items": "center",
-    "background": "#2d2d2d",
-    "padding": "4px",
-    "gap": "4px",
-    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$LaunchBtn", "$RecordBtn", "$GraphBtn", "$FindBtn"]
-  },
-  "$ContentEditor": {
-    "#element": "textarea",
-    "@id": "se-textarea",
-    "width": "100%",
-    "height": "100%"
-  },
-  "$ContentDiv": {
-    "#element": "div",
-    "width": "100%",
-    "height": "100%",
-    "#": ["$ContentEditor"]
-  },
-  "$EditorArea": {
-    "#element": "div",
-    "@id": "se-editor-area",
-    "height": "calc(100vh - 40px)",
-    "position": "relative",
-    "#": ["$ContentDiv", "$Welcome"]
-  },
-  "$Welcome": {
-    "#element": "div",
-    "@id": "se-welcome",
-    "display": "flex",
-    "position": "absolute",
-    "top": "0",
-    "left": "0",
-    "right": "0",
-    "bottom": "0",
-    "align-items": "center",
-    "justify-content": "center",
-    "background": "#191919",
-    "#": ["$WelcomeBox"]
-  },
-  "$WelcomeBox": {
-    "#element": "div",
-    "@id": "se-welcome-box",
-    "max-width": "640px",
-    "padding": "22px 26px",
-    "background": "#242424",
-    "border": "1px solid #3a3a3a",
-    "border-radius": "8px",
-    "color": "#d7d7d7",
-    "line-height": "1.55",
-    "font-size": "14px",
-    "#": ["$WelcomeTitle", "$WelcomeIntro", "$WelcomeButtons", "$WelcomeNote", "$WelcomeLearn"]
-  },
-  "$WelcomeTitle": {
-    "#element": "div",
-    "@id": "se-welcome-title",
-    "font-size": "20px",
-    "color": "#eaeaea",
-    "margin-bottom": "12px"
-  },
-  "$WelcomeIntro": {
-    "#element": "div",
-    "@id": "se-welcome-intro",
-    "margin-bottom": "10px"
-  },
-  "$WelcomeButtons": {
-    "#element": "div",
-    "@id": "se-welcome-buttons",
-    "margin-bottom": "10px"
-  },
-  "$WelcomeNote": {
-    "#element": "div",
-    "@id": "se-welcome-note",
-    "color": "#8f8f8f",
-    "font-size": "13px"
-  },
-  "$WelcomeLearn": {
-    "#element": "div",
-    "@id": "se-welcome-learn",
-    "margin-top": "14px",
-    "#": ["$WelcomePre", "$WelcomeLink", "$WelcomePost"]
-  },
-  "$WelcomePre": {
-    "#element": "span",
-    "@id": "se-welcome-pre"
-  },
-  "$WelcomeLink": {
-    "#element": "a",
-    "@id": "se-welcome-link",
-    "#content": "allspeak.ai",
-    "@href": "https://allspeak.ai",
-    "@target": "_blank",
-    "color": "#00d4ff",
-    "text-decoration": "none"
-  },
-  "$WelcomePost": {
-    "#element": "span",
-    "@id": "se-welcome-post"
-  },
-  "$BlocksTitle": {
-    "#element": "span",
-    "@id": "se-blocks-title",
-    "flex": "1",
-    "color": "#ddd"
-  },
-  "$BlocksPrev": {
-    "#element": "button",
-    "@id": "se-blocks-prev",
-    "#content": "▲",
-    "padding": "2px 10px",
-    "cursor": "pointer"
-  },
-  "$BlocksNext": {
-    "#element": "button",
-    "@id": "se-blocks-next",
-    "#content": "▼",
-    "padding": "2px 10px",
-    "cursor": "pointer"
-  },
-  "$BlocksBadge": {
-    "#element": "span",
-    "@id": "se-blocks-badge",
-    "padding": "2px 8px",
-    "border-radius": "3px",
-    "font-size": "0.85em",
-    "background": "#555",
-    "color": "white",
-    "min-width": "10em",
-    "text-align": "center"
-  },
-  "$BlocksVerifyBtn": {
-    "#element": "button",
-    "@id": "se-blocks-verify",
-    "#content": "Mark verified",
-    "padding": "2px 10px",
-    "cursor": "pointer"
-  },
-  "$BlocksVerifyAllBtn": {
-    "#element": "button",
-    "@id": "se-blocks-verify-all",
-    "#content": "Mark all verified",
-    "padding": "2px 10px",
-    "cursor": "pointer"
-  },
-  "$BlocksToolbar": {
-    "#element": "div",
-    "@id": "se-blocks-toolbar",
-    "display": "flex",
-    "align-items": "center",
-    "gap": "8px",
-    "padding": "4px 8px",
-    "background": "#3a3a3a",
-    "color": "#ddd",
-    "font-size": "0.9em",
-    "flex-shrink": "0",
-    "#": ["$BlocksTitle", "$BlocksPrev", "$BlocksNext", "$BlocksBadge", "$BlocksVerifyBtn", "$BlocksVerifyAllBtn"]
-  },
-  "$AlertText": {
-    "#element": "div",
-    "@id": "se-alert-text",
-    "line-height": "1.45",
-    "min-height": "1.45em"
-  },
-  "$AlertCloseBtn": {
-    "#element": "button",
-    "@id": "se-alert-close",
-    "#content": "Close",
-    "padding": "3px 14px",
-    "cursor": "pointer"
-  },
-  "$AlertButtons": {
-    "#element": "div",
-    "@id": "se-alert-buttons",
-    "display": "flex",
-    "justify-content": "flex-end",
-    "gap": "8px",
-    "margin-top": "10px",
-    "#": ["$AlertCloseBtn"]
-  },
-  "$AlertPanel": {
-    "#element": "div",
-    "@id": "se-alert",
-    "display": "none",
-    "flex-direction": "column",
-    "position": "fixed",
-    "top": "48px",
-    "left": "50%",
-    "transform": "translateX(-50%)",
-    "min-width": "22em",
-    "max-width": "46em",
-    "box-sizing": "border-box",
-    "background": "#fff8e1",
-    "color": "#3a3324",
-    "border": "1px solid #d8b34a",
-    "border-radius": "6px",
-    "box-shadow": "0 6px 24px rgba(0,0,0,0.35)",
-    "padding": "12px 14px",
-    "font-family": "system-ui, sans-serif",
-    "font-size": "13px",
-    "z-index": "90",
-    "#": ["$AlertText", "$AlertButtons"]
-  },
-  "$BlocksToc": {
-    "#element": "div",
-    "@id": "se-blocks-toc",
-    "width": "200px",
-    "height": "100%",
-    "overflow-y": "auto",
-    "background": "#262626",
-    "color": "#ccc",
-    "font-family": "system-ui, sans-serif",
-    "font-size": "12px",
-    "padding": "4px 0",
-    "border-right": "1px solid #444",
-    "flex-shrink": "0",
-    "box-sizing": "border-box"
-  },
-  "$BlocksCodePane": {
-    "#element": "textarea",
-    "@id": "se-blocks-code",
-    "flex": "0 0 60%",
-    "height": "100%",
-    "font-family": "monospace",
-    "font-size": "13px",
-    "border": "none",
-    "padding": "8px",
-    "box-sizing": "border-box",
-    "resize": "none",
-    "outline": "none"
-  },
-  "$BlocksDivider": {
-    "#element": "div",
-    "@id": "se-blocks-divider",
-    "width": "6px",
-    "height": "100%",
-    "cursor": "col-resize",
-    "background": "#bbb",
-    "flex-shrink": "0"
-  },
-  "$BlocksDocPane": {
-    "#element": "textarea",
-    "@id": "se-blocks-doc",
-    "flex": "1 1 0",
-    "height": "100%",
-    "font-family": "Georgia, serif",
-    "font-size": "14px",
-    "border": "none",
-    "padding": "8px",
-    "box-sizing": "border-box",
-    "resize": "none",
-    "outline": "none",
-    "background": "#f8f8f5"
-  },
-  "$BlocksSplit": {
-    "#element": "div",
-    "@id": "se-blocks-split",
-    "display": "flex",
-    "flex": "1",
-    "overflow": "hidden",
-    "#": ["$BlocksToc", "$BlocksCodePane", "$BlocksDivider", "$BlocksDocPane"]
-  },
-  "$GraphHost": {
-    "#element": "div",
-    "@id": "se-graph-host",
-    "flex": "1",
-    "min-width": "0",
-    "height": "100%"
-  },
-  "$GraphSide": {
-    "#element": "div",
-    "@id": "se-graph-side",
-    "width": "340px",
-    "flex-shrink": "0",
-    "height": "100%",
-    "box-sizing": "border-box",
-    "background": "#f8f8f5",
-    "color": "#222",
-    "overflow": "hidden",
-    "display": "flex",
-    "flex-direction": "column"
-  },
-  "$GraphGrip": {
-    "#element": "div",
-    "@id": "se-graph-grip",
-    "width": "6px",
-    "flex-shrink": "0",
-    "height": "100%",
-    "cursor": "col-resize",
-    "background": "#bbb"
-  },
-  "$GraphArea": {
-    "#element": "div",
-    "@id": "se-graph-area",
-    "display": "none",
-    "flex-direction": "row",
-    "height": "calc(100vh - 40px)",
-    "#": ["$GraphHost", "$GraphGrip", "$GraphSide"]
-  },
-  "$BlocksArea": {
-    "#element": "div",
-    "@id": "se-blocks-area",
-    "display": "none",
-    "flex-direction": "column",
-    "height": "calc(100vh - 40px)",
-    "#": ["$BlocksToolbar", "$BlocksSplit"]
-  },
-  "$Scroller": {
-    "#element": "div",
-    "@id": "se-scroller",
-    "flex": "1",
-    "overflow-y": "auto",
-    "margin-bottom": "0.5em",
-    "min-height": "100px"
-  },
-  "$CloseBtn": {
-    "#element": "button",
-    "@id": "se-closebtn",
-    "#content": "Close"
-  },
-  "$FileListing": {
-    "#element": "div",
-    "position": "absolute",
-    "width": "50%",
-    "max-height": "70%",
-    "background": "white",
-    "padding": "1em",
-    "top": "50%",
-    "left": "50%",
-    "transform": "translateX(-50%) translateY(-50%)",
-    "display": "flex",
-    "flex-direction": "column",
-    "border-radius": "4px",
-    "#": ["$Scroller", "$CloseBtn"]
-  },
-  "$Overlay": {
-    "#element": "div",
-    "@id": "se-overlay",
-    "display": "none",
-    "position": "fixed",
-    "top": "0",
-    "left": "0",
-    "width": "100vw",
-    "height": "100vh",
-    "background": "rgba(0,0,0,0.5)",
-    "z-index": "100",
-    "#": ["$FileListing"]
-  },
-  "#": ["$TopBar", "$EditorArea", "$BlocksArea", "$GraphArea", "$AlertPanel", "$Overlay"]
+    "$OpenBtn": {
+        "#element": "button",
+        "@id": "se-open",
+        "#content": "Open",
+        "padding": "4px 12px",
+        "cursor": "pointer"
+    },
+    "$TabBar": {
+        "#element": "div",
+        "@id": "se-tabbar",
+        "display": "flex",
+        "gap": "2px",
+        "overflow-x": "auto",
+        "min-width": "0"
+    },
+    "$PlusBtn": {
+        "#element": "img",
+        "@id": "se-plusbtn",
+        "@src": "https://allspeak.ai/icon/plus.png",
+        "width": "20px",
+        "height": "20px",
+        "cursor": "pointer",
+        "padding": "4px",
+        "flex-shrink": "0"
+    },
+    "$TabGroup": {
+        "#element": "div",
+        "@id": "se-tabgroup",
+        "display": "flex",
+        "flex": "1",
+        "align-items": "center",
+        "min-width": "0",
+        "#": [
+            "$TabBar",
+            "$PlusBtn"
+        ]
+    },
+    "$BlocksBtn": {
+        "#element": "button",
+        "@id": "se-blocksbtn",
+        "#content": "Blocks",
+        "order": "4",
+        "padding": "4px 12px",
+        "cursor": "pointer",
+        "flex-shrink": "0"
+    },
+    "$LaunchBtn": {
+        "#element": "button",
+        "@id": "se-launchbtn",
+        "#content": "Launch",
+        "order": "5",
+        "display": "inline-block",
+        "padding": "4px 12px",
+        "cursor": "pointer",
+        "flex-shrink": "0"
+    },
+    "$RecordBtn": {
+        "#element": "button",
+        "@id": "se-recordbtn",
+        "#content": "Record",
+        "order": "6",
+        "padding": "4px 12px",
+        "cursor": "pointer",
+        "flex-shrink": "0"
+    },
+    "$GraphBtn": {
+        "#element": "button",
+        "@id": "se-graphbtn",
+        "#content": "Graph",
+        "order": "7",
+        "padding": "4px 12px",
+        "cursor": "pointer",
+        "flex-shrink": "0"
+    },
+    "$FindBtn": {
+        "#element": "button",
+        "@id": "se-findbtn",
+        "#content": "Find",
+        "order": "8",
+        "padding": "4px 12px",
+        "cursor": "pointer",
+        "flex-shrink": "0"
+    },
+    "$StatusSpan": {
+        "#element": "span",
+        "@id": "se-status",
+        "color": "lightgreen",
+        "font-size": "0.85em",
+        "padding": "0 8px",
+        "white-space": "nowrap",
+        "min-width": "6em",
+        "text-align": "right"
+    },
+    "$Logo": {
+        "#element": "a",
+        "@id": "se-logo",
+        "@href": "https://allspeak.ai",
+        "@target": "_blank",
+        "@title": "AllSpeak.ai \u2014 the website, the Primer and the documentation",
+        "display": "flex",
+        "flex-shrink": "0",
+        "#": [
+            "$LogoImg"
+        ]
+    },
+    "$LogoImg": {
+        "#element": "img",
+        "@src": "https://allspeak.ai/icon/duckthink.png",
+        "width": "28px",
+        "height": "28px",
+        "border-radius": "6px",
+        "flex-shrink": "0"
+    },
+    "$TopBar": {
+        "#element": "div",
+        "@id": "se-topbar",
+        "display": "flex",
+        "align-items": "center",
+        "background": "#2d2d2d",
+        "padding": "4px",
+        "gap": "4px",
+        "#": [
+            "$Logo",
+            "$OpenBtn",
+            "$TabGroup",
+            "$StatusSpan",
+            "$BlocksBtn",
+            "$LaunchBtn",
+            "$RecordBtn",
+            "$GraphBtn",
+            "$FindBtn"
+        ]
+    },
+    "$ContentEditor": {
+        "#element": "textarea",
+        "@id": "se-textarea",
+        "width": "100%",
+        "height": "100%"
+    },
+    "$ContentDiv": {
+        "#element": "div",
+        "width": "100%",
+        "height": "100%",
+        "#": [
+            "$ContentEditor"
+        ]
+    },
+    "$EditorArea": {
+        "#element": "div",
+        "@id": "se-editor-area",
+        "height": "calc(100vh - 40px)",
+        "position": "relative",
+        "#": [
+            "$ContentDiv",
+            "$Welcome"
+        ]
+    },
+    "$Welcome": {
+        "#element": "div",
+        "@id": "se-welcome",
+        "display": "flex",
+        "position": "absolute",
+        "top": "0",
+        "left": "0",
+        "right": "0",
+        "bottom": "0",
+        "align-items": "center",
+        "justify-content": "center",
+        "background": "#191919",
+        "#": [
+            "$WelcomeBox"
+        ]
+    },
+    "$WelcomeBox": {
+        "#element": "div",
+        "@id": "se-welcome-box",
+        "max-width": "640px",
+        "padding": "22px 26px",
+        "background": "#242424",
+        "border": "1px solid #3a3a3a",
+        "border-radius": "8px",
+        "color": "#d7d7d7",
+        "line-height": "1.55",
+        "font-size": "14px",
+        "#": [
+            "$WelcomeTitle",
+            "$WelcomeIntro",
+            "$WelcomeButtons",
+            "$WelcomeNote",
+            "$WelcomeLearn"
+        ]
+    },
+    "$WelcomeTitle": {
+        "#element": "div",
+        "@id": "se-welcome-title",
+        "font-size": "20px",
+        "color": "#eaeaea",
+        "margin-bottom": "12px"
+    },
+    "$WelcomeIntro": {
+        "#element": "div",
+        "@id": "se-welcome-intro",
+        "margin-bottom": "10px"
+    },
+    "$WelcomeButtons": {
+        "#element": "div",
+        "@id": "se-welcome-buttons",
+        "margin-bottom": "10px"
+    },
+    "$WelcomeNote": {
+        "#element": "div",
+        "@id": "se-welcome-note",
+        "color": "#8f8f8f",
+        "font-size": "13px"
+    },
+    "$WelcomeLearn": {
+        "#element": "div",
+        "@id": "se-welcome-learn",
+        "margin-top": "14px",
+        "#": [
+            "$WelcomePre",
+            "$WelcomeLink",
+            "$WelcomePost"
+        ]
+    },
+    "$WelcomePre": {
+        "#element": "span",
+        "@id": "se-welcome-pre"
+    },
+    "$WelcomeLink": {
+        "#element": "a",
+        "@id": "se-welcome-link",
+        "#content": "allspeak.ai",
+        "@href": "https://allspeak.ai",
+        "@target": "_blank",
+        "color": "#00d4ff",
+        "text-decoration": "none"
+    },
+    "$WelcomePost": {
+        "#element": "span",
+        "@id": "se-welcome-post"
+    },
+    "$BlocksTitle": {
+        "#element": "span",
+        "@id": "se-blocks-title",
+        "flex": "1",
+        "color": "#ddd"
+    },
+    "$BlocksPrev": {
+        "#element": "button",
+        "@id": "se-blocks-prev",
+        "#content": "\u25b2",
+        "padding": "2px 10px",
+        "cursor": "pointer"
+    },
+    "$BlocksNext": {
+        "#element": "button",
+        "@id": "se-blocks-next",
+        "#content": "\u25bc",
+        "padding": "2px 10px",
+        "cursor": "pointer"
+    },
+    "$BlocksBadge": {
+        "#element": "span",
+        "@id": "se-blocks-badge",
+        "padding": "2px 8px",
+        "border-radius": "3px",
+        "font-size": "0.85em",
+        "background": "#555",
+        "color": "white",
+        "min-width": "10em",
+        "text-align": "center"
+    },
+    "$BlocksVerifyBtn": {
+        "#element": "button",
+        "@id": "se-blocks-verify",
+        "#content": "Mark verified",
+        "padding": "2px 10px",
+        "cursor": "pointer"
+    },
+    "$BlocksVerifyAllBtn": {
+        "#element": "button",
+        "@id": "se-blocks-verify-all",
+        "#content": "Mark all verified",
+        "padding": "2px 10px",
+        "cursor": "pointer"
+    },
+    "$BlocksToolbar": {
+        "#element": "div",
+        "@id": "se-blocks-toolbar",
+        "display": "flex",
+        "align-items": "center",
+        "gap": "8px",
+        "padding": "4px 8px",
+        "background": "#3a3a3a",
+        "color": "#ddd",
+        "font-size": "0.9em",
+        "flex-shrink": "0",
+        "#": [
+            "$BlocksTitle",
+            "$BlocksPrev",
+            "$BlocksNext",
+            "$BlocksBadge",
+            "$BlocksVerifyBtn",
+            "$BlocksVerifyAllBtn"
+        ]
+    },
+    "$AlertText": {
+        "#element": "div",
+        "@id": "se-alert-text",
+        "line-height": "1.45",
+        "min-height": "1.45em"
+    },
+    "$AlertCloseBtn": {
+        "#element": "button",
+        "@id": "se-alert-close",
+        "#content": "Close",
+        "padding": "3px 14px",
+        "cursor": "pointer"
+    },
+    "$AlertButtons": {
+        "#element": "div",
+        "@id": "se-alert-buttons",
+        "display": "flex",
+        "justify-content": "flex-end",
+        "gap": "8px",
+        "margin-top": "10px",
+        "#": [
+            "$AlertCloseBtn"
+        ]
+    },
+    "$AlertPanel": {
+        "#element": "div",
+        "@id": "se-alert",
+        "display": "none",
+        "flex-direction": "column",
+        "position": "fixed",
+        "top": "48px",
+        "left": "50%",
+        "transform": "translateX(-50%)",
+        "min-width": "22em",
+        "max-width": "46em",
+        "box-sizing": "border-box",
+        "background": "#fff8e1",
+        "color": "#3a3324",
+        "border": "1px solid #d8b34a",
+        "border-radius": "6px",
+        "box-shadow": "0 6px 24px rgba(0,0,0,0.35)",
+        "padding": "12px 14px",
+        "font-family": "system-ui, sans-serif",
+        "font-size": "13px",
+        "z-index": "90",
+        "#": [
+            "$AlertText",
+            "$AlertButtons"
+        ]
+    },
+    "$BlocksToc": {
+        "#element": "div",
+        "@id": "se-blocks-toc",
+        "width": "200px",
+        "height": "100%",
+        "overflow-y": "auto",
+        "background": "#262626",
+        "color": "#ccc",
+        "font-family": "system-ui, sans-serif",
+        "font-size": "12px",
+        "padding": "4px 0",
+        "border-right": "1px solid #444",
+        "flex-shrink": "0",
+        "box-sizing": "border-box"
+    },
+    "$BlocksCodePane": {
+        "#element": "textarea",
+        "@id": "se-blocks-code",
+        "flex": "0 0 60%",
+        "height": "100%",
+        "font-family": "monospace",
+        "font-size": "13px",
+        "border": "none",
+        "padding": "8px",
+        "box-sizing": "border-box",
+        "resize": "none",
+        "outline": "none"
+    },
+    "$BlocksDivider": {
+        "#element": "div",
+        "@id": "se-blocks-divider",
+        "width": "6px",
+        "height": "100%",
+        "cursor": "col-resize",
+        "background": "#bbb",
+        "flex-shrink": "0"
+    },
+    "$BlocksDocPane": {
+        "#element": "textarea",
+        "@id": "se-blocks-doc",
+        "flex": "1 1 0",
+        "height": "100%",
+        "font-family": "Georgia, serif",
+        "font-size": "14px",
+        "border": "none",
+        "padding": "8px",
+        "box-sizing": "border-box",
+        "resize": "none",
+        "outline": "none",
+        "background": "#f8f8f5"
+    },
+    "$BlocksSplit": {
+        "#element": "div",
+        "@id": "se-blocks-split",
+        "display": "flex",
+        "flex": "1",
+        "overflow": "hidden",
+        "#": [
+            "$BlocksToc",
+            "$BlocksCodePane",
+            "$BlocksDivider",
+            "$BlocksDocPane"
+        ]
+    },
+    "$GraphHost": {
+        "#element": "div",
+        "@id": "se-graph-host",
+        "flex": "1",
+        "min-width": "0",
+        "height": "100%"
+    },
+    "$GraphSide": {
+        "#element": "div",
+        "@id": "se-graph-side",
+        "width": "340px",
+        "flex-shrink": "0",
+        "height": "100%",
+        "box-sizing": "border-box",
+        "background": "#f8f8f5",
+        "color": "#222",
+        "overflow": "hidden",
+        "display": "flex",
+        "flex-direction": "column"
+    },
+    "$GraphGrip": {
+        "#element": "div",
+        "@id": "se-graph-grip",
+        "width": "6px",
+        "flex-shrink": "0",
+        "height": "100%",
+        "cursor": "col-resize",
+        "background": "#bbb"
+    },
+    "$GraphArea": {
+        "#element": "div",
+        "@id": "se-graph-area",
+        "display": "none",
+        "flex-direction": "row",
+        "height": "calc(100vh - 40px)",
+        "#": [
+            "$GraphHost",
+            "$GraphGrip",
+            "$GraphSide"
+        ]
+    },
+    "$BlocksArea": {
+        "#element": "div",
+        "@id": "se-blocks-area",
+        "display": "none",
+        "flex-direction": "column",
+        "height": "calc(100vh - 40px)",
+        "#": [
+            "$BlocksToolbar",
+            "$BlocksSplit"
+        ]
+    },
+    "$Scroller": {
+        "#element": "div",
+        "@id": "se-scroller",
+        "flex": "1",
+        "overflow-y": "auto",
+        "margin-bottom": "0.5em",
+        "min-height": "100px"
+    },
+    "$CloseBtn": {
+        "#element": "button",
+        "@id": "se-closebtn",
+        "#content": "Close"
+    },
+    "$FileListing": {
+        "#element": "div",
+        "position": "absolute",
+        "width": "50%",
+        "max-height": "70%",
+        "background": "white",
+        "padding": "1em",
+        "top": "50%",
+        "left": "50%",
+        "transform": "translateX(-50%) translateY(-50%)",
+        "display": "flex",
+        "flex-direction": "column",
+        "border-radius": "4px",
+        "#": [
+            "$Scroller",
+            "$CloseBtn"
+        ]
+    },
+    "$Overlay": {
+        "#element": "div",
+        "@id": "se-overlay",
+        "display": "none",
+        "position": "fixed",
+        "top": "0",
+        "left": "0",
+        "width": "100vw",
+        "height": "100vh",
+        "background": "rgba(0,0,0,0.5)",
+        "z-index": "100",
+        "#": [
+            "$FileListing"
+        ]
+    },
+    "#": [
+        "$TopBar",
+        "$EditorArea",
+        "$BlocksArea",
+        "$GraphArea",
+        "$AlertPanel",
+        "$Overlay"
+    ],
+    "$MenuMask": {
+        "#element": "div",
+        "@id": "se-menu-mask",
+        "display": "none",
+        "position": "fixed",
+        "top": "0",
+        "left": "0",
+        "width": "100vw",
+        "height": "100vh",
+        "background": "transparent",
+        "z-index": "200"
+    },
+    "$Menu": {
+        "#element": "div",
+        "@id": "se-menu",
+        "display": "none",
+        "position": "fixed",
+        "z-index": "201",
+        "background": "#242424",
+        "border": "1px solid #3a3a3a",
+        "border-radius": "6px",
+        "padding": "4px 0",
+        "min-width": "9em",
+        "box-shadow": "0 4px 14px rgba(0,0,0,0.45)"
+    }
 }

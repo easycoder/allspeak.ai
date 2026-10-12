@@ -160,6 +160,12 @@ if (viewStart < 0) {
 // a drawing's cost rather than any part of the picture, and a stub that pretended to show one would be a
 // check on this file rather than on the pane. The panel itself is measured in a browser (`TODO-viz.md`).
 const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable VizClipInit\nput 0 into VizClipInit\nvariable DrawMillis\nvariable VizEstimate\nvariable DrawStarted\nsvgtext VizBusy\n`
+	// **The freeze's four names are the same case one more time**: they are declared with the boundary's
+	// own state above the marker (the message that sets the freeze arrives through `VizOpen`, and a
+	// variable has to be declared above the statement that writes it) while the code that reads them —
+	// `VizHover` and `VizFrozenLook` — is the view's. Declaring them here is what the plumbing does for
+	// real, and without them the slice does not compile at all.
+	+ `variable VizFrozen\nvariable VizAway\nvariable VizMsgKind\nvariable VizFreezeMsg\n`
 	+ `VizAlertStart:\n    return\nVizAlertStop:\n    return\n`
 	+ moduleSource.slice(viewStart);
 const trace = fs.readFileSync(tracePath, `utf8`);

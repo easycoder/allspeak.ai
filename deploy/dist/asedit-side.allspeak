@@ -4,7 +4,7 @@
 !!
 !! What it owns, and what it does not. Everything inside its panel: the tab strip, the body, the heading, the prose and the hint that stands in for them before anything is clicked. **It does not find the block.** Which doc block holds a line is a question about the script's structure, and the editor already answers it for Blocks mode; a second answer here would be a second parser to keep in step. So the editor sends the block — its heading and its prose — and this module is a pane. That is also why nothing is read from disk here: the run, the path, and every block all arrive by message.
 !!
-!! What crosses. One dict in, and it is one of two kinds, so the message says which: a `run` carries the script's path and whether the pane is still on screen, and a `block` carries the line that was clicked, whether any block holds it, and the heading and prose to show if one does. Nothing goes back — this module has no gestures and nothing to report — and it never needs to know that a picture exists.
+!! What crosses. One dict in, and it is one of three kinds, so the message says which: a `run` carries the script's path and whether the pane is still on screen, a `block` carries the line that was clicked, whether any block holds it, and the heading and prose to show if one does, and a `tab` carries which tab the reader asked for — from the editor's popup menu rather than from the strip. Nothing goes back — this module has no gestures and nothing to report — and it never needs to know that a picture exists.
 !   -- the module, and the panel it owns --
 
     script VizSide
@@ -162,11 +162,20 @@ SideTabsDraw:
 
 SideTabClick:
     put the index of SideTab into SideTabSel
+    gosub to SideTabShow
+    stop
+!! @hash c6dc05c2
+!! @verified e76c1079
+!!!
+
+!! Put the selected tab up, which is one act however it was asked for.
+!!
+!! **Two ways in and one answer.** A tab can be chosen by clicking the strip or by the editor's popup menu, and both end here: the strip's own handler sets `SideTabSel` and comes here, and so does the menu's message. That is deliberate rather than tidy — a reader who could reach a tab two ways that disagreed would be looking at a panel nobody could predict — and it is why the rendering below takes no argument: the state it draws from was set by whoever asked.
+SideTabShow:
     gosub to SideTabsDraw
     gosub to SideRender
-    stop
-!! @hash e76c1079
-!! @verified e76c1079
+    return
+!! @hash 09024525
 !!!
 !! What the body shows, which is one of three things: a block, a line in no block, or nothing yet — and each of them in one of two ways, the doc block's prose or the section's code.
 !!
@@ -299,10 +308,12 @@ SideStatusDraw:
 !!
 !! `release parent` in the plumbing above is what lets the editor's `run` return, and this is what carries on from there: the panel is built on the first message rather than at load, because a module that is loaded and never opened should cost nothing but its attach.
 !!
-!! The two kinds are told apart by the message's own `kind` rather than by which of its properties are present, so a field can be added to either without the other being read wrongly.
+!! The three kinds are told apart by the message's own `kind` rather than by which of its properties are present, so a field can be added to any of them without the others being read wrongly. **The tab switch is answered before `SideKind` is written, and that is a fault rather than a tidy order.** `SideKind` is the panel's *own state* — which of three things it is showing — and not the last message's kind: `SideRender` reads it to choose between a block, a line in no block and its standing hint, so a `tab` message that overwrote it would show the hint over the block the panel is holding. A tab is only ever a different *view* of what is already there, so it must not disturb what it is a view of. **And it is tested before the `open` field of a run is looked at** for the same reason one step on: a `tab` message carries no `open`, and a message whose absent field read as `0` would be taken for the pane being taken off the screen.
 SideMessage:
     put the message into SideRun
-    put property `kind` of SideRun into SideKind
+    put property `kind` of SideRun into SideTmp
+    if SideTmp is `tab` go to SideTabArrived
+    put SideTmp into SideKind
     gosub to SideBuild
     if SideKind is `block` go to SideBlockArrived
     if property `open` of SideRun is 0 go to SideClosed
@@ -320,6 +331,20 @@ SideMessage:
     put 0 into SideVisit
     put json of `{}` into SideValues
     gosub to SideRender
+    stop
+
+SideTabArrived:
+    ! **The menu's tab switch, and it is only a selection.** The panel already holds the line it was last
+    ! told and the block for it, so putting a tab up is the same act a click on the strip is — hence
+    ! `SideTabShow`, which both go through. Nothing is sent to the pane and nothing is re-read: a tab is a
+    ! view of the line the sidebar already has, and asking the pane again would answer about whatever the
+    ! pointer is over *now*, which is the thing the reader may have frozen precisely to get away from.
+    !
+    ! The build is asked for here as well, because this is the one branch that leaves before the shared
+    ! `gosub to SideBuild` above it — and a message can arrive before anything has built the panel.
+    gosub to SideBuild
+    put property `sel` of SideRun into SideTabSel
+    gosub to SideTabShow
     stop
 
 SideBlockArrived:
@@ -345,6 +370,6 @@ SideBlockArrived:
 !   reader returning to the same run expects.
 SideClosed:
     stop
-!! @hash 4336ebe9
+!! @hash 5dd79097
 !! @verified cd2f39fb
 !!!
