@@ -6492,6 +6492,34 @@ const AllSpeak_Browser = {
 					return compiler.completeHandler();
 				}
 				return false;
+			case `right click`:
+				// Element-scoped like `pick` and `wheel`, because a menu belongs to the thing it is
+				// about. **A right-click is not a hover and must not be treated as one**: the pointer
+				// is placed and then pressed, so the handler runs once. What it can read is
+				// `the pick position`, the same pair of coordinates `pick` gives.
+				//
+				// **It fires at pointer rate, and that is the handler's business rather than the
+				// runtime's.** A hover is dozens of events a second, so a handler that redraws
+				// makes a pane unusable; the discipline is attribute writes only, which is what a
+				// drag's guide-and-wash feedback already is. There is nothing the runtime can do
+				// about a heavy handler without inventing a throttle a script cannot see, and the
+				// browser already coalesces a move to about one a frame.
+				if (compiler.nextIsSymbol()) {
+					const symbol = compiler.getSymbolRecord();
+					compiler.next();
+					if (symbol.extra !== `dom`) {
+						return false;
+					}
+					compiler.addCommand({
+						domain: `browser`,
+						keyword: `on`,
+						lino,
+						action,
+						symbol: symbol.name
+					});
+					return compiler.completeHandler();
+				}
+				return false;
 			case `resume`:
 				compiler.next();
 				compiler.addCommand({
@@ -6724,6 +6752,39 @@ const AllSpeak_Browser = {
 					});
 				});
 				break;
+			case `right click`:
+				// **A menu belongs to the thing it is about**, so this is element-scoped like `pick` and
+				// `hover` — and unlike `hover` it is one event rather than a stream: the pointer is placed
+				// and then pressed. So there is one listener here and no leave, because there is no state
+				// to take away again.
+				//
+				// **`preventDefault`, and that is not a detail of style.** The browser's own menu is what a
+				// right-click opens by default, so a script that means to open its own has to say so, or the
+				// reader gets both. This is the one place in the file that cancels a default, and it is why
+				// the event is `contextmenu` rather than a second button on `mousedown`: this is the event
+				// the browser is asking about.
+				//
+				// The coordinates go where `pick` puts its own, so a handler places its menu with
+				// `the pick position` — one reading of "where the pointer was" for both the button that
+				// selects and the button that asks.
+				program.onRightClick = command.pc + 2;
+				const rightRecord = program.getSymbolRecord(command.symbol);
+				rightRecord.element.forEach(function (element, index) {
+					if (!element) {
+						return;
+					}
+					element.oncontextmenu = function (event) {
+						let e = event ? event : window.event;
+						if (e.preventDefault) {
+							e.preventDefault();
+						}
+						document.pickX = e.clientX;
+						document.pickY = e.clientY;
+						rightRecord.index = index;
+						program.run(program.onRightClick);
+					};
+				});
+				break;
 			case `pick`:
 				const pickRecord = program.getSymbolRecord(command.symbol);
 				document.pickRecord = pickRecord;
@@ -6778,6 +6839,14 @@ const AllSpeak_Browser = {
 						element.onmousedown = function (event) {
 							let e = event ? event : window.event;
 							e.stopPropagation();
+							// **The left button is the pick.** Any button used to count, because the runtime
+							// never asked — and the cost of that was a right-click running the pick handler,
+							// moving the selection at the exact moment a reader was asking for a menu. The
+							// right button is `on right click`'s business now. In the numbers the DOM uses:
+							// 0 is left, and anything else is somebody else's event.
+							if (e.button) {
+								return;
+							}
 							// **The target is not the element, and this used to shadow one with the other.**
 							// The press lands on whatever is under the pointer — inside the editor's Graph pane
 							// that is an `<svg>`, a child of the one the script attached — while `pickIndex`,
@@ -8209,6 +8278,7 @@ const AllSpeak_Browser = {
 			ON_SWIPE: this.On,
 			ON_PICK: this.On,
 			ON_HOVER: this.On,
+			ON_RIGHT_CLICK: this.On,
 			ON_RESUME: this.On,
 			ON_DRAG: this.On,
 			ON_DROP: this.On,
@@ -12898,6 +12968,7 @@ const AllSpeak_Opcodes = {
 			case `swipe`:        return `ON_SWIPE`;
 			case `pick`:         return `ON_PICK`;
 			case `hover`:        return `ON_HOVER`;
+			case `right click`:  return `ON_RIGHT_CLICK`;
 			case `resume`:       return `ON_RESUME`;
 			case `drag`:         return `ON_DRAG`;
 			case `drop`:         return `ON_DROP`;
@@ -13700,6 +13771,12 @@ var AllSpeak_LanguagePack_en = {
         "on error"
       ]
     },
+    "ON_RIGHT_CLICK": {
+      "keyword": "on",
+      "patterns": [
+        "on right click {element}"
+      ]
+    },
     "ON_HOVER": {
       "keyword": "on",
       "patterns": [
@@ -14397,6 +14474,7 @@ var AllSpeak_LanguagePack_en = {
     "drag": "drag",
     "drop": "drop",
     "hover": "hover",
+    "right click": "right click",
     "change": "change",
     "leave": "leave",
     "restore": "restore",

@@ -562,6 +562,12 @@ var AllSpeak_LanguagePack_de = {
         "bei fehler"
       ]
     },
+    "ON_RIGHT_CLICK": {
+      "keyword": "bei",
+      "patterns": [
+        "bei Rechtsklick {element}"
+      ]
+    },
     "ON_HOVER": {
       "keyword": "bei",
       "patterns": [
@@ -1166,6 +1172,7 @@ var AllSpeak_LanguagePack_de = {
     "drag": "ziehe",
     "drop": "ablege",
     "hover": "schwebe",
+    "right click": "Rechtsklick",
     "change": "änderung|aenderung",
     "leave": "verlassen",
     "restore": "wiederherstelle",

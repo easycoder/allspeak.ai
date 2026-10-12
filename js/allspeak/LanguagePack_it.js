@@ -570,6 +570,12 @@ var AllSpeak_LanguagePack_it = {
         "su errore"
       ]
     },
+    "ON_RIGHT_CLICK": {
+      "keyword": "su",
+      "patterns": [
+        "su clic destro {element}"
+      ]
+    },
     "ON_HOVER": {
       "keyword": "su",
       "patterns": [
@@ -1170,6 +1176,7 @@ var AllSpeak_LanguagePack_it = {
     "drag": "trascina",
     "drop": "rilascia",
     "hover": "sorvola",
+    "right click": "clic destro",
     "change": "cambio",
     "leave": "lascia",
     "restore": "ripristina",

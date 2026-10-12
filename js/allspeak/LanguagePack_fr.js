@@ -562,6 +562,12 @@ var AllSpeak_LanguagePack_fr = {
         "sur erreur"
       ]
     },
+    "ON_RIGHT_CLICK": {
+      "keyword": "sur",
+      "patterns": [
+        "sur clic droit {element}"
+      ]
+    },
     "ON_HOVER": {
       "keyword": "sur",
       "patterns": [
@@ -1169,6 +1175,7 @@ var AllSpeak_LanguagePack_fr = {
     "drag": "glisse",
     "drop": "dépose",
     "hover": "survole",
+    "right click": "clic droit",
     "change": "changement",
     "leave": "sortie",
     "restore": "restaure",

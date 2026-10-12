@@ -250,6 +250,7 @@ const AllSpeak_Opcodes = {
 			case `swipe`:        return `ON_SWIPE`;
 			case `pick`:         return `ON_PICK`;
 			case `hover`:        return `ON_HOVER`;
+			case `right click`:  return `ON_RIGHT_CLICK`;
 			case `resume`:       return `ON_RESUME`;
 			case `drag`:         return `ON_DRAG`;
 			case `drop`:         return `ON_DROP`;
