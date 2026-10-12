@@ -1088,7 +1088,7 @@ DEFAULT_PORT = '8080'
 HOME_URL = 'https://allspeak.ai'
 HELP_TEXT = '''AllSpeak is a coding tool designed to work with AI
 Syntax:
-"allspeak viz" opens the visualizer in your browser. New users start here
+"allspeak viz {port}" opens the visualizer in your browser. New users start here
 "allspeak <script>" runs the named script (the .allspeak extension can be omitted)
 "allspeak server {port}" starts a local development server at the named port (default 8080)
 "allspeak home" opens the home page (https://allspeak.ai) in your browser

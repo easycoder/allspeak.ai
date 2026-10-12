@@ -45,9 +45,9 @@ Bundles the per-language starter zip `deploy/allspeak-<lang>.zip`, auto-discover
 
 | command | what it does |
 |---|---|
-| `allspeak viz [port]` | the front door. Asks the dev server's own `/version` route whether one is already on the port: if so it opens the visualizer (`/viz.html`) and leaves it alone, otherwise it runs `server.allspeak --viz <port>` in the foreground, which opens the page once its request handler is registered. Port defaults to 8080 |
+| `allspeak viz {port}` | the front door. Asks the dev server's own `/version` route whether one is already on the port: if so it opens the visualizer (`/viz.html`) and leaves it alone, otherwise it runs `server.allspeak --viz <port>` in the foreground, which opens the page once its request handler is registered. Port defaults to 8080 |
 | `allspeak <script>` | runs the script, extension optional. A name that is not a file — and is neither `viz` nor `home` — puts the version and the help on screen instead of a fetch and a compile error |
-| `allspeak server [port]` | the same server with nothing opened, for a session where you open several pages yourself |
+| `allspeak server {port}` | the same server with nothing opened, for a session where you open several pages yourself |
 | `allspeak home` | opens `https://allspeak.ai` in the browser |
 
 **`viz` and `home` are reserved words of the launcher; `server` is not.** `viz.allspeak` is this repository's own visualiser source, so a bare `viz` has to mean the front door rather than that file; a script of either name is run with its extension (`allspeak home.allspeak`). `server` resolves through the ordinary file test on purpose, because a project that pins its own `server.allspeak` is asking for that copy. `info`, `debug <script>`, `--test` and `--record=<file>` still work and are deliberately not in the help.
