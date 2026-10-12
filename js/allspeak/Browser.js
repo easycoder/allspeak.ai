@@ -1291,7 +1291,21 @@ const AllSpeak_Browser = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			const action = AllSpeak_Language.reverseWord(compiler.nextToken());
+			// **An action word can be more than one token**, and `right click` is the one that
+			// is. `reverseWord` reads a single token, so reading only the first would leave
+			// `right` as the action, match no case below, and refuse the statement — which is
+			// what `on right click` did until the multi-token form was read here. The pack holds
+			// the whole form (`"rightClick": "right click"`), so it is read first and a single
+			// token is what remains for every other event. **Both paths leave the index on the
+			// action's last token**, which is the position the cases below expect: each begins
+			// by reading past the action to its subject.
+			const phrase = AllSpeak_Language.phraseWord(compiler.getTokens(), compiler.getIndex() + 1);
+			const action = phrase
+				? phrase.canonical
+				: AllSpeak_Language.reverseWord(compiler.nextToken());
+			if (phrase) {
+				compiler.next(phrase.tokens);
+			}
 			switch (action) {
 			case `change`:
 				compiler.next();

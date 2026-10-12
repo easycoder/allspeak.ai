@@ -6330,7 +6330,21 @@ const AllSpeak_Browser = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			const action = AllSpeak_Language.reverseWord(compiler.nextToken());
+			// **An action word can be more than one token**, and `right click` is the one that
+			// is. `reverseWord` reads a single token, so reading only the first would leave
+			// `right` as the action, match no case below, and refuse the statement — which is
+			// what `on right click` did until the multi-token form was read here. The pack holds
+			// the whole form (`"rightClick": "right click"`), so it is read first and a single
+			// token is what remains for every other event. **Both paths leave the index on the
+			// action's last token**, which is the position the cases below expect: each begins
+			// by reading past the action to its subject.
+			const phrase = AllSpeak_Language.phraseWord(compiler.getTokens(), compiler.getIndex() + 1);
+			const action = phrase
+				? phrase.canonical
+				: AllSpeak_Language.reverseWord(compiler.nextToken());
+			if (phrase) {
+				compiler.next(phrase.tokens);
+			}
 			switch (action) {
 			case `change`:
 				compiler.next();
@@ -13145,13 +13159,22 @@ const AllSpeak_Language = {
 	// Used by switch statements that need to match on canonical keywords.
 	_reverseWords: null,
 
+	// The most tokens any one word's form spans in the active pack (`right click` is two).
+	// A caller wanting a multi-token form scans no further than this.
+	_maxFormTokens: 1,
+
 	_buildReverseWords: function() {
 		this._reverseWords = {};
+		this._maxFormTokens = 1;
 		if (this.pack && this.pack.words) {
 			for (const canonical in this.pack.words) {
 				const forms = this.pack.words[canonical].split(`|`);
 				for (const form of forms) {
 					this._reverseWords[form] = canonical;
+					const tokens = form.split(` `).length;
+					if (tokens > this._maxFormTokens) {
+						this._maxFormTokens = tokens;
+					}
 				}
 			}
 		}
@@ -13162,6 +13185,37 @@ const AllSpeak_Language = {
 			this._buildReverseWords();
 		}
 		return this._reverseWords[token] || token;
+	},
+
+	// Reverse lookup for a word whose form spans more than one token — English `right click`,
+	// French `clic droit`, Italian `clic destro`, all forms of the one canonical `rightClick`.
+	//
+	// `reverseWord` reads a single token, so a form written as two words is unreachable through
+	// it: the first token reverse-maps to nothing, or to a different canonical, and the statement
+	// that wanted the word is refused. The words map already holds the whole form, so this reads
+	// the longest one that matches at `index` and reports how many tokens it spans, leaving the
+	// caller to move its own index. It returns null when no multi-token form starts there, which
+	// is every word but these few.
+	//
+	// **The longest match wins**, so a one-token form that happens to be the first word of a
+	// longer one cannot shadow it. Today no such pair exists in any pack; the rule is what keeps
+	// the first one that arrives from being a silent surprise.
+	phraseWord: function(tokens, index) {
+		if (!this._reverseWords) {
+			this._buildReverseWords();
+		}
+		const limit = Math.min(this._maxFormTokens, tokens.length - index);
+		for (let n = limit; n >= 2; n--) {
+			const parts = [];
+			for (let i = 0; i < n; i++) {
+				parts.push(tokens[index + i].token);
+			}
+			const phrase = parts.join(` `);
+			if (this._reverseWords[phrase] !== undefined) {
+				return { canonical: this._reverseWords[phrase], tokens: n };
+			}
+		}
+		return null;
 	},
 
 	// Get a localized diagnostic message with placeholder substitution.

@@ -59,17 +59,33 @@ const mk = tag => ({
 	// and `y` as part of setting either — `undefined` would let a missing attribute come out as NaN.
 	getAttribute(k) { return k in this.attributes ? this.attributes[k] : null; },
 	getBoundingClientRect() { return this.box; },
+	// The runtime calls this in the pick handler, and a real element has it. `undefined` would
+	// abort the handler before the document-level move listener below it was installed — which is
+	// the very fault the pick path has already paid for once (see `Browser.js`'s `onmousedown`).
+	blur() {},
 	classList: { add: noop, remove: noop, contains: () => false },
 	addEventListener(type, fn) {
 		if (!this.listeners[type]) this.listeners[type] = [];
 		this.listeners[type].push(fn);
 	},
 	removeEventListener() {},
-	// Not something a browser has — a harness's own, so that a test can be the pointer.
+	// Not something a browser has — a harness's own, so that a test can be the pointer. **A property
+	// handler is dispatched too**: the runtime attaches `contextmenu` and `mousedown` as `element.on…`,
+	// not through `addEventListener`, and a real dispatch reaches those the same way — so an instrument
+	// that walked only `listeners` would report a registered handler as missing, which is exactly the
+	// fault this stub exists to be incapable of.
 	fire(type, event) {
-		const handlers = this.listeners[type] || [];
-		for (const fn of handlers) fn(event);
-		return handlers.length;
+		let delivered = 0;
+		for (const fn of (this.listeners[type] || [])) {
+			fn(event);
+			delivered++;
+		}
+		const property = this[`on` + type];
+		if (typeof property === `function`) {
+			property(event);
+			delivered++;
+		}
+		return delivered;
 	},
 });
 global.window = global;
@@ -107,10 +123,12 @@ for (const file of fs.readdirSync(path.join(root, `js/plugins`)).filter(f => f.e
 	catch (err) { /* a plugin that needs a browser: not this check's business */ }
 }
 vm.runInThisContext(`globalThis.__hover = { AllSpeak, AllSpeak_Language, AllSpeak_LanguagePack_en,`
-	+ ` AllSpeak_Run, AllSpeak_LanguagePack_fr, AllSpeak_LanguagePack_de, AllSpeak_LanguagePack_it };`);
+	+ ` AllSpeak_Run, AllSpeak_LanguagePack_fr, AllSpeak_LanguagePack_de, AllSpeak_LanguagePack_it,`
+	+ ` AllSpeak_Core, AllSpeak_Browser, AllSpeak_REST, AllSpeak_MQTT };`);
 const {
 	AllSpeak, AllSpeak_Language, AllSpeak_LanguagePack_en, AllSpeak_Run,
-	AllSpeak_LanguagePack_fr, AllSpeak_LanguagePack_de, AllSpeak_LanguagePack_it
+	AllSpeak_LanguagePack_fr, AllSpeak_LanguagePack_de, AllSpeak_LanguagePack_it,
+	AllSpeak_Core, AllSpeak_Browser, AllSpeak_REST, AllSpeak_MQTT
 } = globalThis.__hover;
 const packOf = { en: AllSpeak_LanguagePack_en, fr: AllSpeak_LanguagePack_fr,
 	de: AllSpeak_LanguagePack_de, it: AllSpeak_LanguagePack_it };
@@ -126,6 +144,14 @@ const premiseDelivered = premise.fire(`mousemove`, {});
 check(premiseDelivered === 1 && premiseFired === 1,
 	`the stub stores a listener and can dispatch one (${premiseDelivered} delivered, ${premiseFired} ran) — `
 	+ `plotview-check's stub cannot, which is why this one does not reuse it`);
+// And the second half of the same premise, because a right-click attaches its handler the other way: as a
+// property (`element.oncontextmenu`), which a real dispatch reaches exactly as it reaches a listener.
+let premisePropertyRan = 0;
+premise.oncontextmenu = () => { premisePropertyRan++; };
+const premisePropertyDelivered = premise.fire(`contextmenu`, {});
+check(premisePropertyDelivered === 1 && premisePropertyRan === 1,
+	`and it dispatches an \`on…\` property handler the same way (${premisePropertyDelivered} delivered, `
+	+ `${premisePropertyRan} ran) — the runtime attaches \`contextmenu\` and \`mousedown\` so`);
 
 // ---- compiling, and reading what a script saw ---------------------------------------------------
 const stdout = console.log;
@@ -162,6 +188,11 @@ const quiet = fn => {
 // **The pack is saved and restored around the compile**, because a script's `language` directive switches it
 // while compiling and a compile that fails leaves it switched just as surely — `tools/asviz-run.js` carries the
 // same guard for the same reason.
+//
+// **And the handler tables with it, or the restore is only half done.** A `language` directive nulls each
+// domain's cached keyword→handler table so it is rebuilt from the new pack; putting the pack back without that
+// leaves the next script compiling against the *previous* language's words. It cost one run here: the English
+// right-click fixture, compiled after the French hover script, was refused with `I don't understand 'create'`.
 const compile = lines => {
 	const saved = AllSpeak_Language.pack;
 	try {
@@ -175,6 +206,11 @@ const compile = lines => {
 		return program;
 	} finally {
 		AllSpeak_Language.init(saved);
+		for (const domain of [AllSpeak_Core, AllSpeak_Browser, AllSpeak_REST, AllSpeak_MQTT]) {
+			if (domain && domain._compileHandlers) {
+				domain._compileHandlers = null;
+			}
+		}
 	}
 };
 const record = (program, name) => program.getSymbolRecord(name);
@@ -244,6 +280,45 @@ const NOTDOM = [
 	`    on hover Counter`,
 	`    begin`,
 	`        log \`nope\``,
+	`    end`,
+	`    stop`,
+];
+
+// ---- the sixth event: `on right click` -----------------------------------------------------------
+// **This statement did not compile until the action word was read across two tokens.** `right click` is two
+// words, `reverseWord` reads one, and the compiler therefore saw an action called `right` and refused the
+// statement altogether. So the fixture is the one that has to reach a command, and it reads `the pick
+// position` — where the runtime puts the right-click's coordinates, the same place `pick` puts its own.
+const RIGHTCLICK = [
+	`    script RightClickProbe`,
+	`    variable Seen`,
+	`    variable Pos`,
+	`    div Host`,
+	`Main:`,
+	`    create Host`,
+	`    on right click Host`,
+	`    begin`,
+	`        put the pick position into Pos`,
+	`        put property \`x\` of Pos into Seen`,
+	`        log \`x=\` cat Seen`,
+	`        put property \`y\` of Pos into Seen`,
+	`        log \`y=\` cat Seen`,
+	`    end`,
+	`    stop`,
+];
+
+// The pick element, because the right button must stop counting as a pick — and the witness is the side effect
+// only a real pick makes, not the handler's `log`: the pick handler's body runs from a `setTimeout`, so it
+// would not have run by the time the assertion is made. What the left button installs synchronously is the
+// document-level move listener a drag hangs off, and that is what the two presses are compared by.
+const PICK = [
+	`    script PickProbe`,
+	`    div Host`,
+	`Main:`,
+	`    create Host`,
+	`    on pick Host`,
+	`    begin`,
+	`        log \`picked\``,
 	`    end`,
 	`    stop`,
 ];
@@ -358,6 +433,105 @@ const frenchFired = witness(() => frenchHost && frenchHost.fire(`mousemove`, { c
 check(frenchCommand !== undefined && frenchCommand.opcode === `ON_HOVER` && frenchFired.join(`|`) === `x=7`,
 	`and a French script's 'sur survole' reaches the same command and the same reading `
 	+ `(${frenchCommand ? frenchCommand.opcode : `no command`}, ${JSON.stringify(frenchFired)})`);
+
+// ---- the sixth event: `on right click` ------------------------------------------------------------
+// **Where the fault was.** The word was two tokens and the opcode was `rightClick`, so the statement was
+// refused whole — and the first thing asserted is therefore that it now reaches a command of its own.
+const right = compile(RIGHTCLICK);
+const rightCommand = right.find(c => c.action === `rightClick`);
+check(rightCommand !== undefined && rightCommand.symbol === `Host`,
+	`'on right click Host' compiles to an \`on\` command carrying the attached symbol `
+	+ `(${rightCommand ? rightCommand.symbol : `no such command`})`);
+check(rightCommand !== undefined && rightCommand.opcode === `ON_RIGHT_CLICK`,
+	`and it resolves to an opcode of its own rather than falling through to dispatch by keyword `
+	+ `(opcode ${rightCommand && rightCommand.opcode})`);
+
+const rightHost = elementOf(right, `Host`);
+check(rightHost !== null && typeof rightHost.oncontextmenu === `function`,
+	`the handler is attached as \`contextmenu\`, the event the browser itself asks about for the right `
+	+ `button (${rightHost ? typeof rightHost.oncontextmenu : `no element found`})`);
+check(rightHost !== null && Object.keys(rightHost.listeners).length === 0,
+	`and as nothing else: a right-click is one event rather than a stream, so there is no leave to attach `
+	+ `(${rightHost ? Object.keys(rightHost.listeners).length : `no element found`} listener kind(s))`);
+
+let prevented = 0;
+const context = witness(() => rightHost && rightHost.fire(`contextmenu`,
+	{ clientX: 210, clientY: 96, preventDefault: () => { prevented++; } }));
+check(context.join(`|`) === `x=210|y=96`,
+	`a dispatched \`contextmenu\` runs the handler, and \`the pick position\` reads the event's own `
+	+ `coordinates (${JSON.stringify(context)})`);
+check(prevented === 1,
+	`and the browser's own menu is cancelled, or the reader would be shown two at once `
+	+ `(preventDefault called ${prevented} time(s))`);
+
+// The words, one language at a time, and **two of the four are two tokens** — which is the whole of what was
+// wrong. So the form is resolved through `phraseWord` (the multi-token reading) as well as `reverseWord`, and
+// English and French are the cases that prove the reading has to span more than one token.
+const rightForm = { en: `right click`, fr: `clic droit`, it: `clic destro`, de: `Rechtsklick` };
+for (const lang of [`en`, `fr`, `it`, `de`]) {
+	const pack = packOf[lang];
+	const opcode = pack.opcodes.ON_RIGHT_CLICK;
+	AllSpeak_Language.init(pack);
+	const tokens = rightForm[lang].split(` `).map(token => ({ token }));
+	const phrase = AllSpeak_Language.phraseWord(tokens, 0);
+	const answered = phrase ? phrase.canonical : AllSpeak_Language.reverseWord(tokens[0].token);
+	check(opcode !== undefined && answered === `rightClick`,
+		`${lang}: '${rightForm[lang]}' resolves to '${answered}' across ${tokens.length} token(s); `
+		+ `ON_RIGHT_CLICK carries the pattern '${opcode ? opcode.patterns[0] : `MISSING`}'`);
+}
+AllSpeak_Language.init(AllSpeak_LanguagePack_en);
+
+// And a French script's `sur clic droit` reaching the same command and the same reading — the multi-token form
+// exercised end to end, not merely resolved. **Every word in it is the French pack's own spelling** — `choisi`
+// for pick, `propriété` for property, `journalise` for log — the discipline the hover fixture above states, and
+// worth restating here because `the pick position` happens to *also* compile under French: the reading's cases
+// are the English canonicals, so `reverseWord` of the English word returns it unchanged. A fixture written that
+// way would be asserting nothing about the French vocabulary at all.
+const frenchRight = compile([
+	`    language français`,
+	`    script ClicDroitFr`,
+	`    variable Vu`,
+	`    variable Pos`,
+	`    div Hote`,
+	`Principal:`,
+	`    crée Hote`,
+	`    sur clic droit Hote`,
+	`    début`,
+	`        mets le choisi position dans Pos`,
+	`        mets propriété \`x\` de Pos dans Vu`,
+	`        journalise \`x=\` cat Vu`,
+	`    fin`,
+	`    arrête`,
+]);
+const frenchRightCommand = frenchRight.find(c => c.action === `rightClick`);
+const frenchRightHost = elementOf(frenchRight, `Hote`);
+const frenchRightFired = witness(() => frenchRightHost &&
+	frenchRightHost.fire(`contextmenu`, { clientX: 33, clientY: 44, preventDefault: () => {} }));
+check(frenchRightCommand !== undefined && frenchRightCommand.opcode === `ON_RIGHT_CLICK`
+	&& frenchRightFired.join(`|`) === `x=33`,
+	`and a French script's 'sur clic droit' reaches the same command and the same reading `
+	+ `(${frenchRightCommand ? frenchRightCommand.opcode : `no command`}, ${JSON.stringify(frenchRightFired)})`);
+
+// ---- a right-click is not a pick ------------------------------------------------------------------
+// **The half of this that was already in the runtime, and the reason it matters.** `onmousedown` never asked
+// which button, so a right-click ran the pick handler — moving a pane's selection at the exact moment the
+// reader was asking for a menu. The guard is one line, and the witness below is a side effect only a real pick
+// produces, because the pick handler's body runs from a `setTimeout` and would not have run yet.
+const pick = compile(PICK);
+const pickHost = elementOf(pick, `Host`);
+const press = button => ({ button, stopPropagation: () => {}, target: pickHost,
+	clientX: 5, clientY: 6, offsetX: 1, offsetY: 2 });
+check(pickHost !== null && typeof pickHost.onmousedown === `function`,
+	`an 'on pick' element carries its press on \`onmousedown\` (${pickHost ? typeof pickHost.onmousedown : `no element found`})`);
+delete document.onmousemove;
+if (pickHost) pickHost.fire(`mousedown`, press(2));
+check(document.onmousemove === undefined,
+	`a \`button: 2\` press does not run the pick handler, so asking for a menu no longer moves the selection `
+	+ `(the drag listener a pick installs is ${document.onmousemove === undefined ? `absent` : `present`})`);
+if (pickHost) pickHost.fire(`mousedown`, press(0));
+check(typeof document.onmousemove === `function`,
+	`and a \`button: 0\` press still does, which is the half that must not have been lost `
+	+ `(the drag listener is ${typeof document.onmousemove})`);
 
 // ---- one host, said out loud ---------------------------------------------------------------------
 // Not a skipped assertion: there is nothing on the other side to assert. The Python runtime has no pointer

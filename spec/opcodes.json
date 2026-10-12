@@ -1121,6 +1121,18 @@
       },
       "params": []
     },
+    "ON_RIGHT_CLICK": {
+      "domain": "browser",
+      "category": "event",
+      "description": "Register handler for a right-click on an element",
+      "current": {
+        "keyword": "on",
+        "action": "rightClick"
+      },
+      "params": [
+        "symbol"
+      ]
+    },
     "ON_SWIPE": {
       "domain": "browser",
       "category": "event",
