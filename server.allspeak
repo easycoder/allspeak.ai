@@ -21,7 +21,9 @@
 !                            returns the verdict. The script's own output goes to
 !                            <file>-stdout.txt beside it, and the trace to <file>.viz.json
 !     GET  /version       →  compares this process's script with the published one;
-!                            returns OK or updated
+!                            returns OK or updated. `updated` means a restart
+!                            would change what runs — a copy the project keeps
+!                            itself is `OK`, because a restart re-runs it as it is
 !     GET  /restart       →  restarts the server process
 !     GET  /<file>        →  serves static files (HTML, JS, CSS, JSON, ECS);
 !                            404 when there is no such file. `viz.html` is
@@ -46,6 +48,7 @@
     variable RemoteServer
     variable LocalServer
     variable LocalServerPath
+    variable ProjectCopy
     variable Lang
     variable InitText
     variable LangTag
@@ -128,16 +131,47 @@
             ! the thing actually being asked: is the *published* server script the one this process is
             ! running? The running copy is a project's own `server.allspeak` when there is one, and the CLI's
             ! fetched copy otherwise. No number, nothing to remember to bump, and a true answer either way.
+            !
+            ! **`updated` means one thing only: a restart would change what runs.** That is the caller's
+            ! whole question — it is about to offer the reader a restart — so a copy it would be re-run
+            ! unchanged must not be called `updated`. There are two running copies and they differ here: the
+            ! CLI's fetched cache is *replaced* by a restart (the CLI fetches at every start), while a file
+            ! beside the project is the copy its owner asked for and a restart runs it again, byte for byte.
+            ! So the second case answers `local`, which the page ignores, and which is the honest word rather
+            ! than an `OK` that would be a lie. **Measured 2026-10-12, from Graham**: running the server out
+            ! of a checkout — where the local script is *ahead* of the published one — offered him "viz has
+            ! been updated. Restart to apply changes?", and a restart could not have changed anything.
+            ! **`OK` means one thing to the caller: there is nothing to do about this process.** The caller
+            ! is the page, and its question is whether to offer the reader a restart. So a copy a restart
+            ! would re-run *unchanged* must not be called `updated` — there are two running copies and they
+            ! differ here: the CLI's fetched cache is *replaced* by a restart (the CLI fetches at every
+            ! start), while a file beside the project is the copy its owner asked for and a restart runs it
+            ! again, byte for byte. Both answer `OK`: the same script is published, or this process is
+            ! running the project's own. **Measured 2026-10-12, from Graham**: running the server out of a
+            ! checkout — where the local script is *ahead* of the published one — offered him "viz has been
+            ! updated. Restart to apply changes?", and a restart could not have changed anything.
+            !
+            ! **Two words, and no more, because the caller's vocabulary is a published one.** A third word
+            ! would be read by an `allspeak` older than it as "not a dev server" — the probe that opens the
+            ! visualizer accepts exactly this route's words — and the older one's advice is to try another
+            ! port, which starts a second server. Saying `OK` and meaning "nothing for you to do" costs
+            ! nothing and cannot break a client that was not upgraded.
             get RemoteServer from url RepoBase cat `server.allspeak` or begin
                 return `error` to Files with status 500
             end
             put BaseDir cat `/server.allspeak` into LocalServerPath
+            put `yes` into ProjectCopy
             if file LocalServerPath does not exist
+            begin
+                put `no` into ProjectCopy
                 put `~/.cache/allspeak/server.allspeak` into LocalServerPath
+            end
             load LocalServer from LocalServerPath or begin
                 return `OK` to Files
             end
-            if RemoteServer is LocalServer
+            if ProjectCopy is `yes`
+                return `OK` to Files
+            else if RemoteServer is LocalServer
                 return `OK` to Files
             else
                 return `updated` to Files
@@ -149,6 +183,14 @@
             print `Restart requested`
             system background `sleep 2 && allspeak server ` cat Port
             return `OK` to Files
+            ! **The answer has to be out before this process goes, and that is what this pause is for.**
+            ! `return … to Files` hands the response to the request thread to write; `exit` below ends the
+            ! process. Without the pause the caller gets a closed connection instead of the answer, and the
+            ! page's `or` clause then reports a failure that did not happen — "Please restart the server
+            ! manually" while the restart was going ahead in the background. Measured 2026-10-12: **seven
+            ! of eight calls lost the reply**, and the eighth arrived with an empty body. A second is
+            ! generous for a write to localhost, and the new server waits two before it binds.
+            wait 1 second
             exit
         end
         else if FullPath is `/list` or FullPath starts with `/list/`

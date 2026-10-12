@@ -1088,11 +1088,11 @@ DEFAULT_PORT = '8080'
 HOME_URL = 'https://allspeak.ai'
 HELP_TEXT = '''AllSpeak is a coding tool designed to work with AI
 Syntax:
-"allspeak viz {port}" opens the visualizer in your browser. New users start here
-"allspeak <script>" runs the named script (the .allspeak extension can be omitted)
-"allspeak server {port}" starts a local development server at the named port (default 8080)
-"allspeak home" opens the home page (https://allspeak.ai) in your browser
-"allspeak <anything else>" displays the version number and this help message'''
+"allspeak viz {port}" opens the visualizer in your browser. New users start here.
+"allspeak <script>" runs the named script (the .allspeak extension can be omitted).
+"allspeak server {port}" starts a local development server at the named port (default 8080).
+"allspeak home" opens the home page (https://allspeak.ai) in your browser.
+"allspeak <anything else>" displays the version number and this help message.'''
 
 
 def printVersionAndHelp():
@@ -1131,11 +1131,13 @@ def scriptExists(name):
 def devServerAnswer(port, timeout=1.5):
 	"""What a dev server says at its own `/version`, or None when no dev server is there.
 
-	**`/version` is the server's own route, and its whole vocabulary is `OK`, `updated` and `error`**
-	(the last when it cannot reach the published script, which is an ordinary state on a machine that is
-	offline). So anything *else* answering on that port is not ours — and that matters twice: `viz` must
-	not open a page belonging to somebody else's server, and it must not start a second one on a port
-	that is already held. The route is the handshake rather than a new one invented here.
+	**`/version` is the server's own route, and its whole vocabulary is `OK`, `updated` and `error`** (the
+	last when the route cannot reach the published script, which is an ordinary state on a machine that is
+	offline). So anything *else* answering on that port is not ours — and that matters twice: `viz` must not
+	open a page belonging to somebody else's server, and it must not start a second one on a port that is
+	already held. The route is the handshake rather than a new one invented here, and **the list is exact on
+	purpose**: a word added to the route without being added here reads as "not a dev server", and the
+	advice that follows sends the reader to another port.
 	"""
 	try:
 		import requests
