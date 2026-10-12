@@ -97,6 +97,18 @@ Each of these was decided by Graham and is not to be re-opened without him.
 
 ## Open work, in the order it was chosen — [mine, queued]
 
+### The restart, and the server nobody can Ctrl+C — [your call], opened 2026-10-12
+
+**The mechanism works; what it leaves behind is the problem.** `/restart` spawns its successor with `system background` and exits. So after the page's "restart to apply changes?" the reader's terminal is free and a **detached** `allspeak server` is running — not in the terminal's foreground process group, so a Ctrl+C there stops nothing. That is the third of Graham's three symptoms (2026-10-12) and it is the only one left: the nag that reached it and the lost answer are both fixed. Reproduced and measured: the original exits on SIGINT, and the port goes on serving.
+
+**The three shapes, and what each costs.**
+
+1. **Say it.** Keep the restart, and print one line when it happens: the new server is in the background and `pgrep -af "allspeak server"` / `kill <pid>` stops it. One line of AllSpeak, no new vocabulary, and the reader keeps the click-and-reload convenience. The cost is that a dev server you did not start, and cannot Ctrl+C, still exists — explained rather than absent.
+2. **Take the restart out.** The page's dialog becomes an instruction instead of a question — "a newer dev server has been published: stop this server and start it again" — and `/restart` goes. Then the process in the terminal is the only one, Ctrl+C works, and there is nothing detached, ever. The cost is two manual actions (restart, reload) in a moment that is already rare, and the loss of a mechanism Graham built.
+3. **Restart in place.** One process, same pid, same terminal, Ctrl+C working — what `BUILD.md` already says `/restart` does ("re-execs `allspeak server <port>`"). It needs an in-process `exec`-style keyword: a new dev-environment keyword in **both** runtimes, the four packs, a spec note and a check. The most work and the least surprise; the only one that keeps the feature *and* the terminal.
+
+**Nothing here is urgent now**: after fix (1) a checkout — this repository among them — never sees the dialog at all. It appears for a *project* whose running copy is the CLI's cache and whose published script has since changed, which is once per deploy, per project.
+
 ### The welcome — the new user's first screen (new 2026-10-12; *not* shaped, and it is Graham's to shape)
 
 **`allspeak viz` is now the front door, and it lands a new user on an empty visualizer.** Graham's words for what should greet them: *"an upcoming task is for viz to display a welcome popup leading to essential documentation, avoiding the need to dive into the website."* So the page's job at first open is to say what the tool is, and to hand over the few things worth reading — in the page, not by sending the reader to allspeak.ai.
