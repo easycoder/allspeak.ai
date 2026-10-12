@@ -98,14 +98,6 @@ Each of these was decided by Graham and is not to be re-opened without him.
 
 ## Open work, in the order it was chosen — [mine, queued]
 
-### The welcome — the new user's first screen (new 2026-10-12; *not* shaped, and it is Graham's to shape)
-
-**`allspeak viz` is now the front door, and it lands a new user on an empty visualizer.** Graham's words for what should greet them: *"an upcoming task is for viz to display a welcome popup leading to essential documentation, avoiding the need to dive into the website."* So the page's job at first open is to say what the tool is, and to hand over the few things worth reading — in the page, not by sending the reader to allspeak.ai.
-
-**Nothing about it is decided**, and the questions are the work: what it says; where the "essential documentation" comes from (the `learn/` chapters as they stand, the starter `AGENTS.md`, or something written for this alone); whether it is a panel in the page or the alert panel that already exists (`se-alert`, and the first-use case is exactly what it was built for); and what makes it stop appearing. The on-ramp constraint governs it — *the onboarding does not grow with the tooling* — so whatever it becomes, it is the first thing a reader sees and it must not need a second screen to be understood.
-
-**It goes before the traffic lights in the queue, not because it is bigger but because it is the first thing a new reader meets.** The lights are for a session already under way.
-
 ### First: the traffic lights — decided, designed, not built (2026-10-03)
 
 **Graham's answer to the choice was both halves: per-tab lights *and* the app reporting back.** The order follows, because the second half writes into the first.
@@ -586,3 +578,15 @@ So the clip pays, by roughly the square of the fraction kept, exactly as the sec
 
 **The same day, second pass: the page took the name too, and the CLI grew a front door.** `edit.html` is `viz.html` — answered under both names by the server, with a legacy copy published beside it — and `allspeak`'s vocabulary is now four lines with `allspeak viz` as the way in. The detail is the top entry of `TODO.md`; two things belong here because they are this file's business. **First, `allspeak viz` opens *this* page**, so the visualiser's first screen is now the first thing a new user sees — and that is the welcome item above. **Second, the CLI's word and the tool's name are the same word, and the file that already had it is this repository's own `viz.allspeak`**: `allspeak viz` therefore means the front door and not the script, and the script is run as `allspeak viz.allspeak`. That reservation is deliberate and stated in `as_program.py`; it is the kind of collision that is worth a sentence rather than a discovery.
 
+
+---
+
+## The welcome panel — built 2026-10-12, and the two faults only a browser could see
+
+**What it is for.** `allspeak viz` lands a new reader on an empty editor, and the panel that greets them is what stops that being a wall: what AllSpeak is, what the buttons do, and where the worked example is. It is `se-welcome` in `viz.json` (a field over the work area with a centred card inside it), *shown* by the file so it is up before a line of the script has run, and *put away* on the first click of anything that works.
+
+**Graham's two calls, and one more ask.** **The Primer is named in the sentence rather than given a control** — *"the problem is the wording, which implies a local Primer button"* — so the card reads *"To learn more, visit our website at allspeak.ai and click Primer to see a worked example and comprehensive documentation about AllSpeak"*, with the address as a link to the site (whose own nav carries `Primer →` and `Learn`). And **it appears only on a fresh page load while nothing is open**: gone on the first click, back on a reload, and never pushing itself back while a session is under way. He also asked for the logo to link to the website, which is now an `<a>` around the image opening in a new tab, with a tooltip — and that is the route to the site which *outlives* the panel.
+
+**The mechanism that had to be abandoned, and the one in use.** `on click document` is the obvious one-line answer to "dismiss it on any click" and it **does not work**: `Browser.js`'s `clickDocument` runs its handler only inside an `<a href>` test, and only when that href is into the same page — it exists for the editor's own file links. Measured in a browser: a click on `Blocks` left the panel standing, and it is now a trap in `AGENTS.md`. The panel is put away by an `on click` on the panel itself plus a `gosub to DismissWelcome` as the **first line of all seven** of the bar's handlers. **That is a coupling, deliberately**: a new button has to carry its own `gosub` and no list can imply it, so `tools/viz-modes-check.js` asks the *source* of all seven — running them for real is what the first version of the check did, and it opened the file browser, started a new file, and broke the sidebar checks below it.
+
+**Measured in a real browser** (headless chromium through playwright, driven against the dev server; the card as seen is `various/welcome-look.png`): the panel is up at load, **694 × 295 centred in the work area and clear of the bar** (its top 327 against the bar's 8); the learn link reads `allspeak.ai`; **clicking `Open` puts the panel away *and* raises the file browser** (70 rows); **clicking the logo opens `https://allspeak.ai/` in a new tab and leaves the editor where it was**; and no page errors. **That measurement found two faults no harness here could see** — the link had no text at all (its `#content` was never written into `viz.json`) and the dismissal never fired — which is the argument for keeping a browser in reach for anything whose behaviour *is* a gesture. The card's field shade is one key (`$Welcome`'s `background`) if it should sit flush with the editor rather than read as an inset.

@@ -314,6 +314,16 @@ const seed = (items, parent) => {
 		// The page's own text, which matters: the three buttons carry their labels in the markup, and a
 		// check that asked what a button says would otherwise be asking about a stub.
 		if (typeof items[`#content`] === `string`) el.innerHTML = items[`#content`];
+		// **And every other `@name`, because that is what a renderer does with them** (`Webson.js`:
+		// `element.setAttribute(aName, aValue)` for any key starting `@`) — which is how the layout states an
+		// `href`, a `target` or a `title`. Seeding only `@id` and `#content` made every attribute the *file*
+		// states invisible here while the same attribute written by the script was recorded, and the first
+		// control whose tooltip lives in the file would have read as a control with no tooltip at all.
+		for (const [key, value] of Object.entries(items)) {
+			if (key.startsWith(`@`) && key !== `@id` && typeof value === `string`) {
+				el.setAttribute(key.slice(1), value);
+			}
+		}
 		parent.appendChild(el);
 	}
 	Object.values(items).forEach(v => seed(v, parent));
@@ -419,6 +429,7 @@ check(await waitFor(() => !!program.onMessage), `the editor's inbound message ha
 // arrow — are precisely the ones a later change would drop without noticing, and `title` is invisible
 // until a pointer rests on it, so nothing else would complain.
 const titles = {
+	[`se-logo`]: `AllSpeak.ai — the website, the Primer and the documentation`,
 	[`se-open`]: `Open a file from this project`,
 	[`se-plusbtn`]: `Start a new file`,
 	[`se-findbtn`]: `Find a block holding the text you have selected`,
@@ -444,6 +455,72 @@ check(untooled.length === 0,
 	`every control carries its own tooltip (${Object.keys(titles).length} checked`
 	+ (untooled.length ? `, ${untooled.length} wrong: `
 		+ untooled.map(id => `${id}=${JSON.stringify(titleOf(id))}`).join(`, `) : ``) + `)`);
+
+// ---- the first screen: the welcome, and the route that outlives it ----------------------------------
+//
+// **A new reader's first sight of Viz is a blank editor, and this is what stops that being a wall.** Graham,
+// 2026-10-12: *"I'm acutely aware of the sense of bafflement many products create when they present a mass of
+// unfamiliar artefacts with no obvious route to using them."* The help message sends them to `allspeak viz`;
+// from there the panel above the editor has to take over — what AllSpeak is, what the buttons do, and where
+// the worked example is.
+//
+// **It is *shown* by the file, and *put away* by eight things.** `viz.json` has it as `display: flex`, so it
+// is up as soon as the page renders — before a line of the script has run, which is the point for a
+// first-time reader — and the script owns only the way it goes. **There is no one line that means "any
+// click"**: `on click document` reads like it and is not — the runtime runs a document click handler only for
+// an `<a href>` into the same page (`Browser.js`, `clickDocument`), which is what the editor's own file links
+// need. Measured in a browser, 2026-10-12: a click on `Blocks` left the panel standing. So the dismissal is
+// the first line of each control's handler, and the panel is clickable itself for a reader who clicks the
+// prose. Those eight *are* the mechanism, which is why each is run here: a button added without its `gosub`
+// would leave a panel sitting over a page the reader has already started using.
+check(!!byId[`se-welcome`] && (UI_JSON[`$Welcome`] || {}).display !== `none`,
+	`the welcome panel is on the first screen (element ${!!byId[`se-welcome`]}, `
+	+ `file display ${JSON.stringify((UI_JSON[`$Welcome`] || {}).display)})`);
+check(typeof (byId[`se-welcome`] || {}).targetPc === `number`,
+	`and the panel itself is clickable, so clicking the prose puts it away as a button does `
+	+ `(targetPc=${(byId[`se-welcome`] || {}).targetPc})`);
+
+// One real handler, chosen because it is the harmless one: with no tab open `ToggleBlocks` puts the panel away
+// and then returns without a tab to show.
+run(`ToggleBlocks`);
+check((displayOf(`se-welcome`) || {}).display === `none`,
+	`and a button's own handler puts it away as it starts (display=`
+	+ `${JSON.stringify((displayOf(`se-welcome`) || {}).display)})`);
+
+// **And the other six are asked about in the source, not by running them.** Running each would *do* what that
+// button does — open the file browser, start a new file, record this script — and every check below would then
+// be describing a different editor; the first version of this check did exactly that, and the sidebar checks
+// began failing with a panel that had never been built. What matters is one property, and the source states
+// it: **the first statement of every handler a bar control reaches is the dismissal.** The behaviour itself
+// was watched in a browser (a click on `Open` puts the panel away and shows the file list) — that is the
+// instrument for a gesture, and this is the instrument for the class.
+const source = scriptElement.innerText.split(`\n`);
+const opensWithDismissal = label => {
+	const at = source.findIndex(l => l.trim() === label + `:`);
+	if (at < 0) return `no such handler`;
+	const first = source.slice(at + 1).find(l => l.trim() !== `` && !l.trim().startsWith(`!`));
+	return (first || ``).trim();
+};
+const bars = [[`OpenBtn`, `ShowBrowser`], [`PlusBtn`, `NewFile`], [`FindBtn`, `DoFind`],
+	[`BlocksBtn`, `ToggleBlocks`], [`GraphBtn`, `ToggleGraph`], [`RecordBtn`, `RecordRun`],
+	[`LaunchBtn`, `LaunchApp`]];
+const unwired = bars.filter(([symbol, label]) =>
+	!source.some(l => l.trim() === `on click ` + symbol + ` go to ` + label)
+	|| !opensWithDismissal(label).startsWith(`gosub to DismissWelcome`));
+check(unwired.length === 0,
+	`and every button that does something dismisses it first — ${bars.length} handlers asked`
+	+ (unwired.length ? `, ${unwired.length} not: `
+		+ unwired.map(([, label]) => `${label}=${JSON.stringify(opensWithDismissal(label))}`).join(`, `) : ``) + `)`);
+
+// **And the logo is the route that outlives it.** The panel is gone for the rest of the page load once
+// anything is clicked, so a reader who wants the Primer later needs a door that does not close — the logo,
+// which is where a reader looks for the site a tool belongs to. It is an `<a>` around the image in the file,
+// with the `title` above as its tooltip, so nothing about it is the script's business.
+check((UI_JSON[`$Logo`] || {})[`#element`] === `a`
+	&& (UI_JSON[`$Logo`] || {})[`@href`] === `https://allspeak.ai`
+	&& (UI_JSON[`$Logo`] || {})[`@target`] === `_blank`,
+	`the logo is a link to the website, in a window of its own, so it does not navigate the editor away `
+	+ `(${JSON.stringify((UI_JSON[`$Logo`] || {})[`@href`])} ${JSON.stringify((UI_JSON[`$Logo`] || {})[`@target`])})`);
 
 // ---- the alert panel: one box, named by the page, shared with the Graph pane -------------------
 //

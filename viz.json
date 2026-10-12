@@ -90,8 +90,17 @@
     "text-align": "right"
   },
   "$Logo": {
-    "#element": "img",
+    "#element": "a",
     "@id": "se-logo",
+    "@href": "https://allspeak.ai",
+    "@target": "_blank",
+    "@title": "AllSpeak.ai — the website, the Primer and the documentation",
+    "display": "flex",
+    "flex-shrink": "0",
+    "#": ["$LogoImg"]
+  },
+  "$LogoImg": {
+    "#element": "img",
     "@src": "https://allspeak.ai/icon/duckthink.png",
     "width": "28px",
     "height": "28px",
@@ -124,7 +133,81 @@
     "#element": "div",
     "@id": "se-editor-area",
     "height": "calc(100vh - 40px)",
-    "#": ["$ContentDiv"]
+    "position": "relative",
+    "#": ["$ContentDiv", "$Welcome"]
+  },
+  "$Welcome": {
+    "#element": "div",
+    "@id": "se-welcome",
+    "display": "flex",
+    "position": "absolute",
+    "top": "0",
+    "left": "0",
+    "right": "0",
+    "bottom": "0",
+    "align-items": "center",
+    "justify-content": "center",
+    "background": "#191919",
+    "#": ["$WelcomeBox"]
+  },
+  "$WelcomeBox": {
+    "#element": "div",
+    "@id": "se-welcome-box",
+    "max-width": "640px",
+    "padding": "22px 26px",
+    "background": "#242424",
+    "border": "1px solid #3a3a3a",
+    "border-radius": "8px",
+    "color": "#d7d7d7",
+    "line-height": "1.55",
+    "font-size": "14px",
+    "#": ["$WelcomeTitle", "$WelcomeIntro", "$WelcomeButtons", "$WelcomeNote", "$WelcomeLearn"]
+  },
+  "$WelcomeTitle": {
+    "#element": "div",
+    "@id": "se-welcome-title",
+    "font-size": "20px",
+    "color": "#eaeaea",
+    "margin-bottom": "12px"
+  },
+  "$WelcomeIntro": {
+    "#element": "div",
+    "@id": "se-welcome-intro",
+    "margin-bottom": "10px"
+  },
+  "$WelcomeButtons": {
+    "#element": "div",
+    "@id": "se-welcome-buttons",
+    "margin-bottom": "10px"
+  },
+  "$WelcomeNote": {
+    "#element": "div",
+    "@id": "se-welcome-note",
+    "color": "#8f8f8f",
+    "font-size": "13px"
+  },
+  "$WelcomeLearn": {
+    "#element": "div",
+    "@id": "se-welcome-learn",
+    "margin-top": "14px",
+    "#": ["$WelcomePre", "$WelcomeLink", "$WelcomePost"]
+  },
+  "$WelcomePre": {
+    "#element": "span",
+    "@id": "se-welcome-pre"
+  },
+  "$WelcomeLink": {
+    "#element": "a",
+    "@id": "se-welcome-link",
+    "#content": "allspeak.ai",
+    "@href": "https://allspeak.ai",
+    "@target": "_blank",
+    "color": "#00d4ff",
+    "text-decoration": "none"
+  },
+  "$WelcomePost": {
+    "#element": "span",
+    "@id": "se-welcome-post"
   },
   "$BlocksTitle": {
     "#element": "span",

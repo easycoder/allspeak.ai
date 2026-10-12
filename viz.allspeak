@@ -42,6 +42,13 @@
     img TabClose
     a FileName
     pre UIPre
+    div Welcome          ! the first-run panel over the editor — gone on the first click anywhere
+    div WelcomeTitle
+    div WelcomeIntro
+    div WelcomeButtons
+    div WelcomeNote
+    span WelcomePre      ! the sentence around the website link, which is the `a` in `viz.json`
+    span WelcomePost
 
 !   -- State --
     variable Lang
@@ -62,6 +69,15 @@
     variable StrUpLevel
     variable StrRoot
     variable StrUpdated
+    ! The welcome panel: the first thing a new reader sees, and the only place the buttons are explained.
+    ! Six strings rather than one paragraph, so each is a plain line a translator can read on its own and
+    ! the layout between them is `viz.json`'s business.
+    variable StrWelcomeTitle
+    variable StrWelcomeIntro
+    variable StrWelcomeButtons
+    variable StrWelcomeNote
+    variable StrWelcomePre   ! the website sentence, around the link
+    variable StrWelcomePost
     ! What the alert panel is asked to say. A variable rather than an argument, because the language has
     ! no parameters: `ShowAlert` reads it and nothing else.
     variable AlertMsg
@@ -215,7 +231,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 12b1ff2b
+!! @hash b4074474
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'viz-ui',
@@ -247,6 +263,16 @@
     attach GraphGrip to `se-graph-grip`
     attach GraphSide to `se-graph-side`
     attach EditorArea to `se-editor-area`
+    ! The welcome panel's own boxes, by id. Its container (`se-welcome-box`), the `<a>` and the two
+    ! surrounding spans are attached by nothing: the box is hidden by its container's id, the link's href and
+    ! text are `viz.json`'s, and only the words change with the language.
+    attach Welcome to `se-welcome`
+    attach WelcomeTitle to `se-welcome-title`
+    attach WelcomeIntro to `se-welcome-intro`
+    attach WelcomeButtons to `se-welcome-buttons`
+    attach WelcomeNote to `se-welcome-note`
+    attach WelcomePre to `se-welcome-pre`
+    attach WelcomePost to `se-welcome-post`
     attach BlocksArea to `se-blocks-area`
     attach BlocksTitle to `se-blocks-title`
     attach BlocksPrev to `se-blocks-prev`
@@ -264,7 +290,7 @@
     ! Every control is named while the UI is still being built: see `SetTips`, below the startup
     ! loops, for what a tooltip is here and why it is a subroutine rather than lines in this block.
     gosub to SetTips
-!! @hash e203ef10
+!! @hash eb4eaadf
 !! @verified 414ea5b9
 !!!
 !! Some general initialisation
@@ -314,6 +340,12 @@ SetStrings:
         put `.. (livello superiore)` into StrUpLevel
         put `/ (radice progetto)` into StrRoot
         put `Il visualizzatore è stato aggiornato. Ferma il server nel terminale e riavvialo, poi ricarica questa pagina.` into StrUpdated
+        put `Benvenuto in Viz` into StrWelcomeTitle
+        put `L'editor, il visualizzatore e il debugger di AllSpeak — un linguaggio per un mondo dove l'IA scrive il codice e tu guidi e rivedi.` into StrWelcomeIntro
+        put `I pulsanti qui sopra coprono tutto il lavoro: aprire uno script, leggerlo a blocchi — la prosa di ogni parte accanto al codice che descrive — eseguirlo, catturare l'esecuzione, vedere dove è andata e saltare a una parte. Passa il puntatore su un pulsante per vedere esattamente cosa fa.` into StrWelcomeButtons
+        put `Questa finestra scompare appena clicchi uno dei pulsanti.` into StrWelcomeNote
+        put `Per saperne di più, visita il nostro sito a ` into StrWelcomePre
+        put ` e clicca su Primer per un esempio guidato e una documentazione completa su AllSpeak.` into StrWelcomePost
         put `vaisub` into StrFlowCall
         put `vai` into StrFlowJump
         put `ritorna` into StrFlowReturn
@@ -334,6 +366,12 @@ SetStrings:
         put `.. (niveau supérieur)` into StrUpLevel
         put `/ (racine du projet)` into StrRoot
         put `Le visualiseur a été mis à jour. Arrête le serveur dans le terminal et redémarre-le, puis recharge cette page.` into StrUpdated
+        put `Bienvenue dans Viz` into StrWelcomeTitle
+        put `L'éditeur, le visualiseur et le débogueur d'AllSpeak — un langage pour un monde où l'IA écrit le code et où vous guidez et relisez.` into StrWelcomeIntro
+        put `Les boutons ci-dessus couvrent tout le travail : ouvrir un script, le lire en blocs — la prose de chaque partie à côté du code qu'elle décrit — l'exécuter, capturer l'exécution, voir où elle est passée, et sauter à une partie. Survolez un bouton pour voir exactement ce qu'il fait.` into StrWelcomeButtons
+        put `Cette boîte disparaît dès que vous cliquez sur l'un des boutons.` into StrWelcomeNote
+        put `Pour en savoir plus, visitez notre site à ` into StrWelcomePre
+        put ` et cliquez sur Primer pour un exemple guidé et une documentation complète sur AllSpeak.` into StrWelcomePost
         put `vasous` into StrFlowCall
         put `va` into StrFlowJump
         put `retourne` into StrFlowReturn
@@ -354,6 +392,12 @@ SetStrings:
         put `.. (Ebene höher)` into StrUpLevel
         put `/ (Projektstamm)` into StrRoot
         put `Der Visualisierer wurde aktualisiert. Beenden Sie den Server im Terminal, starten Sie ihn erneut und laden Sie dann diese Seite neu.` into StrUpdated
+        put `Willkommen bei Viz` into StrWelcomeTitle
+        put `Der Editor, Visualisierer und Debugger für AllSpeak — eine Sprache für eine Welt, in der die KI den Code schreibt und Sie führen und prüfen.` into StrWelcomeIntro
+        put `Die Schaltflächen oben decken die ganze Arbeit ab: ein Skript öffnen, es als Blöcke lesen — die Prosa jedes Teils neben dem Code, den sie beschreibt — es ausführen, den Lauf aufzeichnen, sehen, wohin er ging, und zu einem Teil springen. Zeigen Sie auf eine Schaltfläche, um genau zu sehen, was sie tut.` into StrWelcomeButtons
+        put `Dieses Fenster verschwindet, sobald Sie eine der Schaltflächen anklicken.` into StrWelcomeNote
+        put `Mehr dazu auf unserer Website ` into StrWelcomePre
+        put ` — klicken Sie dort auf Primer für ein geführtes Beispiel und die vollständige Dokumentation zu AllSpeak.` into StrWelcomePost
         put `gosub` into StrFlowCall
         put `gehe` into StrFlowJump
         put `retourniere` into StrFlowReturn
@@ -374,6 +418,12 @@ SetStrings:
         put `.. (up one level)` into StrUpLevel
         put `/ (project root)` into StrRoot
         put `The visualizer has been updated. Stop the server in your terminal and start it again, then reload this page.` into StrUpdated
+        put `Welcome to Viz` into StrWelcomeTitle
+        put `The editor, visualizer and debugger for AllSpeak — a language for a world where AI does the coding and you do the guiding and reviewing.` into StrWelcomeIntro
+        put `The buttons above take you through the whole job: open a script, read it as blocks — each part's prose beside the code it describes — run it, capture the run, see where the run went, and jump to a part. Hover over any button to see exactly what it does.` into StrWelcomeButtons
+        put `This box goes as soon as you click any of the buttons.` into StrWelcomeNote
+        put `To learn more, visit our website at ` into StrWelcomePre
+        put ` and click Primer to see a worked example and comprehensive documentation about AllSpeak.` into StrWelcomePost
         put `gosub` into StrFlowCall
         put `go` into StrFlowJump
         put `return` into StrFlowReturn
@@ -381,7 +431,16 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash 947cd4c0
+    ! The welcome panel's words, once, from whichever language's set is in hand. **The panel is *up* from the
+    ! moment the page renders and goes on the first click anywhere** — see `DismissWelcome` — so there is
+    ! nothing here to show or hide, only to say.
+    set the content of WelcomeTitle to StrWelcomeTitle
+    set the content of WelcomeIntro to StrWelcomeIntro
+    set the content of WelcomeButtons to StrWelcomeButtons
+    set the content of WelcomeNote to StrWelcomeNote
+    set the content of WelcomePre to StrWelcomePre
+    set the content of WelcomePost to StrWelcomePost
+!! @hash 4c38d48d
 !! @verified 3f450398
 !!!
 !! Tells the reader when the dev server they are running has been superseded.
@@ -413,6 +472,18 @@ VersionDone:
     on click BlocksVerify go to MarkVerified
     on click BlocksVerifyAll go to MarkAllVerified
     on click AlertCloseBtn go to HideAlert
+    ! **The welcome panel goes on the first click of anything that *does* something** — and there is no single
+    ! line that says so, which is worth knowing before anyone looks for one. `on click document` reads as "any
+    ! click anywhere" and is not: the runtime runs a document click handler only when the click was on an
+    ! `<a href>` **into this same page** (`Browser.js`, `clickDocument` — the editor's own file links are what
+    ! it exists for). Measured in a browser, 2026-10-12: a click on `Blocks` left the panel standing.
+    !
+    ! So the dismissal is the first line of each control's handler — the `gosub to DismissWelcome` that opens
+    ! `ShowBrowser`, `NewFile`, `DoFind`, `ToggleBlocks`, `ToggleGraph`, `RecordRun` and `LaunchApp` — with the
+    ! panel itself clickable too, for a reader who clicks the prose rather than a button. **The cost is that a
+    ! new button has to carry its own `gosub`**, which a list of handlers cannot be made to imply: the check
+    ! below runs all seven and insists that each one puts the panel away.
+    on click Welcome go to DismissWelcome
 
     on pick BlocksDivider
     begin
@@ -498,7 +569,7 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash faeb1bc4
+!! @hash 75bd93e6
 !! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
@@ -680,6 +751,7 @@ PollNext:
 !! File browser overlay behind the Open button: lists the current directory, navigates into folders and back to the project root, and hands the chosen file to the tab-management section to open.
 !   -- File browser with directory navigation --
 ShowBrowser:
+    gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     ! Opening a tab while Blocks mode is up leaves the panes out of sync with
     ! the active tab's source; switch back to flat mode first.
     if BlocksMode is 1 gosub to DoExitBlocks
@@ -825,6 +897,7 @@ TabGrow:
 
 !   -- New empty tab --
 NewFile:
+    gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     put TabCount into N
     gosub to TabGrow
     index TabPath to N
@@ -1024,6 +1097,7 @@ RebuildTabBar:
 !! DoFind searches in flat mode via CodeMirror's find dialog; in Blocks mode it jumps to the next block whose code or prose contains the text selected in either pane (wrapping around), highlighting the match so repeated presses walk through the hits.
 !   -- Find --
 DoFind:
+    gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if BlocksMode is 1 go to FindInBlocks
     codemirror find in ContentEditor
     stop
@@ -1444,6 +1518,7 @@ ScoreWithCode:
 !! RenderBlock paints the textareas and the toolbar badge for the current section.
 !! UpdateBadge derives badge text/colour from the section's hash and verify states.
 ToggleBlocks:
+    gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if BlocksMode is 0 go to EnterBlocks
     go to ExitBlocks
 
@@ -1920,6 +1995,7 @@ JumpToBlock:
 !!
 !! **Leaving is automatic when a tab changes.** A mode owns the screen, so opening or switching to a file drops back to the flat editor rather than loading the new script into a pane nobody can see — which is what happened the first time this pane was used, and what Blocks has always done. The rule lives in `ActivateTab`, so every path that shows a file obeys it.
 ToggleGraph:
+    gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if GraphMode is 0 go to EnterGraph
     gosub to DoExitGraph
     ! Back to the flat editor exactly where it was left — the caret *and* the view, which is what the
@@ -2277,6 +2353,7 @@ TellSideClosed:
 !!
 !! **And a guard is armed, with the recorder's own defaults.** A script handed to the editor by a tool is not to be trusted with the editor's responsiveness: a busy loop and a never-returning wait both end here, and the recording says which.
 RecordRun:
+    gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if TabCount is 0 stop
     index TabPath to ActiveTab
     put TabPath into EditorPath
@@ -2365,6 +2442,7 @@ RecordFailed:
 !!
 !! **A script that names no app says so** rather than the button doing nothing, because "nothing happened" is the one report a reader cannot act on. The message names the spelling, says it goes on a line of its own, and says it is not a comment — the three things a reader needs and the three the first version got wrong: it pointed at a doc block, which is where the *analyser's* `@hash` and `@verified` live and where an attribute never reaches the compiler.
 LaunchApp:
+    gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if TabCount is 0 stop
     ! The parse is what reads the attributes, and the buffer may have changed since the last one — so read it now
     ! rather than trusting `AppPage` to be current. It is the same walk the Blocks view uses, and it clears
@@ -2391,4 +2469,15 @@ LaunchApp:
     stop
 !! @hash def5bda2
 !! @verified 0faead49
+!!!
+
+!! Puts the welcome panel away, and is the only thing that does.
+!!
+!! **Registered on the document, so *any* click dismisses it** — a button, the picture, the prose, the empty page around them. The panel is the first thing a new reader sees and exists to be read once, so the click that means "I have started" is not a click on any particular control: a design that watched the buttons would need one line per button, and the seventh button added later would silently not dismiss it. Registering it is what makes it work at all — see the note at the registration, near the top of the flow — and the panel is *shown* by `viz.json` rather than by this file, so there is nothing here that puts it back.
+!   -- Put the welcome panel away --
+DismissWelcome:
+    set style `display` of Welcome to `none`
+    return
+
+!! @hash 3c88926c
 !!!

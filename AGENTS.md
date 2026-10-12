@@ -233,6 +233,20 @@ Standing knowledge rather than next steps, which is why they live here and not i
 - **`0 tokens` in a `Compiled …` line is a finding, not noise.** It cost a round on 2026-10-04: the editor's parse reporting an empty source was the whole clue to a blank Graph pane, and it was twice dismissed as startup chatter.
 - **A check file that stops half-way still reads as coverage.** `tools/viz-modes-check.js` reports 56 checks and contains 74: the Record section's first act draws in the pane, the pane's first draw throws on `VizBusy` (its element is written before `Draw`'s build creates it), and everything below that line never runs — including a whole flavour section a reader would take as covered. Measured 2026-10-11, when a new check was written into the dead part and silently did not run. **Compare what a check file *reports* against what it *contains*, and when adding a check, put it where the file actually reaches.** The `VizBusy` fault itself is Graham's open item, and reviving 22 checks is the reason to fix it.
 - **Measure a visual fault from a screenshot before reading the code**, and check the instrument's own constants first.
+- **`on click document` is not "any click", and it reads as though it were.** `Browser.js`'s `clickDocument`
+  installs its listener on the document, but the handler is run only inside a test on the event's `<a href>` —
+  *and only when that href begins with the current page's URL*, because the feature exists for the editor's own
+  file links. So a handler registered that way fires for a click on an internal link and for nothing else:
+  measured 2026-10-12, a click on `Blocks` left a panel registered that way standing. **Measure the gesture, in
+  a browser, before believing a one-line dismissal.** What did work: `on click <element>` on the element itself
+  (per-element `targetPc`, checked directly on the DOM node) and a `gosub` as the first line of each button's
+  handler.
+- **A check that runs real handlers changes the editor for every check after it.** The first version of the
+  welcome check ran seven button handlers to prove each dismissed the panel — which opened the file browser and
+  started a new file, and the *sidebar* checks further down began failing with a panel that had never been
+  built. Where a check must ask about a class of handlers, ask the **source** (`scriptElement.innerText`) and
+  run only the handlers that are provably harmless; and when a browser can watch the gesture, that is the
+  instrument for the gesture.
 - **A response is not out until the request thread has written it, and `exit` does not wait.** `return X to Files` hands the response over; a command that ends the process on the next line wins the race, so the caller gets a *closed connection* instead of an answer — which its `or` clause then reports as a failure that did not happen. Measured 2026-10-12 on the old `/restart` route: **7 of 8 calls lost the reply**, the eighth arriving with an empty body; `wait 1 second` between the two fixed it. That route has since been removed for another reason — it left a server the reader's Ctrl+C could not reach — and the trap outlived the code, which is why it is written down here.
 - **A signal test has to prove the signal can arrive.** My first SIGINT test started a server with `nohup … &`, watched it survive, and very nearly reported it as a fault. It was the harness: a shell with job control off sets **SIG_IGN** for SIGINT in a background child, so the signal was never delivered. `grep SigIgn /proc/<pid>/status` settles it in one line, or install `signal.default_int_handler` explicitly and say that you did.
 
