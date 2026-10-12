@@ -810,6 +810,7 @@ const SIDEFIX = [
 	`!! Its prose too.`,
 	`Beta:`,
 	`    return`,
+	`    put \`Total < 20 & Row\` into Msg`,
 	`!!!`,
 ].join(`\n`);
 // **The fixture is set and then Graph is entered again, because entering is what builds the model** —
@@ -839,6 +840,50 @@ const relayed = await waitFor(() => Number(sideValue(`SideLine`)) === 12);
 check(relayed, `a line the pane reports is looked up here and shown in the sidebar (line=${sideValue(`SideLine`)}, found=${sideValue(`SideFound`)})`);
 check(sideValue(`SideFound`) === 1 && sideValue(`SideTitle`) === `2. The second block, and this one holds line twelve.`,
 	`and the block it names is the one holding that line, numbered as Blocks numbers it (${JSON.stringify(sideValue(`SideTitle`))})`);
+
+// ---- the Code tab, which shows the section's code with the doc blocks taken out --------------------
+// **The tab is the one thing the pointer does not carry, so it is set before the report is delivered** — and
+// put back afterwards, because the claims below it are about the other tab. Written the way a browser writes
+// it (`Core.Put`'s own shape), since this harness stubs the DOM too far down to click a tab for real.
+const setSide = (name, content, numeric) => {
+	const record = sideRecord(name);
+	if (!record) throw new Error(`the sidebar declares no '${name}'`);
+	const slot = { type: `constant`, numeric: !!numeric, content };
+	record.value[record.index] = slot;
+	record.value[0] = slot;
+};
+// **And the script the sidebar is told about is the one the *pane* was given**, which in this harness has to
+// be put there: the editor fetches it over `/read/` for the pane, and a harness with no server reads nothing.
+// It is the same text either way, which is the point — the sidebar slices the picture's own script.
+const setEditorSource = text => {
+	const record = program.getSymbolRecord(`SourceText`);
+	const slot = { type: `constant`, numeric: false, content: text };
+	record.value[record.index] = slot;
+	record.value[0] = slot;
+};
+const codeHtml = () => String(sideElText(`ec-SideCode`) || ``);
+const deliver = async () => {
+	program.message = report(12, 3, 7);
+	run(`SideMarkLine`);
+	await waitFor(() => Number(sideValue(`SideLine`)) === 12);
+};
+setEditorSource(SIDEFIX);
+run(`SendRunToSide`);
+setSide(`SideTabSel`, 1, true);
+await deliver();
+const codePlain = () => codeHtml().replace(/<span[^>]*>/g, ``).replace(/<\/span>/g, ``);
+check(codePlain() === `Beta:\n    return\n    put \`Total &lt; 20 &amp; Row\` into Msg\n`,
+	`the Code tab shows the section's code with the doc-block lines taken out (${JSON.stringify(codePlain())})`);
+check(String(sideElText(`ec-SideProse`) || ``) === `` && String(sideElText(`ec-SideHead`)).includes(`The second block`),
+	`and the prose is not presented while it is up, though the heading still names the section`);
+check(codeHtml().includes(`&lt; 20 &amp; Row`),
+	`and code that looks like markup is escaped rather than eaten, so a script full of it reads as written`);
+check(/<span[^>]*>    return<\/span>/.test(codeHtml()),
+	`and the line the pointer named is picked out — the section's own line 12, not the line above it`);
+setSide(`SideTabSel`, 0, true);
+await deliver();
+check(String(sideElText(`ec-SideCode`) || ``) === `` && String(sideElText(`ec-SideProse`) || ``).includes(`Its prose too`),
+	`and switching back to the doc block takes the code away again`);
 // **The mark's own figures reach the panel's status bar**, which is the one thing that can tell two dots
 // on a row apart — they share a line and so a block, and differ only in which arrival they are.
 check(String(sideElText(`ec-SideStatus`)).includes(`3 of 7`),

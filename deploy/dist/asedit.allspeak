@@ -569,7 +569,7 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash 75bd93e6
+!! @hash c214aaca
 !! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
@@ -853,7 +853,7 @@ SelectEntry:
 CloseBrowser:
     set style `display` of Overlay to `none`
     stop
-!! @hash ac5d5c01
+!! @hash 4dfa3b5b
 !! @verified ac5d5c01
 !!!
 !! This section is tab management; creating a new tab, opening a file, selecting a tab and closing a tab.
@@ -1056,7 +1056,7 @@ ActivateTab:
     gosub to TabRestore
     gosub to RebuildTabBar
     stop
-!! @hash e6bbb6c8
+!! @hash 7de46ea7
 !! @verified e6bbb6c8
 !!!
 !! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
@@ -1189,7 +1189,7 @@ ClearStatus:
     wait 3 seconds
     set the content of StatusSpan to ``
     stop
-!! @hash 74b13222
+!! @hash 674162f4
 !! @verified 74b13222
 !!!
 !! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.
@@ -1665,7 +1665,7 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash e77f083d
+!! @hash 4fe395f9
 !! @verified 4464102e
 !!!
 !! Blocks save.
@@ -2234,7 +2234,7 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash 291af56e
+!! @hash 9730e80c
 !! @verified ecd231d6
 !!!
 !! The sidebar: what the pane reports back, and what the sidebar is shown.
@@ -2315,6 +2315,11 @@ SendBlockToSide:
     set property `found` of SideMsg to SideFound
     set property `title` of SideMsg to SideTitle
     set property `prose` of SideMsg to SideProse
+    ! **And the block's two bounds**, which are what the code tab slices on. They are what `SideFindBlock`
+    ! has just walked — `From` and `To`, the block's own documented lines — and `SideFound` above is what
+    ! says whether they mean anything, so nothing extra has to be kept for the not-found case.
+    set property `from` of SideMsg to From
+    set property `to` of SideMsg to To
     send SideMsg to SideModule
     return
 
@@ -2327,6 +2332,11 @@ SendRunToSide:
     set property `kind` of SideMsg to `run`
     set property `open` of SideMsg to 1
     set property `path` of SideMsg to TracePath
+    ! **The script itself, because the sidebar's second tab is the code.** It is the same text the pane
+    ! was given rather than the tab's live buffer: the line numbers the sidebar is told come from the
+    ! pane's own hit test, and those were measured against *this* text — a reader who has edited since
+    ! would otherwise be shown a code line that is not the one their pointer named.
+    set property `script` of SideMsg to SourceText
     send SideMsg to SideModule
     return
 
@@ -2336,7 +2346,7 @@ TellSideClosed:
     set property `open` of SideMsg to 0
     send SideMsg to SideModule
     return
-!! @hash 0c4a0949
+!! @hash 499ec9d8
 !! @verified 0c4a0949
 !!!
 !! Recording a run, from the button.
@@ -2431,7 +2441,7 @@ RecordFailed:
     set the content of StatusSpan to `Could not record this script`
     fork to ClearStatus
     stop
-!! @hash 08c20866
+!! @hash caa49d70
 !! @verified df567fa6
 !!!
 !! Opening the project's app, from the editor.
@@ -2467,7 +2477,7 @@ LaunchApp:
     set the content of StatusSpan to `Opened ` cat AppPage
     fork to ClearStatus
     stop
-!! @hash def5bda2
+!! @hash 299d8de4
 !! @verified 0faead49
 !!!
 
