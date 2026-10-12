@@ -13,6 +13,21 @@
     div TabBar
     div TabBtn
     div Overlay
+    div MenuMask            ! the sheet that takes the click that closes the menu
+    div Menu                ! the popup itself, placed where the right-click was
+    div MenuItem            ! a pool: one row per item
+    div GraphPic            ! the picture's host, for its own right-click
+    div GraphSidePane       ! and the sidebar's box, for its
+!   -- the menu's own state --
+    variable MenuBuilt      ! 1 once the rows exist
+    variable MenuItemCount  ! how many there are
+    variable MenuItemName   ! array: the label on each
+    variable MenuI          ! scratch: index over them
+    variable MenuItemLabel  ! scratch: one label
+    variable MenuAt         ! what `the pick position` gave the right-click
+    variable MenuX          ! scratch: where the menu goes, in client pixels
+    variable MenuY
+    variable MenuPad        ! scratch: a title, before it is shown
     div Scroller
     div FileRow
     div EditorArea       ! flat-mode pane (CodeMirror-wrapped textarea)
@@ -231,7 +246,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash b4074474
+!! @hash 9427ebdc
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'viz-ui',
@@ -253,6 +268,14 @@
     attach FindBtn to `se-findbtn`
     attach PlusBtn to `se-plusbtn`
     attach Overlay to `se-overlay`
+    attach MenuMask to `se-menu-mask`
+    attach Menu to `se-menu`
+    ! **The two surfaces the menu answers on, each attached by the id its own module also uses.** A symbol
+    ! and an element are not one to one — a module attaches its own name to the same box — and that is what
+    ! makes this possible without either program knowing about the other: `on right click GraphPic` registers
+    ! a handler on `se-graph-host`, and the pane's `VizHost`, attached to the same element, is untouched.
+    attach GraphPic to `se-graph-host`
+    attach GraphSidePane to `se-graph-side`
     attach Scroller to `se-scroller`
     attach CloseBtn to `se-closebtn`
     attach BlocksBtn to `se-blocksbtn`
@@ -290,7 +313,7 @@
     ! Every control is named while the UI is still being built: see `SetTips`, below the startup
     ! loops, for what a tooltip is here and why it is a subroutine rather than lines in this block.
     gosub to SetTips
-!! @hash eb4eaadf
+!! @hash d61f049f
 !! @verified 414ea5b9
 !!!
 !! Some general initialisation
@@ -484,6 +507,14 @@ VersionDone:
     ! new button has to carry its own `gosub`**, which a list of handlers cannot be made to imply: the check
     ! below runs all seven and insists that each one puts the panel away.
     on click Welcome go to DismissWelcome
+    on click MenuMask go to HideMenu
+    ! **The two right-clicks that would open it are not registered yet**: `on right click` does not compile
+    ! (see TODO-language.md — the word, the opcode and both cases are in, and `viz-check` still answers
+    ! `I don't understand 'on'`), so the menu is built and placed but nothing shows it. Restoring these two
+    ! lines is the last step of wiring it, and they are written here rather than deleted so the shape of it
+    ! is not lost:
+    !     on right click GraphPic go to ShowMenu
+    !     on right click GraphSidePane go to ShowMenu
 
     on pick BlocksDivider
     begin
@@ -569,7 +600,7 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash c214aaca
+!! @hash 2b21b6f1
 !! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
@@ -2485,6 +2516,61 @@ LaunchApp:
 !!
 !! **Registered on the document, so *any* click dismisses it** — a button, the picture, the prose, the empty page around them. The panel is the first thing a new reader sees and exists to be read once, so the click that means "I have started" is not a click on any particular control: a design that watched the buttons would need one line per button, and the seventh button added later would silently not dismiss it. Registering it is what makes it work at all — see the note at the registration, near the top of the flow — and the panel is *shown* by `viz.json` rather than by this file, so there is nothing here that puts it back.
 !   -- Put the welcome panel away --
+!! The popup menu: where the pointer's other button is answered, and what closes it again.
+!!
+!! **One menu, owned here, for two surfaces.** The picture and the sidebar are separate programs in separate boxes, and a menu is neither's: it must be able to appear over either, and what it lists is the *editor's* to know — the sidebar's tabs and the pane's freeze. So the editor listens for the right-click on both boxes and draws the box itself, and each module is told what the item meant without ever learning that a menu exists.
+!!
+!! **A right-click is answered wherever it lands**, and the browser's own menu is suppressed where ours is offered (`on right click` cancels the default) so the reader is never shown two menus stacked on one another.
+!!
+!! **The mask is what makes a click-away close it.** The sheet covers the window and takes the click, and `HideMenu` is its handler; the menu itself is above the sheet and takes its own clicks. It is the same shape the file browser uses, and for the same reason: a popup closed by a click *anywhere* would need an `on click document`, which the runtime does not have and must not grow — a document handler fires for internal links and nothing else.
+ShowMenu:
+    if MenuBuilt is 0 gosub to MenuBuild
+    put the pick position into MenuAt
+    put property `x` of MenuAt into MenuX
+    put property `y` of MenuAt into MenuY
+    set style `left` of Menu to MenuX cat `px`
+    set style `top` of Menu to MenuY cat `px`
+    set style `display` of MenuMask to `block`
+    set style `display` of Menu to `block`
+    return
+
+HideMenu:
+    set style `display` of Menu to `none`
+    set style `display` of MenuMask to `none`
+    return
+!! @hash a78ec6e8
+!!!
+
+!! The menu's rows, built once from a list of names.
+!!
+!! **A row is a symbol, so the list is a name in `MenuItemName` and a row in the pool** — the same constraint the sidebar's tabs live under, and the same shape it uses to get round it. The names are the sidebar's two tabs and the pane's freeze, in that order, because that is the order the reader meets them in: what to look at, then how to hold it still.
+!!
+!! **The labels are English, and so are the sidebar's tabs** — that module has no language pack, deliberately, and neither has this. When the items *act* (they do not yet) the labels are still the editor's: it owns the box and it owns the words on it.
+MenuBuild:
+    put 1 into MenuBuilt
+    put 3 into MenuItemCount
+    set the elements of MenuItemName to MenuItemCount
+    index MenuItemName to 0
+    put `Doc block` into MenuItemName
+    index MenuItemName to 1
+    put `Code` into MenuItemName
+    index MenuItemName to 2
+    put `Freeze` into MenuItemName
+    set the elements of MenuItem to MenuItemCount
+    put 0 into MenuI
+    while MenuI is less than MenuItemCount
+    begin
+        index MenuItem to MenuI
+        create MenuItem in Menu
+        index MenuItemName to MenuI
+        put MenuItemName into MenuItemLabel
+        set the content of MenuItem to MenuItemLabel
+        add 1 to MenuI
+    end
+    return
+!! @hash 4f8191d1
+!!!
+
 DismissWelcome:
     set style `display` of Welcome to `none`
     return

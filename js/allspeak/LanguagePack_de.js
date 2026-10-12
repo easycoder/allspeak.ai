@@ -1172,7 +1172,7 @@ var AllSpeak_LanguagePack_de = {
     "drag": "ziehe",
     "drop": "ablege",
     "hover": "schwebe",
-    "right click": "Rechtsklick",
+    "rightClick": "Rechtsklick",
     "change": "änderung|aenderung",
     "leave": "verlassen",
     "restore": "wiederherstelle",

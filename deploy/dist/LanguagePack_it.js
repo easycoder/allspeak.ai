@@ -1176,7 +1176,7 @@ var AllSpeak_LanguagePack_it = {
     "drag": "trascina",
     "drop": "rilascia",
     "hover": "sorvola",
-    "right click": "clic destro",
+    "rightClick": "clic destro",
     "change": "cambio",
     "leave": "lascia",
     "restore": "ripristina",

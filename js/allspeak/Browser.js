@@ -1453,7 +1453,7 @@ const AllSpeak_Browser = {
 					return compiler.completeHandler();
 				}
 				return false;
-			case `right click`:
+			case `rightClick`:
 				// Element-scoped like `pick` and `wheel`, because a menu belongs to the thing it is
 				// about. **A right-click is not a hover and must not be treated as one**: the pointer
 				// is placed and then pressed, so the handler runs once. What it can read is
@@ -1713,7 +1713,7 @@ const AllSpeak_Browser = {
 					});
 				});
 				break;
-			case `right click`:
+			case `rightClick`:
 				// **A menu belongs to the thing it is about**, so this is element-scoped like `pick` and
 				// `hover` — and unlike `hover` it is one event rather than a stream: the pointer is placed
 				// and then pressed. So there is one listener here and no leave, because there is no state

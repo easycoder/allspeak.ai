@@ -1273,7 +1273,7 @@ var AllSpeak_LanguagePack_en = {
     "drag": "drag",
     "drop": "drop",
     "hover": "hover",
-    "right click": "right click",
+    "rightClick": "right click",
     "change": "change",
     "leave": "leave",
     "restore": "restore",

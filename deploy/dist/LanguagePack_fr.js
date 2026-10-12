@@ -1175,7 +1175,7 @@ var AllSpeak_LanguagePack_fr = {
     "drag": "glisse",
     "drop": "dépose",
     "hover": "survole",
-    "right click": "clic droit",
+    "rightClick": "clic droit",
     "change": "changement",
     "leave": "sortie",
     "restore": "restaure",
