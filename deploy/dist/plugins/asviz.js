@@ -26,7 +26,10 @@
 //     save the recording to <path>
 //         name the trace file, and write what has already been stopped into it. Naming is the job that
 //         matters, and it can be done before the first `viz start`: a stop flushes into the named file
-//         and the recording carries on
+//         and the recording carries on. **It is also the run's beginning** — the file is written *from
+//         nothing*, not added to, so a second run of the same script replaces the first run's recording
+//         rather than growing the file. That is what a reader of the file assumes, and what a script
+//         that names its own recording says about the line: "it creates the file empty"
 //
 // **`viz start` and `viz stop` are a segment's two ends.** A start begins one — arming a recorder if the
 // script has none, which is how a script records itself with no host in the picture — a stop ends it and
@@ -435,6 +438,17 @@ const AllSpeak_Viz = {
 				// with no path is not lost — the flush holds its watermark back — but it is not written either,
 				// so the earlier this lands the better.
 				win.AllSpeak_Viz.tracePath = path;
+				// **And the file begins here, because this is the run beginning.** An app armed from outside is
+				// the one case where nothing in the app runs `save the recording to <path>` — the path is the
+				// host's contribution, since a window cannot work out the name Record chose from the script's —
+				// so without this its first `viz stop` adds to whatever the last Record left behind and the file
+				// grows run after run. Measured 2026-10-12: 621 KB in Graham's project.
+				//
+				// The create is made *here*, from the editor's own plugin, rather than by calling into the
+				// app's copy: the app's copy is injected from the plugin URL and may be one the browser has
+				// cached from before this existed, and a reset that silently did not happen is the fault this
+				// is fixing.
+				AllSpeak_Viz.appendTrace(path, [], true);
 				told = true;
 			}
 			let count = 0;
@@ -2457,19 +2471,36 @@ const vizAppendTrace = function (path, windows, create) {
 };
 
 const vizTraceHandover = async function (path, windows, create) {
+	// **`create` is the beginning of a run, and it is the only thing that tells a new run from a page that
+	// reloaded.** Both arrive with a fresh recorder holding only the windows just closed, so the file cannot
+	// tell them apart — but the caller can: `save the recording to <path>` is executed once per run, and a host
+	// arming an app says "begin" once, while a reload re-runs nothing that says it. So a create *replaces* what
+	// the file held, which is the entire point of it, and every other caller adds to what is there.
+	//
+	// **It was passed here and never read, so every run appended to the last one.** Measured 2026-10-12 on
+	// Graham's own project: `parser-main.allspeak.viz.json` had grown to **621 KB** of successive recordings
+	// and said so in his report — *"successive runs keep making it bigger"* — while the very line in his script
+	// that names the file documents the opposite ("it creates the file empty", `parser-main.allspeak:34`). What
+	// `windows` carries is the *new* run's segments either way; this is only about what is already in the file.
+	//
+	// **And it is where the two runtimes come back into line.** Python has never had this fault: it does not
+	// implement this command at all, and `as_program.writeTrace` opens with `w`. The trace is one contract, so
+	// the file's contents on either side of it are now the same for the same run.
 	let events = [];
-	try {
-		const response = await fetch(`/read/` + path);
-		if (response && response.ok) {
-			const text = await response.text();
-			// An empty body is what the dev server answers for a path it does not hold, so "not JSON" is the
-			// ordinary no-file-yet case rather than a fault. The bare-array form of the format is valid too.
-			const document = text ? JSON.parse(text) : null;
-			if (Array.isArray(document)) events = document;
-			else if (document && Array.isArray(document.traceEvents)) events = document.traceEvents;
+	if (create !== true) {
+		try {
+			const response = await fetch(`/read/` + path);
+			if (response && response.ok) {
+				const text = await response.text();
+				// An empty body is what the dev server answers for a path it does not hold, so "not JSON" is the
+				// ordinary no-file-yet case rather than a fault. The bare-array form of the format is valid too.
+				const document = text ? JSON.parse(text) : null;
+				if (Array.isArray(document)) events = document;
+				else if (document && Array.isArray(document.traceEvents)) events = document.traceEvents;
+			}
+		} catch (err) {
+			events = [];
 		}
-	} catch (err) {
-		events = [];
 	}
 	// One `thread_name` per window, so counting them counts the windows already in the file.
 	const recorded = events.filter(function (event) { return event && event.name === `thread_name`; }).length;

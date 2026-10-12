@@ -192,6 +192,43 @@ const read = () => {
 	check(!!files[`script-chosen.viz.json`],
 		`and a script that names a file of its own overrides the host (${Object.keys(files).includes(`script-chosen.viz.json`)})`);
 
+	// 8. **A run that begins the file replaces what was in it, and a flush that does not begin it still adds.**
+	//    Both callers arrive with a fresh recorder holding only the windows it has just closed, so the file
+	//    itself cannot tell a new run from a page that reloaded — `create` is the whole of that difference, and
+	//    it is what `save the recording to <path>` passes and what the editor passes when it arms an app. **It
+	//    was passed and never read**, so every run appended to the one before. Measured 2026-10-12 on Graham's
+	//    own project: `parser-main.allspeak.viz.json` had reached **621 KB** of successive recordings, while the
+	//    line in his script that names the file says of itself "it creates the file empty".
+	const restart = `restart.viz.json`;
+	const restartProgram = { length: 2, programStack: [], vizTracePath: restart, 0: {}, 1: {} };
+	const windowsIn = name => {
+		const document = JSON.parse(files[name]);
+		return {
+			windows: document.traceEvents.filter(e => e.name === `thread_name`).length,
+			tids: document.traceEvents.filter(e => e.cat === `window`).map(e => e.tid),
+		};
+	};
+	const firstRun = new AllSpeak_Viz.Recorder(null, null);
+	segment2(firstRun, restartProgram);
+	await firstRun.flushTo(restartProgram, true);
+	await settle();
+	const secondRun = new AllSpeak_Viz.Recorder(null, null);
+	segment2(secondRun, restartProgram);
+	await secondRun.flushTo(restartProgram, true);
+	await settle();
+	check(windowsIn(restart).windows === 1 && windowsIn(restart).tids[0] === 1,
+		`a run that begins the file replaces it — one window in it, its index starting at 1 again `
+		+ `(${JSON.stringify(windowsIn(restart))})`);
+	// **And the reload rule still holds on that file.** A flush without the create adds its window rather than
+	// replacing it, which is checks 2 and 3 restated where a fix for one could quietly have removed the other.
+	const addedToRestart = new AllSpeak_Viz.Recorder(null, null);
+	segment2(addedToRestart, restartProgram);
+	await addedToRestart.flushTo(restartProgram);
+	await settle();
+	check(windowsIn(restart).windows === 2 && JSON.stringify(windowsIn(restart).tids) === JSON.stringify([1, 2]),
+		`and a flush that does not begin the file still adds to it, its index continued `
+		+ `(${JSON.stringify(windowsIn(restart))})`);
+
 	console.log(failures === 0
 		? `flush-check: all checks passed`
 		: `flush-check: ${failures} check(s) failed`);
