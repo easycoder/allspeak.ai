@@ -4,7 +4,7 @@
 //
 // **Why this exists.** `response.text` decodes with the charset a response declares, and for `text/*`
 // with no charset at all it is told (RFC 2616) to assume ISO-8859-1. Plenty of servers serve a page that
-// way — including allspeak.ai's own, which answers `content-type: text/html` for `code/edit.html` — so a
+// way — including allspeak.ai's own, which answers `content-type: text/html` for `code/viz.html` — so a
 // UTF-8 page arrived with every em dash and every accented letter doubled: `—` became `â€"`, `café`
 // became `cafÃ©`. Measured 2026-10-04, and the JS twin never had it, because `fetch().text()` decodes
 // UTF-8 whatever the header says. This check drives the Python runtime over a page served in exactly

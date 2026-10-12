@@ -36,7 +36,7 @@ Here's all you do:
 2. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into that folder.
 3. Install AllSpeak: `pip install -U allspeak-ai`
 4. Install Claude Code (see [claude.ai/code](https://claude.ai/code)).
-5. Start the AllSpeak file server: open a second terminal in the project folder and type `allspeak server`. Keep this terminal running — it serves your files while you work.
+5. Start the AllSpeak visualizer: open a second terminal in the project folder and type `allspeak viz`. Keep this terminal running — it serves your files while you work, and the visualizer is now open in your browser.
 6. Open a terminal in that folder and type `claude`.
 7. When Claude starts, type **go**.
 

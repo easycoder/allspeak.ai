@@ -15,7 +15,7 @@ Diese Befehle existieren, um Dev-Zeit-Skripte zu unterstützen (Entwicklungsserv
 Öffnet eine URL im Standard-Browser des Benutzers über das `webbrowser`-Modul von Python. Betriebssystem-unabhängig — kein Shell-Out an `xdg-open` / `open` / `start`, also funktioniert dasselbe Skript auf Linux, macOS und Windows ohne bedingte Logik.
 
 ```
-browse `http://localhost:8080/edit.html`
+browse `http://localhost:8080/viz.html`
 ```
 
 Der Aufruf kehrt sofort zurück; das Betriebssystem übergibt die URL asynchron an den Browser. Es gibt keinen Rückgabewert und keine Möglichkeit, aus dem Skript zu erfahren, ob der Browser wirklich geöffnet hat — `browse` ist Feuer-und-vergiss.

@@ -2,82 +2,88 @@
 
 ## Problem
 
-Ein typisches AllSpeak-GUI-Projekt erzeugt zwei Artefakte, mit denen der Benutzer interagiert: einen browserbasierten Editor (`edit.html`) und eine oder mehrere Projektseiten (`<projekt>.html`). Als getrennte Artefakte behandelt, muss der Benutzer in einem Terminal einen Dev-Server starten, die Editor-URL in einem Tab öffnen, die Projekt-URL in einem anderen Tab öffnen und sich den Port merken. Das sind vier Schritte und drei Teile mentalen Zustands für etwas, das konzeptionell eine einzige laufende Sache ist.
+Ein typisches AllSpeak-GUI-Projekt erzeugt zwei Artefakte, mit denen der Benutzer interagiert: den **Visualisierer** (`viz.html`) und eine oder mehrere Projektseiten (`<projekt>.html`). Als getrennte Dinge betrachtet heißt das: einen Entwicklungsserver in einem Terminal starten, eine URL in einem Tab öffnen und eine andere in einem zweiten Tab, und sich den Port merken — vier Schritte und drei Stücke mentalen Zustands für etwas, das konzeptionell eine laufende Sache ist.
 
-Der einfachere Rahmen: **der Server ist die Anwendung, und die Browser-Tabs sind seine Oberfläche.** Der Benutzer führt einen Befehl aus; die Tabs öffnen sich von selbst; den Server zu schließen schließt die App.
+Der einfachere Rahmen: **Der Server ist die Anwendung, und der Browser ist seine Oberfläche.**
 
 ## Das Muster
 
-`server.allspeak` akzeptiert ein `-t`-/`--tabs`-Flag, dessen Wert eine kommaseparierte Liste von Seitennamen ist (ohne `.html`):
+**Ein Befehl für eine Person; `server` für eine Sitzung mit mehreren Tabs.** `allspeak viz` ist die Tür:
 
 ```
-allspeak server -t edit,<projekt>
-allspeak server --tabs edit,<projekt> 8080
+allspeak viz
+allspeak viz 9000
 ```
 
-Für jeden Namen baut der Server `http://localhost:<port>/<name>.html` und öffnet ihn mit [`browse`](../reference/17-dev-environment.md#browse) im Standard-Browser des Benutzers. Der Port ist standardmäßig 8080 und darf vor oder nach dem Flag stehen.
+Er fragt die eigene `/version`-Route des Servers, ob auf diesem Port schon ein Entwicklungsserver läuft. Wenn ja, öffnet er den Visualisierer und lässt den laufenden in Ruhe; wenn nichts da ist, startet er den Server in diesem Terminal und öffnet den Visualisierer, sobald dessen Request-Handler registriert ist. Der Port ist standardmäßig 8080.
 
-Die Launcher-Konvention in den Starter-Packs ist, diesen Befehl im Hintergrund auszuführen, sobald die GUI-Gerüstdateien existieren, damit der Benutzer eine einzige App entstehen sieht statt drei getrennter Schritte.
+`allspeak server {port}` ist derselbe Server, ohne etwas zu öffnen — das will man, wenn man selbst mehrere Seiten öffnen möchte:
 
-## Aufbau eines Startskripts
+```
+allspeak server
+```
 
-Ein Startskript, das dieses Muster nutzt, hat vier geordnete Phasen:
+Die Seite des Projekts ist dann eine URL — `http://localhost:<port>/<projekt>.html` — und im Visualisierer die Schaltfläche **Launch**, die die Seite öffnet, die ein Skript mit `@app` benennt, und bei einem GUI-Projekt den Lauf aufzeichnet.
 
-1. **Die CLI-Argumente parsen.** Über `argc` / `arg N` iterieren, das Flag erkennen, alles andere als Port behandeln.
-2. **Den Server starten.** `start MyServer on port Port` akzeptiert den Port, hat aber noch keinen Handler.
-3. **Den Request-Handler registrieren.** `on MyServer request begin … end` setzt den Befehlszeiger des Handlers und springt über den Rumpf hinweg.
-4. **Die Tabs öffnen.** Die kommaseparierte Liste aufteilen, jede URL bauen und `browse` darauf aufrufen.
+## Einen eigenen Launcher schreiben
 
-Die Reihenfolge ist tragend: Phase 3 und 4 müssen in dieser Reihenfolge stehen. Wenn `browse` vor dem Handler-Block läuft, wetteifern die frisch geöffneten Tabs mit dem Server und laufen in ein 503 „Server handler not ready", bevor der Handler installiert ist. Die Lösung ist, die Schleife zum Öffnen der Tabs ans *Ende* des Skripts zu setzen, nach dem `on … request begin … end`-Block.
+Wenn ein Projekt einen eigenen Launcher will statt des Wortes der CLI, hat die Form vier geordnete Phasen:
+
+1. **Die CLI-Argumente auswerten.** Über `argc` / `arg N` schleifen, den Port nehmen und die Seiten notieren, die geöffnet werden sollen.
+2. **Den Server starten.** `start MyServer on port Port` nimmt den Port an, hat aber noch keinen Handler.
+3. **Den Request-Handler registrieren.** `on MyServer request begin … end` setzt den Handler-PC und springt über den Rumpf hinweg.
+4. **Die Seiten öffnen.** Jede URL bauen und `browse` darauf aufrufen.
+
+Die Reihenfolge ist tragend: Phasen 3 und 4 müssen in dieser Reihenfolge stehen. Läuft `browse` vor dem Handler-Block, laufen die frisch geöffneten Seiten dem Server davon und bekommen ein 503 „Server handler not ready“, bevor der Handler installiert ist. Die Lösung ist, die Öffnungsschleife ans *Ende* des Skripts zu setzen, hinter den Block `on … request begin … end`.
 
 ```
     start Files on port Port
 
     on Files request
-    beginn
-        ! ... Anfragen bearbeiten ...
-    ende
+    begin
+        ! ... Anfragen behandeln ...
+    end
 
     ! Nach der Registrierung des Handlers — niemals davor.
-    wenn TabList ist nicht leer
-    beginn
-        trenne TabList bei `,`
-        lege 0 in TabIndex
-        solange TabIndex ist kleiner als die elemente von TabList
-        beginn
-            indexiere TabList zu TabIndex
-            lege TabList in TabName
-            wenn TabName ist nicht leer
-            beginn
-                lege `http://localhost:` cat Port cat `/` cat TabName cat `.html` in TabUrl
-                browse TabUrl
-            ende
-            increment TabIndex
-        ende
-    ende
+    if PageList is not empty
+    begin
+        split PageList on `,`
+        put 0 into PageIndex
+        while PageIndex is less than the elements of PageList
+        begin
+            index PageList to PageIndex
+            put PageList into PageName
+            if PageName is not empty
+            begin
+                put `http://localhost:` cat Port cat `/` cat PageName cat `.html` into PageUrl
+                browse PageUrl
+            end
+            increment PageIndex
+        end
+    end
 ```
 
-Die vollständige Referenzimplementierung ist `server.allspeak` in den Starter-Packs.
+Die Referenzimplementierung ist `server.allspeak`, das genau das für den Visualisierer tut, wenn die CLI ihm `--viz` übergibt.
 
-## Wann du dieses Muster verwendest
+## Wann das Muster seinen Platz verdient
 
-- **GUI-Projekte**, bei denen der Benutzer sowohl den Editor als auch eine Projektseite geöffnet haben muss. Der Standard im `CLAUDE.md` der Starter-Packs ist der Start mit `-t edit,<projekt>`.
-- **CLI-Projekte**, bei denen der Benutzer den Editor vielleicht auch für browserbasierte Bearbeitung nutzen will. Starte nur mit `-t edit` — der Server bedient die Projektdateien weiterhin, aber standardmäßig wird kein Projekt-Tab geöffnet.
-- **Mehrseitige Apps**, bei denen zwei oder drei Seiten immer zusammen geöffnet werden. Liste sie alle im Flag auf.
+- **GUI-Projekte**, in denen der Benutzer den Visualisierer und eine Projektseite braucht — ein Befehl, und die Seite ist eine URL oder ein Klick auf Launch entfernt.
+- **CLI-Projekte**, in denen der Benutzer vielleicht auch den Visualisierer zum Bearbeiten im Browser möchte. `allspeak viz` allein genügt; der Server liefert die Projektdateien weiterhin aus.
+- **Mehrseitige Anwendungen**, in denen ein eigener Launcher zwei oder drei Seiten zusammen öffnet.
 
-## Wann du dieses Muster *nicht* verwendest
+## Wann es das nicht tut
 
-- **Für eine deployed App.** Produktionsnutzer werden `server.allspeak` nicht ausführen. Dieses Muster ist nur für den Entwicklungsablauf.
-- **Wenn das Skript keinen Server betreibt.** `browse` funktioniert für sich allein, aber der Server-als-App-Rahmen ergibt nur Sinn, wenn es Seiten auszuliefern gibt.
-- **Für Ad-hoc-Einmalstarts.** Tippe die URL einfach in den Browser. Das Muster rechtfertigt seine Komplexität erst, wenn der Start wiederholt wird.
+- **Für eine ausgelieferte Anwendung.** Produktionsbenutzer starten kein `server.allspeak`. Das ist nur für den Entwicklungsablauf.
+- **Wenn das Skript keinen Server startet.** `browse` funktioniert allein, aber der Rahmen setzt Seiten voraus, die ausgeliefert werden.
+- **Für einen einmaligen Start.** Tippen Sie die URL in den Browser. Das Muster verdient seine Komplexität, wenn sich der Start wiederholt.
 
-## Mentales Modell für KI-Agenten
+## Gedankenmodell für KI-Agenten
 
-Wenn eine KI gebeten wird, mit dem Starter-Pack ein GUI-Projekt zu erstellen, ist die erwartete Abfolge:
+Wenn eine KI gebeten wird, mit dem Starter-Pack ein GUI-Projekt zu erstellen, ist die erwartete Reihenfolge:
 
 1. `<projekt>.html`, `<projekt>-main.allspeak`, `<projekt>.json` erzeugen.
-2. `python3 asdoc-check.py --write` auf allen neuen `.allspeak`-Dateien ausführen.
-3. **Sofort** `allspeak server -t edit,<projekt>` im Hintergrund ausführen.
-4. Dem Benutzer sagen, dass die App gestartet ist und sich zwei Tabs geöffnet haben sollten.
+2. `python3 asdoc-check.py --write` auf alle neuen `.allspeak`-Dateien anwenden.
+3. **Starten Sie den Server nicht selbst.** Der Benutzer hat ihn mit `allspeak viz` gestartet, bevor er Sie gestartet hat, und der Visualisierer ist bereits offen.
+4. Sagen Sie dem Benutzer, dass seine Projektseite unter `http://localhost:8080/<projekt>.html` liegt, neben dem Visualisierer.
 
-Der Benutzer soll das Gefühl haben, dass „die App gestartet ist" — nicht, dass er drei Infrastrukturteile zusammensetzen muss, um zu sehen, was gerade gebaut wurde.
+Der Benutzer soll das Gefühl haben, dass „die Anwendung gestartet ist“ — nicht, dass er drei Stücke Infrastruktur zusammensetzen muss, um zu sehen, was gerade gebaut wurde.

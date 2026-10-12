@@ -1,11 +1,14 @@
 !   server.allspeak
 !   AllSpeak development server.
-!   Usage: allspeak server [-t|--tabs page1,page2,...] [port]    (default port: 8080)
-!   Example: allspeak server -t edit,test 8080
-!     opens edit.html and test.html in the default browser at localhost:8080
+!   Usage: allspeak viz [port]      starts this server if it is not already running, and opens the
+!                                   visualizer at localhost:<port>/viz.html in your browser
+!          allspeak server [port]   starts this server and opens nothing, so you can open as many
+!                                   pages as you like yourself
+!   Port defaults to 8080.
 !
 !   Serves two purposes:
-!     1. Hosts the AllSpeak editor at localhost:<port>/edit.html
+!     1. Hosts the AllSpeak visualizer at localhost:<port>/viz.html — and the name it had before
+!        2026-10-12, `edit.html`, still answers with the same page
 !     2. Serves project files at localhost:<port>/<project>.html
 !        (replaces the need for python3 -m http.server)
 !
@@ -21,9 +24,10 @@
 !                            returns OK or updated
 !     GET  /restart       →  restarts the server process
 !     GET  /<file>        →  serves static files (HTML, JS, CSS, JSON, ECS);
-!                            404 when there is no such file. `edit.html` is
+!                            404 when there is no such file. `viz.html` is
 !                            served from the deploy when the project has none,
-!                            with the project's language filled in.
+!                            with the project's language filled in — and so is
+!                            `edit.html`, the name it had before 2026-10-12.
 
     script CodeServer
 
@@ -72,23 +76,17 @@
     variable ArgCount
     variable ArgIndex
     variable CurrentArg
-    variable TabList
-    variable TabName
-    variable TabIndex
-    variable TabUrl
+    variable OpenViz
+    variable VizUrl
     put argc into ArgCount
     put `8080` into Port
-    put empty into TabList
+    put `no` into OpenViz
     put 0 into ArgIndex
     while ArgIndex is less than ArgCount
     begin
         put arg ArgIndex into CurrentArg
-        if CurrentArg is `-t` or CurrentArg is `--tabs`
-        begin
-            increment ArgIndex
-            if ArgIndex is less than ArgCount
-                put arg ArgIndex into TabList
-        end
+        if CurrentArg is `--viz`
+            put `yes` into OpenViz
         else
             put CurrentArg into Port
         increment ArgIndex
@@ -304,8 +302,8 @@
             put `yes` into FileLoaded
             ! **Ask whether the file is there before trying to read it.** `load … on failure` prints a line for
             ! every failure, and in a project a missing page is the *ordinary* case — a project has no
-            ! `edit.html`, and the branch below serves the deployed one — so every page load printed
-            ! `Exception "Unable to read from …/edit.html": Running the "or" clause` and read as a fault. A file
+            ! `viz.html`, and the branch below serves the deployed one — so every page load printed
+            ! `Exception "Unable to read from …/viz.html": Running the "or" clause` and read as a fault. A file
             ! that exists and cannot be read is still caught, by the clause that remains.
             if file BaseDir cat `/` cat FilePath does not exist
                 put `no` into FileLoaded
@@ -319,12 +317,17 @@
             end
             if FileLoaded is `yes`
                 return Content to Files with type MimeType
-            else if FilePath is `edit.html`
+            ! **Two names, one page, and the second name is a window.** The visualizer's page was `edit.html`
+            ! until 2026-10-12, so a bookmark, a starter pack built earlier, or an agent following one still
+            ! asks for that name — and it is answered with the same page rather than a 404. A project that
+            ! keeps a local `edit.html` still wins, above: the two names are only interchangeable here, at
+            ! the fallback.
+            else if FilePath is `viz.html` or FilePath is `edit.html`
             begin
-                ! **The page is served, not shipped.** A pack used to carry `edit.html`, generated per
+                ! **The page is served, not shipped.** A pack used to carry `viz.html`, generated per
                 ! language — which put a copy of the *tooling* in every project, and nothing in a project
                 ! knows when the repository's page has moved on. So the page is not in a project at all
-                ! unless somebody chose to put one there (a local `edit.html` still wins, above): the
+                ! unless somebody chose to put one there (a local `viz.html` still wins, above): the
                 ! server fetches the deployed page and fills in the two things a pack's page used to
                 ! get from the pack — the language, and where the editor's payload lives.
                 !
@@ -359,10 +362,18 @@
                     gosub to ReadInitKey
                     if InitValue is not empty put InitValue into ProjectRuntime
                 end
-                get Page from url RepoBase cat `edit.html`
+                get Page from url RepoBase cat `viz.html`
                     on failure
                     begin
+                        ! **A real 404, and `stop` because the response alone does not refuse** — the same
+                        ! fault and the same fix as the `/read/` route above, and it took reaching this
+                        ! path to see it. `on failure` *carries on* where `or` ends the thread, so the
+                        ! `replace`s below ran with no page at all and the handler died with
+                        ! `Variable Page does not hold a value`: the caller got a dropped connection
+                        ! rather than the 404 this line sets. Measured 2026-10-12, the day the published
+                        ! page's name changed and a fetch of the new name was the first to fail.
                         return `Not found` to Files with status 404
+                        stop
                     end
                 if ProjectRuntime is not `js` and ProjectRuntime is not `py`
                     put `js` into ProjectRuntime
@@ -419,25 +430,17 @@
         end
     end
 
-    ! Open requested browser tabs (-t/--tabs flag) — done AFTER the
-    ! request handler is registered so the tabs don't race the server
-    ! and hit a 503 'Server handler not ready'.
-    if TabList is not empty
+    ! **Open the visualizer, and only when `allspeak viz` asked for it.** `--viz` is how the CLI says so;
+    ! it is not a user option, and `allspeak server` passes nothing so that starting the server by itself
+    ! opens nothing and the reader opens as many pages as they like. Two reasons this belongs here and not
+    ! in the CLI: the opening has to happen *after* the request handler is registered — before that the page
+    ! gets a 503 'Server handler not ready' — and `browse` is a language command, so the behaviour stays in
+    ! the script.
+    if OpenViz is `yes`
     begin
-        split TabList on `,`
-        put 0 into TabIndex
-        while TabIndex is less than the elements of TabList
-        begin
-            index TabList to TabIndex
-            put TabList into TabName
-            if TabName is not empty
-            begin
-                put `http://localhost:` cat Port cat `/` cat TabName cat `.html` into TabUrl
-                print `Opening ` cat TabUrl
-                browse TabUrl
-            end
-            increment TabIndex
-        end
+        put `http://localhost:` cat Port cat `/viz.html` into VizUrl
+        print `Opening ` cat VizUrl
+        browse VizUrl
     end
 
     ! The main flow ends here and the server keeps the process alive, so the subroutine below is never fallen

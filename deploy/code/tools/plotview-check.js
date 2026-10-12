@@ -118,7 +118,7 @@ const tracePath = process.argv[2];
 // where the view and the way it is reached live in one file. `PLOTVIEW=<path>` runs another one, which
 // is how a change to the view is proved not to have changed the fitted picture: run the version before
 // it and the version after it against the same trace, and diff the two reports.
-const viewPath = process.env.PLOTVIEW || path.join(root, `asedit-graph.allspeak`);
+const viewPath = process.env.PLOTVIEW || path.join(root, `viz-graph.allspeak`);
 // **The view is cut out of that module.** Everything before its own doc-block header is the module's
 // plumbing — the declarations, the attachments, the message that hands it a run — and none of that
 // exists when the view is compiled as a section here; the harness stands in for it instead (the panel,
@@ -284,7 +284,7 @@ const source = Array.from({ length: 260 }, (_, i) => {
 // could not hold the answer. Four checks failed for a change that was sound, and that is what they were.
 const editedSource = source + `\n    one line more`;
 // The order matters: the host's main flow comes *first*, and the view's section after it, so that
-// execution stops before falling into the section's body. That is how it will sit in asedit too.
+// execution stops before falling into the section's body. That is how it will sit in viz too.
 // **`PLOTVIEW_CLIP=<from>-<to>` sets a clip before the load-time drawings.** The phases below cannot be
 // run on a big recording — a 435KB trace never finishes them — so the only way to ask what a *clipped*
 // draw costs on one is to hand the view a range before it draws. It is the same two variables `VizClip`
@@ -786,7 +786,7 @@ const statusOf = st => {
 	const m = /ec-VizStatus-\d+ = "(.*)"$/.exec(line);
 	return m ? m[1] : ``;
 };
-// A view variable by name, read the way `asedit-modes-check` reads the editor's: the report compares
+// A view variable by name, read the way `viz-modes-check` reads the editor's: the report compares
 // what the view *drew*, and the one thing a press leaves behind is a number it keeps.
 const viewVar = name => {
 	const record = program && program.getSymbolRecord(name);
@@ -866,7 +866,7 @@ const pressReset = () => pressBox(`ec-VizResetBox`);
 // `VizHover` reads the hover position exactly as `VizGrab` reads the pick, so this is the shipped path
 // rather than a private one — and the pane's handler for it is registered on the host, which is the
 // half this harness cannot see (it compiles the view alone; `tools/hover-check.js` proves the runtime's
-// half and `asedit-check` proves the module compiles its registration).
+// half and `viz-check` proves the module compiles its registration).
 const hoverAt = (x, y) => {
 	const [cx, cy] = toClient(x, y);
 	global.document.hoverX = cx; global.document.hoverY = cy;
@@ -2347,7 +2347,7 @@ if (process.argv[3]) {
   #panel { position:absolute; inset:44px 0 0 0; display:flex; align-items:center; justify-content:center; }
   svg { width:100%; height:100%; }
 </style>
-<header><b>${path.basename(tracePath)}</b> \u2014 drawn by <code>asedit-graph.allspeak</code> through the svg plugin.
+<header><b>${path.basename(tracePath)}</b> \u2014 drawn by <code>viz-graph.allspeak</code> through the svg plugin.
   Each mark is a stroke in a path; the axis is a pool of four labels a side.</header>
 <div id="panel">${markup}</div>
 `);
