@@ -51,6 +51,15 @@ import time
 DEFAULT_LIMIT = 100000
 
 
+# How many visits a *requested* recording may collect before the runtime stops collecting and writes what it
+# has. The per-window `DEFAULT_LIMIT` above bounds one window; this bounds a recording asked for by a flag
+# file (see `Program.watchRecordFlag`), which may span hundreds of windows over a control loop and has nobody
+# watching it. 50,000 visits is the point Graham put on it — "beyond which the graph will be unmanageable" —
+# and it is a *stop*: a recording asked for by mistake ends with a file that opens rather than with a machine
+# that has been filling its memory for a week.
+FLAG_CAP = 50000
+
+
 # **This module's slice of the attribute vocabulary.** An attribute is one unparsed string — the language has
 # no opinion on a key and a value, so a tool that wants them apart splits them itself. Two keys, both of which
 # the language reference names as reasons for attributes to exist:
@@ -63,6 +72,28 @@ def _attrKey(text):
     whole = str(text or '')
     gap = whole.find(' ')
     return whole if gap < 0 else whole[:gap]
+
+
+def markerOf(command):
+    """Which window marker this command is, if any: `'start'`, `'stop'` or None.
+
+    **One copy, because two callers need it and they must agree.** The recorder reads it in `tick`, where a
+    marker opens or closes a window; the runtime reads it too, where a marker is *the point in the script at
+    which a request to record is noticed* (see `Program.watchRecordFlag`) — and if the two disagreed about
+    what a marker is, a script could be watched at a point that never opens a window. A marker arrives either
+    as a command (`viz start`) or as an attribute on a line (`@viz start`), which are the only two forms the
+    compiler makes of it.
+    """
+    if command is None:
+        return None
+    if command.get('keyword') == 'viz':
+        return command.get('request')
+    attr = str(command.get('attr') or '')
+    if _attrKey(attr) == 'viz':
+        rest = attr[len('viz'):].strip()
+        if rest in ('start', 'stop'):
+            return rest
+    return None
 
 
 # **Which runtime a script is for, which nothing else in the language records.** The two implementations are
@@ -338,6 +369,10 @@ class Recorder:
         self.lastCommand = None
         self.started = None
         self.stopped = None     # 'work' or 'wall' when a guard ended the run
+        # Every visit this recorder has collected, across every window of it. The per-window `DEFAULT_LIMIT`
+        # cannot bound a recording that spans many windows, and the flag-driven one does, so the runtime reads
+        # this to stop a recording whose owner has stopped watching. See `FLAG_CAP`.
+        self.records = 0
         # **Whether the run has just handed control to a timer**, which is what a `wait` does: the command
         # returns without advancing the pc, the run loop breaks, and the flush comes back to its caller with
         # the program still to continue. Nothing else records that fact — a program parked on a timer looks
@@ -485,13 +520,7 @@ class Recorder:
         # **Where attributes stop being inert.** They arrive in the program and nothing else looks at them,
         # so this is the one place they are read — which is what lets a run with a recorder match one without.
         attr = str(command.get('attr') or '') if command is not None else ''
-        marker = None
-        if command is not None and command.get('keyword') == 'viz':
-            marker = command.get('request')
-        elif _attrKey(attr) == 'viz':
-            rest = attr[len('viz'):].strip()
-            if rest in ('start', 'stop'):
-                marker = rest
+        marker = markerOf(command)
         if marker == 'start':
             self.arm(program, command, pc)
         window = self.current
@@ -526,6 +555,7 @@ class Recorder:
             window['truncated'] = True      # keep counting, stop collecting visits
             return
         window['visits'].append((pc, window['steps'], time.perf_counter_ns()))
+        self.records += 1
         self.capture(program, attr, window)
 
     # ---------------------------------------------------------------- the guard

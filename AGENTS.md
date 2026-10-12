@@ -206,6 +206,16 @@ Standing knowledge rather than next steps, which is why they live here and not i
 - **An element the drawing builds cannot be written to before the drawing builds it.** `VizBusy` is created inside `Draw`'s build block, and `VizBusyNotice` — which writes it — runs *before* `VizRequest` calls `Draw`, so the first drawing of a run writes to `null` and throws. **It is invisible twice over, which is why it has survived since 2026-10-06**: with no recording the flow stops at `GraphNone` before the draw and the notice's message is all that is shown, and with one the build has happened by the time the notice is reached. It is what `viz-modes-check` dies on at the end, and a live browser reproduces it exactly (`VizBusyNotice` called by hand → `Cannot set properties of null (setting 'innerHTML')`). **The general rule: a message that has to be read *while* a long job runs belongs in a page element the page built, not in the drawing the job is building** — which is what the alert panel (`se-alert`) is for.
 - **`svg` is the one element type the plugin registers without the `dom` extra**, so `the width of` will not compile for it — the pane maps the pointer from the panel's corner instead.
 - **CORS on allspeak.ai is by file type:** `.js` and `.css` carry it, `.allspeak` does not, which is why the editor reaches a project as a script (`dist/viz.js`) rather than a fetch.
+- **A guard that protects a tool must not be put on a recorder that watches a service.** The recorder's
+  budget and ceiling exist so the *editor* cannot be hung by a script it was handed; the thing being
+  watched in a controller must not be *stopped* by the act of watching it. Measured 2026-10-12, the day
+  the recording flag was built: with the guard on, a twelve-cycle controller with a three-second wait
+  between cycles was killed by the recorder twenty seconds in, and `--record=`'s helper printed
+  `viz: stopped: wall` — asking for a recording ended the heating system. The flag recorder takes no
+  guard and is bounded by a cap on what it may collect instead. **And the check for it had to be built to
+  fail**: the first version ran a script far too quick to reach a twenty-second ceiling and passed against
+  the guarded recorder, so the check now sets `DEFAULT_BUDGET_NS` and `DEFAULT_CEILING_NS` to a nanosecond
+  — a recorder that reads them dies at its first command.
 - **Never redirect stderr on a check whose stderr is its verdict.**
 - **A check on a boundary must carry what the boundary carries** — the JSON string, the registered handler — and set up what the real path sets up. Two green harnesses have sat over browser faults for want of this.
 - **A value computed before the pass that measures it silently uses the previous draw's number.** The first render looks right and every later one does not.

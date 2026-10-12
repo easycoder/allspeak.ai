@@ -148,6 +148,12 @@ class Program:
 		self.onMessagePC = 0
 		self.breakpoint = False
 		self.recorder = None        # the visualiser's recorder, when attached
+		# **The file a service is asked for a recording with.** `watchRecordFlag` is where the whole
+		# mechanism is explained; this is the path it is looked for at, and it is derived from the script so
+		# that the directory the script is run from cannot change it. An explicit `--record=` takes
+		# precedence, which is why this is None when one was given: nothing about that call changes.
+		self.recordFlag = None if recordTo else (self.scriptName or '') + '.record'
+		self.recordWatching = False  # an asked-for recording is running
 		# **`--record=<path>`: run this script and write what the run did to that file.** The flag is the CLI's
 		# answer to "run it as if I had typed it, and keep the recording" — the same act `record the script …`
 		# performs for a script that names another one, and what a project's dev server calls so that a script
@@ -213,8 +219,9 @@ class Program:
 			if self.recordTo:
 				# The recorder's own defaults, as everywhere else a *tool* asks for a recording: a script
 				# handed over by a tool is not to be trusted with the tool's responsiveness, and the verdict
-				# says so when a bound ends the run. `DEFAULT_*` are the plugin's, and this is the one place
-				# the runtime names the plugin — deliberately: the markers are core and the *watching* is the
+				# says so when a bound ends the run. `DEFAULT_*` are the plugin's, and this is one of the two places
+				# the runtime names it (the other is `watchRecordFlag`, where a service is asked for a
+				# recording) — deliberately: the markers are core and the *watching* is the
 				# visualiser's, and a recording is a visualiser feature the runtime is asked to perform.
 				from .plugins import as_viz
 				self.recorder = as_viz.Recorder(budget=as_viz.DEFAULT_BUDGET_NS,
@@ -284,6 +291,61 @@ class Program:
 	# swamp the console it shares with the server's own messages, and reads this one line back for a status
 	# line. So the file holds only what the script printed, and this holds only what the recording amounted to.
 	# A trace needs one writer and this is it: the recorder collects, and nothing writes until here.
+	def watchRecordFlag(self, command):
+		"""Notice, at a marker, whether a recording has been asked for — and open or close one.
+
+		**Why a file, and why this is the whole trigger a service needs.** A controller on a machine reachable
+		only by SSH has to be asked for a recording without being restarted, and the only thing an SSH session
+		can set on a process it did not start is a file. So a file beside the script is the request:
+		`touch thermostat.allspeak.record` asks, `rm` withdraws, and the recording lands beside the script as
+		`thermostat.allspeak.viz.json` — the name the editor already looks for, so a file brought back with
+		`scp` displays by opening the script in it and pressing Graph.
+
+		**The request is noticed at the markers, which is what "a specific point in the script" means.** `@viz
+		start` and `@viz stop` are where a script says what is worth watching, and the runtime passes them once
+		per iteration of whatever loop they sit in — so the flag is read there and nowhere else. Nothing polls
+		and nothing runs on a timer: a script with no markers is never asked, and a script whose markers sit in
+		its control loop is asked once a cycle, which is the granularity its author chose.
+
+		**The edges are the mechanism.** Clear to set begins a recording *from nothing* — a fresh recorder, so
+		the previous file stands until this one is written and a short episode cannot destroy a good recording.
+		Set to clear finishes and writes it, which is what closes the file, and the markers then go inert
+		again: the annotations stay in the script, and this is what decides whether they do anything at all.
+
+		**And a cap, because a machine across the country has nobody watching it.** A recording left asked for
+		stops at `as_viz.FLAG_CAP` visits, writes what it has, and says so on stderr — where the reader who
+		typed the `touch` will find it. It does not wait for a flag that may never be cleared.
+		"""
+		from .plugins import as_viz
+		if as_viz.markerOf(command) is None:
+			return
+		present = os.path.exists(self.recordFlag)
+		if present and not self.recordWatching:
+			self.recordWatching = True
+			self.recordTo = self.scriptName + '.viz.json'
+			# **No guard here, and that is the point of it.** The budget and the ceiling above exist for a
+			# *tool*, which must not be hung by a script it was handed; a service must not be *stopped* by
+			# the act of watching it. Measured 2026-10-12: with the ceiling on, a twelve-cycle controller
+			# with a three-second wait between cycles was killed by the recorder 20 s in — the recording
+			# ended the heating system. What bounds this one is the cap below: it stops *collecting*, and
+			# the run carries on, which is the only behaviour a controller can be given.
+			self.recorder = as_viz.Recorder()
+			sys.stderr.write(f'viz: recording asked for by {self.recordFlag}\n')
+			return
+		if not present and self.recordWatching:
+			self.recordWatching = False
+			self.writeTrace()
+			self.recorder = None
+			self.recordTo = None
+			return
+		if (self.recordWatching and self.recorder is not None
+				and self.recorder.records >= as_viz.FLAG_CAP):
+			sys.stderr.write(f'viz: the asked-for recording reached {as_viz.FLAG_CAP} visits; '
+			                 f'stopping and writing it\n')
+			self.writeTrace()
+			self.recorder = None
+			self.recordTo = None
+
 	def writeTrace(self):
 		if self.recorder is None or not self.recordTo:
 			return
@@ -747,6 +809,14 @@ class Program:
 				# than the recorder halting the program itself because a handler that finds the
 				# program already stopped reports "Improper use of runtime function" — a lie
 				# about what happened. Breaking here runs no further command.
+				# The file a service asks with, looked for at the markers and nowhere else, so the cost
+				# is one attribute test per command while a request is possible and nothing at all for a
+				# script that was not asked (`recordFlag` is None) or whose request has been served.
+				#
+				# It comes before the tick because a marker is the point at which the request is noticed:
+				# the recorder this may create is the one the tick below then arms.
+				if self.recordFlag is not None:
+					self.watchRecordFlag(command)
 				if self.recorder is not None and self.recorder.tick(self, self.pc) is False:
 					break
 				
@@ -1092,6 +1162,8 @@ Syntax:
 "allspeak <script>" runs the named script (the .allspeak extension can be omitted).
 "allspeak server {port}" starts a local development server at the named port (default 8080).
 "allspeak home" opens the home page (https://allspeak.ai) in your browser.
+A script that carries @viz markers is recorded while a file named "<script>.record" sits
+beside it, and written to "<script>.viz.json" when that file goes away.
 "allspeak <anything else>" displays the version number and this help message.'''
 
 

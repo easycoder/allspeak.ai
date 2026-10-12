@@ -19,6 +19,30 @@ export to. Writing that rather than a private shape means a viewer works on day 
 keeps this document small: it specifies the subset used and the contract for the `args` fields,
 not the file format itself.
 
+## How a recording is asked for
+
+A run records only when something asks it to, so the markers can stay in a script permanently — they are
+documentation of what is worth watching, and they are inert otherwise. There are two ways to ask, and they
+are the same mechanism seen from two ends.
+
+- **`--record=<file>`**, on the command line, for a run nobody is waiting on: the whole run is collected and
+  written at the end, with the recorder's guard on (see below).
+- **A file named `<script>.record` beside the script**, for a run that is already going — a service, or a
+  machine reachable only by SSH, where a file is the one thing a session can set on a process it did not
+  start. The request is *noticed at the markers*: `touch thermostat.allspeak.record` begins collecting at the
+  next `@viz start` or `@viz stop` the script passes, `rm` writes `<script>.viz.json` at the next one, and the
+  markers go inert again. A script whose markers sit in its control loop is therefore asked once a cycle,
+  which is the granularity its author chose; a script with no markers is never asked at all.
+
+The second form deliberately carries **no guard**. The guard exists so that a *tool* — the editor — cannot be
+hung by a script it was handed, and a service must not be *stopped* by the act of watching it. What bounds a
+requested recording instead is a cap on how much it may collect (`as_viz.FLAG_CAP`, 50,000 visits): at the cap
+it stops collecting, writes what it has and says so on stderr, and the run carries on. A request left standing
+by mistake therefore ends with a file that opens rather than with a machine that has been filling its memory.
+
+The recording a request makes lands beside the script as `<script>.viz.json` — the name the editor looks for,
+so a file brought back with `scp` is displayed by opening the script and pressing Graph.
+
 ## Document shape
 
 A JSON object with a `traceEvents` array. The bare-array form of the format is also valid, but
