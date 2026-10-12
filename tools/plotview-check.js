@@ -879,6 +879,24 @@ const hoverBox = id => {
 	if (!box) throw new Error(`${id} was not drawn, so there is nothing to hover over`);
 	hoverAt(box.x + Math.floor(box.width / 2), box.y + Math.floor(box.height / 2));
 };
+// **A line is aimed at through the view's own forward mapping.** `VizPlaceY` is where a line lands, so asking
+// it and hovering the answer is a round trip through the shipped function rather than a coordinate typed in
+// here — and the assertion after the phases is the other direction of that same pair, which is the fault the
+// mapping's own note is about (a mark and a rule that disagreed about where a line is).
+//
+// The glyph layer's `<image>` was the first thing tried and it cannot be used: its rows are drawn in the
+// *image's* own coordinates, which are the picture's only while the window happens to show as many lines as
+// the plot has room for. Measured 2026-10-12 — at the phase's fit the two disagreed by a factor of sixteen,
+// and the round trip below is the claim that matters either way.
+const rowLine = () => Number(viewVar(`VizViewY0`)) + 15;
+const hoverRow = () => {
+	const line = rowLine();
+	setViewVar(`VizTickValue`, line);
+	entry(`VizPlaceY`);
+	const y = Number(readViewVar(`VizTickPos`));
+	if (!y) throw new Error(`VizPlaceY put line ${line} at y ${y}, so there is nowhere to hover`);
+	hoverAt(500, y);
+};
 
 const PHASES = [
 	{ name: `fitted`, act: null },
@@ -1010,6 +1028,13 @@ const PHASES = [
 	{ name: `hover over the outside control`, act: () => hoverBox(`ec-VizOuterBox`) },
 	{ name: `hover over the reset control`, act: () => hoverBox(`ec-VizResetBox`) },
 	{ name: `hover away from every control`, act: () => hoverAt(500, 400) },
+	// **The row under the pointer, which is the trigger every sidebar tab is a view of.** These come last, and
+	// the second one moves the pointer *off* the rows on purpose: what is asserted afterwards is the first
+	// hover's answer still standing, which is the pair of claims the pane makes — a row is reported, and a
+	// pointer that leaves the script does not take it away. It is what lets a reader move the pointer to the
+	// sidebar and still read what the picture said.
+	{ name: `hover over a row of the script`, act: () => hoverRow() },
+	{ name: `and off the rows again`, act: () => hoverAt(500, 4) },
 ];
 
 // **What each gesture cost.** Reported rather than asserted, because the pane's cost is a property of the
@@ -2304,6 +2329,37 @@ if (!tipWindow || !tipOutside || !tipReset || !tipAway) {
 		? `  OK: and no hover drew anything — the picture is byte-identical across all three of them, `
 			+ `which is what a handler at pointer rate has to be`
 		: `  FAIL: a hover changed the picture, so the tip is not attribute writes alone`);
+
+	// **And the row under the pointer, which is the trigger the sidebar's every tab will be a view of.** Two
+	// claims in one comparison, because the phases were built to make both at once: the row the picture drew
+	// for a line is reported *as that line* — a round trip through the two directions of the one mapping
+	// `VizPlaceY` holds, where a mark and a rule disagreeing about a line is the fault it already cost — and a
+	// pointer moved off the rows leaves the last answer *standing*, which is what lets a reader take the
+	// pointer to the sidebar and still read what the picture said about the line they were on.
+	const rowPhase = indexOf(`hover over a row of the script`);
+	const offPhase = indexOf(`and off the rows again`);
+	if (rowPhase < 0 || offPhase < 0) {
+		console.log(`  FAIL: the row-hover phases are missing from the list, so the trigger that every `
+			+ `sidebar tab is a view of is unchecked`);
+	} else {
+		const aimed = rowLine();
+		// **What was *reported*, not what is under the pointer now.** `VizRowLine` is what the pointer is over
+		// at this instant, and the last phase moved it off the rows on purpose, so it is 0 here by design —
+		// `VizRowSent` is the memo of the last line the pane told the editor about, and it is the claim: the
+		// row drawn for a line is reported as that line, and the hover that then left the rows reported
+		// nothing rather than reporting "none", which is what leaves the sidebar showing what it was last
+		// given. Both halves in one comparison, and a revert of either fails it.
+		const reported = Number(viewVar(`VizRowSent`));
+		console.log(reported === aimed
+			? `  OK: a pointer where VizPlaceY puts line ${aimed} reports line ${reported}, and moving off `
+				+ `the rows leaves it standing (the pointer is now over ${viewVar(`VizRowLine`)})`
+			: `  FAIL: a pointer where VizPlaceY puts line ${aimed} reported ${reported} — the mapping and `
+				+ `its inverse disagree`);
+		// A row hover is a hover, so the stillness has to cover it as well as the tip's.
+		console.log(picture(taken[offPhase][1]) === picture(beforeHover)
+			? `  OK: and hovering the rows drew nothing either — the picture is still the one the load drew`
+			: `  FAIL: hovering a row changed the picture`);
+	}
 }
 
 // What it asked the DOM for, and what the layers actually contain.

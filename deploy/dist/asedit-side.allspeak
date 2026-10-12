@@ -174,7 +174,7 @@ SideRenderOutside:
 SideRenderHint:
     set the content of SideHead to ``
     set the content of SideProse to ``
-    set the content of SideHint to `Click a mark in the picture to see the doc block its line belongs to.`
+    set the content of SideHint to `Point at a line of the script in the picture to see the doc block it belongs to.`
     return
 !! @hash b04946e6
 !! @verified b04946e6

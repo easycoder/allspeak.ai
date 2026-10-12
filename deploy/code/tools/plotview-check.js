@@ -879,6 +879,24 @@ const hoverBox = id => {
 	if (!box) throw new Error(`${id} was not drawn, so there is nothing to hover over`);
 	hoverAt(box.x + Math.floor(box.width / 2), box.y + Math.floor(box.height / 2));
 };
+// **The rows as the picture drew them.** The glyph layer is one `<image>` whose `href` is the SVG those rows
+// are — a data URL, which is why the rows cannot be found in the DOM — and the y each row was drawn at is in
+// that attribute rather than recomputed here. That is the same discipline the controls are hovered under, and
+// it is what makes the assertion below a round trip through the two directions of one mapping rather than a
+// second copy of its arithmetic.
+const drawnRows = () => {
+	const href = String(((byId[`ec-VizGlyphs-0`] || {}).attributes || {}).href || ``);
+	// `Array.from`, not `Array.prototype.slice.call`: `matchAll` yields an *iterator*, which has no
+	// `length`, so `slice` hands back an empty array and every lookup finds nothing. Measured 2026-10-12 —
+	// the string was right and the iteration was not, which is the shape of mistake the note about
+	// measuring the value rather than the idiom is about.
+	return Array.from(href.matchAll(/<tspan x="0" y="(\d+)">/g)).map(m => Number(m[1]));
+};
+const hoverRow = index => {
+	const rows = drawnRows();
+	if (!rows[index]) throw new Error(`the picture drew no row ${index}, so there is nothing to hover over`);
+	hoverAt(500, rows[index]);
+};
 
 const PHASES = [
 	{ name: `fitted`, act: null },
@@ -1010,6 +1028,13 @@ const PHASES = [
 	{ name: `hover over the outside control`, act: () => hoverBox(`ec-VizOuterBox`) },
 	{ name: `hover over the reset control`, act: () => hoverBox(`ec-VizResetBox`) },
 	{ name: `hover away from every control`, act: () => hoverAt(500, 400) },
+	// **The row under the pointer, which is the trigger every sidebar tab is a view of.** These come last, and
+	// the second one moves the pointer *off* the rows on purpose: what is asserted afterwards is the first
+	// hover's answer still standing, which is the pair of claims the pane makes — a row is reported, and a
+	// pointer that leaves the script does not take it away. It is what lets a reader move the pointer to the
+	// sidebar and still read what the picture said.
+	{ name: `hover over a row of the script`, act: () => hoverRow(15) },
+	{ name: `and off the rows again`, act: () => hoverAt(500, 4) },
 ];
 
 // **What each gesture cost.** Reported rather than asserted, because the pane's cost is a property of the
@@ -2304,6 +2329,32 @@ if (!tipWindow || !tipOutside || !tipReset || !tipAway) {
 		? `  OK: and no hover drew anything — the picture is byte-identical across all three of them, `
 			+ `which is what a handler at pointer rate has to be`
 		: `  FAIL: a hover changed the picture, so the tip is not attribute writes alone`);
+
+	// **And the row under the pointer, which is the trigger the sidebar's every tab will be a view of.** Two
+	// claims in one comparison, because the phases were built to make both at once: the row the picture drew
+	// for a line is reported *as that line* — a round trip through the two directions of the one mapping
+	// `VizPlaceY` holds, where a mark and a rule disagreeing about a line is the fault it already cost — and a
+	// pointer moved off the rows leaves the last answer *standing*, which is what lets a reader take the
+	// pointer to the sidebar and still read what the picture said about the line they were on.
+	const rowPhase = indexOf(`hover over a row of the script`);
+	const offPhase = indexOf(`and off the rows again`);
+	if (rowPhase < 0 || offPhase < 0) {
+		console.log(`  FAIL: the row-hover phases are missing from the list, so the trigger that every `
+			+ `sidebar tab is a view of is unchecked`);
+	} else {
+		const rows = drawnRows();
+		const minLine = Number(viewVar(`VizMinLine`));
+		const reported = Number(viewVar(`VizRowLine`));
+		console.log(rows.length > 15 && reported === minLine + 15
+			? `  OK: a pointer over the row drawn for line ${minLine + 15} reports that line, and moving off `
+				+ `the rows leaves it standing (${rows.length} rows drawn, reported ${reported})`
+			: `  FAIL: hovering row 15 reported line ${reported} rather than ${minLine + 15} — the mapping `
+				+ `and its inverse disagree (${rows.length} rows drawn, first at ${rows[0]})`);
+		// A row hover is a hover, so the stillness has to cover it as well as the tip's.
+		console.log(picture(taken[offPhase][1]) === picture(beforeHover)
+			? `  OK: and hovering the rows drew nothing either — the picture is still the one the load drew`
+			: `  FAIL: hovering a row changed the picture`);
+	}
 }
 
 // What it asked the DOM for, and what the layers actually contain.

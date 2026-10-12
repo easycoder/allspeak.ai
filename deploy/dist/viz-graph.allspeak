@@ -832,6 +832,13 @@ VizRemember:
     variable VizHoverPos
     variable VizHoverShown  ! which control the tip is about: 0 none, 1 keep, 2 outside, 3 reset
     variable VizCtrlHit     ! which control the pointer is over, from `VizControlAt`
+    ! The line the pointer is over, and the last one *reported* — the pair that makes a hover say one
+    ! thing per line rather than one per pointer event. `VizRowLine` is 0 when the pointer is over no row
+    ! at all (the frame, the bars above, the key below, or outside the pane).
+    variable VizRowLine
+    variable VizRowSent
+    variable VizRowTmp
+    variable VizRowMsg
     variable VizTipText
     variable VizTipLen
     variable VizTipW        ! the tip's width in drawing units, from the words it carries
@@ -2706,6 +2713,16 @@ VizHover:
     put property `x` of VizHoverPos into VizRawX
     put property `y` of VizHoverPos into VizRawY
     gosub to VizPointerUnits
+    ! **The line under the pointer, which every sidebar tab is a view of** — reported here rather than on a
+    ! press alone, which is what this gesture now exists for: the reader moves the pointer over the script
+    ! and the panel says what that part of it was for. It is two comparisons and a message when the line
+    ! changes, and nothing at all while the pointer stays inside one row.
+    !
+    ! It comes *before* the tip's memo below, and that is a real order rather than a style: the memo returns
+    ! as soon as the control under the pointer is the one already described, so the row would only ever be
+    ! reported on the events that happened to change the tip.
+    gosub to VizRowAt
+    gosub to VizRowTell
     gosub to VizControlAt
     if VizCtrlHit is VizHoverShown return
     put VizCtrlHit into VizHoverShown
@@ -3613,6 +3630,62 @@ VizPlaceX:
     multiply VizTickPos by VizPlotW
     divide VizTickPos by VizViewXW
     add VizMargin to VizTickPos
+    return
+
+VizRowAt:
+    ! **`VizPlaceY` read the other way: which line of the file a y in the picture is over.** They are one
+    ! mapping in two directions, so they sit together — `VizPlaceY` says why there must be one copy of it,
+    ! and a mark and a rule that disagreed about where a line is is what it cost to learn.
+    !
+    ! **The half row `VizPlaceY` adds is deliberately not subtracted here.** It puts a line's glyphs in the
+    ! middle of its row; it is smaller than a row, and the truncation below removes it, so pointing at a
+    ! line's glyphs and pointing at its row's edge name the same line. Subtracting it would be a second
+    ! opinion about the same number.
+    !
+    ! **0 means "no row", and it is the answer for every part of the pane that is not the script** — the
+    ! frame the window is drawn in, the two bars above it, the flow key and the status line below, and
+    ! anywhere outside the pane. A pointer over none of them leaves the *last* line reported standing: that
+    ! is what lets a reader move the pointer off the picture, onto the sidebar or the bars, and still read
+    ! the block it filled. `VizRowTell` is where that is decided.
+    put 0 into VizRowLine
+    if VizPtrY is less than VizMargin return
+    put VizPlotH into VizRowTmp
+    add VizMargin to VizRowTmp
+    if VizPtrY is not less than VizRowTmp return
+    take VizMargin from VizPtrY giving VizRowTmp
+    multiply VizRowTmp by VizViewYH
+    divide VizRowTmp by VizPlotH
+    add VizViewY0 to VizRowTmp
+    ! A y inside the plot but past the last row of the file — the picture is taller than the file when the
+    ! window has room to spare — names a line that is not there, and reporting it would show the reader the
+    ! block for a line below the script's end.
+    if VizRowTmp is less than VizMinLine return
+    if VizRowTmp is greater than VizMaxLine return
+    put VizRowTmp into VizRowLine
+    return
+
+VizRowTell:
+    ! **The shared trigger: one report per line the pointer settles on, not one per pointer event.** Every
+    ! tab in the sidebar is a view of *this* line — the doc block today, captured values and the code block
+    ! to come — so the report is about the line and says nothing about what to do with it. What the reader
+    ! is shown is the sidebar's business, which is why the pane decides nothing here.
+    !
+    ! **Why the memo and not a watcher.** A hover arrives at pointer rate, and `VizHover` already refuses to
+    ! write the tip back in the same words for exactly this reason. The same argument settles this: the file
+    ! says one thing per *line*, so sweeping a pointer down a file costs one message a line crossed and
+    ! nothing between the crossings. There is no queue to manage because there is no per-event work to
+    ! queue — and nothing here draws, so no drawing can be interrupted either. A `fork`ed monitor was the
+    ! other shape worth considering and it buys nothing the comparison below does not already do.
+    if VizRowLine is 0 return
+    if VizRowLine is VizRowSent return
+    put VizRowLine into VizRowSent
+    ! The dict the press sends, with the line and nothing else. No visit and no values: those belong to an
+    ! *arrival*, and a pointer over a row has not named one. A click still does, and still refines the panel
+    ! to "visit 3 of 12" and whatever `@show` collected.
+    put `{}` into VizRowMsg
+    set property `kind` of VizRowMsg to `line`
+    set property `line` of VizRowMsg to VizRowLine
+    send VizRowMsg to parent
     return
 !! @hash 3de4d772
 !! @verified 3de4d772
