@@ -14,6 +14,40 @@
 
 ---
 
+## Where this stands — written 2026-10-12, at the end of the session that built the `Code` tab
+
+**Graham's plan, in his words**: *"I'll get it built in a new session then pick up viz in another after that."* Two sessions follow this one, in this order.
+
+## Session A — `on right click` does not compile (language; `TODO-language.md`)
+
+**Read "`on right click` does not compile" and "The brief for that session" at the foot of `TODO-language.md` before anything else.** The event, its opcode, both `Browser.js` cases and the four pack entries are all in and it still fails — measured, the packs' `patterns` are documentation only (`patterns` appears nowhere in `js/` outside the packs), and `Opcodes.js:245`'s `clickDocument` is the precedent to work from: **what turns a script's two words `click document` into that one canonical.** Find that and `on right click` compiles. Then: **the two `on right click …` registrations parked as comments in `viz.allspeak`'s registration block**, and **the `tools/hover-check.js` claims that were owed** (a dispatched `contextmenu` runs the handler and reads `the pick position`; a `button: 2` `mousedown` no longer picks).
+
+## Session B — pick up `viz` (editor and visualiser; `TODO-viz.md`)
+
+**The popup menu exists and nothing opens it** — `se-menu`, `se-menu-mask` and the `$MenuItem` pool are in `viz.json`, and `ShowMenu`/`HideMenu`/`MenuBuild` are in `viz.allspeak` and compiling (1,822 commands / 317 symbols). Once session A lands, the order is:
+
+1. **Restore the two parked registrations** — that shows the menu, which is all Graham asked for first (*"let's start with the popup menu itself and then add its functionality"*).
+2. **The items act.** Two things: the **tab switch** (a message from the editor to the sidebar — a new `kind`, since the sidebar has no way to be told today) and the **freeze**. **The freeze's state machine is settled from Graham's own words and is written out at the foot of `TODO-language.md`**: the pane stands down, the freeze holds on the journey out to the sidebar, a `mouseleave` does **not** lift it, **the first hover back inside the pane does** (*"on re-entering to the graph the mouseover actions resume"*), and `Cancel` covers freezing and resuming without leaving the picture.
+3. **The item labels are currently English in the editor**, matching the sidebar's own tabs (that module has no language pack, deliberately); deciding otherwise is a small job for whoever wires the switch.
+
+**Then the rest of the viz queue**, which is unchanged and in no order:
+
+- **`viz-modes-check` runs only 56 of its 74 checks** — it dies on the pane's `VizBusyNotice` writing to an element `Draw` has not built yet (`Cannot set properties of null (setting 'innerHTML')`). Graham's open item; it also costs 22 checks their coverage, including a whole flavour section.
+- **The sidebar's own rollover** — the other half of the `on hover` work: a tip surface inside the sidebar, over its tabs and its marked rows.
+- **One open question for Graham from the hover work**: a row *outside* any doc block says *"This line is outside any doc block."*, so a sweep alternates between blocks and that sentence. Leave it, or report only lines that are in a block (which needs the message to carry the gesture). One line either way. **It interacts with the new `Code` tab**, which says the same thing in its own words.
+- **The two long-standing `viz-modes-check` failures** (the status-bar claims at the sidebar relay) are pre-existing and unchanged — 67 OK / 2 FAIL against a 62 OK / 2 FAIL baseline.
+
+## Waiting on Graham, not on a session
+
+- **A deploy** (`./deploy-allspeak`) — the dev server fetches the pane and the sidebar from `allspeak.ai`, so **in a browser the hover work, the `Code` tab and the menu are not visible until one goes out**, and the published `plotview-check.js` is still the pre-`Array.from` copy that fails its own new claim. I have not run one and will not without his word.
+- **A release of `allspeak-ai`** — `allspeak-py/**` changes reach an installed user only through a package release, and the recording flag built on 2026-10-12 is in the checkout and nowhere else. The version is bumped so `pip install -U` upgrades.
+- **Whether `tools/record-flag-check.py` should join the nine published tools** (it is a dev check and says so; one line to publish it).
+- **`learn/` has no page about recordings at all** — the `@viz` markers and the recording flag are taught nowhere a user reads.
+
+## What the last session did, in one line each
+
+The `Code` tab (the section's code minus the doc-block lines, with the pointed-at line picked out); the hover trigger that feeds every sidebar tab; the recording flag (`<script>.record` noticed at the markers, written when it clears, capped at 50,000 visits) with its check; and the `on right click` language work that does not yet compile. The detail is in the entries below, newest first.
+
 ## What changed most recently
 
 **2026-10-12, eighth pass: a running script can be asked for a recording, over SSH.** Graham: *"I have an automated heating system with a controller running on a dedicated PC … The only access I have is over SSH. … Can you make sure there's a mechanism for triggering a recording, either from the command line or by some kind of signal that would work for the service too. It will ideally allow the annotations to remain even when not collecting data."* Most of it existed and was unlisted: **`allspeak --record=<file> <script>`**, and the fact that the `@viz` markers are *already* inert without it. What was missing was a way to ask a **running** process. It is a **flag file, `<script>.record`**, noticed **at the markers** — which is what Graham settled on as *"a flag that's detected at a specific point in the script"*: `touch thermostat.allspeak.record` begins collecting at the next `@viz start`/`@viz stop`, `rm` writes `<script>.viz.json` at the next one, and the markers go inert again. No polling, no timer; a controller with markers in its cycle is asked once a cycle.

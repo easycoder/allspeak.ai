@@ -609,6 +609,12 @@ So the clip pays, by roughly the square of the fraction kept, exactly as the sec
 
 ---
 
+## Where to start, if you are picking up `viz` next — written 2026-10-12
+
+**`TODO.md`'s "Where this stands" block is the brief: read it first.** In one paragraph: the sidebar's **popup menu is built and nothing opens it**, because `on right click` does not compile yet — that is a separate session's job, briefed at the foot of `TODO-language.md`. When it lands: restore the two parked registrations in `viz.allspeak`'s registration block (that shows the menu, which is all Graham asked for first), then make the items act — the **tab switch** (a new message `kind`, since the sidebar cannot be told anything today) and the **freeze**, whose state machine is settled from Graham's own words at the foot of `TODO-language.md`. After that, the queue is the `VizBusy` fault that costs `viz-modes-check` 22 of its checks, the sidebar's own rollover, and the "line outside any doc block" question — all listed in `TODO.md`.
+
+---
+
 ## The sidebar's second tab — built 2026-10-12
 
 **Graham's ask.** *"Now for the second sidebar tab, which will show the AllSpeak code - minus doc blocks - for the section of script the cursor currently inhabits. With this tab selected, the doc blocks will no longer be presented. If the line under the cursor can also be highlighted, so much the better."* The "cursor" is the pointer, as it is everywhere else in this pane: the sidebar is a Graph-mode panel and has no text caret of its own, so the tab is a view of *the line the pointer is over* — the trigger built the day before, which needed no change for this.
