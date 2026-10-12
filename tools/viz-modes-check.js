@@ -862,6 +862,41 @@ check(JSON.stringify(listed.map(t => t.id)) === JSON.stringify(FIVE_IDS)
 	`the bar's tabs are in the order asked for — ${listed.map(t => t.label).join(`, `)} `
 	+ `— which is what '$TopBar' renders, so it is what a reader sees (${JSON.stringify(listed.map(t => t.id))})`);
 
+// **The sequence a reader sees is that DOM order *modified by* `order`, and `order` is the part the DOM
+// cannot carry.** The button that leaves a pane relabels itself `Edit`, and `Edit` has to be the *first* of
+// the five — so each of them states an `order` in `viz.json`, and the two pane toggles take the first two
+// places when one of them is the `Edit`. A hidden button is `display: none`: it keeps its `order` and takes
+// no place, which is what makes a missing `Launch` — or a missing pane — shuffle nothing.
+//
+// The stub does not apply the file's styles (measured, as `se-status`'s own `font-size` is absent too), so
+// the file's `order` is the fallback here — the value a browser would have applied and the code had not yet
+// overwritten. **Graham, 2026-10-12:** *"the sequence is always Edit - Blocks - Launch - Record - Graph -
+// Find, including when 1 or more is missing"*, after finding that the `Edit` simply replaced `Graph` where
+// `Graph` was — second from the end, rather than first.
+const barSequence = () => FIVE_IDS
+	.map((id, dom) => ({
+		id,
+		label: contentOf(id) || (byIdOf[id] || {})[`#content`],
+		order: Number(((byId[id] || {}).style || {}).order ?? (byIdOf[id] || {})[`order`] ?? 0),
+		dom,
+	}))
+	.filter(t => ((byId[t.id] || {}).style || {}).display !== `none`)
+	.sort((a, b) => (a.order - b.order) || (a.dom - b.dom))
+	.map(t => t.label);
+check(JSON.stringify(barSequence()) === JSON.stringify(TOP_ORDER),
+	`and with each button's place taken into account it is that same sequence (${barSequence().join(`, `)})`);
+
+// In the Graph pane the `Edit` takes that first place, which is what the `order`s are for. Before this the
+// bar read `Blocks, Launch, Record, Edit, Find`. Toggling in and straight back out leaves the editor where
+// these checks found it.
+run(`ToggleGraph`);
+check(JSON.stringify(barSequence()) === JSON.stringify([`Edit`, `Blocks`, `Launch`, `Record`, `Find`]),
+	`and in Graph mode the Edit leads, so the sequence is Edit - Blocks - Launch - Record - Find `
+	+ `(${barSequence().join(`, `)})`);
+run(`ToggleGraph`);
+check(JSON.stringify(barSequence()) === JSON.stringify(TOP_ORDER),
+	`and leaving the pane puts the bar back as it was (${barSequence().join(`, `)})`);
+
 // **And Launch is put away for a script this page cannot run.** Launching hands the script to the JavaScript
 // runtime, and a `@py` script is by definition one it cannot compile — so the button would open a window that
 // does nothing. The flavour is the parse's, so the button follows the tab's script rather than a memory of it:

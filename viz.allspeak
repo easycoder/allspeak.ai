@@ -524,7 +524,7 @@ on message go to SideMarkLine
 !!
 !! **A `title` is the browser's own rollover, and this file already uses it** — the Graph sidebar's tabs are named the same way, in `viz-side.allspeak`. It costs no element of ours, needs no positioning, and cannot be left standing by a pointer that has moved on, which is the whole of what a hand-drawn tip would have to solve for itself.
 !!
-!! **A control that changes what it does is named in both of its states.** `Blocks` and `Graph` are toggles whose label flips to `Edit` while their pane is up, so each tooltip is set beside its label — see `EnterBlocks`, `DoExitBlocks`, `EnterGraph` and `DoExitGraph` — and this block is the state a freshly opened editor is in.
+!! **A control that changes what it does is named in both of its states.** `Blocks` and `Graph` are toggles whose label flips to `Edit` while their pane is up, so each tooltip is set beside its label — see `EnterBlocks`, `DoExitBlocks`, `EnterGraph` and `DoExitGraph` — and this block is the state a freshly opened editor is in. **And the one that reads `Edit` also moves to the head of the bar**: the way back should be in the same place whichever pane the reader is in, so the five buttons each state an `order` in `viz.json` and `EnterGraph` shifts the group along by one for its `Edit` to take the first place. A hidden button takes no place, and the sequence with any of them missing is still `Edit - Blocks - Launch - Record - Graph - Find`.
 !!
 !! **The words are English, and that is the standing gap rather than a choice made here.** Only the chrome in `SetStrings` is translated; the status line and every message in this file are English already, so a tooltip localised on its own would read as a third language. The batch that closes it is in `TODO.md`.
 SetTips:
@@ -1941,6 +1941,18 @@ EnterGraph:
     put 1 into GraphMode
     set the content of GraphBtn to `Edit`
     set attribute `title` of GraphBtn to `Back to the plain editor`
+    ! **And it takes the first place in the bar, which is where `Edit` belongs.** The button that goes back
+    ! to the plain editor is the leftmost of the five, whichever pane it is leaving — so in Blocks mode
+    ! nothing moves (Blocks is already first) and here the group shifts up by one to make room. **The
+    ! numbers are the ones `viz.json` states**, whose `order` on these five *is* the bar's sequence; the
+    ! earlier four children of the bar take the default `0` and hold their DOM order ahead of these.
+    ! Graham, 2026-10-12: *"the sequence is always Edit - Blocks - Launch - Record - Graph - Find, including
+    ! when 1 or more is missing."* A hidden button is `display: none`, so it takes no place and the rest keep
+    ! this order — which is what makes a missing `Launch` or a missing pane not shuffle anything.
+    set style `order` of GraphBtn to `4`
+    set style `order` of BlocksBtn to `5`
+    set style `order` of LaunchBtn to `6`
+    set style `order` of RecordBtn to `7`
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `none`
     set style `display` of GraphArea to `flex`
@@ -2116,6 +2128,11 @@ DoExitGraph:
     put 0 into GripPicked
     set the content of GraphBtn to `Graph`
     set attribute `title` of GraphBtn to `Show the run this script recorded, as a picture`
+    ! Back to the sequence `viz.json` states — `EnterGraph` has the reasoning for these four numbers.
+    set style `order` of BlocksBtn to `4`
+    set style `order` of LaunchBtn to `5`
+    set style `order` of RecordBtn to `6`
+    set style `order` of GraphBtn to `7`
     set style `display` of GraphArea to `none`
     set style `display` of EditorArea to `block`
     if VizLoaded is 1 gosub to TellVizClosed
@@ -2141,7 +2158,7 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash 162c2579
+!! @hash 291af56e
 !! @verified ecd231d6
 !!!
 !! The sidebar: what the pane reports back, and what the sidebar is shown.
