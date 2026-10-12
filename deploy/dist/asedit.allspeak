@@ -1,9 +1,9 @@
 !!  Tabbed script editor with auto-save and external change detection.
 !!  Served by server.allspeak locally, or any web server with /list, /read, /write routes.
-!   asedit.allspeak
+!   viz.allspeak
 
-    script ASEditor
-!! @hash 57eacdb1
+    script Viz
+!! @hash 9e6e7696
 !! @verified 57eacdb1
 !!!
 !! Variable declarations
@@ -219,7 +219,7 @@
 !! @hash eaf2f9ee
 !! @verified 90e6973b
 !!!
-!! The UI is described by a DOM element 'asedit-ui',
+!! The UI is described by a DOM element 'viz-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
 !! These are formatted using Webson, a JSON representation of any number of DOM elements,
 !! which is rendered into an existing element using the 'render' command
@@ -228,7 +228,7 @@
 !! so that other elements - in this case those represented by the Webson -  can be added to it.
 !   -- Build UI --
     attach Body to body
-    attach UIPre to `asedit-ui`
+    attach UIPre to `viz-ui`
     put the content of UIPre into UIWebson
     render UIWebson in Body
     attach TabBar to `se-tabbar`
@@ -265,7 +265,7 @@
     ! Every control is named while the UI is still being built: see `SetTips`, below the startup
     ! loops, for what a tooltip is here and why it is a subroutine rather than lines in this block.
     gosub to SetTips
-!! @hash b1e477ad
+!! @hash e203ef10
 !! @verified 414ea5b9
 !!!
 !! Some general initialisation
@@ -377,7 +377,7 @@ SetStrings:
         put `(empty directory)` into StrEmpty
         put `.. (up one level)` into StrUpLevel
         put `/ (project root)` into StrRoot
-        put `asedit has been updated. Restart to apply changes?` into StrUpdated
+        put `viz has been updated. Restart to apply changes?` into StrUpdated
         put `Please restart the server manually.` into StrRestart
         put `gosub` into StrFlowCall
         put `go` into StrFlowJump
@@ -386,7 +386,7 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash 3f450398
+!! @hash cad4dc41
 !! @verified 3f450398
 !!!
 !! The editor checks on startup and periodically for updates to itself.
@@ -511,18 +511,18 @@ VersionDone:
         begin
             put 0 into GripPicked
             put the width of GraphSide into FinalWidth
-            put FinalWidth into storage as `asedit-graph-side-width`
+            put FinalWidth into storage as `viz-graph-side-width`
             return
         end
         if GraphMode is 1 return
         put the width of BlocksCodePane into FinalWidth
-        put FinalWidth into storage as `asedit-blocks-code-width`
+        put FinalWidth into storage as `viz-blocks-code-width`
     end
 
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash 9c062d6d
+!! @hash faeb1bc4
 !! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
@@ -546,7 +546,7 @@ on message go to SideMarkLine
 !!!
 !! What each control says when the pointer rests on it.
 !!
-!! **A `title` is the browser's own rollover, and this file already uses it** — the Graph sidebar's tabs are named the same way, in `asedit-side.allspeak`. It costs no element of ours, needs no positioning, and cannot be left standing by a pointer that has moved on, which is the whole of what a hand-drawn tip would have to solve for itself.
+!! **A `title` is the browser's own rollover, and this file already uses it** — the Graph sidebar's tabs are named the same way, in `viz-side.allspeak`. It costs no element of ours, needs no positioning, and cannot be left standing by a pointer that has moved on, which is the whole of what a hand-drawn tip would have to solve for itself.
 !!
 !! **A control that changes what it does is named in both of its states.** `Blocks` and `Graph` are toggles whose label flips to `Edit` while their pane is up, so each tooltip is set beside its label — see `EnterBlocks`, `DoExitBlocks`, `EnterGraph` and `DoExitGraph` — and this block is the state a freshly opened editor is in.
 !!
@@ -572,7 +572,7 @@ SetTips:
 !!
 !! **Why a panel rather than the status line, which is where messages go now.** The status line is a strip at the far end of the window, one line wide, and every message on it is cleared after three seconds whether or not anybody read it. That is right for `Saved` and wrong for anything a reader has to *understand* — the two module-load failures below are the ones that were worst served by it, because the editor also leaves the mode they belong to, so the explanation and the symptom arrived a line apart and both went. A panel near the top, in front of everything, with a Close button, is the shape Graham asked for.
 !!
-!! **The same panel is the Graph pane's.** `asedit-graph.allspeak` attaches to `se-alert` and `se-alert-text` by the same ids this file uses and writes its own message there — the long-drawing notice and the number it counts while it waits — so there is one place on the page a message of this kind appears, and neither program has to know about the other's text. The Close button is this file's (`HideAlert`), because the panel is named in `asedit.json` beside the editor's own elements and a page element's controls belong to whoever rendered them.
+!! **The same panel is the Graph pane's.** `viz-graph.allspeak` attaches to `se-alert` and `se-alert-text` by the same ids this file uses and writes its own message there — the long-drawing notice and the number it counts while it waits — so there is one place on the page a message of this kind appears, and neither program has to know about the other's text. The Close button is this file's (`HideAlert`), because the panel is named in `viz.json` beside the editor's own elements and a page element's controls belong to whoever rendered them.
 !!
 !! **A message is written with `set the content of`, so it must not carry markup.** That is the trap the Launch message fell into — a `<page>` placeholder in angle brackets was parsed as a tag and never rendered — so anything meant to be read as a literal wants a concrete example rather than a placeholder. The pane's messages are its own and obey the same rule.
 ShowAlert:
@@ -1274,7 +1274,7 @@ LaunchButton:
     ! nothing about is not `py` — the plugin's own answer is `js` when neither the script nor the project says
     ! otherwise — so an empty `TabFlavour` shows the button.
     !
-    ! The value written back is the one `asedit.json` states for the button, and it states it rather than
+    ! The value written back is the one `viz.json` states for the button, and it states it rather than
     ! leaving it to the browser's default for a `<button>`: a hide has to know what it is hiding *from*, and a
     ! stylesheet that names the value is one the button can be put back to. Launch is the only button that
     ! carries it, because it is the only one ever hidden.
@@ -1458,7 +1458,7 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash da944c9a
+!! @hash 9005fa83
 !! @verified d37980ab
 !!!
 !! Blocks view.
@@ -1508,7 +1508,7 @@ EnterBlocks:
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `flex`
     ! Restore divider position from previous session if persisted.
-    get StoredWidth from storage as `asedit-blocks-code-width`
+    get StoredWidth from storage as `viz-blocks-code-width`
     if StoredWidth is `null` put 0 into StoredWidth
     if StoredWidth is `undefined` put 0 into StoredWidth
     if StoredWidth is empty put 0 into StoredWidth
@@ -1614,7 +1614,7 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash 991be32a
+!! @hash e77f083d
 !! @verified 4464102e
 !!!
 !! Blocks save.
@@ -1936,7 +1936,7 @@ JumpToBlock:
 !!
 !! **The recording is not made here.** It is a file beside the script — `<script>.viz.json`, which the runtime writes with `--trace=` — so a run captured on remote hardware arrives with the project however the project travels, and reviewing a script never has to execute it. This pane reads that file and draws it, nothing more.
 !!
-!! **The drawing and its sidebar are two modules, each loaded on demand.** They are half of this editor by size between them and none of it is needed until somebody looks at a run, so one is `asedit-graph.allspeak` and the other `asedit-side.allspeak`: each fetched, compiled and run on the first click on Graph, and messaged from then on. The split is by *what each is about* rather than by size alone — the pane is the picture and owns the gestures, the sidebar is the reading aid and owns its tabs — so either can grow without the other's file growing with it, and the two are given **different elements** to attach to, which is what keeps the layout out of both of them. Two consequences are worth knowing. This file names no `svg` vocabulary any more — that left with the pane, and the pane is what needs the plugin, which the page still loads because the pane is compiled when it is fetched. And `various/plotview.allspeak` is gone: the module file *is* the view, so there is one copy of the drawing rather than a section kept verbatim beside the harness's own copy of the same code. The harness cuts the view out of the module at its header, so what it tests is still what ships.
+!! **The drawing and its sidebar are two modules, each loaded on demand.** They are half of this editor by size between them and none of it is needed until somebody looks at a run, so one is `viz-graph.allspeak` and the other `viz-side.allspeak`: each fetched, compiled and run on the first click on Graph, and messaged from then on. The split is by *what each is about* rather than by size alone — the pane is the picture and owns the gestures, the sidebar is the reading aid and owns its tabs — so either can grow without the other's file growing with it, and the two are given **different elements** to attach to, which is what keeps the layout out of both of them. Two consequences are worth knowing. This file names no `svg` vocabulary any more — that left with the pane, and the pane is what needs the plugin, which the page still loads because the pane is compiled when it is fetched. And `various/plotview.allspeak` is gone: the module file *is* the view, so there is one copy of the drawing rather than a section kept verbatim beside the harness's own copy of the same code. The harness cuts the view out of the module at its header, so what it tests is still what ships.
 !!
 !! **What crosses is a dict each way, and only when a run is opened.** This section fetches the recording and the script — it is the one that knows which tab is open — and sends the pane their text, the three localised flow words, and the path the recording was expected at. The sidebar is sent the same run, because a doc block is prose about a *line* and the click is what names the line. **And one thing comes back**: a click on a mark is reported here as the line it names, and this file looks that line up in the doc-block model it already holds and shows the result in the sidebar. The editor is the hub in both directions rather than the pane knowing that the sidebar exists, which is what keeps either of them replaceable. The wait, and the message about a recording that is not there, go on the status line, which the pane attached for itself. The gestures never cross at all, and leaving is one more message each, because a module cannot see that it has been taken off the screen.
 !!
@@ -1971,7 +1971,7 @@ EnterGraph:
     ! The sidebar's width, from the last session that had one. Restored here, before the pane is fetched,
     ! so the drawing is fitted to the box it will actually be drawn in — a re-fit a moment later would
     ! move the picture under the reader's eye for no reason it could see.
-    get SideStored from storage as `asedit-graph-side-width`
+    get SideStored from storage as `viz-graph-side-width`
     if SideStored is `null` put 0 into SideStored
     if SideStored is `undefined` put 0 into SideStored
     if SideStored is empty put 0 into SideStored
@@ -2038,7 +2038,7 @@ LoadVizModule:
     put the text of VizSrcDiv into VizSrc
     if VizSrc is not empty go to VizModuleHere
 VizModuleLocal:
-    rest get VizSrc from `asedit-graph.allspeak?v=` cat now or go VizModuleHosted
+    rest get VizSrc from `viz-graph.allspeak?v=` cat now or go VizModuleHosted
     ! **A `<` means the server sent a page, not a module.** A dev server that answers an unknown path with its
     ! own page does it with `200` and a type guessed from the extension, so the body is the only thing that
     ! says whether the file arrived — and a page is treated as a miss, so the next place gets its turn. Without
@@ -2052,7 +2052,7 @@ VizModuleHere:
     return
 
 VizModuleHosted:
-    rest get VizSrc from `https://allspeak.ai/dist/asedit-graph.allspeak?v=` cat now or go VizLoadFailed
+    rest get VizSrc from `https://allspeak.ai/dist/viz-graph.allspeak?v=` cat now or go VizLoadFailed
     if VizSrc starts with `<` go to VizLoadFailed
     go to VizModuleHere
 
@@ -2072,7 +2072,7 @@ LoadSideModule:
     put the text of SideSrcDiv into SideSrc
     if SideSrc is not empty go to SideModuleHere
 SideModuleLocal:
-    rest get SideSrc from `asedit-side.allspeak?v=` cat now or go SideModuleHosted
+    rest get SideSrc from `viz-side.allspeak?v=` cat now or go SideModuleHosted
     if SideSrc starts with `<` put `` into SideSrc
     if SideSrc is empty go to SideModuleHosted
 SideModuleHere:
@@ -2082,7 +2082,7 @@ SideModuleHere:
     return
 
 SideModuleHosted:
-    rest get SideSrc from `https://allspeak.ai/dist/asedit-side.allspeak?v=` cat now or go SideLoadFailed
+    rest get SideSrc from `https://allspeak.ai/dist/viz-side.allspeak?v=` cat now or go SideLoadFailed
     if SideSrc starts with `<` go to SideLoadFailed
     go to SideModuleHere
 
@@ -2094,7 +2094,7 @@ SideLoadFailed:
     ! only symptom was that nothing happened when a mark was clicked. The status line could not hold it
     ! (everything there is cleared after three seconds); the panel stays until it is closed.
     put `The Graph sidebar could not be loaded. Without it the picture still works — the sidebar is a reading aid beside the drawing. Rebuild the editor payload with ./build-allspeak, or start the dev server from the repository root.` into AlertMsg
-    log `sidebar: could not fetch ` cat `asedit-side.allspeak` cat ` — is it beside the editor?`
+    log `sidebar: could not fetch ` cat `viz-side.allspeak` cat ` — is it beside the editor?`
     gosub to ShowAlert
     return
 
@@ -2165,7 +2165,7 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash 87bc979c
+!! @hash 162c2579
 !! @verified ecd231d6
 !!!
 !! The sidebar: what the pane reports back, and what the sidebar is shown.

@@ -76,7 +76,7 @@ Ein veralteter Hash bedeutet, dass der Code sich geändert hat, ohne dass die Pr
 
 `@verified` ist eine stärkere Aussage als `@hash` allein — ein bewusstes Signal, dass ein Mensch den Code und die Prosa zusammen gelesen und die Paarung gebilligt hat. Der verifizierte Hash ist danach gesperrt. Spätere Code-Änderungen brechen die Verifizierung (`verified-stale`) und erfordern einen frischen menschlichen Durchgang.
 
-Der Blocks-Modus von Asedit bietet dafür einen Ein-Klick-Button „Als verifiziert markieren".
+Der Blocks-Modus von Viz bietet dafür einen Ein-Klick-Button „Als verifiziert markieren".
 
 ## Abmelden: Dateien ohne Dokumentationsblöcke
 
@@ -91,7 +91,7 @@ Zwei Werkzeuge validieren dieselbe Konvention:
 - `tools/asdoc-check.py` — Python-CLI; rekursiv über ein Verzeichnis. Mit `--write` ausführen, um Hashes aufzufrischen.
 - `tools/asdoc-check-cli.allspeak` — läuft unter der Python-AllSpeak-Laufzeit und übt dieselbe Logik aus AllSpeak heraus.
 
-Der Blocks-Modus von Asedit validiert auch beim Tippen im Editor.
+Der Blocks-Modus von Viz validiert auch beim Tippen im Editor.
 
 ## Beim Dokumentieren prüfen
 

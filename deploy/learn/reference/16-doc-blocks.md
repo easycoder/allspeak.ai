@@ -81,7 +81,7 @@ A stale hash means the code changed without the prose being re-reviewed — the 
 
 `@verified` is a stronger statement than `@hash` alone — a deliberate signal that a human has read the code and the prose together and approved the pairing. The verified hash is then locked. Subsequent code changes break the verification (`verified-stale`), requiring a fresh human pass.
 
-Asedit's Blocks mode provides a one-click "Mark verified" button for this.
+Viz's Blocks mode provides a one-click "Mark verified" button for this.
 
 ## Opt-out: files with no doc blocks
 
@@ -96,7 +96,7 @@ Two tools validate the same convention, and they are not interchangeable:
 - `tools/asdoc-check.py` — the Python CLI, and the one to fetch into a project: recursive over a directory, and the only one that writes. Run with `--write` to refresh hashes.
 - `tools/asdoc-check-cli.allspeak` — the same convention from inside AllSpeak, running under the Python runtime. It is the demonstration that the convention is expressible in the language, and it is the one that resolves a relative path against its own directory (see above).
 
-Asedit's Blocks mode also performs in-editor validation as you type.
+Viz's Blocks mode also performs in-editor validation as you type.
 
 ## Review while documenting
 

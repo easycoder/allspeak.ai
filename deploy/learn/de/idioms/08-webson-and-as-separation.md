@@ -139,7 +139,7 @@ Das Muster Webson + `befestige` wird unzureichend, wenn die Form zum Vorlagenzei
 - **Variable Elementanzahl.** Webson kann eine feste Anzahl von Zeilen deklarieren; es kann nicht „eine Zeile pro Datensatz in der Datendatei" deklarieren.
 - **Elementinhalt aus einem Skriptwert.** `#content` nimmt ein String-Literal, keinen Ausdruck — es gibt keine Möglichkeit zu sagen: „der Wert von `Row.amount` für diese Iteration".
 
-Die Lösung ist, die Seite danach aufzuteilen, welche Achse variiert. Verwende Webson für die Teile, deren Form zum Vorlagenzeitpunkt feststeht — Seitenrahmen, Kopfleiste, Tabellenkopfzeile, modale Formulare. Verwende das Skript für die Teile, deren Form aus den Daten kommt — Körperzeilen, Monatszwischensummen, berechnete Summen. `asedit.allspeak` macht das für seine Dateiliste: ein per Webson befestigter Scroll-Container mit skripterzeugten Einträgen darin; das Layout weiß nichts darüber, wie viele Dateien es geben könnte.
+Die Lösung ist, die Seite danach aufzuteilen, welche Achse variiert. Verwende Webson für die Teile, deren Form zum Vorlagenzeitpunkt feststeht — Seitenrahmen, Kopfleiste, Tabellenkopfzeile, modale Formulare. Verwende das Skript für die Teile, deren Form aus den Daten kommt — Körperzeilen, Monatszwischensummen, berechnete Summen. `viz.allspeak` macht das für seine Dateiliste: ein per Webson befestigter Scroll-Container mit skripterzeugten Einträgen darin; das Layout weiß nichts darüber, wie viele Dateien es geben könnte.
 
 ### Eine datengetriebene Tabelle
 

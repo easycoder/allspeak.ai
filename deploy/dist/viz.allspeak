@@ -1,9 +1,9 @@
 !!  Tabbed script editor with auto-save and external change detection.
 !!  Served by server.allspeak locally, or any web server with /list, /read, /write routes.
-!   asedit.allspeak
+!   viz.allspeak
 
-    script ASEditor
-!! @hash 57eacdb1
+    script Viz
+!! @hash 9e6e7696
 !! @verified 57eacdb1
 !!!
 !! Variable declarations
@@ -24,6 +24,9 @@
     span TabLabel
     span BlocksTitle
     span BlocksBadge
+    div AlertPanel       ! the alert/info panel, near the top of the page and in front of everything
+    div AlertText        ! what it says
+    button AlertCloseBtn ! the one control it carries
     button OpenBtn
     button FindBtn
     button BlocksBtn
@@ -50,6 +53,7 @@
     variable StrClose
     variable StrSaved
     variable StrSaveFailed
+    variable StrRecording
     variable StrReloaded
     variable StrExtChange
     variable StrNoConnect
@@ -59,6 +63,9 @@
     variable StrRoot
     variable StrUpdated
     variable StrRestart
+    ! What the alert panel is asked to say. A variable rather than an argument, because the language has
+    ! no parameters: `ShowAlert` reads it and nothing else.
+    variable AlertMsg
     variable TabPath       ! array: full file path per tab (relative to project root)
     variable TabName       ! array: display name (basename) per tab
     variable TabSaved      ! array: last content saved to server per tab
@@ -119,6 +126,12 @@
     variable RecordTrace     ! what that run collected, as the trace document's text
     variable RecordVerdict   ! what the recording amounts to — visits and windows, or why there is none
     variable AppPage         ! the page this script's `@app` attribute names, if it has one
+    variable TabFlavour      ! this tab's script: `py` or `js`, as the plugin resolved it — the script's own
+                             ! marker, then the project's `#editor-runtime`, then `js`
+    variable LaunchHide     ! 1 when the Launch button does not belong on this tab's bar, which is when the tab
+                            ! is Python-side; resolved per parse, like `TabFlavour` itself
+    variable LaunchHidden   ! what the button is currently set to, so a parse that changes nothing writes nothing
+    variable RecordReply     ! what the server says after it ran a Python script and recorded the run
     variable TraceText      ! the recording, as read — the `trace` field of that dict
     variable SourceText     ! the script, as read — the `source` field of it
     variable CurBlock      ! 0-based index into Sections arrays
@@ -203,10 +216,10 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 821fc25a
-!! @verified b3977d8a
+!! @hash eaf2f9ee
+!! @verified 90e6973b
 !!!
-!! The UI is described by a DOM element 'asedit-ui',
+!! The UI is described by a DOM element 'viz-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
 !! These are formatted using Webson, a JSON representation of any number of DOM elements,
 !! which is rendered into an existing element using the 'render' command
@@ -215,7 +228,7 @@
 !! so that other elements - in this case those represented by the Webson -  can be added to it.
 !   -- Build UI --
     attach Body to body
-    attach UIPre to `asedit-ui`
+    attach UIPre to `viz-ui`
     put the content of UIPre into UIWebson
     render UIWebson in Body
     attach TabBar to `se-tabbar`
@@ -246,8 +259,14 @@
     attach BlocksDocPane to `se-blocks-doc`
     attach BlocksToc to `se-blocks-toc`
     attach BlocksDivider to `se-blocks-divider`
-!! @hash 414ea5b9
-!! @verified c52f8b76
+    attach AlertPanel to `se-alert`
+    attach AlertText to `se-alert-text`
+    attach AlertCloseBtn to `se-alert-close`
+    ! Every control is named while the UI is still being built: see `SetTips`, below the startup
+    ! loops, for what a tooltip is here and why it is a subroutine rather than lines in this block.
+    gosub to SetTips
+!! @hash e203ef10
+!! @verified 414ea5b9
 !!!
 !! Some general initialisation
 !   -- CodeMirror --
@@ -264,8 +283,14 @@
 !! and defaults to 'en'. All of the language-specific strings are then defined for each language.
 !   -- Detect language and set strings for each supported language --
     div LangDiv
-    div VizSrcDiv
-    div SideSrcDiv
+    ! **Textareas, and the reason is in how `the text of` reads an element.** The branches switch on the
+    ! *symbol's* type: a `div` reads `innerHTML` with every newline removed, which turns a 2,700-line module
+    ! into one line — and its first line is a `!!` comment, which then comments out the lot. Measured
+    ! 2026-10-04: the pane compiled as `1 lines (0 tokens)` and nothing was ever drawn. A `pre` would keep the
+    ! newlines but hands back *escaped* markup, and the module has 25 `<` in it. A textarea's `value` is the
+    ! text and only the text.
+    textarea VizSrcDiv
+    textarea SideSrcDiv
     put `en` into Lang
     attach LangDiv to `editor-lang` or go to SetStrings
     put the text of LangDiv into Lang
@@ -281,6 +306,7 @@ SetStrings:
         put `Chiudi` into StrClose
         put `Salvato` into StrSaved
         put `Salvataggio fallito` into StrSaveFailed
+        put `Registrazione dell'app` into StrRecording
         put `Ricaricato` into StrReloaded
         put `Modifica esterna rilevata` into StrExtChange
         put `Impossibile connettersi al server` into StrNoConnect
@@ -301,6 +327,7 @@ SetStrings:
         put `Fermer` into StrClose
         put `Enregistré` into StrSaved
         put `Échec de l'enregistrement` into StrSaveFailed
+        put `Enregistrement de l'app` into StrRecording
         put `Rechargé` into StrReloaded
         put `Modification externe détectée` into StrExtChange
         put `Impossible de se connecter au serveur` into StrNoConnect
@@ -321,6 +348,7 @@ SetStrings:
         put `Schließen` into StrClose
         put `Gespeichert` into StrSaved
         put `Speichern fehlgeschlagen` into StrSaveFailed
+        put `Aufzeichnung der App` into StrRecording
         put `Neu geladen` into StrReloaded
         put `Externe Änderung erkannt` into StrExtChange
         put `Verbindung zum Server nicht möglich` into StrNoConnect
@@ -341,6 +369,7 @@ SetStrings:
         put `Close` into StrClose
         put `Saved` into StrSaved
         put `Save failed` into StrSaveFailed
+        put `Recording the app` into StrRecording
         put `Reloaded` into StrReloaded
         put `External change detected` into StrExtChange
         put `Cannot connect to server` into StrNoConnect
@@ -348,7 +377,7 @@ SetStrings:
         put `(empty directory)` into StrEmpty
         put `.. (up one level)` into StrUpLevel
         put `/ (project root)` into StrRoot
-        put `asedit has been updated. Restart to apply changes?` into StrUpdated
+        put `viz has been updated. Restart to apply changes?` into StrUpdated
         put `Please restart the server manually.` into StrRestart
         put `gosub` into StrFlowCall
         put `go` into StrFlowJump
@@ -357,8 +386,8 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash 1ef8e8d5
-!! @verified 3ec54b89
+!! @hash cad4dc41
+!! @verified 3f450398
 !!!
 !! The editor checks on startup and periodically for updates to itself.
 !! (explain)
@@ -407,6 +436,7 @@ VersionDone:
     on click BlocksNext go to NextBlock
     on click BlocksVerify go to MarkVerified
     on click BlocksVerifyAll go to MarkAllVerified
+    on click AlertCloseBtn go to HideAlert
 
     on pick BlocksDivider
     begin
@@ -481,19 +511,19 @@ VersionDone:
         begin
             put 0 into GripPicked
             put the width of GraphSide into FinalWidth
-            put FinalWidth into storage as `asedit-graph-side-width`
+            put FinalWidth into storage as `viz-graph-side-width`
             return
         end
         if GraphMode is 1 return
         put the width of BlocksCodePane into FinalWidth
-        put FinalWidth into storage as `asedit-blocks-code-width`
+        put FinalWidth into storage as `viz-blocks-code-width`
     end
 
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash 3efa1530
-!! @verified aeba3967
+!! @hash faeb1bc4
+!! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
 !!
@@ -513,6 +543,54 @@ on message go to SideMarkLine
     stop
 !! @hash f86feb98
 !! @verified f86feb98
+!!!
+!! What each control says when the pointer rests on it.
+!!
+!! **A `title` is the browser's own rollover, and this file already uses it** — the Graph sidebar's tabs are named the same way, in `viz-side.allspeak`. It costs no element of ours, needs no positioning, and cannot be left standing by a pointer that has moved on, which is the whole of what a hand-drawn tip would have to solve for itself.
+!!
+!! **A control that changes what it does is named in both of its states.** `Blocks` and `Graph` are toggles whose label flips to `Edit` while their pane is up, so each tooltip is set beside its label — see `EnterBlocks`, `DoExitBlocks`, `EnterGraph` and `DoExitGraph` — and this block is the state a freshly opened editor is in.
+!!
+!! **The words are English, and that is the standing gap rather than a choice made here.** Only the chrome in `SetStrings` is translated; the status line and every message in this file are English already, so a tooltip localised on its own would read as a third language. The batch that closes it is in `TODO.md`.
+SetTips:
+    set attribute `title` of OpenBtn to `Open a file from this project`
+    set attribute `title` of PlusBtn to `Start a new file`
+    set attribute `title` of FindBtn to `Find a block holding the text you have selected`
+    set attribute `title` of BlocksBtn to `Show this script as blocks, one block at a time`
+    set attribute `title` of GraphBtn to `Show the run this script recorded, as a picture`
+    set attribute `title` of RecordBtn to `Run this script and save its recording beside it`
+    set attribute `title` of LaunchBtn to `Open the page this script names with '@app', in a new window`
+    set attribute `title` of BlocksPrev to `Previous block`
+    set attribute `title` of BlocksNext to `Next block`
+    set attribute `title` of BlocksVerify to `Mark this block verified, at its present hash`
+    set attribute `title` of BlocksVerifyAll to `Mark every block in this file verified`
+    set attribute `title` of CloseBtn to `Close the file browser`
+    set attribute `title` of AlertCloseBtn to `Put this message away`
+    return
+!! @hash 21476b47
+!!!
+!! The alert panel: one box that says what is happening and stays until it is read.
+!!
+!! **Why a panel rather than the status line, which is where messages go now.** The status line is a strip at the far end of the window, one line wide, and every message on it is cleared after three seconds whether or not anybody read it. That is right for `Saved` and wrong for anything a reader has to *understand* — the two module-load failures below are the ones that were worst served by it, because the editor also leaves the mode they belong to, so the explanation and the symptom arrived a line apart and both went. A panel near the top, in front of everything, with a Close button, is the shape Graham asked for.
+!!
+!! **The same panel is the Graph pane's.** `viz-graph.allspeak` attaches to `se-alert` and `se-alert-text` by the same ids this file uses and writes its own message there — the long-drawing notice and the number it counts while it waits — so there is one place on the page a message of this kind appears, and neither program has to know about the other's text. The Close button is this file's (`HideAlert`), because the panel is named in `viz.json` beside the editor's own elements and a page element's controls belong to whoever rendered them.
+!!
+!! **A message is written with `set the content of`, so it must not carry markup.** That is the trap the Launch message fell into — a `<page>` placeholder in angle brackets was parsed as a tag and never rendered — so anything meant to be read as a literal wants a concrete example rather than a placeholder. The pane's messages are its own and obey the same rule.
+ShowAlert:
+    ! Reads `AlertMsg`; the panel's visibility is the whole of the state it keeps. A subroutine rather
+    ! than an entry point, because the two callers below are in the middle of their own flow — the
+    ! sidebar's failure in particular must let `EnterGraph` carry on, since a missing sidebar is not a
+    ! reason to stop showing a picture.
+    set the content of AlertText to AlertMsg
+    set style `display` of AlertPanel to `flex`
+    return
+
+HideAlert:
+    ! The Close button's own entry, and the one place the panel is put away. `on click` reaches a label
+    ! rather than a subroutine, so this ends the flow it started instead of returning to a caller that
+    ! does not exist.
+    set style `display` of AlertPanel to `none`
+    stop
+!! @hash 5b38b66f
 !!!
 !! Every half-second, changes to the content are saved.
 !!
@@ -957,12 +1035,13 @@ RebuildTabBar:
         index TabClose to N
         create TabClose in TabBtn
         set attribute `src` of TabClose to `https://allspeak.ai/icon/stop.png`
+        set attribute `title` of TabClose to `Close this tab`
         set the style of TabClose to `width:12px;height:12px;opacity:0.6;cursor:pointer`
         on click TabClose go to CloseTab
         add 1 to N
     end
     return
-!! @hash 1347598c
+!! @hash 2ade580b
 !! @verified 1347598c
 !!!
 !! Here are some utility functions.
@@ -1068,6 +1147,9 @@ ClearStatus:
 !! Same classifier logic as tools/asdoc-check.allspeak — the spec is one source of truth even though the code is duplicated here for the editor's in-process use.
 ParseSource:
     put `` into AppPage
+    ! The flavour is re-resolved on every parse, for the same reason `AppPage` is cleared: a marker that has
+    ! just been deleted, or a `@py` that has just been added, must not go on deciding.
+    put `` into TabFlavour
     put 0 into SecCount
     put 0 into InSection
     put `` into Source
@@ -1145,8 +1227,12 @@ ParseSource:
         index Model to K
         put Model into MarkRecord
         if MarkRecord starts with `attr | ` gosub to NoteAttribute
+        if MarkRecord starts with `flavour | ` gosub to NoteFlavour
         add 1 to K
     end
+    ! Last, because it is the one thing here that is not a parse result: the flavour decides whether the
+    ! Launch button belongs on the bar at all. See `LaunchButton`.
+    gosub to LaunchButton
     return
 
 !   One attribute, as the model reports it: `attr | line=N | <text>`.
@@ -1158,6 +1244,53 @@ NoteAttribute:
     index MarkRecord to 2
     put MarkRecord into LContent
     gosub to SplitMeta
+    return
+
+!   Which runtime this tab's script is for, and where that came from: `flavour | py | from=script`.
+!
+!   **Read from the model and not from the script's own attributes**, and that is the fault this replaced. An
+!   `attr` record is emitted only for a program the runtime *compiled* — and a script carrying `@py` is by
+!   definition one the JavaScript runtime cannot compile, because `dictionary` and `list` are Python's. So the
+!   marker was invisible to the editor exactly when it mattered: `parser.allspeak` with `@py` at the top and
+!   `dictionary` at line 43 modelled to `commands=0`, no `attr` records, `TabFlavour` fell through to the
+!   project's answer and Record refused a script it had been built to run. Reported by Graham, 2026-10-05.
+!   The plugin reports this from the *token stream*, so it is there whether the compile succeeded or not.
+NoteFlavour:
+    split MarkRecord on ` | `
+    if the elements of MarkRecord is less than 3 return
+    index MarkRecord to 1
+    put MarkRecord into TabFlavour
+    return
+
+LaunchButton:
+    ! **A `@py` script cannot be launched, so its Launch button is hidden.** Launching hands the script to the
+    ! page's JavaScript runtime, and `@py` is by definition a script that runtime cannot compile — `dictionary`
+    ! and `list` are Python's — so the button would open a window that does nothing, which is worse than a
+    ! button that is not there. Graham asked for it on 2026-10-11, in the same breath as the tab order.
+    !
+    ! **Whose flavour it follows is the *tab's*, and this is called from the parse**, so adding or deleting the
+    ! marker moves the button on the next keystroke. That is the same rule `AppPage` and `TabFlavour` already
+    ! follow: a cleared value re-resolved per parse, never a memory of the last script. A tab the model says
+    ! nothing about is not `py` — the plugin's own answer is `js` when neither the script nor the project says
+    ! otherwise — so an empty `TabFlavour` shows the button.
+    !
+    ! The value written back is the one `viz.json` states for the button, and it states it rather than
+    ! leaving it to the browser's default for a `<button>`: a hide has to know what it is hiding *from*, and a
+    ! stylesheet that names the value is one the button can be put back to. Launch is the only button that
+    ! carries it, because it is the only one ever hidden.
+    !
+    ! **Written only when it changes, because the auto-save loop parses twice a second.** The editor rewrites
+    ! a good deal per keystroke; this is one write that can simply not happen.
+    put 0 into LaunchHide
+    if TabFlavour is `py` put 1 into LaunchHide
+    if LaunchHide is LaunchHidden return
+    put LaunchHide into LaunchHidden
+    if LaunchHide is 0
+    begin
+        set style `display` of LaunchBtn to `inline-block`
+        return
+    end
+    set style `display` of LaunchBtn to `none`
     return
 
 OutsideDispatch:
@@ -1325,8 +1458,8 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash d37980ab
-!! @verified fab5b751
+!! @hash 9005fa83
+!! @verified d37980ab
 !!!
 !! Blocks view.
 !! ToggleBlocks switches between flat and Blocks panes.
@@ -1371,10 +1504,11 @@ EnterBlocks:
     put 1 into BlocksMode
     ! The toggle button now leaves Blocks mode, so relabel it.
     set the content of BlocksBtn to `Edit`
+    set attribute `title` of BlocksBtn to `Back to the plain editor`
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `flex`
     ! Restore divider position from previous session if persisted.
-    get StoredWidth from storage as `asedit-blocks-code-width`
+    get StoredWidth from storage as `viz-blocks-code-width`
     if StoredWidth is `null` put 0 into StoredWidth
     if StoredWidth is `undefined` put 0 into StoredWidth
     if StoredWidth is empty put 0 into StoredWidth
@@ -1400,6 +1534,7 @@ DoExitBlocks:
     put 0 into BlocksMode
     ! Back in flat mode the toggle button re-enters Blocks mode.
     set the content of BlocksBtn to `Blocks`
+    set attribute `title` of BlocksBtn to `Show this script as blocks, one block at a time`
     set style `display` of BlocksArea to `none`
     set style `display` of EditorArea to `block`
     ! Scroll the flat editor so the start of the block just viewed is visible.
@@ -1479,7 +1614,7 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash 4464102e
+!! @hash e77f083d
 !! @verified 4464102e
 !!!
 !! Blocks save.
@@ -1801,7 +1936,7 @@ JumpToBlock:
 !!
 !! **The recording is not made here.** It is a file beside the script — `<script>.viz.json`, which the runtime writes with `--trace=` — so a run captured on remote hardware arrives with the project however the project travels, and reviewing a script never has to execute it. This pane reads that file and draws it, nothing more.
 !!
-!! **The drawing and its sidebar are two modules, each loaded on demand.** They are half of this editor by size between them and none of it is needed until somebody looks at a run, so one is `asedit-graph.allspeak` and the other `asedit-side.allspeak`: each fetched, compiled and run on the first click on Graph, and messaged from then on. The split is by *what each is about* rather than by size alone — the pane is the picture and owns the gestures, the sidebar is the reading aid and owns its tabs — so either can grow without the other's file growing with it, and the two are given **different elements** to attach to, which is what keeps the layout out of both of them. Two consequences are worth knowing. This file names no `svg` vocabulary any more — that left with the pane, and the pane is what needs the plugin, which the page still loads because the pane is compiled when it is fetched. And `various/plotview.allspeak` is gone: the module file *is* the view, so there is one copy of the drawing rather than a section kept verbatim beside the harness's own copy of the same code. The harness cuts the view out of the module at its header, so what it tests is still what ships.
+!! **The drawing and its sidebar are two modules, each loaded on demand.** They are half of this editor by size between them and none of it is needed until somebody looks at a run, so one is `viz-graph.allspeak` and the other `viz-side.allspeak`: each fetched, compiled and run on the first click on Graph, and messaged from then on. The split is by *what each is about* rather than by size alone — the pane is the picture and owns the gestures, the sidebar is the reading aid and owns its tabs — so either can grow without the other's file growing with it, and the two are given **different elements** to attach to, which is what keeps the layout out of both of them. Two consequences are worth knowing. This file names no `svg` vocabulary any more — that left with the pane, and the pane is what needs the plugin, which the page still loads because the pane is compiled when it is fetched. And `various/plotview.allspeak` is gone: the module file *is* the view, so there is one copy of the drawing rather than a section kept verbatim beside the harness's own copy of the same code. The harness cuts the view out of the module at its header, so what it tests is still what ships.
 !!
 !! **What crosses is a dict each way, and only when a run is opened.** This section fetches the recording and the script — it is the one that knows which tab is open — and sends the pane their text, the three localised flow words, and the path the recording was expected at. The sidebar is sent the same run, because a doc block is prose about a *line* and the click is what names the line. **And one thing comes back**: a click on a mark is reported here as the line it names, and this file looks that line up in the doc-block model it already holds and shows the result in the sidebar. The editor is the hub in both directions rather than the pane knowing that the sidebar exists, which is what keeps either of them replaceable. The wait, and the message about a recording that is not there, go on the status line, which the pane attached for itself. The gestures never cross at all, and leaving is one more message each, because a module cannot see that it has been taken off the screen.
 !!
@@ -1829,13 +1964,14 @@ EnterGraph:
     gosub to DoExitPanes
     put 1 into GraphMode
     set the content of GraphBtn to `Edit`
+    set attribute `title` of GraphBtn to `Back to the plain editor`
     set style `display` of EditorArea to `none`
     set style `display` of BlocksArea to `none`
     set style `display` of GraphArea to `flex`
     ! The sidebar's width, from the last session that had one. Restored here, before the pane is fetched,
     ! so the drawing is fitted to the box it will actually be drawn in — a re-fit a moment later would
     ! move the picture under the reader's eye for no reason it could see.
-    get SideStored from storage as `asedit-graph-side-width`
+    get SideStored from storage as `viz-graph-side-width`
     if SideStored is `null` put 0 into SideStored
     if SideStored is `undefined` put 0 into SideStored
     if SideStored is empty put 0 into SideStored
@@ -1902,7 +2038,7 @@ LoadVizModule:
     put the text of VizSrcDiv into VizSrc
     if VizSrc is not empty go to VizModuleHere
 VizModuleLocal:
-    rest get VizSrc from `asedit-graph.allspeak?v=` cat now or go VizModuleHosted
+    rest get VizSrc from `viz-graph.allspeak?v=` cat now or go VizModuleHosted
     ! **A `<` means the server sent a page, not a module.** A dev server that answers an unknown path with its
     ! own page does it with `200` and a type guessed from the extension, so the body is the only thing that
     ! says whether the file arrived — and a page is treated as a miss, so the next place gets its turn. Without
@@ -1916,7 +2052,7 @@ VizModuleHere:
     return
 
 VizModuleHosted:
-    rest get VizSrc from `https://allspeak.ai/dist/asedit-graph.allspeak?v=` cat now or go VizLoadFailed
+    rest get VizSrc from `https://allspeak.ai/dist/viz-graph.allspeak?v=` cat now or go VizLoadFailed
     if VizSrc starts with `<` go to VizLoadFailed
     go to VizModuleHere
 
@@ -1936,7 +2072,7 @@ LoadSideModule:
     put the text of SideSrcDiv into SideSrc
     if SideSrc is not empty go to SideModuleHere
 SideModuleLocal:
-    rest get SideSrc from `asedit-side.allspeak?v=` cat now or go SideModuleHosted
+    rest get SideSrc from `viz-side.allspeak?v=` cat now or go SideModuleHosted
     if SideSrc starts with `<` put `` into SideSrc
     if SideSrc is empty go to SideModuleHosted
 SideModuleHere:
@@ -1946,27 +2082,29 @@ SideModuleHere:
     return
 
 SideModuleHosted:
-    rest get SideSrc from `https://allspeak.ai/dist/asedit-side.allspeak?v=` cat now or go SideLoadFailed
+    rest get SideSrc from `https://allspeak.ai/dist/viz-side.allspeak?v=` cat now or go SideLoadFailed
     if SideSrc starts with `<` go to SideLoadFailed
     go to SideModuleHere
 
 SideLoadFailed:
-    ! **Not cleared after three seconds, unlike every other message here.** A module that will not load is
-    ! a fault in the page rather than news about the work, and the reader needs it to still be there when
-    ! they look up from the pointer — which is exactly what went wrong the first time this path was hit:
-    ! the sidebar was not beside the editor, the line flashed and went, and the only symptom was that
-    ! nothing happened when a mark was clicked.
-    set the content of StatusSpan to `The Graph sidebar could not be loaded`
-    log `sidebar: could not fetch ` cat `asedit-side.allspeak` cat ` — is it beside the editor?`
+    ! **The panel rather than the status line, and that is the fix this path always needed.** A module
+    ! that will not load is a fault in the page rather than news about the work, and the reader needs it
+    ! to still be there when they look up from the pointer — which is exactly what went wrong the first
+    ! time this path was hit: the sidebar was not beside the editor, the line flashed and went, and the
+    ! only symptom was that nothing happened when a mark was clicked. The status line could not hold it
+    ! (everything there is cleared after three seconds); the panel stays until it is closed.
+    put `The Graph sidebar could not be loaded. Without it the picture still works — the sidebar is a reading aid beside the drawing. Rebuild the editor payload with ./build-allspeak, or start the dev server from the repository root.` into AlertMsg
+    log `sidebar: could not fetch ` cat `viz-side.allspeak` cat ` — is it beside the editor?`
+    gosub to ShowAlert
     return
 
-!   A page served without the pane beside it, which is the one way this can fail. Said on the status
-!   line and rectified in the same breath: the editor goes back to the flat view rather than leaving
-!   a pane up that nothing will ever draw in.
+!   A page served without the pane beside it, which is the one way this can fail. Said in the panel and
+!   rectified in the same breath: the editor goes back to the flat view rather than leaving a pane up
+!   that nothing will ever draw in.
 VizLoadFailed:
-    set the content of StatusSpan to `The Graph pane could not be loaded`
-    fork to ClearStatus
+    put `The Graph pane could not be loaded, so the editor has gone back to the plain view. Rebuild the editor payload with ./build-allspeak, or start the dev server from the repository root.` into AlertMsg
     gosub to DoExitGraph
+    gosub to ShowAlert
     stop
 
 !   The run, as one dict — the whole of the interface in this direction. Built here rather than
@@ -2001,6 +2139,7 @@ DoExitGraph:
     ! otherwise be offered to a splitter nobody can see.
     put 0 into GripPicked
     set the content of GraphBtn to `Graph`
+    set attribute `title` of GraphBtn to `Show the run this script recorded, as a picture`
     set style `display` of GraphArea to `none`
     set style `display` of EditorArea to `block`
     if VizLoaded is 1 gosub to TellVizClosed
@@ -2026,8 +2165,8 @@ DoExitPanes:
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash ecd231d6
-!! @verified 5964c053
+!! @hash 162c2579
+!! @verified ecd231d6
 !!!
 !! The sidebar: what the pane reports back, and what the sidebar is shown.
 !!
@@ -2129,9 +2268,8 @@ TellSideClosed:
     send SideMsg to SideModule
     return
 !! @hash 0c4a0949
-!! @verified c33ecd04
+!! @verified 0c4a0949
 !!!
-
 !! Recording a run, from the button.
 !!
 !! **This is the trigger, and the pane's empty state is its argument.** A pane that says *"no recording beside this script"* names a file and leaves the reader to produce one at a console; this makes it instead — the buffer is already here, and so is the plugin, which the page loads for the pane's sake.
@@ -2165,10 +2303,41 @@ RecordRun:
     ! runs it here as it always has. The parse is what knows the difference, and it is the same parse the Blocks
     ! view uses, so `@app parser.html` means the same thing on both sides of the editor.
     gosub to ParseSource
+    ! **The flavour is the plugin's answer, not a second reading of the same facts.** The `flavour |` record
+    ! comes from the plugin's own resolution — the script's marker, then the project's `#editor-runtime`, then
+    ! `js` — so the editor and the thing that actually records cannot disagree. This file used to read
+    ! `#editor-runtime` itself and fall back to it when the tab said nothing: two implementations of one rule,
+    ! and the reason the marker's case was invisible here is that the *attributes* it used to be read from do
+    ! not exist on a script this runtime cannot compile. See `NoteFlavour`.
+    ! **A script for the Python runtime is run by the project's server, and not here.** The editor is a page, so
+    ! it has the JavaScript runtime and nothing else — which is why Record refused a `@py` script before this.
+    ! The dev server has Python: `/record/<script>` runs it exactly as `allspeak <script>` would, puts what it
+    ! printed in `<script>-stdout.txt` beside it (a script's output is unpredictable and would drown the console
+    ! the server is also writing to) and the recording in `<script>.viz.json`, which is the file the pane
+    ! already looks for. The server composes the sentence, so the file's name and the verdict are named once.
+    if TabFlavour is `py`
+    begin
+        rest get RecordReply from `/record/` cat EditorPath or begin
+            set the content of StatusSpan to `Could not run ` cat EditorPath cat ` — the server did not answer`
+            fork to ClearStatus
+            stop
+        end
+        set the content of StatusSpan to RecordReply
+        fork to ClearStatus
+        stop
+    end
     if AppPage is not empty
     begin
         record the app at AppPage to TracePath
-        set the content of StatusSpan to `Recording ` cat AppPage cat ` — close its window and the recording is saved to ` cat TracePath
+        ! **Short, true, and out of the way in three seconds.** The message names no path: the pane does, when
+        ! it reads the recording, and the toolbar is not the place for a filename. It used to say "Recording
+        ! ... — close its window and the recording is saved to ...", which was both a promise the editor cannot
+        ! keep (it printed whether or not a window opened) and the longest thing in the toolbar — Graham's two
+        ! objections, in one line. A failure is the plugin's to report, in the console, where it names which of
+        ! the two things went wrong.
+        set the content of StatusSpan to StrRecording
+        fork to ClearStatus
+        stop
         stop
     end
     record the script in EditorPath as RecordSource giving RecordTrace reporting RecordVerdict
@@ -2192,10 +2361,9 @@ RecordFailed:
     set the content of StatusSpan to `Could not record this script`
     fork to ClearStatus
     stop
-!! @hash 88d3e846
-!! @verified 00000000
+!! @hash 08c20866
+!! @verified df567fa6
 !!!
-
 !! Opening the project's app, from the editor.
 !!
 !! **The app is a page, and a page the editor can already reach: its own.** `@app parser.html` names it relative to where the editor is served from — the project root — so no path has to be assembled, no server route is added, and the page resolves against the editor's own location. It opens in a window of its own, which is the point: the app runs exactly as it does when you open it by hand, with its own layout, its own DOM and its own `rest get`s, unconstrained by the editor's.
@@ -2215,7 +2383,12 @@ LaunchApp:
         ! where an attribute must *not* go: a `@`-line inside a `!!` block is the analyser's metadata and never
         ! reaches the compiler, so a reader who followed that advice would have written something the program
         ! cannot see. Graham asked which it was, which is the message failing at the one moment it exists for.
-        set the content of StatusSpan to `No app named: add '@app <page>' on a line of its own — a script attribute, not a comment`
+        ! **The example is a real filename, not `<page>`, and that is not a style choice.** `set the content of`
+        ! writes `innerHTML` (`Browser.js`), so a placeholder in angle brackets is parsed as an HTML tag and
+        ! never rendered: the reader saw `add '@app ' on a line of its own` — the spelling this sentence exists
+        ! to give them, gone. Measured 2026-10-05, from Graham's own status line, and the check below could not
+        ! see it because the harness's stub stores the string it is given rather than parsing it.
+        set the content of StatusSpan to `No app named: add '@app mypage.html' on a line of its own — a script attribute, not a comment`
         fork to ClearStatus
         stop
     end
@@ -2223,6 +2396,6 @@ LaunchApp:
     set the content of StatusSpan to `Opened ` cat AppPage
     fork to ClearStatus
     stop
-!! @hash 0faead49
-!! @verified 00000000
+!! @hash def5bda2
+!! @verified 0faead49
 !!!

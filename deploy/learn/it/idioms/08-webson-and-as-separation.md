@@ -139,7 +139,7 @@ Il pattern Webson + collega smette di bastare quando la forma non è nota al mom
 - **Conteggi di elementi variabili.** Webson può dichiarare un numero fisso di righe; non può dichiarare «una riga per ogni record del file di dati».
 - **Contenuto di un elemento che viene da un valore dello script.** `#content` accetta una stringa letterale, non un'espressione — non c'è modo di dire «il valore di `Row.amount` per questa iterazione».
 
-La soluzione è dividere la pagina secondo l'asse che varia. Usa Webson per le parti la cui forma è fissa al momento del template — la cornice della pagina, la barra dell'intestazione, la riga d'intestazione della tabella, i form modali. Usa lo script per le parti la cui forma arriva dai dati — le righe del corpo, i subtotali mensili, i totali calcolati. `asedit.allspeak` fa così per la sua lista di file: un contenitore a scorrimento collegato via Webson con voci create dallo script al suo interno; il layout non sa nulla di quanti file possano esserci.
+La soluzione è dividere la pagina secondo l'asse che varia. Usa Webson per le parti la cui forma è fissa al momento del template — la cornice della pagina, la barra dell'intestazione, la riga d'intestazione della tabella, i form modali. Usa lo script per le parti la cui forma arriva dai dati — le righe del corpo, i subtotali mensili, i totali calcolati. `viz.allspeak` fa così per la sua lista di file: un contenitore a scorrimento collegato via Webson con voci create dallo script al suo interno; il layout non sa nulla di quanti file possano esserci.
 
 ### Una tabella guidata dai dati
 

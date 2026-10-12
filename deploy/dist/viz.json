@@ -41,10 +41,11 @@
     "cursor": "pointer",
     "flex-shrink": "0"
   },
-  "$GraphBtn": {
+  "$LaunchBtn": {
     "#element": "button",
-    "@id": "se-graphbtn",
-    "#content": "Graph",
+    "@id": "se-launchbtn",
+    "#content": "Launch",
+    "display": "inline-block",
     "padding": "4px 12px",
     "cursor": "pointer",
     "flex-shrink": "0"
@@ -57,10 +58,10 @@
     "cursor": "pointer",
     "flex-shrink": "0"
   },
-  "$LaunchBtn": {
+  "$GraphBtn": {
     "#element": "button",
-    "@id": "se-launchbtn",
-    "#content": "Launch",
+    "@id": "se-graphbtn",
+    "#content": "Graph",
     "padding": "4px 12px",
     "cursor": "pointer",
     "flex-shrink": "0"
@@ -100,7 +101,7 @@
     "background": "#2d2d2d",
     "padding": "4px",
     "gap": "4px",
-    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$GraphBtn", "$RecordBtn", "$LaunchBtn", "$FindBtn"]
+    "#": ["$Logo", "$OpenBtn", "$TabGroup", "$StatusSpan", "$BlocksBtn", "$LaunchBtn", "$RecordBtn", "$GraphBtn", "$FindBtn"]
   },
   "$ContentEditor": {
     "#element": "textarea",
@@ -177,6 +178,51 @@
     "font-size": "0.9em",
     "flex-shrink": "0",
     "#": ["$BlocksTitle", "$BlocksPrev", "$BlocksNext", "$BlocksBadge", "$BlocksVerifyBtn", "$BlocksVerifyAllBtn"]
+  },
+  "$AlertText": {
+    "#element": "div",
+    "@id": "se-alert-text",
+    "line-height": "1.45",
+    "min-height": "1.45em"
+  },
+  "$AlertCloseBtn": {
+    "#element": "button",
+    "@id": "se-alert-close",
+    "#content": "Close",
+    "padding": "3px 14px",
+    "cursor": "pointer"
+  },
+  "$AlertButtons": {
+    "#element": "div",
+    "@id": "se-alert-buttons",
+    "display": "flex",
+    "justify-content": "flex-end",
+    "gap": "8px",
+    "margin-top": "10px",
+    "#": ["$AlertCloseBtn"]
+  },
+  "$AlertPanel": {
+    "#element": "div",
+    "@id": "se-alert",
+    "display": "none",
+    "flex-direction": "column",
+    "position": "fixed",
+    "top": "48px",
+    "left": "50%",
+    "transform": "translateX(-50%)",
+    "min-width": "22em",
+    "max-width": "46em",
+    "box-sizing": "border-box",
+    "background": "#fff8e1",
+    "color": "#3a3324",
+    "border": "1px solid #d8b34a",
+    "border-radius": "6px",
+    "box-shadow": "0 6px 24px rgba(0,0,0,0.35)",
+    "padding": "12px 14px",
+    "font-family": "system-ui, sans-serif",
+    "font-size": "13px",
+    "z-index": "90",
+    "#": ["$AlertText", "$AlertButtons"]
   },
   "$BlocksToc": {
     "#element": "div",
@@ -323,5 +369,5 @@
     "z-index": "100",
     "#": ["$FileListing"]
   },
-  "#": ["$TopBar", "$EditorArea", "$BlocksArea", "$GraphArea", "$Overlay"]
+  "#": ["$TopBar", "$EditorArea", "$BlocksArea", "$GraphArea", "$AlertPanel", "$Overlay"]
 }

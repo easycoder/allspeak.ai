@@ -76,7 +76,7 @@ Un hash périmé signifie que le code a changé sans que la prose ait été relu
 
 `@verified` est une déclaration plus forte que `@hash` seul — un signal délibéré qu'un humain a lu le code et la prose ensemble et a approuvé l'association. Le hash vérifié est ensuite verrouillé. Les modifications ultérieures du code cassent la vérification (`verified-stale`), exigeant un nouveau passage humain.
 
-Le mode Blocs d'Asedit fournit un bouton « Marquer vérifié » en un clic pour cela.
+Le mode Blocs d'Viz fournit un bouton « Marquer vérifié » en un clic pour cela.
 
 ## Refus : fichiers sans bloc de documentation
 
@@ -91,7 +91,7 @@ Deux outils valident la même convention :
 - `tools/asdoc-check.py` — CLI Python ; récursif sur un répertoire. Lance-le avec `--write` pour rafraîchir les hashes.
 - `tools/asdoc-check-cli.allspeak` — tourne sous le runtime Python AllSpeak, exerçant la même logique depuis AllSpeak lui-même.
 
-Le mode Blocs d'Asedit effectue aussi une validation dans l'éditeur pendant que tu tapes.
+Le mode Blocs d'Viz effectue aussi une validation dans l'éditeur pendant que tu tapes.
 
 ## Relire tout en documentant
 
