@@ -104,10 +104,40 @@ Gli eventi degli elementi si registrano con `su <evento> <elemento> vaisub Handl
 ```as
 su clic Save vaisub HandleSave
 su cambio NameField vaisub NameChanged
-su submit Form vaisub Submit
+su scegli Canvas vaisub Grab
+su sorvola Save vaisub ShowSaveTip
 ```
 
-Il gestore è un thread; il cursore sulla variabile di elemento viene posizionato sull'istanza che ha scatenato l'evento prima che il gestore giri. Vedi [gestori di eventi e indice di array](../idioms/event-handlers-and-array-index.md) per il pattern canonico con array di elementi.
+Il gestore è un thread; il cursore sulla variabile di elemento viene posizionato sull'istanza che ha scatenato l'evento prima che il gestore giri. Un `<elemento>` deve essere un elemento del browser, non una semplice `variabile`. Vedi [gestori di eventi e indice di array](../idioms/event-handlers-and-array-index.md) per il pattern canonico con array di elementi.
+
+### Eventi di puntatore e tattili
+
+| istruzione | scatta quando | cosa legge il gestore |
+|--|--|--|
+| `su scegli <elemento>` | il tasto sinistro è premuto sull'elemento | `il scegli posizione` |
+| `su trascina` | il puntatore si muove mentre un `scegli` è in corso, ovunque sulla pagina | `il trascina posizione` |
+| `su rilascia` | quel tasto viene rilasciato | `il trascina posizione` |
+| `su sorvola <elemento>` | il puntatore si muove *sopra* l'elemento, e una volta ancora quando lo lascia | `il sorvola posizione` |
+| `su rotella <elemento>` | la rotella gira sopra l'elemento | `il rotella quantità`, `il rotella posizione`, `il rotella maiusc`, `il rotella ctrl` |
+| `su clic destro <elemento>` | il tasto destro è premuto sull'elemento | `il scegli posizione` |
+| `su scorri sinistra` / `su scorri destra` | un tocco trascina in quel verso sulla pagina | — il verso è nell'istruzione |
+
+Una posizione è una coppia json, `{"x": …, "y": …}` in pixel client:
+
+```as
+su scegli Canvas vaisub Grab
+
+Grab:
+    metti il scegli posizione in Pos
+    metti proprieta `x` di Pos in StartX
+    ritorna
+```
+
+`il rotella quantità` è un numero con segno — giù e a destra sono positivi — e `il rotella maiusc` e `il rotella ctrl` valgono `1` o `0` invece di vero/falso, così si possono moltiplicare.
+
+**Tre cose da sapere prima di registrarne uno.** `scegli` è solo il tasto sinistro, quindi la pressione che chiede un menu non sposta mai anche una selezione. `trascina` e `rilascia` non nominano alcun elemento, perché un trascinamento che inizia su una cosa continua ovunque vada il puntatore: `scegli` avvia il gesto, e gli altri due sono a livello di documento e girano per ogni programma che ne ha chiesto uno. E `rotella` e `clic destro` prendono la gesta dal browser — lo scorrimento predefinito della rotella viene annullato, così come il menu del browser — così un riquadro può zoomare e una pagina può offrire il proprio menu senza che il browser faccia entrambi.
+
+**`sorvola` arriva alla frequenza del puntatore** — a ogni movimento, non una volta all'arrivo — quindi il suo gestore dovrebbe scrivere attributi invece di ridisegnare la pagina. Lasciare l'elemento lo scatena una volta ancora, con le coordinate in cui il puntatore ha superato il confine, ed è ciò che permette di ritirare un tooltip; un tocco non ha sorvola, quindi non esiste una controparte tattile.
 
 ## Dialoghi nativi del browser
 
