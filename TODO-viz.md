@@ -32,6 +32,7 @@ The detail behind `TODO.md`'s viz row. Everything here is either a **binding dec
 
 Each of these was decided by Graham and is not to be re-opened without him.
 
+- **The page warns; it does not restart the server** (decided 2026-10-12). What the dialog used to do: `confirm("viz has been updated. Restart to apply changes?")`, then `GET /restart`, and the route re-ran the server with `system background` and exited. **The restart worked and left a server the reader could not stop** — a detached process, not in the terminal's foreground group, so the Ctrl+C that follows reaches nothing; that was the third of Graham's three symptoms on 2026-10-12 (the other two were the false nag and a lost HTTP response, both fixed). **Graham's call: take the restart out** — *"given that this is an infrequent operation to perform"* — so the dialog is an `alert` naming the reader's own two steps (stop the server, start it again, reload the page) and `/restart` is gone. The alternative that was on the table is recorded so it is not re-derived: an in-process `exec`-style keyword would have kept the feature *and* the terminal — same pid, still the foreground job, Ctrl+C working — at the cost of one dev-environment keyword in both runtimes, the four packs, a spec note and a check, for something that happens once per deploy per project. Not worth it.
 - **The dev server's page has no check.** On 2026-10-04 the Graph pane came up empty for Graham on a dev server, with a clean console and no effect from resizing: `server.allspeak` filled `lang` and `#editor-home` in the page and **nothing filled `#editor-graph`/`#editor-side`**, so the editor fell through to a cross-origin fetch of a `.allspeak` file, which the browser refuses (the site sends `access-control-allow-origin` for `.js`, `.css` and `.json`, not `.allspeak`) — and the refusal is swallowed by design. Fixed by having the server fetch both modules and write them into those elements (before: 11,580-byte page with no pane; after: 179,056 with both). **What is missing is a check that the page a dev server serves carries the two modules**, since every other symptom of this failure is invisible: `tools/encoding-check.js` is the model — it starts the runtime and inspects what it serves.
 - **One view, and lines from the start.** Every line is a row; at low zoom they are sub-pixel and read as one compressed band per block, with the block label above it.
 - **The bar is not a shape device — it is the heat channel.** The marks are shaded by how busy a line is, and the shape of the flow is a separate channel.
@@ -96,18 +97,6 @@ Each of these was decided by Graham and is not to be re-opened without him.
 ---
 
 ## Open work, in the order it was chosen — [mine, queued]
-
-### The restart, and the server nobody can Ctrl+C — [your call], opened 2026-10-12
-
-**The mechanism works; what it leaves behind is the problem.** `/restart` spawns its successor with `system background` and exits. So after the page's "restart to apply changes?" the reader's terminal is free and a **detached** `allspeak server` is running — not in the terminal's foreground process group, so a Ctrl+C there stops nothing. That is the third of Graham's three symptoms (2026-10-12) and it is the only one left: the nag that reached it and the lost answer are both fixed. Reproduced and measured: the original exits on SIGINT, and the port goes on serving.
-
-**The three shapes, and what each costs.**
-
-1. **Say it.** Keep the restart, and print one line when it happens: the new server is in the background and `pgrep -af "allspeak server"` / `kill <pid>` stops it. One line of AllSpeak, no new vocabulary, and the reader keeps the click-and-reload convenience. The cost is that a dev server you did not start, and cannot Ctrl+C, still exists — explained rather than absent.
-2. **Take the restart out.** The page's dialog becomes an instruction instead of a question — "a newer dev server has been published: stop this server and start it again" — and `/restart` goes. Then the process in the terminal is the only one, Ctrl+C works, and there is nothing detached, ever. The cost is two manual actions (restart, reload) in a moment that is already rare, and the loss of a mechanism Graham built.
-3. **Restart in place.** One process, same pid, same terminal, Ctrl+C working — what `BUILD.md` already says `/restart` does ("re-execs `allspeak server <port>`"). It needs an in-process `exec`-style keyword: a new dev-environment keyword in **both** runtimes, the four packs, a spec note and a check. The most work and the least surprise; the only one that keeps the feature *and* the terminal.
-
-**Nothing here is urgent now**: after fix (1) a checkout — this repository among them — never sees the dialog at all. It appears for a *project* whose running copy is the CLI's cache and whose published script has since changed, which is once per deploy, per project.
 
 ### The welcome — the new user's first screen (new 2026-10-12; *not* shaped, and it is Graham's to shape)
 

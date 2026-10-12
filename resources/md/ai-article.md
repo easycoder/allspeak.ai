@@ -433,7 +433,7 @@ The editor is itself an AllSpeak application, split the way any AllSpeak applica
 
 One language, two runtimes, two processes. The browser half runs on the same JavaScript runtime as the applications this editor is used to write; the server half is an ordinary AllSpeak script using the `server` plugin.
 
-`server.allspeak` exposes the three routes described in the previous section — `/list/<path>`, `/read/<file>`, `/write/<file>` — plus two of its own: `/version`, which reports whether a newer editor has been published, and `/restart`, which re-execs the server process. It also serves static files, and it is short enough to read in one sitting, which matters, because it is the thing holding write permission on your project.
+`server.allspeak` exposes the three routes described in the previous section — `/list/<path>`, `/read/<file>`, `/write/<file>` — plus one of its own: `/version`, which reports whether a newer dev server has been published and whether a restart would change what runs. It also serves static files, and it is short enough to read in one sitting, which matters, because it is the thing holding write permission on your project.
 
 Two properties follow from "the editor is an AllSpeak script".
 
@@ -486,7 +486,7 @@ What lets the editor sit alongside an agent is that it treats the file on disk a
 - **Disk changed, editor dirty** — the editor *does not* clobber the buffer. It reports "External change detected" and leaves the resolution to the human, who can copy out what they need and reload. Silent last-writer-wins would destroy work; the editor declines to guess.
 - **Nothing changed** — nothing happens.
 
-**Itself, at startup.** The editor asks `/version`; if a newer `viz.allspeak` has been published since the copy on disk, it offers to restart, and `/restart` re-execs the server so the next page load fetches the new code. The server makes the same check for its own files when it starts, comparing a `.code-version` stamp against the published one. This is a development tool that is being changed while people are using it, so the update path is part of the tool rather than an instruction in a README.
+**Itself, at startup.** The editor asks `/version`; if a newer dev server has been published since the copy this process is running, it says so and tells you to stop the server and start it again. **It deliberately does not restart anything itself** — a restart from the page runs in the background, which leaves a server your terminal's Ctrl+C cannot reach, so the two steps are yours. A copy a project keeps for itself is never reported, because a restart would re-run it unchanged. The server makes the same check for its own files when it starts, comparing a `.code-version` stamp against the published one. This is a development tool that is being changed while people are using it, so the update path is part of the tool rather than an instruction in a README.
 
 There is one exception. **Blocks mode suspends the inward poll**, because inside Blocks mode the parsed section array is the source of truth and the CodeMirror buffer is being rebuilt from it; a silent reload part-way through would clobber the pane edits. The editor waits until you leave Blocks mode. This is the kind of thing that is invisible until it eats half an hour of somebody's work.
 

@@ -62,7 +62,6 @@
     variable StrUpLevel
     variable StrRoot
     variable StrUpdated
-    variable StrRestart
     ! What the alert panel is asked to say. A variable rather than an argument, because the language has
     ! no parameters: `ShowAlert` reads it and nothing else.
     variable AlertMsg
@@ -216,7 +215,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash eaf2f9ee
+!! @hash 12b1ff2b
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'viz-ui',
@@ -314,8 +313,7 @@ SetStrings:
         put `(cartella vuota)` into StrEmpty
         put `.. (livello superiore)` into StrUpLevel
         put `/ (radice progetto)` into StrRoot
-        put `L'editor è stato aggiornato. Riavviare?` into StrUpdated
-        put `Riavvia il server manualmente.` into StrRestart
+        put `Il visualizzatore è stato aggiornato. Ferma il server nel terminale e riavvialo, poi ricarica questa pagina.` into StrUpdated
         put `vaisub` into StrFlowCall
         put `vai` into StrFlowJump
         put `ritorna` into StrFlowReturn
@@ -335,8 +333,7 @@ SetStrings:
         put `(dossier vide)` into StrEmpty
         put `.. (niveau supérieur)` into StrUpLevel
         put `/ (racine du projet)` into StrRoot
-        put `L'éditeur a été mis à jour. Redémarrer ?` into StrUpdated
-        put `Veuillez redémarrer le serveur manuellement.` into StrRestart
+        put `Le visualiseur a été mis à jour. Arrête le serveur dans le terminal et redémarre-le, puis recharge cette page.` into StrUpdated
         put `vasous` into StrFlowCall
         put `va` into StrFlowJump
         put `retourne` into StrFlowReturn
@@ -356,8 +353,7 @@ SetStrings:
         put `(leerer Ordner)` into StrEmpty
         put `.. (Ebene höher)` into StrUpLevel
         put `/ (Projektstamm)` into StrRoot
-        put `Der Editor wurde aktualisiert. Neu starten?` into StrUpdated
-        put `Bitte den Server manuell neu starten.` into StrRestart
+        put `Der Visualisierer wurde aktualisiert. Beenden Sie den Server im Terminal, starten Sie ihn erneut und laden Sie dann diese Seite neu.` into StrUpdated
         put `gosub` into StrFlowCall
         put `gehe` into StrFlowJump
         put `retourniere` into StrFlowReturn
@@ -377,8 +373,7 @@ SetStrings:
         put `(empty directory)` into StrEmpty
         put `.. (up one level)` into StrUpLevel
         put `/ (project root)` into StrRoot
-        put `viz has been updated. Restart to apply changes?` into StrUpdated
-        put `Please restart the server manually.` into StrRestart
+        put `The visualizer has been updated. Stop the server in your terminal and start it again, then reload this page.` into StrUpdated
         put `gosub` into StrFlowCall
         put `go` into StrFlowJump
         put `return` into StrFlowReturn
@@ -386,37 +381,18 @@ SetStrings:
     set the content of OpenBtn to StrOpen
     set the content of FindBtn to StrFind
     set the content of CloseBtn to StrClose
-!! @hash cad4dc41
+!! @hash 947cd4c0
 !! @verified 3f450398
 !!!
-!! The editor checks on startup and periodically for updates to itself.
-!! (explain)
-!! then 
-!   -- Check for updates --
+!! Tells the reader when the dev server they are running has been superseded.
+!!
+!! The page asks the server's own `/version`, and `updated` means a restart would run a script newer than the one this process is running — the route in `server.allspeak` is where that is decided, and a copy the project keeps itself answers `OK`, because a restart would re-run it unchanged. **Nothing here restarts anything, and that is deliberate** (Graham, 2026-10-12): the dialog used to offer a restart, and the restart ran in the background — leaving a server that a Ctrl+C in the reader's own terminal could not reach, so the reader could not stop what they had started. The advice is now their own two steps in the terminal they are already looking at. `alert` rather than `confirm`, because there is no longer an action for the page to take, and the reader reloads the page themselves once the new server is up.
+!   -- Tell the reader the server is out of date --
     rest get VersionResult from `/version` or go VersionDone
     if VersionResult is `updated`
-    begin
-        if confirm StrUpdated
-        begin
-            rest get VersionResult from `/restart` or begin
-                alert StrRestart
-                go VersionDone
-            end
-            wait 3 seconds
-            location the location
-
-!			 Is this alternative valid?
-!            rest get VersionResult from `/restart`
-!            on failure alert StrRestart
-!           	else
-!            begin
-!            	wait 3 seconds
-!            	location the location
-!            end
-        end
-    end
+        alert StrUpdated
 VersionDone:
-!! @hash 96465c41
+!! @hash b847cbd5
 !! @verified 96465c41
 !!!
 !! Set up click handlers for the various editor functions.

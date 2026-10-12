@@ -23,8 +23,17 @@
 !     GET  /version       →  compares this process's script with the published one;
 !                            returns OK or updated. `updated` means a restart
 !                            would change what runs — a copy the project keeps
-!                            itself is `OK`, because a restart re-runs it as it is
-!     GET  /restart       →  restarts the server process
+!                            itself is `OK`, because a restart re-runs it as it is.
+!                            The page warns the reader rather than restarting
+!                            anything: a restart offered from the page left a
+!                            detached server a Ctrl+C in the reader's terminal
+!                            could not reach (Graham's call, 2026-10-12), so the
+!                            `/restart` route is gone and the advice is the
+!                            reader's own two steps
+!     GET  /restart       →  **removed 2026-10-12.** It re-ran the server in the background and exited,
+!                            which left a server the reader's Ctrl+C could not reach; the page now tells
+!                            the reader to stop this one and start it again, which is two steps in the
+!                            terminal they are already looking at. See `/version` below for the rest.
 !     GET  /<file>        →  serves static files (HTML, JS, CSS, JSON, ECS);
 !                            404 when there is no such file. `viz.html` is
 !                            served from the deploy when the project has none,
@@ -125,31 +134,22 @@
 
         if FullPath is `/version`
         begin
-            ! **Content, not a number.** The editor asks this at startup and offers a restart when the answer
-            ! is `updated`. It used to compare a `code-version` number in the project with the published one,
-            ! which needed that number to be in the project and a hand to bump it. What it compares now is
-            ! the thing actually being asked: is the *published* server script the one this process is
-            ! running? The running copy is a project's own `server.allspeak` when there is one, and the CLI's
-            ! fetched copy otherwise. No number, nothing to remember to bump, and a true answer either way.
+            ! **Content, not a number.** The page asks this at startup and warns the reader when the answer is
+            ! `updated`. It used to compare a `code-version` number in the project with the published one,
+            ! which needed that number to be in the project and a hand to bump it. What it compares now is the
+            ! thing actually being asked: is the *published* server script the one this process is running?
+            ! The running copy is a project's own `server.allspeak` when there is one, and the CLI's fetched
+            ! copy otherwise. No number, nothing to remember to bump, and a true answer either way.
             !
-            ! **`updated` means one thing only: a restart would change what runs.** That is the caller's
-            ! whole question — it is about to offer the reader a restart — so a copy it would be re-run
-            ! unchanged must not be called `updated`. There are two running copies and they differ here: the
-            ! CLI's fetched cache is *replaced* by a restart (the CLI fetches at every start), while a file
-            ! beside the project is the copy its owner asked for and a restart runs it again, byte for byte.
-            ! So the second case answers `local`, which the page ignores, and which is the honest word rather
-            ! than an `OK` that would be a lie. **Measured 2026-10-12, from Graham**: running the server out
-            ! of a checkout — where the local script is *ahead* of the published one — offered him "viz has
-            ! been updated. Restart to apply changes?", and a restart could not have changed anything.
-            ! **`OK` means one thing to the caller: there is nothing to do about this process.** The caller
-            ! is the page, and its question is whether to offer the reader a restart. So a copy a restart
-            ! would re-run *unchanged* must not be called `updated` — there are two running copies and they
-            ! differ here: the CLI's fetched cache is *replaced* by a restart (the CLI fetches at every
+            ! **`OK` means one thing to the caller: there is nothing to do about this process.** The caller is
+            ! the page, and its question is whether to tell the reader the server is out of date. So a copy a
+            ! restart would re-run *unchanged* must not be called `updated`, and the two running copies differ
+            ! exactly there: the CLI's fetched cache is *replaced* by a restart (the CLI fetches at every
             ! start), while a file beside the project is the copy its owner asked for and a restart runs it
-            ! again, byte for byte. Both answer `OK`: the same script is published, or this process is
-            ! running the project's own. **Measured 2026-10-12, from Graham**: running the server out of a
-            ! checkout — where the local script is *ahead* of the published one — offered him "viz has been
-            ! updated. Restart to apply changes?", and a restart could not have changed anything.
+            ! again, byte for byte. Both answer `OK` — the same script is published, or this process is running
+            ! the project's own copy. **Measured 2026-10-12, from Graham**: running the server out of a
+            ! checkout, where the local script is *ahead* of the published one, the page offered him "viz has
+            ! been updated. Restart to apply changes?" and a restart could not have changed anything.
             !
             ! **Two words, and no more, because the caller's vocabulary is a published one.** A third word
             ! would be read by an `allspeak` older than it as "not a dev server" — the probe that opens the
@@ -175,23 +175,6 @@
                 return `OK` to Files
             else
                 return `updated` to Files
-        end
-        else if FullPath is `/restart`
-        begin
-            ! The extension is optional, and a project no longer needs a copy of this script for the
-            ! command below to work — which is what makes this the way to pick up a newly published one.
-            print `Restart requested`
-            system background `sleep 2 && allspeak server ` cat Port
-            return `OK` to Files
-            ! **The answer has to be out before this process goes, and that is what this pause is for.**
-            ! `return … to Files` hands the response to the request thread to write; `exit` below ends the
-            ! process. Without the pause the caller gets a closed connection instead of the answer, and the
-            ! page's `or` clause then reports a failure that did not happen — "Please restart the server
-            ! manually" while the restart was going ahead in the background. Measured 2026-10-12: **seven
-            ! of eight calls lost the reply**, and the eighth arrived with an empty body. A second is
-            ! generous for a write to localhost, and the new server waits two before it binds.
-            wait 1 second
-            exit
         end
         else if FullPath is `/list` or FullPath starts with `/list/`
         begin
