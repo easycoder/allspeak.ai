@@ -52,17 +52,28 @@ def attribute_text(line, at):
 	comment = rest.find('!')
 	return (rest if comment < 0 else rest[:comment]).strip()
 
+def allspeakVersion():
+	"""The version a *user* sees: the installed distribution's, and the source tree only without one.
+
+	`Program.__init__` used to hold this inline and the help text needs the same answer, so it lives
+	here once. BUILD.md's warning is the reason it is the installed number rather than the file's: a
+	source checkout at a newer version still reports what is installed, so a bump only reaches a user
+	through a release.
+	"""
+	try:
+		return version('allspeak-ai')
+	except PackageNotFoundError:
+		from . import __version__ as allspeak_version
+		return allspeak_version
+
+
 class Program:
 
 	def __init__(self, arg, testMode=False, source=None, name=None, recordTo=None):
 		global queue
 		self.testMode = testMode
-		try:
-			allspeak_version = version("allspeak-ai")
-		except PackageNotFoundError:
-			from . import __version__ as allspeak_version
 		if not testMode:
-			print(f'AllSpeak version {allspeak_version}')
+			print(f'AllSpeak version {allspeakVersion()}')
 		if source is not None:
 			# Source with no file behind it. The editor's unsaved buffer is the case that
 			# matters: text should not have to be written to disk to be compiled, looked at or
@@ -1069,6 +1080,108 @@ def showScriptInfo(name):
 			return
 	print(f"No 'info' command found in '{name}'.")
 
+# **The help, and it is the whole of the front door for somebody new.** Graham's wording, 2026-10-12;
+# `allspeak viz` is the line that matters, because the visualiser is where a person starts — it opens the
+# page and, when the page grows one, the welcome that leads to the documentation. Everything else is either
+# a script of their own or the server underneath.
+DEFAULT_PORT = '8080'
+HOME_URL = 'https://allspeak.ai'
+HELP_TEXT = '''AllSpeak is a coding tool designed to work with AI
+Syntax:
+"allspeak viz" opens the visualizer in your browser. New users start here
+"allspeak <script>" runs the named script (the .allspeak extension can be omitted)
+"allspeak server {port}" starts a local development server at the named port (default 8080)
+"allspeak home" opens the home page (https://allspeak.ai) in your browser
+"allspeak <anything else>" displays the version number and this help message'''
+
+
+def printVersionAndHelp():
+	"""The version *and* the help, which is what `allspeak` with nothing useful on the line answers with.
+
+	The version comes first because the last line of the help promises it, and it is the only place a
+	user can find out which `allspeak` they are running.
+	"""
+	print(f'AllSpeak version {allspeakVersion()}')
+	print(HELP_TEXT)
+
+
+def openUrl(url):
+	"""Hand a URL to the desktop. The language's own `browse` does the same thing, one layer up."""
+	import webbrowser
+	print(f'Opening {url}')
+	webbrowser.open(url)
+
+
+def visualizerUrl(port):
+	return f'http://localhost:{port}/viz.html'
+
+
+def scriptExists(name):
+	"""Is this a script this machine can run — a file beside us, or the one script that is published?
+
+	`server.allspeak` is the exception the CLI has always made: a project holds no copy (the CLI fetches
+	the published one), so an absence test alone would send `allspeak server` to the help text. Every
+	other name has to be a file that is really here — which is what makes a typo land on the help rather
+	than on a fetch and then a compile error, and it is the difference between the three clauses above.
+	"""
+	path = resolveScriptPath(name)
+	return os.path.exists(path) or os.path.basename(path) == DEV_SERVER_NAME
+
+
+def devServerAnswer(port, timeout=1.5):
+	"""What a dev server says at its own `/version`, or None when no dev server is there.
+
+	**`/version` is the server's own route, and its whole vocabulary is `OK`, `updated` and `error`**
+	(the last when it cannot reach the published script, which is an ordinary state on a machine that is
+	offline). So anything *else* answering on that port is not ours — and that matters twice: `viz` must
+	not open a page belonging to somebody else's server, and it must not start a second one on a port
+	that is already held. The route is the handshake rather than a new one invented here.
+	"""
+	try:
+		import requests
+		answer = requests.get(f'http://localhost:{port}/version', timeout=timeout)
+	except Exception:
+		return None
+	body = (answer.text or '').strip()
+	return body if body in ('OK', 'updated', 'error') else None
+
+
+def portIsTaken(port, timeout=1.0):
+	"""Is anything at all listening on this port, ours or not."""
+	import socket
+	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+		probe.settimeout(timeout)
+		return probe.connect_ex(('127.0.0.1', int(port))) == 0
+
+
+def runVisualizer(rest):
+	"""`allspeak viz [port]` — open the visualizer, starting the dev server if it is not already up.
+
+	**Two questions are asked before anything is started**, because each has a wrong answer worse than
+	the right one: is a dev server already on this port (open the page, leave the running one alone), and
+	is *something else* on it (say so in a sentence, rather than bind, fail, and print a message about
+	`allspeak server` processes that do not exist).
+
+	The opening is the server's own work — it is told `--viz` and opens the page once its request handler
+	is registered, because a page asked for before that gets a 503. That keeps `browse`, and therefore the
+	behaviour, in the language.
+	"""
+	port = rest[0] if rest and rest[0].isdigit() else DEFAULT_PORT
+	if devServerAnswer(port) is not None:
+		openUrl(visualizerUrl(port))
+		return
+	if portIsTaken(port):
+		print(f'Port {port} is held by something that is not the AllSpeak dev server.')
+		print(f'Use another one — `allspeak viz 8081` — or stop whatever has {port}.')
+		sys.exit(2)
+	Program(f'{DEV_SERVER_NAME} --viz {port}').start()
+
+
+def openHome():
+	"""`allspeak home` — the website, for a reader who is not in a project yet."""
+	openUrl(HOME_URL)
+
+
 # This is the program launcher
 def Main():
 	args = sys.argv[1:]
@@ -1085,16 +1198,37 @@ def Main():
 		if not recordTo:
 			sys.stderr.write('allspeak: --record needs a path: --record=<file.json>\n')
 			sys.exit(2)
-	if len(args) > 0:
-		if args[0] == 'info':
-			if len(args) > 1:
-				showScriptInfo(args[1])
-			else:
-				listScripts()
+	# **The three words, then the script, then the help — and `viz` and `home` are reserved.** They are
+	# the two the help promises, and a promise has to win over a file: `viz.allspeak` is this repository's
+	# own visualiser source, so a bare `viz` that ran whatever file shared the name would start the
+	# visualiser's *engine* instead of its page, and a project with a `home.allspeak` would lose the way to
+	# the website. A script of either name is run with its extension — `allspeak home.allspeak`.
+	#
+	# `server` is deliberately *not* reserved: a project that pins its own `server.allspeak` is asking for
+	# that copy — it is a documented feature, the CLI fetches the published one only when the file is absent
+	# — so `server` resolves through the file test like any other name.
+	#
+	# `info` and `debug <script>` are not in the help and are not gone: they are here for whoever typed them
+	# yesterday.
+	if len(args) == 0:
+		printVersionAndHelp()
+		return
+	first = args[0]
+	if first == 'info':
+		if len(args) > 1:
+			showScriptInfo(args[1])
 		else:
-			Program(' '.join(args), recordTo=recordTo).start()
+			listScripts()
+	elif first == 'viz':
+		runVisualizer(args[1:])
+	elif first == 'home':
+		openHome()
+	elif first == 'debug' and len(args) > 1 and scriptExists(args[1]):
+		Program(' '.join(args), recordTo=recordTo).start()
+	elif scriptExists(first):
+		Program(' '.join(args), recordTo=recordTo).start()
 	else:
-		Program('-v')
+		printVersionAndHelp()
 
 # Run one .allspeak file in test mode and return its exit code. A SystemExit here
 # means the script could not be compiled or run (exit code 2), as distinct

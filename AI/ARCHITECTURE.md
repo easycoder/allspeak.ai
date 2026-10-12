@@ -25,10 +25,10 @@ The JS side is the more complete of the two. Known Python gaps are tracked in `l
 - Markdown conversion is delegated from `Browser.js` to `MarkdownRenderer.js`.
 
 ## Editor
-`edit.html` fetches `viz.json` (Webson layout) and `viz.allspeak` (all behaviour, ~1500 lines of AllSpeak), loads the runtime and plugins, and calls `AllSpeak_Startup()`. The dev server is `server.allspeak`, a Python AllSpeak script exposing `/list`, `/read`, `/write`, `/version`, `/restart`. CodeMirror is reached only through the `codemirror` plugin's vocabulary — see `resources/md/ai-article.md` for the full account.
+`viz.html` fetches `viz.json` (Webson layout) and `viz.allspeak` (all behaviour, ~1500 lines of AllSpeak), loads the runtime and plugins, and calls `AllSpeak_Startup()`. The dev server is `server.allspeak`, a Python AllSpeak script exposing `/list`, `/read`, `/write`, `/version`, `/restart`. CodeMirror is reached only through the `codemirror` plugin's vocabulary — see `resources/md/ai-article.md` for the full account.
 
 ## Known integration sensitivities
 - **"Webson engine is not loaded"** — check the page loads `Webson.js`, and that the render logic and the Webson symbol name agree (`AllSpeak_Webson` vs legacy `Webson`).
-- **A served file is cached** — `edit.html` fetches with a `?v=<timestamp>` stamp. If an edit doesn't appear, check the fetch before the code.
+- **A served file is cached** — `viz.html` fetches with a `?v=<timestamp>` stamp. If an edit doesn't appear, check the fetch before the code.
 - **Domain handlers are tried in order and may fall through** — a handler must not throw or warn on syntax that could legitimately belong to another domain.
 - **Doc blocks are not free of consequence** — they compile to nothing, but they are what the analysers and viz's Blocks mode check. Changing code inside a block without refreshing the hash leaves the file reporting `verify-stale`.

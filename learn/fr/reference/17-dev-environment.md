@@ -15,7 +15,7 @@ Ces commandes existent pour soutenir les scripts de développement (serveurs de 
 Ouvre une URL dans le navigateur par défaut de l'utilisateur via le module `webbrowser` de Python. Indépendant du système d'exploitation — pas de recours au shell `xdg-open` / `open` / `start`, donc le même script fonctionne sous Linux, macOS et Windows sans logique conditionnelle.
 
 ```
-browse `http://localhost:8080/edit.html`
+browse `http://localhost:8080/viz.html`
 ```
 
 L'appel revient immédiatement ; le système d'exploitation remet l'URL au navigateur de manière asynchrone. Il n'y a pas de valeur de retour et aucun moyen de savoir depuis le script si le navigateur s'est réellement ouvert — `browse` est du feu-et-oubli.

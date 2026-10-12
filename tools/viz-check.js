@@ -8,7 +8,7 @@
 // plugins from its own page, so a check that loads *every* plugin in js/plugins verifies a program
 // nobody runs. That is not hypothetical: a version of this check passed while the editor failed to
 // compile with "I don't understand 'svg'", because the page's list had no svg plugin and the check
-// had all of them. Reading the list out of edit.html is what stops the two drifting.
+// had all of them. Reading the list out of viz.html is what stops the two drifting.
 //
 // **A non-zero command count, not just the analyser's clean bill.** `asdoc-check.py` reports doc
 // blocks, not compilability, and a broken editor still analyses clean. Compiling is the check the
@@ -24,10 +24,10 @@ const root = path.resolve(__dirname, `..`);
 const target = process.argv[2] || `viz.allspeak`;
 
 // The truth about what the editor loads: its own page.
-const page = fs.readFileSync(path.join(root, `edit.html`), `utf8`);
+const page = fs.readFileSync(path.join(root, `viz.html`), `utf8`);
 const listed = page.match(/const bundles = \[([\s\S]*?)\]/);
 if (!listed) {
-	process.stderr.write(`viz-check: no 'bundles' list in edit.html — has the page changed shape?\n`);
+	process.stderr.write(`viz-check: no 'bundles' list in viz.html — has the page changed shape?\n`);
 	process.exit(1);
 }
 const bundles = [...listed[1].matchAll(/'([^']+)'/g)].map(m => m[1]);

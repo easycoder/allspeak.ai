@@ -147,7 +147,7 @@ Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour compr
 
 **Important :** Lis `.allspeak-init` dans ce répertoire. Il déclare **la langue du projet**, puis son nom et son type une fois le projet configuré. S'il ne nomme aucun projet, le projet n'a pas encore été configuré — guide l'utilisateur à travers le processus d'initialisation ci-dessous. **Laisse la ligne `lang:` exactement telle quelle** : le serveur de développement la lit pour servir l'éditeur dans la langue de ce projet. La ligne `runtime:` dit pour quel moteur le projet est fait — `js` pour un projet de navigateur, `py` pour un projet qui tourne depuis le terminal ou comme application de bureau — et le serveur la transmet à l'éditeur.
 
-**Aucun outil n'est présent dans ce répertoire, et c'est délibéré.** Il n'y a pas de `server.allspeak` (la commande `allspeak server` récupère le fichier courant), pas de `edit.html` (le serveur sert la page déployée et lui donne la langue de ce projet), aucun fichier d'éditeur (la page les apporte) et aucun outil de vérification. Un projet contient son propre code, `AGENTS.md`, `CLAUDE.md` et `.allspeak-init` — rien d'autre. Ainsi, tout ce qu'un projet exécute est la version *courante* plutôt qu'une copie de quelque chose qui a bougé depuis, et un agent ne doit ni chercher ces fichiers localement ni les ajouter.
+**Aucun outil n'est présent dans ce répertoire, et c'est délibéré.** Il n'y a pas de `server.allspeak` (les commandes `allspeak viz` et `allspeak server` récupèrent le fichier courant), pas de `viz.html` (le serveur sert la page déployée et lui donne la langue de ce projet), aucun fichier du visualiseur (la page les apporte) et aucun outil de vérification. Un projet contient son propre code, `AGENTS.md`, `CLAUDE.md` et `.allspeak-init` — rien d'autre. Ainsi, tout ce qu'un projet exécute est la version *courante* plutôt qu'une copie de quelque chose qui a bougé depuis, et un agent ne doit ni chercher ces fichiers localement ni les ajouter.
 
 ### Processus d'initialisation
 
@@ -167,19 +167,19 @@ Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour compr
 
 6. **Dis à l'utilisateur que les fichiers du projet sont prêts et où les voir.**
 
-   Le serveur AllSpeak tourne déjà — l'utilisateur l'a démarré avec `allspeak server` avant de te lancer. N'essaie **pas** de démarrer ou redémarrer le serveur toi-même. Il sert déjà les fichiers dans un autre terminal. Il n'y a délibérément pas de `server.allspeak` dans ce répertoire : la commande `allspeak` récupère le fichier courant.
+   Le serveur AllSpeak tourne déjà — l'utilisateur l'a démarré avec `allspeak viz`, ce qui a aussi ouvert le visualiseur dans son navigateur. N'essaie **pas** de démarrer ou redémarrer le serveur toi-même. Il sert déjà les fichiers dans un autre terminal. Il n'y a délibérément pas de `server.allspeak` dans ce répertoire : la commande `allspeak` récupère le fichier courant.
 
-   S'il ne tourne *pas* et que `allspeak server` se plaint qu'il manque `server.allspeak`, la commande `allspeak` est antérieure à ce projet : `pip install -U allspeak-ai`, puis démarre-le à nouveau.
+   S'il ne tourne *pas*, l'utilisateur le démarre avec `allspeak viz` (le visualiseur) ou `allspeak server` (le serveur seul, qui n'ouvre rien). Si l'un ou l'autre se plaint qu'il manque `server.allspeak`, la commande `allspeak` est antérieure à ce projet : `pip install -U allspeak-ai`, puis démarre-le à nouveau.
 
    Après avoir créé les fichiers du projet, dis à l'utilisateur :
 
    > Vos fichiers projet sont prêts. Ouvrez-les dans votre navigateur :
-   > - http://localhost:8080/edit.html — l'éditeur
+   > - http://localhost:8080/viz.html — le visualiseur
    > - http://localhost:8080/<projet>.html — votre page projet
 
    Remplace `<projet>` par le nom réel du projet.
 
-   - **CLI** : Dis à l'utilisateur d'exécuter son script avec `allspeak <projet>` (l'extension `.allspeak` est facultative). Il peut aussi ouvrir http://localhost:8080/edit.html pour utiliser l'éditeur dans le navigateur s'il préfère.
+   - **CLI** : Dis à l'utilisateur d'exécuter son script avec `allspeak <projet>` (l'extension `.allspeak` est facultative). Il peut aussi ouvrir http://localhost:8080/viz.html pour utiliser le visualiseur dans le navigateur s'il préfère.
 
 7. **Explique à l'utilisateur comment les fichiers fonctionnent ensemble.** Pour les projets GUI, explique :
 
@@ -190,7 +190,7 @@ Ce répertoire contient `AGENTS.md` — ce fichier. Lis-le maintenant pour compr
 
    Pour les projets CLI, explique que le fichier `.allspeak` est un script autonome exécuté depuis le terminal, et décris ce que fait chaque ligne.
 
-8. **À propos de l'éditeur.** L'éditeur dans le navigateur (`edit.html`) offre une édition avec coloration syntaxique pour les fichiers `.allspeak`, `.json`, `.html` et autres. L'utilisateur devrait déjà l'avoir ouvert à http://localhost:8080/edit.html depuis l'étape précédente. Pour les projets CLI, il peut aussi l'ouvrir là — aucune commande de démarrage séparée n'est nécessaire puisque le serveur tourne déjà.
+8. **À propos du visualiseur.** Le visualiseur dans le navigateur (`viz.html`) offre une édition avec coloration syntaxique pour les fichiers `.allspeak`, `.json`, `.html` et autres. L'utilisateur devrait déjà l'avoir ouvert à http://localhost:8080/viz.html depuis l'étape précédente. Pour les projets CLI, il peut aussi l'ouvrir là — aucune commande de démarrage séparée n'est nécessaire puisque le serveur tourne déjà.
 
 9. **Demande ce qu'il veut construire.** À partir de là, réponds simplement à ce que l'utilisateur veut.
 

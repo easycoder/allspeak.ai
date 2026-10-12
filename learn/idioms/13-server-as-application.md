@@ -2,33 +2,39 @@
 
 ## Problem
 
-A typical AllSpeak GUI project produces two artifacts that the user interacts with: a browser-based editor (`edit.html`) and one or more project pages (`<project>.html`). Treated as separate artifacts, the user has to start a dev server in one terminal, open the editor URL in one tab, open the project URL in another tab, and remember the port. That's four steps and three pieces of mental state for what is conceptually one running thing.
+A typical AllSpeak GUI project produces two artefacts the user interacts with: the **visualizer** (`viz.html`) and one or more project pages (`<project>.html`). Treated as separate things, getting to them means starting a dev server in one terminal, opening one URL in one tab and another in a second tab, and remembering the port — four steps and three pieces of mental state for what is conceptually one running thing.
 
-The simpler frame: **the server is the application, and the browser tabs are its UI.** The user runs one command; the tabs open themselves; closing the server closes the app.
+The simpler frame: **the server is the application, and the browser is its UI.**
 
 ## The pattern
 
-`server.allspeak` accepts a `-t` / `--tabs` flag whose value is a comma-separated list of page names (without `.html`):
+**One command for a person; `server` for a session with several tabs.** `allspeak viz` is the front door:
 
 ```
-allspeak server -t edit,<project>
-allspeak server --tabs edit,<project> 8080
+allspeak viz
+allspeak viz 9000
 ```
 
-For each name, the server builds `http://localhost:<port>/<name>.html` and opens it in the user's default browser using [`browse`](../reference/17-dev-environment.md#browse). Port defaults to 8080 and may appear before or after the flag.
+It asks the server's own `/version` route whether a dev server is already on that port. If one is, it opens the visualizer and leaves the running one alone; if nothing is there, it starts the server in this terminal and opens the visualizer once its request handler is registered. The port defaults to 8080.
 
-The launcher convention in the starter packs is to run this command in the background as soon as the GUI outline files exist, so the user sees one app come to life rather than three separate steps.
+`allspeak server {port}` is the same server with nothing opened, which is what you want when you mean to open several pages yourself:
 
-## Anatomy of a launcher script
+```
+allspeak server
+```
 
-A launcher that uses this pattern has four ordered phases:
+A project's own page is then a URL — `http://localhost:<port>/<project>.html` — and in the visualizer it is the **Launch** button, which opens the page a script names with `@app` and, for a GUI project, records the run.
 
-1. **Parse the CLI arguments.** Loop over `argc` / `arg N`, recognise the flag, treat anything else as the port.
+## Writing your own launcher
+
+If a project wants a launcher of its own rather than the CLI's word, the shape is four ordered phases:
+
+1. **Parse the CLI arguments.** Loop over `argc` / `arg N`, take the port, and note the pages you mean to open.
 2. **Start the server.** `start MyServer on port Port` accepts the port but does not yet have a handler.
 3. **Register the request handler.** `on MyServer request begin … end` sets the handler PC and jumps past the body.
-4. **Open the tabs.** Split the comma-separated list, build each URL, call `browse` on it.
+4. **Open the pages.** Build each URL and call `browse` on it.
 
-The ordering is load-bearing: phases 3 and 4 must be in that order. If `browse` runs before the handler block, the freshly-opened tabs race the server and hit a 503 "Server handler not ready" before the handler is installed. The fix is to put the tab-opening loop at the *end* of the script, after the `on … request begin … end` block.
+The ordering is load-bearing: phases 3 and 4 must be in that order. If `browse` runs before the handler block, the freshly-opened pages race the server and hit a 503 "Server handler not ready" before the handler is installed. The fix is to put the opening loop at the *end* of the script, after the `on … request begin … end` block.
 
 ```
     start Files on port Port
@@ -39,37 +45,37 @@ The ordering is load-bearing: phases 3 and 4 must be in that order. If `browse` 
     end
 
     ! After the handler is registered — never before.
-    if TabList is not empty
+    if PageList is not empty
     begin
-        split TabList on `,`
-        put 0 into TabIndex
-        while TabIndex is less than the elements of TabList
+        split PageList on `,`
+        put 0 into PageIndex
+        while PageIndex is less than the elements of PageList
         begin
-            index TabList to TabIndex
-            put TabList into TabName
-            if TabName is not empty
+            index PageList to PageIndex
+            put PageList into PageName
+            if PageName is not empty
             begin
-                put `http://localhost:` cat Port cat `/` cat TabName cat `.html` into TabUrl
-                browse TabUrl
+                put `http://localhost:` cat Port cat `/` cat PageName cat `.html` into PageUrl
+                browse PageUrl
             end
-            increment TabIndex
+            increment PageIndex
         end
     end
 ```
 
-The full reference implementation is `server.allspeak` in the starter packs.
+The reference implementation is `server.allspeak`, which does exactly this for the visualizer when the CLI hands it `--viz`.
 
-## When to use this pattern
+## When the pattern earns its place
 
-- **GUI projects** where the user needs both the editor and a project page open. The default in the starter packs' `CLAUDE.md` is to launch with `-t edit,<project>`.
-- **CLI projects** where the user might also want the editor for browser-side editing. Launch with `-t edit` alone — the server still serves the project files, but no project page tab is opened by default.
-- **Multi-page apps** where two or three pages are always opened together. List them all in the flag.
+- **GUI projects**, where the user needs the visualizer and a project page — one command, and the page is a URL or the Launch button away.
+- **CLI projects** where the user might also want the visualizer for browser-side editing. `allspeak viz` alone is enough; the server still serves the project files.
+- **Multi-page apps**, where a launcher of your own opens two or three pages together.
 
-## When *not* to use this pattern
+## When it does not
 
-- **For a deployed app.** Production users won't be running `server.allspeak`. This pattern is for the development workflow only.
-- **When the script doesn't run a server.** `browse` works on its own, but the server-as-app framing only makes sense when there are pages to serve.
-- **For ad-hoc one-off launches.** Just type the URL into the browser. The pattern earns its complexity when the launch is repeated.
+- **For a deployed app.** Production users won't be running `server.allspeak`. This is for the development workflow only.
+- **When the script runs no server.** `browse` works on its own, but the framing needs pages to serve.
+- **For an ad-hoc launch.** Just type the URL into the browser. The pattern earns its complexity when the launch is repeated.
 
 ## Mental model for AI agents
 
@@ -77,7 +83,7 @@ When an AI is asked to create a GUI project with the starter pack, the expected 
 
 1. Generate `<project>.html`, `<project>-main.allspeak`, `<project>.json`.
 2. Run `python3 asdoc-check.py --write` on any new `.allspeak` files.
-3. **Immediately** run `allspeak server -t edit,<project>` in the background.
-4. Tell the user that the app has started and two tabs should have opened.
+3. **Do not start the server yourself.** The user started it with `allspeak viz` before launching you and the visualizer is already open.
+4. Tell the user their project page is at `http://localhost:8080/<project>.html`, beside the visualizer.
 
 The user should feel that "the app started" — not that they have to assemble three pieces of infrastructure to see what was just built.

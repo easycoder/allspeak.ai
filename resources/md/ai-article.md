@@ -323,13 +323,15 @@ The screenshot above shows a script open in the editor — note the syntax highl
 
 ### Setup
 
-The editor files (`edit.html` and `server.allspeak`) are included in the [starter pack](https://allspeak.ai/code.zip). Unzip into your project root. The editor script and UI definition are fetched automatically from GitHub when you open the page.
+AllSpeak installs as a Python package (`pip install -U allspeak-ai`), and a project starts from a [starter pack](https://allspeak.ai/allspeak-en.zip). **A pack is three files and no tooling** — the agent's instructions, a pointer at them, and `.allspeak-init`, which declares the language the project speaks. The visualizer, its two modules and the dev server are all fetched when they are needed, so a project holds no copy that can go stale.
 
-### Start the server
+### Start the visualizer
 
 ```bash
-allspeak server.allspeak 8080
+allspeak viz
 ```
+
+On a port where a dev server is already running this opens the page and leaves the running server alone.
 
 You should see:
 
@@ -339,12 +341,12 @@ Serving files from /your/project/directory
 Press Ctrl+C to stop
 ```
 
-### Open the editor
+### Open the visualizer
 
 Navigate to:
 
 ```
-http://localhost:8080/edit.html
+http://localhost:8080/viz.html
 ```
 
 Click **Open** to browse your project files and directories. Navigate into subdirectories, open files for editing. Changes are auto-saved every half second.
@@ -424,7 +426,7 @@ The editor is itself an AllSpeak application, split the way any AllSpeak applica
 
 | Piece | Runtime | Role |
 |---|---|---|
-| `edit.html` | — | About fifty lines of bootstrap: fetch the UI and the script as text, load the runtime and plugins, call `AllSpeak_Startup()` |
+| `viz.html` | — | About fifty lines of bootstrap: fetch the UI and the script as text, load the runtime and plugins, call `AllSpeak_Startup()` |
 | `viz.json` | — | The Webson layout — the fixed shape of the page |
 | `viz.allspeak` | JS, in the browser | ~1500 lines: the editor's entire behaviour |
 | `server.allspeak` | Python, on your machine | ~200 lines: serves the project files and the editor |
@@ -437,7 +439,7 @@ Two properties follow from "the editor is an AllSpeak script".
 
 **The editor is its own worked example.** `viz.allspeak` is written under the documentation convention from end to end — 22 doc blocks across 1500 lines — and it is reviewed in the Blocks mode it implements, which also makes it the largest script in the project that follows the convention. If you want to show an agent what the convention looks like at scale, that file is the reference. (`server.allspeak`, by contrast, has no doc blocks at all: the convention is adopted file by file, and that file hasn't been.)
 
-**There is no build step.** `edit.html` fetches `viz.json` and `viz.allspeak` as text, hands the markup to the Webson renderer and the script to the runtime, and that is the whole apparatus. Compilation takes tens of milliseconds in the browser. Changing the editor is editing a text file and reloading the page — and, as described below, the editor will even pick up its own updates without you doing that.
+**There is no build step.** `viz.html` fetches `viz.json` and `viz.allspeak` as text, hands the markup to the Webson renderer and the script to the runtime, and that is the whole apparatus. Compilation takes tens of milliseconds in the browser. Changing the editor is editing a text file and reloading the page — and, as described below, the editor will even pick up its own updates without you doing that.
 
 ### CodeMirror does the text, AllSpeak does the behaviour
 
@@ -492,7 +494,7 @@ There is one exception. **Blocks mode suspends the inward poll**, because inside
 
 That is two different questions with two different answers.
 
-**Other human languages: yes, already.** The editor's own interface is localised into English, Italian, French and German. `edit.html` carries a hidden `<div id="editor-lang">en</div>`; the script reads it and selects a string table for the Open / Find / Close / Saved / error messages. The per-language starter packs ship the div pre-set. The file browser also lists ordinary project files — `.allspeak`, `.md`, `.txt`, `.json`, `.html`, `.css`, `.js`, `.py` — not just scripts.
+**Other human languages: yes, already.** The editor's own interface is localised into English, Italian, French and German. `viz.html` carries a hidden `<div id="editor-lang">en</div>`; the script reads it and selects a string table for the Open / Find / Close / Saved / error messages. The per-language starter packs ship the div pre-set. The file browser also lists ordinary project files — `.allspeak`, `.md`, `.txt`, `.json`, `.html`, `.css`, `.js`, `.py` — not just scripts.
 
 **Other programming languages: partly.** Flat mode will open any text file and give it the CodeMirror treatment: colouring by shape, find, tabs, auto-save. That is a perfectly usable small text editor, and with a mode profile loaded it would colour another language properly.
 

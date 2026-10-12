@@ -15,7 +15,7 @@ These commands exist to support dev-time scripts (development servers, launchers
 Opens a URL in the user's default browser via Python's `webbrowser` module. OS-independent — no shell-out to `xdg-open` / `open` / `start`, so the same script works on Linux, macOS, and Windows without conditional logic.
 
 ```
-browse `http://localhost:8080/edit.html`
+browse `http://localhost:8080/viz.html`
 ```
 
 The call returns immediately; the OS hands the URL to the browser asynchronously. There is no return value and no way to know from the script whether the browser actually opened — `browse` is fire-and-forget.

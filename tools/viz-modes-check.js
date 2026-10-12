@@ -256,10 +256,10 @@ global.fetch = (url, opts) => {
 // ---- the runtime and the page's plugins ------------------------------------------------------
 // The list comes from the editor's own page, not from a list here: a check that loads every plugin
 // verifies a program nobody runs. That mistake has been made once already, in viz-check.js.
-const page = fs.readFileSync(path.join(root, `edit.html`), `utf8`);
+const page = fs.readFileSync(path.join(root, `viz.html`), `utf8`);
 const listed = page.match(/const bundles = \[([\s\S]*?)\]/);
 if (!listed) {
-	process.stderr.write(`viz-modes-check: no 'bundles' list in edit.html — has the page changed shape?\n`);
+	process.stderr.write(`viz-modes-check: no 'bundles' list in viz.html — has the page changed shape?\n`);
 	process.exit(1);
 }
 const plugins = [...listed[1].matchAll(/'([^']+)'/g)].map(m => m[1])

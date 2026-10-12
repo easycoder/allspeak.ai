@@ -15,7 +15,7 @@ Questi comandi esistono per supportare gli script di sviluppo (server di svilupp
 Apre un URL nel browser predefinito dell'utente tramite il modulo `webbrowser` di Python. Indipendente dal sistema operativo: nessun richiamo a shell tipo `xdg-open` / `open` / `start`, quindi lo stesso script funziona su Linux, macOS e Windows senza logica condizionale.
 
 ```
-browse `http://localhost:8080/edit.html`
+browse `http://localhost:8080/viz.html`
 ```
 
 La chiamata ritorna subito; il sistema operativo passa l'URL al browser in modo asincrono. Non c'è valore di ritorno né modo di sapere dallo script se il browser si è davvero aperto: `browse` è fuoco-e-dimentica.

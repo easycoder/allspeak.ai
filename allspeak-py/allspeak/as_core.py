@@ -53,7 +53,7 @@ class Core(Handler):
     # it is told (RFC 2616) to assume ISO-8859-1. A UTF-8 page therefore arrives mangled: every em dash
     # and every accented letter doubles (`—` became `â€"`), because the bytes were reinterpreted as
     # latin-1 and then written back out as UTF-8. Measured 2026-10-04 on
-    # https://allspeak.ai/code/edit.html, which serves `content-type: text/html` with no charset: requests
+    # https://allspeak.ai/code/viz.html, which serves `content-type: text/html` with no charset: requests
     # reported `.encoding == 'ISO-8859-1'` and `.apparent_encoding == 'utf-8'`. For a project whose whole
     # point is French, Italian and German, that is every accent.
     #

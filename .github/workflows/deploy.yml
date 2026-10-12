@@ -24,7 +24,9 @@ jobs:
       - name: Prepare deploy/ directory
         run: |
           # build-allspeak already writes directly to deploy/dist/
-          cp server.allspeak edit.html deploy/code/
+          cp server.allspeak viz.html deploy/code/
+          # The page's old name, served beside the new one for a window — see ./deploy-allspeak.
+          cp viz.html deploy/code/edit.html
           # The tools an agent uses are published, not shipped in a pack: a project fetches the one it
           # needs from https://allspeak.ai/code/tools/. Kept in step with ./deploy-allspeak.
           cp viz.allspeak viz-graph.allspeak viz-side.allspeak viz.json deploy/dist/

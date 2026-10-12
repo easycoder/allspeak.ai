@@ -45,7 +45,7 @@ Translators adapted some English-specific asides thoughtfully (step4's "works li
 
 *Noticed 2026-04-24 while producing the FR and DE starter zips.*
 
-The per-language starter zips (`deploy/allspeak-{en,it,fr,de}.zip`) bundle seven files: `AGENTS.md`, `CLAUDE.md`, `server.allspeak`, `edit.html`, `viz.json`, `viz.allspeak`, `asdoc-check.py`. Of these, only `AGENTS.md`, `CLAUDE.md` and `edit.html` are per-language. The three shared files are English across every pack, including Italian:
+The per-language starter zips (`deploy/allspeak-{en,it,fr,de}.zip`) bundle seven files: `AGENTS.md`, `CLAUDE.md`, `server.allspeak`, `viz.html`, `viz.json`, `viz.allspeak`, `asdoc-check.py`. Of these, only `AGENTS.md`, `CLAUDE.md` and `viz.html` are per-language. The three shared files are English across every pack, including Italian:
 
 - `code/server.allspeak` — the dev-server program. User-visible strings include startup prints (`AllSpeak dev server running on port …`, `Serving files from …`, `Press Ctrl+C to stop`) and error messages (`Warning: could not check for updates`, `Updating from version … to …`, `Update complete`, `Restart requested`, `Forbidden`, `Not found`). All hardcoded English.
 - `viz.allspeak` — the browser editor script. Builds UI strings for the editor (labels, prompts, error messages) — all hardcoded English.

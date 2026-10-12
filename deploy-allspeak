@@ -53,7 +53,11 @@ echo "==> 3/6 prepare deploy/code/ and deploy/dist/"
 # `server.allspeak` (the CLI keeps one at `~/.cache/allspeak/`, and runs it when a fetch fails) asks for
 # `asedit-graph.allspeak` and `asedit-side.allspeak` by name. Serving both is what keeps a project that did not
 # change working; drop the four `asedit.*` copies once no page and no cached server asks for them.
-cp server.allspeak edit.html deploy/code/
+cp server.allspeak viz.html deploy/code/
+# **The page's own old name, and the same reason.** It was `edit.html` until 2026-10-12, so a bookmark, a
+# pack built earlier, or an agent following one still asks for it — and the server answers it with this page
+# under either name. One `cp`, and it goes when the bookmarks have.
+cp viz.html deploy/code/edit.html
 cp viz.allspeak viz-graph.allspeak viz-side.allspeak viz.json deploy/dist/
 cp viz.allspeak deploy/dist/asedit.allspeak
 cp viz-graph.allspeak deploy/dist/asedit-graph.allspeak

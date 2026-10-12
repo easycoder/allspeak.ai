@@ -24,7 +24,7 @@ Open a page on a local dev server:
 
 ```
 variable Url
-put `http://localhost:` cat Port cat `/edit.html` into Url
+put `http://localhost:` cat Port cat `/viz.html` into Url
 browse Url
 ```
 

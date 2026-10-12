@@ -7,7 +7,7 @@
 # stale — a copy of the tooling in a project is what cost two evenings and a broken page on 2026-10-04:
 #
 #   * `server.allspeak` — fetched by the CLI, which runs the published one when the directory has none
-#   * `edit.html` — served by that server, which fills in the language from `.allspeak-init`
+#   * `viz.html` — served by that server, which fills in the language from `.allspeak-init`
 #   * `viz.allspeak`, `viz-graph.allspeak`, `viz-side.allspeak`, `viz.json` — in the page's
 #     payload (`dist/viz.js`, written by ./build-allspeak)
 #   * `asdoc-check.py`, `plotview-check.js`, `viz-align-measure.py`, `guard-check.js`, `capture-check.js`,
