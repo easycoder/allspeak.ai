@@ -3699,7 +3699,22 @@ VizRowAt:
     ! anywhere outside the pane. A pointer over none of them leaves the *last* line reported standing: that
     ! is what lets a reader move the pointer off the picture, onto the sidebar or the bars, and still read
     ! the block it filled. `VizRowTell` is where that is decided.
+    !
+    ! **And "the script" means the plot in *both* directions, which is what the first version of this got
+    ! wrong.** Only `y` was tested, so any `x` in the plot's band of heights named a line: the left margin,
+    ! the right margin and the vertical scrollbar strip beside it, and a pointer past the canvas altogether.
+    ! **Measured in chromium against the dev server, 2026-10-12** — the panel changed from block 1 to block 2
+    ! as the pointer's `y` moved over the scrollbar strip (x = 98.5% of the pane) and over the left margin
+    ! (x = 0.5%) alike. It mattered most on the way out: **a pointer leaving the picture for the sidebar
+    ! carries the coordinates of where it went, so a departure through the right edge re-named a line and the
+    ! panel jumped** — the one thing the menu's `Freeze` had been covering for. Found by the browser rig the
+    ! menu work built (`various/menu-measure.js`) and fixed by Graham's call on 2026-10-13, in the stated
+    ! shape: the `y` test's own pair, applied to `x`.
     put 0 into VizRowLine
+    if VizPtrX is less than VizMargin return
+    put VizPlotW into VizRowTmp
+    add VizMargin to VizRowTmp
+    if VizPtrX is not less than VizRowTmp return
     if VizPtrY is less than VizMargin return
     put VizPlotH into VizRowTmp
     add VizMargin to VizRowTmp
@@ -3739,7 +3754,7 @@ VizRowTell:
     set property `line` of VizRowMsg to VizRowLine
     send VizRowMsg to parent
     return
-!! @hash f74b0721
+!! @hash 0f2008b9
 !! @verified f74b0721
 !!!
 !! Holding the picture still while the pointer goes to the sidebar, and letting go on the way back.
