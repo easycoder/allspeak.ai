@@ -2365,6 +2365,42 @@ if (!tipWindow || !tipOutside || !tipReset || !tipAway) {
 		console.log(picture(taken[offPhase][1]) === picture(beforeHover)
 			? `  OK: and hovering the rows drew nothing either — the picture is still the one the load drew`
 			: `  FAIL: hovering a row changed the picture`);
+
+		// **And the pointer has to be over the plot in *both* directions, which is what the first version of
+		// `VizRowAt` got wrong.** It tested only `y`, so any `x` in the plot's band of heights named a line —
+		// the left margin, the right margin and the scrollbar strip beside it, and a pointer past the canvas
+		// altogether. **It mattered most on the way out**: a pointer leaving the picture for the sidebar
+		// arrives carrying where it went, so a departure through the right edge re-named a line and the panel
+		// jumped — the jump the menu's `Freeze` had been covering for. Measured in a browser on 2026-10-12,
+		// fixed 2026-10-13. Each `x` below is asked with the **same `y`** as the row hover above, so the only
+		// thing that differs is the axis under test.
+		setViewVar(`VizTickValue`, aimed);
+		entry(`VizPlaceY`);
+		const rowY = Number(readViewVar(`VizTickPos`));
+		const margin = Number(viewVar(`VizMargin`));
+		const plotW = Number(viewVar(`VizPlotW`));
+		const outsideX = [
+			[`the left margin`, margin - 10],
+			[`the right margin`, margin + plotW + 10],
+			[`past the canvas altogether`, margin + plotW + 200],
+		];
+		const answered = [];
+		for (const [what, x] of outsideX) {
+			hoverAt(x, rowY);
+			// Two halves: the pointer is over no row *and* nothing was reported — `VizRowSent` is the memo
+			// the reader's panel follows, so a line named here would move it.
+			if (Number(viewVar(`VizRowLine`)) !== 0 || Number(viewVar(`VizRowSent`)) !== aimed) answered.push(what);
+		}
+		hoverAt(margin + Math.floor(plotW / 2), rowY);
+		const insideStillNames = Number(viewVar(`VizRowLine`)) === aimed;
+		console.log(answered.length === 0 && insideStillNames
+			? `  OK: a pointer over ${outsideX.map(([w]) => w).join(`, `)} names no line, while the same y `
+				+ `inside the plot still names line ${aimed} — the script is the plot both ways`
+			: answered.length > 0
+				? `  FAIL: the row trigger answered outside the plot (${JSON.stringify(answered)}), so a pointer `
+					+ `in the margin or on the way to the sidebar re-names a line`
+				: `  FAIL: and inside the plot the same y named ${viewVar(`VizRowLine`)} where line ${aimed} `
+					+ `belongs, so the x test has thrown the script away with the margin`);
 	}
 }
 
