@@ -71,6 +71,16 @@
 !! **An AllSpeak element is a declared symbol, so a tab is a symbol rather than something grown at run time** — the same constraint the drawing's marks live under. The pool is `SideTab`, sized here to the number of tabs and created one element at a time at its own index, which is the shape Blocks mode's table of contents already uses; **so a tab is a name in `SideTabName`, a branch in `SideRender`, and whatever that branch shows** — the next one after the code tab was those three things and nothing else, which is the shape to keep.
 !!
 !! The strip is built before the body so that it sits above it, and the three body elements are created once and emptied rather than replaced: a panel that rebuilt its own children on every click would flicker, and a hidden panel that keeps them is the cheaper thing to show again.
+!!
+!! Appendix
+!!
+!! §1 **The body holds no padding of its own, because the two text components carry their own margins.** That is Graham's arrangement and it is the better one: the synopsis and the body are two things a reader reads in two different ways, and giving each its own inset is what keeps them from being pinned to the panel's edges at one width and lost in it at another. A single padding on the body would look identical today and would have to be unpicked the moment one of them wanted a wider gutter than the other.
+!!
+!! §2 **The prose is the same reading as Blocks gives it** — Georgia on the pane's own paper — because a doc block a reader has met in Blocks should not meet them differently here. The colour is set rather than inherited: the panel is light now, but a component that relied on that would break the day the panel's colour changed, and light-grey-on-light is the failure nobody notices until it ships.
+!!
+!! §3 `pre-wrap` rather than running the text together, because the doc-block convention writes one paragraph to a line and those lines are the paragraphs: re-flowing them here would throw the shape away, which is the one thing the convention is for.
+!!
+!! §4 **The status bar, along the foot of the panel.** It is the one place a reader can be told something about the *mark* rather than about the block the mark's line belongs to — and along a single row of dots the block is the same for every one of them, so the block is exactly what cannot tell them apart. Created after the body so it sits below it, and given a top border rather than a second background: the panel is one surface, and a reader should see the bar as the panel's own foot, not as a third thing wedged into it.
 SideBuild:
     if SideBuilt is 1 return
     put 1 into SideBuilt
@@ -78,26 +88,12 @@ SideBuild:
     create SideTabs in SideHost
     set the style of SideTabs to `display:flex;gap:2px;padding:4px 8px 0 8px;border-bottom:1px solid #ddd;flex-shrink:0`
 
-    ! **The body holds no padding of its own, because the two text components carry their own margins.**
-    ! That is Graham's arrangement and it is the better one: the synopsis and the body are two things a
-    ! reader reads in two different ways, and giving each its own inset is what keeps them from being
-    ! pinned to the panel's edges at one width and lost in it at another. A single padding on the body
-    ! would look identical today and would have to be unpicked the moment one of them wanted a wider
-    ! gutter than the other.
-    create SideBody in SideHost
+    create SideBody in SideHost ! §1
     set the style of SideBody to `flex:1;overflow-y:auto;box-sizing:border-box`
     create SideHead in SideBody
     set the style of SideHead to `display:block;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#8a8a80;margin:14px 16px 6px 16px`
     create SideProse in SideBody
-    ! **The prose is the same reading as Blocks gives it** — Georgia on the pane's own paper — because a
-    ! doc block a reader has met in Blocks should not meet them differently here. The colour is set rather
-    ! than inherited: the panel is light now, but a component that relied on that would break the day the
-    ! panel's colour changed, and light-grey-on-light is the failure nobody notices until it ships.
-    !
-    ! `pre-wrap` rather than running the text together, because the doc-block convention writes one
-    ! paragraph to a line and those lines are the paragraphs: re-flowing them here would throw the shape
-    ! away, which is the one thing the convention is for.
-    set the style of SideProse to `font-family:Georgia,serif;font-size:14px;line-height:1.5;white-space:pre-wrap;color:#222;margin:0 16px 16px 16px`
+    set the style of SideProse to `font-family:Georgia,serif;font-size:14px;line-height:1.5;white-space:pre-wrap;color:#222;margin:0 16px 16px 16px` ! §2–§3
     ! **The code is shown in the script's own shape, which is why it is `pre` and not `pre-wrap`.** A
     ! wrapped line of code reads as two statements, and a reader comparing this panel with the picture is
     ! comparing line for line. The horizontal overflow scrolls rather than wraps for the same reason, and
@@ -107,13 +103,7 @@ SideBuild:
     create SideHint in SideBody
     set the style of SideHint to `color:#8a8a80;font-size:12px;font-style:italic;margin:14px 16px`
 
-    ! **The status bar, along the foot of the panel.** It is the one place a reader can be told something
-    ! about the *mark* rather than about the block the mark's line belongs to — and along a single row of
-    ! dots the block is the same for every one of them, so the block is exactly what cannot tell them
-    ! apart. Created after the body so it sits below it, and given a top border rather than a second
-    ! background: the panel is one surface, and a reader should see the bar as the panel's own foot, not as
-    ! a third thing wedged into it.
-    create SideStatus in SideHost
+    create SideStatus in SideHost ! §4
     set the style of SideStatus to `border-top:1px solid #ddd;padding:6px 16px;font-size:12px;color:#666;flex-shrink:0;min-height:18px`
 
     ! The names first, then the strip built from them, so the strip and this list cannot disagree
@@ -141,7 +131,7 @@ SideBuild:
     end
     gosub to SideTabsDraw
     return
-!! @hash 8c000471
+!! @hash 01f12ebf
 !! @verified 8ee3c368
 !!!
 !! The tab strip's one piece of state, which is which tab is up.
@@ -185,6 +175,10 @@ SideTabShow:
 !! **The line the pointer named is picked out, when it is one of the lines shown.** Here rather than in the editor because it is a fact about the *rendering*: the same line is highlighted in the code and is the subject of the prose, and a reader switching tabs should see the same line picked out in both. A line outside the section has nothing to pick out, and gets no mark.
 !!
 !! The hint is what the panel says whenever there is nothing to show, and it is the only thing in this module that tells a reader what the panel is for.
+!!
+!! Appendix
+!!
+!! §1 **A line no block holds still has code, and this tab shows it.** The editor sends the *gap's* bounds for such a line — the run of code between the block before the pointer and the block after it — so the slice below is the same one a block gets, and the sentence that is the doc-block tab's whole answer becomes this tab's footnote, under the code. That is Graham's rule for this panel doing its work (`TODO-viz.md`, "Settled decisions"): a reader pointing at the code between two blocks is handed that code rather than sent back to the editor for it. An *empty* gap — two blocks written back to back — shows no code and the sentence, which is the truth about it.
 SideRender:
     ! The status bar first, and unconditionally: it is about the mark, not about the block, so it says its
     ! piece whether or not the line turned out to be in one.
@@ -211,14 +205,7 @@ SideRenderOutside:
     return
 
 SideRenderCode:
-    ! **A line no block holds still has code, and this tab shows it.** The editor sends the *gap's* bounds
-    ! for such a line — the run of code between the block before the pointer and the block after it — so the
-    ! slice below is the same one a block gets, and the sentence that is the doc-block tab's whole answer
-    ! becomes this tab's footnote, under the code. That is Graham's rule for this panel doing its work
-    ! (`TODO-viz.md`, "Settled decisions"): a reader pointing at the code between two blocks is handed that
-    ! code rather than sent back to the editor for it. An *empty* gap — two blocks written back to back —
-    ! shows no code and the sentence, which is the truth about it.
-    if SideFound is 0 set the content of SideHead to `Line ` cat SideLine
+    if SideFound is 0 set the content of SideHead to `Line ` cat SideLine ! §1
     if SideFound is 1 set the content of SideHead to SideTitle
     gosub to SideCodeBuild
     set the content of SideCode to SideCodeText
@@ -261,7 +248,7 @@ SideRenderHint:
     set the content of SideProse to ``
     set the content of SideHint to `Point at a line of the script in the picture to see the doc block it belongs to, or its code on the Code tab.`
     return
-!! @hash db46ae94
+!! @hash 55b7306e
 !! @verified b04946e6
 !!!
 !! The status bar: what the script asked to have watched, at the mark it was watching.
@@ -269,6 +256,14 @@ SideRenderHint:
 !! **It is the values and not the mark, and that is a division made on 2026-10-05.** It used to carry the mark's own figures too — "line 254 visit 23 of 44" — and Graham moved them out: they are read while pointing at a dot, and on a big screen the foot of this panel is the other side of the room from the picture, so the pane says them itself, one line under its own status line, where the eye already is. What is left here is the other half of the same message: the numbers the script asked to have shown by writing `@show`, which belong beside the block because they are about the work the line did rather than about which dot was clicked.
 !!
 !! **The figures still decide whether the bar is drawn at all.** A press that named no mark leaves an empty bar, and so does a mark whose script asked to watch nothing — the panel is not the place for a line that says only that there is nothing to say.
+!!
+!! Appendix
+!!
+!! §1 **And the values, which is what a script's `@show` was for.** This is where the question that made somebody write the attribute is answered: the bar is read at the same moment as the picture, so the number and the run it belongs to arrive together without a second place to look.
+!!
+!! §2 **In name order**, which is what `the json keys of` gives and the reason to use it here: two visits compared across a run read the same way round, and a reader scanning a column of status lines is comparing them. The script's own order (`@show N, Total`) would put the names in whatever order each line happened to be written in, which is a difference nobody asked to see.
+!!
+!! §3 **`the json count of` and `element N of`, because these keys are one json list and one value.** A variable is a holder with slots: `index X to N` picks a slot, and a *json list* is a single value occupying a single slot — so `index Keys to 0` with `put Keys into Name` hands back the whole list (correctly), and the elements of that list are reached with `element N of`. `split` is the other way round: it fills a slot per line, which is why this editor's buffer walk uses `index` and `has element` on it. Both are index-based and neither replaces the other; using the wrong one prints a list where a value belongs.
 SideStatusDraw:
     if SideVisit is less than 1
     begin
@@ -276,27 +271,12 @@ SideStatusDraw:
         return
     end
     put `` into SideStatusText
-    ! **And the values, which is what a script's `@show` was for.** This is where the question that made
-    ! somebody write the attribute is answered: the bar is read at the same moment as the picture, so the
-    ! number and the run it belongs to arrive together without a second place to look.
-    !
-    ! **In name order**, which is what `the json keys of` gives and the reason to use it here: two visits
-    ! compared across a run read the same way round, and a reader scanning a column of status lines is
-    ! comparing them. The script's own order (`@show N, Total`) would put the names in whatever order each
-    ! line happened to be written in, which is a difference nobody asked to see.
-    if SideValues is not empty
+    if SideValues is not empty ! §1–§2
     begin
         put the json keys of SideValues into SideValueKeys
         put `` into SideValueText
         put 0 into SideValueI
-        ! **`the json count of` and `element N of`, because these keys are one json list and one value.** A
-        ! variable is a holder with slots: `index X to N` picks a slot, and a *json list* is a single value
-        ! occupying a single slot — so `index Keys to 0` with `put Keys into Name` hands back the whole list
-        ! (correctly), and the elements of that list are reached with `element N of`. `split` is the other way
-        ! round: it fills a slot per line, which is why this editor's buffer walk uses `index` and `has
-        ! element` on it. Both are index-based and neither replaces the other; using the wrong one prints a
-        ! list where a value belongs.
-        while SideValueI is less than the json count of SideValueKeys
+        while SideValueI is less than the json count of SideValueKeys ! §3
         begin
             put element SideValueI of SideValueKeys into SideValueName
             if SideValueText is not empty put SideValueText cat `  ` into SideValueText
@@ -308,7 +288,7 @@ SideStatusDraw:
     end
     set the content of SideStatus to SideStatusText
     return
-!! @hash b74412d4
+!! @hash 1a7e607d
 !! @verified 591e92f4
 !!!
 !! The boundary: one message in, and the module parks until the next one.
@@ -316,6 +296,12 @@ SideStatusDraw:
 !! `release parent` in the plumbing above is what lets the editor's `run` return, and this is what carries on from there: the panel is built on the first message rather than at load, because a module that is loaded and never opened should cost nothing but its attach.
 !!
 !! The three kinds are told apart by the message's own `kind` rather than by which of its properties are present, so a field can be added to any of them without the others being read wrongly. **The tab switch is answered before `SideKind` is written, and that is a fault rather than a tidy order.** `SideKind` is the panel's *own state* — which of three things it is showing — and not the last message's kind: `SideRender` reads it to choose between a block, a line in no block and its standing hint, so a `tab` message that overwrote it would show the hint over the block the panel is holding. A tab is only ever a different *view* of what is already there, so it must not disturb what it is a view of. **And it is tested before the `open` field of a run is looked at** for the same reason one step on: a `tab` message carries no `open`, and a message whose absent field read as `0` would be taken for the pane being taken off the screen.
+!!
+!! Appendix
+!!
+!! §1 **The menu's tab switch, and it is only a selection.** The panel already holds the line it was last told and the block for it, so putting a tab up is the same act a click on the strip is — hence `SideTabShow`, which both go through. Nothing is sent to the pane and nothing is re-read: a tab is a view of the line the sidebar already has, and asking the pane again would answer about whatever the pointer is over *now*, which is the thing the reader may have frozen precisely to get away from.
+!!
+!! §2 The build is asked for here as well, because this is the one branch that leaves before the shared `gosub to SideBuild` above it — and a message can arrive before anything has built the panel.
 SideMessage:
     put the message into SideRun
     put property `kind` of SideRun into SideTmp
@@ -341,15 +327,7 @@ SideMessage:
     stop
 
 SideTabArrived:
-    ! **The menu's tab switch, and it is only a selection.** The panel already holds the line it was last
-    ! told and the block for it, so putting a tab up is the same act a click on the strip is — hence
-    ! `SideTabShow`, which both go through. Nothing is sent to the pane and nothing is re-read: a tab is a
-    ! view of the line the sidebar already has, and asking the pane again would answer about whatever the
-    ! pointer is over *now*, which is the thing the reader may have frozen precisely to get away from.
-    !
-    ! The build is asked for here as well, because this is the one branch that leaves before the shared
-    ! `gosub to SideBuild` above it — and a message can arrive before anything has built the panel.
-    gosub to SideBuild
+    gosub to SideBuild ! §1–§2
     put property `sel` of SideRun into SideTabSel
     gosub to SideTabShow
     stop
@@ -377,6 +355,6 @@ SideBlockArrived:
 !   reader returning to the same run expects.
 SideClosed:
     stop
-!! @hash 5dd79097
+!! @hash 41deff7c
 !! @verified cd2f39fb
 !!!

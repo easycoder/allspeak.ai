@@ -334,15 +334,13 @@
 !! Language detection
 !! The command 'language xx' switches the system to the given language (fr, de, it etc.)
 !! and defaults to 'en'. All of the language-specific strings are then defined for each language.
+!!
+!! Appendix
+!!
+!! §1 **Textareas, and the reason is in how `the text of` reads an element.** The branches switch on the *symbol's* type: a `div` reads `innerHTML` with every newline removed, which turns a 2,700-line module into one line — and its first line is a `!!` comment, which then comments out the lot. Measured 2026-10-04: the pane compiled as `1 lines (0 tokens)` and nothing was ever drawn. A `pre` would keep the newlines but hands back *escaped* markup, and the module has 25 `<` in it. A textarea's `value` is the text and only the text.
 !   -- Detect language and set strings for each supported language --
     div LangDiv
-    ! **Textareas, and the reason is in how `the text of` reads an element.** The branches switch on the
-    ! *symbol's* type: a `div` reads `innerHTML` with every newline removed, which turns a 2,700-line module
-    ! into one line — and its first line is a `!!` comment, which then comments out the lot. Measured
-    ! 2026-10-04: the pane compiled as `1 lines (0 tokens)` and nothing was ever drawn. A `pre` would keep the
-    ! newlines but hands back *escaped* markup, and the module has 25 `<` in it. A textarea's `value` is the
-    ! text and only the text.
-    textarea VizSrcDiv
+    textarea VizSrcDiv ! §1
     textarea SideSrcDiv
     put `en` into Lang
     attach LangDiv to `editor-lang` or go to SetStrings
@@ -468,7 +466,7 @@ SetStrings:
     set the content of WelcomeNote to StrWelcomeNote
     set the content of WelcomePre to StrWelcomePre
     set the content of WelcomePost to StrWelcomePost
-!! @hash 4c38d48d
+!! @hash 8a667163
 !! @verified 3f450398
 !!!
 !! Tells the reader when the dev server they are running has been superseded.
@@ -487,6 +485,22 @@ VersionDone:
 !! the existing flat-mode handlers. The pane editor textareas have
 !! keyboard input handlers wired in EnterBlocks so we can stop watching
 !! them when the pane is hidden.
+!!
+!! Appendix
+!!
+!! §1 **The welcome panel goes on the first click of anything that *does* something** — and there is no single line that says so, which is worth knowing before anyone looks for one. `on click document` reads as "any click anywhere" and is not: the runtime runs a document click handler only when the click was on an `<a href>` **into this same page** (`Browser.js`, `clickDocument` — the editor's own file links are what it exists for). Measured in a browser, 2026-10-12: a click on `Blocks` left the panel standing.
+!!
+!! §2 So the dismissal is the first line of each control's handler — the `gosub to DismissWelcome` that opens `ShowBrowser`, `NewFile`, `DoFind`, `ToggleBlocks`, `ToggleGraph`, `RecordRun` and `LaunchApp` — with the panel itself clickable too, for a reader who clicks the prose rather than a button. **The cost is that a new button has to carry its own `gosub`**, which a list of handlers cannot be made to imply: the check below runs all seven and insists that each one puts the panel away.
+!!
+!! §3 **The menu opens where the pointer's other button was pressed, on each of the two surfaces it is about.** `GraphPic` and `GraphSidePane` are this file's own handles on the pane's box and the sidebar's — the pane attaches `VizHost` to the same element under its own name and the sidebar `SideHost` to the other, so one box carries two symbols and neither module has to know the editor exists. The press's own coordinates arrive in `the pick position`, which is what places the menu.
+!!
+!! §4 **The Graph grip, which is the one drag that belongs to Graph mode.** It moves the sidebar's *left* edge, so a pointer travelling left makes the panel wider — the opposite sense to the Blocks splitter, whose right edge the pointer carries. The clamps are a floor and a ceiling: at the floor the prose has no width left to be read in, and at the ceiling the drawing is the thing being squeezed, which is the pane's whole purpose. The ceiling is the panel's own width less a floor for the picture, so a narrow window cannot let the sidebar eat the run.
+!!
+!! §5 **The width kept at the pick is added *to* the travel, and the destination is the travel.** Written the other way round — `add NewWidth to GripWidthAtPick` — this compiles and runs, and is wrong twice over: the sum lands in the width kept at the pick, so the travel is left as it was and every drag clamps, and the starting width grows by the travel on *every* pointer move, so a drag that went on long enough would accelerate. The two idioms differ by which operand is the destination, and both look reasonable; the harness's grip checks exist for this line.
+!!
+!! §6 **The grip answers first**, because it is the one that can be held while Graph mode is up — the Blocks splitter's own guard below refuses to do anything there and would otherwise swallow this drop, losing the width the reader just chose.
+!!
+!! §7 Nothing is redrawn on the way out, and that is deliberate rather than an omission: the pane measures its own box on every gesture (`VizPixelScale` is called from the pick), so the picture needs no telling that its box has changed, and a redraw here would re-fit the drawing under the reader's hand for nothing.
 !   -- Handlers --
     on click OpenBtn go to ShowBrowser
     on click PlusBtn go to NewFile
@@ -500,25 +514,9 @@ VersionDone:
     on click BlocksVerify go to MarkVerified
     on click BlocksVerifyAll go to MarkAllVerified
     on click AlertCloseBtn go to HideAlert
-    ! **The welcome panel goes on the first click of anything that *does* something** — and there is no single
-    ! line that says so, which is worth knowing before anyone looks for one. `on click document` reads as "any
-    ! click anywhere" and is not: the runtime runs a document click handler only when the click was on an
-    ! `<a href>` **into this same page** (`Browser.js`, `clickDocument` — the editor's own file links are what
-    ! it exists for). Measured in a browser, 2026-10-12: a click on `Blocks` left the panel standing.
-    !
-    ! So the dismissal is the first line of each control's handler — the `gosub to DismissWelcome` that opens
-    ! `ShowBrowser`, `NewFile`, `DoFind`, `ToggleBlocks`, `ToggleGraph`, `RecordRun` and `LaunchApp` — with the
-    ! panel itself clickable too, for a reader who clicks the prose rather than a button. **The cost is that a
-    ! new button has to carry its own `gosub`**, which a list of handlers cannot be made to imply: the check
-    ! below runs all seven and insists that each one puts the panel away.
-    on click Welcome go to DismissWelcome
+    on click Welcome go to DismissWelcome ! §1–§2
     on click MenuMask go to HideMenu
-    ! **The menu opens where the pointer's other button was pressed, on each of the two surfaces it is
-    ! about.** `GraphPic` and `GraphSidePane` are this file's own handles on the pane's box and the
-    ! sidebar's — the pane attaches `VizHost` to the same element under its own name and the sidebar
-    ! `SideHost` to the other, so one box carries two symbols and neither module has to know the editor
-    ! exists. The press's own coordinates arrive in `the pick position`, which is what places the menu.
-    on right click GraphPic go to ShowMenu
+    on right click GraphPic go to ShowMenu ! §3
     on right click GraphSidePane go to ShowMenu
 
     on pick BlocksDivider
@@ -540,23 +538,11 @@ VersionDone:
     on drag
     begin
         put the drag position into DragPos
-        ! **The Graph grip, which is the one drag that belongs to Graph mode.** It moves the sidebar's
-        ! *left* edge, so a pointer travelling left makes the panel wider — the opposite sense to the
-        ! Blocks splitter, whose right edge the pointer carries. The clamps are a floor and a ceiling: at
-        ! the floor the prose has no width left to be read in, and at the ceiling the drawing is the thing
-        ! being squeezed, which is the pane's whole purpose. The ceiling is the panel's own width less a
-        ! floor for the picture, so a narrow window cannot let the sidebar eat the run.
-        if GripPicked is 1
+        if GripPicked is 1 ! §4
         begin
             put property `x` of DragPos into DragX
             take DragX from PickX giving NewWidth
-            ! **The width kept at the pick is added *to* the travel, and the destination is the travel.**
-            ! Written the other way round — `add NewWidth to GripWidthAtPick` — this compiles and runs, and
-            ! is wrong twice over: the sum lands in the width kept at the pick, so the travel is left as it
-            ! was and every drag clamps, and the starting width grows by the travel on *every* pointer move,
-            ! so a drag that went on long enough would accelerate. The two idioms differ by which operand is
-            ! the destination, and both look reasonable; the harness's grip checks exist for this line.
-            add GripWidthAtPick to NewWidth
+            add GripWidthAtPick to NewWidth ! §5
             put 700 into GripMost
             put the width of GraphArea into Tmp
             take 320 from Tmp
@@ -582,15 +568,7 @@ VersionDone:
     end
     on drop
     begin
-        ! **The grip answers first**, because it is the one that can be held while Graph mode is up — the
-        ! Blocks splitter's own guard below refuses to do anything there and would otherwise swallow this
-        ! drop, losing the width the reader just chose.
-        !
-        ! Nothing is redrawn on the way out, and that is deliberate rather than an omission: the pane
-        ! measures its own box on every gesture (`VizPixelScale` is called from the pick), so the picture
-        ! needs no telling that its box has changed, and a redraw here would re-fit the drawing under the
-        ! reader's hand for nothing.
-        if GripPicked is 1
+        if GripPicked is 1 ! §6–§7
         begin
             put 0 into GripPicked
             put the width of GraphSide into FinalWidth
@@ -605,7 +583,7 @@ VersionDone:
     put 0 into BlocksMode
     put 0 into GraphMode
     put 0 into BlockDirty
-!! @hash 988c70a6
+!! @hash a046db0d
 !! @verified 3efa1530
 !!!
 !! One `on message`, registered here rather than with the code it runs.
@@ -734,6 +712,10 @@ SaveFailed:
 !! Every 3 seconds, the current file is re-read into FileContent.
 !!
 !! If this differs from what is currently held in TabSaved for this tab, the editor content is updated and a message is displayed briefly.
+!!
+!! Appendix
+!!
+!! §1 Formatted as it is read, exactly as the loader formats it. Without this the poll compares a one-line file on disk against the formatted text in the tab, sees a difference on every pass, and reloads the file over the formatted text every three seconds — which is what "it formats it, then after a couple of seconds reverts to a one-liner" turned out to be. Like has to be compared with like for the poll to settle.
 !   -- External change polling --
 PollFile:
     wait 3 seconds
@@ -750,12 +732,7 @@ PollFile:
     index TabPath to ActiveTab
     if TabPath is empty go to PollNext
     rest get FileContent from `/read/` cat TabPath or go PollNext
-    ! Formatted as it is read, exactly as the loader formats it. Without this the poll compares a
-    ! one-line file on disk against the formatted text in the tab, sees a difference on every pass,
-    ! and reloads the file over the formatted text every three seconds — which is what "it formats
-    ! it, then after a couple of seconds reverts to a one-liner" turned out to be. Like has to be
-    ! compared with like for the poll to settle.
-    if TabPath ends with `.json`
+    if TabPath ends with `.json` ! §1
     begin
         put FileContent into JsonText
         gosub to FormatJson
@@ -781,7 +758,7 @@ PollFile:
 PollNext:
     fork to PollFile
     stop
-!! @hash bbd67e70
+!! @hash 6d5bfafb
 !! @verified bbd67e70
 !!!
 !! File browser overlay behind the Open button: lists the current directory, navigates into folders and back to the project root, and hands the chosen file to the tab-management section to open.
@@ -895,22 +872,19 @@ CloseBrowser:
 !! This section is tab management; creating a new tab, opening a file, selecting a tab and closing a tab.
 !! Activating a tab leaves Blocks mode first. A tab is a different file, and Blocks mode belongs to the file you were reading — so switching tabs, and opening a file, both land in the flat editor rather than refusing to move until you leave the mode by hand.
 !! **A tab remembers where the flat editor was standing** — the caret's line and the viewport's scroll offset — and puts both back on return, whether the reader left by the tab bar, the Blocks button or the Graph one. Two values rather than one because they are independent: scrolling must not move the insertion point, and coming back must not carry the view to the caret, which is the jump a video editor teaches you to distrust. `codemirror` carries a command for each half and each half only — `cursor to line` does not scroll and `view to` does not move the caret — and the scroll one refreshes the editor on the way, which a CodeMirror hidden by a mode switch needs.
-!   Make room for one more tab: the count up by one and every per-tab array grown to match. **In one
-!   place, and that is the point of it.** There are two ways to open a tab — the + button and the file
-!   browser — and each used to grow the arrays itself, so an array added for one of them is a tab that
-!   fails in the other. That is not hypothetical: the caret and view records added for the tab
-!   restoration above went into `NewFile` only, and opening a *file* then died with "Array index 1 is
-!   out of range for 'TabCursor'" the moment a second tab existed with no slot to hold it.
-!   `CloseTab` shifts the value-carrying arrays back down when a tab goes — the element ones are rebuilt
-!   from the count instead — so it is the other place that has to know this list, and there are only two.
-!
-!   **The new slot is cleared, not assumed empty.** Growing an array does not shorten it, so a slot
-!   vacated when a tab was closed keeps whatever it held — and the two records below are only ever
-!   *read*, so a stale caret and scroll would be put back on a tab that has never been anywhere. The
-!   other arrays are written by their callers straight afterwards, which is why they never showed it.
-!   Empty is also what `TabRestore` wants: it asks whether a value is *numeric*, so a cleared slot is
-!   a tab with nowhere to restore to, which is the honest answer for one that has never been left.
-TabGrow:
+!!
+!! Appendix
+!!
+!! §1 Make room for one more tab: the count up by one and every per-tab array grown to match. **In one place, and that is the point of it.** There are two ways to open a tab — the + button and the file browser — and each used to grow the arrays itself, so an array added for one of them is a tab that fails in the other. That is not hypothetical: the caret and view records added for the tab restoration above went into `NewFile` only, and opening a *file* then died with "Array index 1 is out of range for 'TabCursor'" the moment a second tab existed with no slot to hold it. `CloseTab` shifts the value-carrying arrays back down when a tab goes — the element ones are rebuilt from the count instead — so it is the other place that has to know this list, and there are only two.
+!!
+!! §2 **The new slot is cleared, not assumed empty.** Growing an array does not shorten it, so a slot vacated when a tab was closed keeps whatever it held — and the two records below are only ever *read*, so a stale caret and scroll would be put back on a tab that has never been anywhere. The other arrays are written by their callers straight afterwards, which is why they never showed it. Empty is also what `TabRestore` wants: it asks whether a value is *numeric*, so a cleared slot is a tab with nowhere to restore to, which is the honest answer for one that has never been left.
+!!
+!! §3 Only a file that is *one line* is reformatted. A file already laid out, at whatever indent its author chose, is left exactly as it is — the complaint is that one line of JSON is unreadable, not that somebody's formatting is wrong, and normalising it would rewrite their file the first time they saved. `json split` divides on newline by default, so the test costs two statements and needs no new vocabulary.
+!!
+!! §4 The formatted text is what the tab records as its own, so opening a file does not mark it modified — and because the poll formats the file it reads in just the same way, the two agree and the tab settles rather than reloading itself every three seconds. Malformed JSON is left as it is: a file that will not parse is the one you most want to look at, so the error is caught rather than reported. The runtime's own formatter does the work — `json format` is JSON.stringify with a two-space indent, the same indent the Python runtime writes on save.
+!!
+!! §5 Where the flat editor is standing, remembered per tab and put back on return. The caret and the view are kept apart on purpose: `codemirror cursor to line` does not scroll and `codemirror view to` does not move the caret, so a revisit restores both without one dragging the other. Restoring the caret *and then* the view is the order that matters — the view is the one that has to end up exact, and setting the caret cannot disturb it.
+TabGrow: ! §1–§2
     add 1 to TabCount
     set the elements of TabPath to TabCount
     set the elements of TabName to TabCount
@@ -979,20 +953,9 @@ OpenFile:
 
 !   -- A JSON file arrives minified as often as not, and one line of it is unreadable --
 FormatJson:
-    ! Only a file that is *one line* is reformatted. A file already laid out, at whatever indent its
-    ! author chose, is left exactly as it is — the complaint is that one line of JSON is unreadable,
-    ! not that somebody's formatting is wrong, and normalising it would rewrite their file the first
-    ! time they saved. `json split` divides on newline by default, so the test costs two statements
-    ! and needs no new vocabulary.
-    json split JsonText into JsonLines
+    json split JsonText into JsonLines ! §3
     if the json count of JsonLines is greater than 1 return
-    ! The formatted text is what the tab records as its own, so opening a file does not mark it
-    ! modified — and because the poll formats the file it reads in just the same way, the two agree
-    ! and the tab settles rather than reloading itself every three seconds. Malformed JSON is left
-    ! as it is: a file that will not parse is the one you most want to look at, so the error is
-    ! caught rather than reported. The runtime's own formatter does the work — `json format` is
-    ! JSON.stringify with a two-space indent, the same indent the Python runtime writes on save.
-    json format JsonText or go FormatJsonEnd
+    json format JsonText or go FormatJsonEnd ! §4
 FormatJsonEnd:
     return
 
@@ -1060,12 +1023,7 @@ CloseTab:
     end
     go to ActivateTab
 
-!   Where the flat editor is standing, remembered per tab and put back on return. The caret and the
-!   view are kept apart on purpose: `codemirror cursor to line` does not scroll and
-!   `codemirror view to` does not move the caret, so a revisit restores both without one dragging
-!   the other. Restoring the caret *and then* the view is the order that matters — the view is the
-!   one that has to end up exact, and setting the caret cannot disturb it.
-TabRemember:
+TabRemember: ! §5
     if TabCount is 0 return
     index TabCursor to ActiveTab
     codemirror get cursor of ContentEditor into TabCursor
@@ -1092,7 +1050,7 @@ ActivateTab:
     gosub to TabRestore
     gosub to RebuildTabBar
     stop
-!! @hash 7de46ea7
+!! @hash 8a69e9c5
 !! @verified e6bbb6c8
 !!!
 !! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
@@ -1231,6 +1189,30 @@ ClearStatus:
 !! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.
 !!
 !! Same classifier logic as tools/asdoc-check.allspeak — the spec is one source of truth even though the code is duplicated here for the editor's in-process use.
+!!
+!! Appendix
+!!
+!! §1 -- Review signals -- What the parse cannot see for itself: blocks nothing enters. The viz plugin compiles the same source and reports it. Nothing here raises an error — a buffer mid-edit frequently will not compile, which is the editor's ordinary condition, and the plugin simply reports fewer records. With no flags the TOC renders exactly as it did before.
+!!
+!! §2 **The attributes the program carries — the real spelling.** The plugin reads them off the compiled program, which is the only place they can be read correctly: the tokeniser is what knows an `@` inside a literal from an attribute, so a reader scanning the buffer's text would be a second, worse implementation of that rule. A file-level attribute like `@app parser.html` is a line of its own, and its record carries the line it is on, so a tool that wants to point at it can.
+!!
+!! §3 Which runtime this tab's script is for, and where that came from: `flavour | py | from=script`.
+!!
+!! §4 **Read from the model and not from the script's own attributes**, and that is the fault this replaced. An `attr` record is emitted only for a program the runtime *compiled* — and a script carrying `@py` is by definition one the JavaScript runtime cannot compile, because `dictionary` and `list` are Python's. So the marker was invisible to the editor exactly when it mattered: `parser.allspeak` with `@py` at the top and `dictionary` at line 43 modelled to `commands=0`, no `attr` records, `TabFlavour` fell through to the project's answer and Record refused a script it had been built to run. Reported by Graham, 2026-10-05. The plugin reports this from the *token stream*, so it is there whether the compile succeeded or not.
+!!
+!! §5 **A `@py` script cannot be launched, so its Launch button is hidden.** Launching hands the script to the page's JavaScript runtime, and `@py` is by definition a script that runtime cannot compile — `dictionary` and `list` are Python's — so the button would open a window that does nothing, which is worse than a button that is not there. Graham asked for it on 2026-10-11, in the same breath as the tab order.
+!!
+!! §6 **Whose flavour it follows is the *tab's*, and this is called from the parse**, so adding or deleting the marker moves the button on the next keystroke. That is the same rule `AppPage` and `TabFlavour` already follow: a cleared value re-resolved per parse, never a memory of the last script. A tab the model says nothing about is not `py` — the plugin's own answer is `js` when neither the script nor the project says otherwise — so an empty `TabFlavour` shows the button.
+!!
+!! §7 The value written back is the one `viz.json` states for the button, and it states it rather than leaving it to the browser's default for a `<button>`: a hide has to know what it is hiding *from*, and a stylesheet that names the value is one the button can be put back to. Launch is the only button that carries it, because it is the only one ever hidden.
+!!
+!! §8 **Written only when it changes, because the auto-save loop parses twice a second.** The editor rewrites a good deal per keystroke; this is one write that can simply not happen.
+!!
+!! §9 A key and the rest of it, from an attribute's text.
+!!
+!! §10 **The one reading of an attribute's text, shared by both places attributes arrive.** A `@`-line inside a `!!` doc block is the analyser's metadata and never reaches the compiler; an attribute in the script itself is carried into the program and comes back through the model. They are the same thing to a reader — a key, a space, and the rest — so they are split in one place rather than two, and a tool vocabulary read here reads the same either way.
+!!
+!! §11 The spelling `!! @app` is accepted and is not the real thing: the doc-block form says nothing to the compiler, so a page named there launches a page that the *program* does not know about. Prefer `@app`.
 ParseSource:
     put `` into AppPage
     ! The flavour is re-resolved on every parse, for the same reason `AppPage` is cleared: a marker that has
@@ -1270,12 +1252,7 @@ ParseSource:
     index Outside to SecCount
     put OutsideTmp into Outside
 
-    !   -- Review signals --
-    ! What the parse cannot see for itself: blocks nothing enters. The viz plugin compiles
-    ! the same source and reports it. Nothing here raises an error — a buffer mid-edit
-    ! frequently will not compile, which is the editor's ordinary condition, and the plugin
-    ! simply reports fewer records. With no flags the TOC renders exactly as it did before.
-    put 0 into FlagCount
+    put 0 into FlagCount ! §1
     index TabPath to ActiveTab
     put TabPath into EditorPath
     model the script in EditorPath as Source giving Model
@@ -1302,12 +1279,7 @@ ParseSource:
         add 1 to K
     end
 
-    ! **The attributes the program carries — the real spelling.** The plugin reads them off the compiled
-    ! program, which is the only place they can be read correctly: the tokeniser is what knows an `@` inside a
-    ! literal from an attribute, so a reader scanning the buffer's text would be a second, worse implementation
-    ! of that rule. A file-level attribute like `@app parser.html` is a line of its own, and its record carries
-    ! the line it is on, so a tool that wants to point at it can.
-    put 0 into K
+    put 0 into K ! §2
     while K is less than MarkCount
     begin
         index Model to K
@@ -1332,16 +1304,7 @@ NoteAttribute:
     gosub to SplitMeta
     return
 
-!   Which runtime this tab's script is for, and where that came from: `flavour | py | from=script`.
-!
-!   **Read from the model and not from the script's own attributes**, and that is the fault this replaced. An
-!   `attr` record is emitted only for a program the runtime *compiled* — and a script carrying `@py` is by
-!   definition one the JavaScript runtime cannot compile, because `dictionary` and `list` are Python's. So the
-!   marker was invisible to the editor exactly when it mattered: `parser.allspeak` with `@py` at the top and
-!   `dictionary` at line 43 modelled to `commands=0`, no `attr` records, `TabFlavour` fell through to the
-!   project's answer and Record refused a script it had been built to run. Reported by Graham, 2026-10-05.
-!   The plugin reports this from the *token stream*, so it is there whether the compile succeeded or not.
-NoteFlavour:
+NoteFlavour: ! §3–§4
     split MarkRecord on ` | `
     if the elements of MarkRecord is less than 3 return
     index MarkRecord to 1
@@ -1349,25 +1312,7 @@ NoteFlavour:
     return
 
 LaunchButton:
-    ! **A `@py` script cannot be launched, so its Launch button is hidden.** Launching hands the script to the
-    ! page's JavaScript runtime, and `@py` is by definition a script that runtime cannot compile — `dictionary`
-    ! and `list` are Python's — so the button would open a window that does nothing, which is worse than a
-    ! button that is not there. Graham asked for it on 2026-10-11, in the same breath as the tab order.
-    !
-    ! **Whose flavour it follows is the *tab's*, and this is called from the parse**, so adding or deleting the
-    ! marker moves the button on the next keystroke. That is the same rule `AppPage` and `TabFlavour` already
-    ! follow: a cleared value re-resolved per parse, never a memory of the last script. A tab the model says
-    ! nothing about is not `py` — the plugin's own answer is `js` when neither the script nor the project says
-    ! otherwise — so an empty `TabFlavour` shows the button.
-    !
-    ! The value written back is the one `viz.json` states for the button, and it states it rather than
-    ! leaving it to the browser's default for a `<button>`: a hide has to know what it is hiding *from*, and a
-    ! stylesheet that names the value is one the button can be put back to. Launch is the only button that
-    ! carries it, because it is the only one ever hidden.
-    !
-    ! **Written only when it changes, because the auto-save loop parses twice a second.** The editor rewrites
-    ! a good deal per keystroke; this is one write that can simply not happen.
-    put 0 into LaunchHide
+    put 0 into LaunchHide ! §5–§8
     if TabFlavour is `py` put 1 into LaunchHide
     if LaunchHide is LaunchHidden return
     put LaunchHide into LaunchHidden
@@ -1429,17 +1374,7 @@ MaybeMeta:
     end
     return
 
-!   A key and the rest of it, from an attribute's text.
-!
-!   **The one reading of an attribute's text, shared by both places attributes arrive.** A `@`-line inside a
-!   `!!` doc block is the analyser's metadata and never reaches the compiler; an attribute in the script itself
-!   is carried into the program and comes back through the model. They are the same thing to a reader — a key,
-!   a space, and the rest — so they are split in one place rather than two, and a tool vocabulary read here
-!   reads the same either way.
-!
-!   The spelling `!! @app` is accepted and is not the real thing: the doc-block form says nothing to the
-!   compiler, so a page named there launches a page that the *program* does not know about. Prefer `@app`.
-SplitMeta:
+SplitMeta: ! §9–§11
     put the position of ` ` in LContent into Pos
     if Pos is less than 0
     begin
@@ -1544,7 +1479,7 @@ ScoreWithCode:
     else if SecVerifiedTmp is CurHash put `verified-fresh` into VerifyState
     else put `verified-stale` into VerifyState
     return
-!! @hash 9005fa83
+!! @hash 5fc18a1f
 !! @verified d37980ab
 !!!
 !! Blocks view.
@@ -1553,19 +1488,18 @@ ScoreWithCode:
 !! ExitBlocks flushes pending edits, reveals the flat pane again, and scrolls it to the start of the block just viewed; the work is in DoExitBlocks so ShowBrowser can call it as a subroutine before opening a tab.
 !! RenderBlock paints the textareas and the toolbar badge for the current section.
 !! UpdateBadge derives badge text/colour from the section's hash and verify states.
+!!
+!! Appendix
+!!
+!! §1 Enter Blocks mode **At most one mode is on, and `DoExitPanes` is where that is said.** Every entry point turns the others off through it rather than each naming the ones it happens to know about — which is how this one came to miss the Graph pane: it was written before Graph existed, and nothing pointed at the assumption. The omission had two faces, and Graham found both by the one path that showed it, Graph then Blocks: the Graph button still read `Edit`, so two buttons offered to leave a pane neither of which was on, and `VizHost` was never hidden, so the graph sat under the Blocks pane.
+!!
+!! §2 Remembered here rather than on the way *in*, because leaving is what moves the editor: the scroll above is deliberate and puts the block's start at the top, and that is where the reader then is. Every way out of Blocks passes through this subroutine — the button, a tab switch, and the way into Graph — so one save here covers all of them, and the pair of values is consistent whichever way the reader came back.
 ToggleBlocks:
     gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if BlocksMode is 0 go to EnterBlocks
     go to ExitBlocks
 
-!   Enter Blocks mode
-!   **At most one mode is on, and `DoExitPanes` is where that is said.** Every entry point turns the
-!   others off through it rather than each naming the ones it happens to know about — which is how
-!   this one came to miss the Graph pane: it was written before Graph existed, and nothing pointed at
-!   the assumption. The omission had two faces, and Graham found both by the one path that showed it,
-!   Graph then Blocks: the Graph button still read `Edit`, so two buttons offered to leave a pane
-!   neither of which was on, and `VizHost` was never hidden, so the graph sat under the Blocks pane.
-EnterBlocks:
+EnterBlocks: ! §1
     gosub to DoExitPanes
     gosub to ParseSource
     if SecCount is 0
@@ -1639,12 +1573,7 @@ DoExitBlocks:
         take 1 from Tmp
         codemirror scroll to line Tmp in ContentEditor
     end
-    ! Remembered here rather than on the way *in*, because leaving is what moves the editor: the
-    ! scroll above is deliberate and puts the block's start at the top, and that is where the reader
-    ! then is. Every way out of Blocks passes through this subroutine — the button, a tab switch, and
-    ! the way into Graph — so one save here covers all of them, and the pair of values is consistent
-    ! whichever way the reader came back.
-    gosub to TabRemember
+    gosub to TabRemember ! §2
     return
 
 NextBlock:
@@ -1701,7 +1630,7 @@ UpdateBadge:
         set style `background` of BlocksBadge to `#666`
     end
     return
-!! @hash 4fe395f9
+!! @hash a8e720ab
 !! @verified 4464102e
 !!!
 !! Blocks save.
@@ -2030,18 +1959,47 @@ JumpToBlock:
 !! **The plumbing is one sentence.** Markers decide what is recorded, and a script without them has nothing to show; rather than explain that in the pane, the message names the file it looked for, because that is the one thing a reader needs in order to produce one.
 !!
 !! **Leaving is automatic when a tab changes.** A mode owns the screen, so opening or switching to a file drops back to the flat editor rather than loading the new script into a pane nobody can see — which is what happened the first time this pane was used, and what Blocks has always done. The rule lives in `ActivateTab`, so every path that shows a file obeys it.
+!!
+!! Appendix
+!!
+!! §1 Back to the flat editor exactly where it was left — the caret *and* the view, which is what the pane remembering its own state now means for this side too. It is the same pair a tab switch restores, through the same two subroutines, so there is one answer to "where was I" rather than one per way of leaving.
+!!
+!! §2 This is the only path out of Graph mode that restores: the other is a tab change, which is a different file and starts wherever its own record says.
+!!
+!! §3 **And it takes the first place in the bar, which is where `Edit` belongs.** The button that goes back to the plain editor is the leftmost of the five, whichever pane it is leaving — so in Blocks mode nothing moves (Blocks is already first) and here the group shifts up by one to make room. **The numbers are the ones `viz.json` states**, whose `order` on these five *is* the bar's sequence; the earlier four children of the bar take the default `0` and hold their DOM order ahead of these. Graham, 2026-10-12: *"the sequence is always Edit - Blocks - Launch - Record - Graph - Find, including when 1 or more is missing."* A hidden button is `display: none`, so it takes no place and the rest keep this order — which is what makes a missing `Launch` or a missing pane not shuffle anything.
+!!
+!! §4 **The section model is built for this file before the sidebar can be asked about a line.** This file parses its own buffer in Blocks mode and only there, so a reader who opens a run without ever having opened Blocks would otherwise have no sections at all — or worse, the ones left behind by the last file that *was* blocked. It is done here, before the fetch, because the fetch is what puts the pane on screen: after it there is a window in which a mark could be clicked against a stale model.
+!!
+!! §5 The two files the run is made of, read and defaulted before either is fetched.
+!!
+!! §6 **Both reads point their failure clause at the send, and that is what makes this work.** `rest get` compiles its failure clause — `or` and `on failure` alike — as a clause that ends the thread, so a clause that merely set a default would leave the pane waiting for a message that never came: the recording is optional, but the *send* is not. Defaulting both to empty first and jumping to the send on failure means the pane is told either way, and an empty recording is what makes it name the file it looked for.
+!!
+!! §7 The recording is read first because a recording that will not answer is the failure worth naming; the script is the picture's background, and it is a different file.
+!!
+!! §8 Both modules: each fetched, compiled and run once, and messaged from then on.
+!!
+!! §9 **`run` compiles the *text*, not a path**, which is why the fetch comes first — and it is a fetch of a file beside this page, so a project that has the editor has both as well. `release parent` inside each module is what makes its `run` return: by the time it does, that module is attached, its handlers are registered and it is listening.
+!!
+!! §10 **This directory first, the served copy second, and that order is the page's.** The editor is a file a project can be *given* — a pack used to carry one — and a copy of a thing that moves is a copy that goes stale: a project could run an old editor beside a current runtime and plugin, and only found out when the editor refused to compile its own source. A pack carries none now, so this falls through to the released one and cannot be stale; a working tree carries its own, and an edit to the pane is visible in it.
+!!
+!! §11 **The sidebar is not the pane, so it is loaded leniently.** Without it the picture still works — it is a reading aid beside a drawing — so a page that has one file and not the other says so on the status line and carries on, rather than dropping out of Graph mode over the half of the pane that is optional. The pane is the opposite case: with no pane there is nothing to look at, so a page without it leaves the mode entirely.
+!!
+!! §12 The default-then-read is `FetchRunText`'s pattern and for its reason: a failure clause ends the thread, so it has to point at the continuation rather than merely set a value. An empty source must not reach `run`, which would try to compile nothing.
+!!
+!! §13 **The panel rather than the status line, and that is the fix this path always needed.** A module that will not load is a fault in the page rather than news about the work, and the reader needs it to still be there when they look up from the pointer — which is exactly what went wrong the first time this path was hit: the sidebar was not beside the editor, the line flashed and went, and the only symptom was that nothing happened when a mark was clicked. The status line could not hold it (everything there is cleared after three seconds); the panel stays until it is closed.
+!!
+!! §14 The run, as one dict — the whole of the interface in this direction. Built here rather than filled in place because the pane reads its fields by name, so a field added on one side is visible on the other.
+!!
+!! §15 **The `GraphMode` guard is not belt and braces.** Both fetches above hand control back to the event loop, so the reader can leave the pane — or switch to another file — while this is still waiting for the recording. Sending `open` then would leave the pane answering a pointer it no longer has, with the editor in flat mode and nothing left to send it the close.
+!!
+!! §16 Turn off every mode there is. The panes are alternatives, not layers, so each one's entry point has to turn the others off before turning itself on — and the list of "the others" belongs in one place, or the next pane added is missed by whichever entrant was written before it existed. That is exactly what happened to `EnterBlocks` and the Graph pane, and it showed as the Graph button still reading `Edit` (two buttons offering to leave a pane neither of which was on) with the graph left lying under the Blocks pane.
+!!
+!! §17 Called by `EnterBlocks`, `EnterGraph` and `ActivateTab`. A fourth pane means changing this and nothing else.
 ToggleGraph:
     gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if GraphMode is 0 go to EnterGraph
     gosub to DoExitGraph
-    ! Back to the flat editor exactly where it was left — the caret *and* the view, which is what the
-    ! pane remembering its own state now means for this side too. It is the same pair a tab switch
-    ! restores, through the same two subroutines, so there is one answer to "where was I" rather than
-    ! one per way of leaving.
-    !
-    ! This is the only path out of Graph mode that restores: the other is a tab change, which is a
-    ! different file and starts wherever its own record says.
-    gosub to TabRestore
+    gosub to TabRestore ! §1–§2
     stop
 
 !   Entering shows the pane and hands this tab's run to it. Loading the pane first, because the
@@ -2053,15 +2011,7 @@ EnterGraph:
     put 1 into GraphMode
     set the content of GraphBtn to `Edit`
     set attribute `title` of GraphBtn to `Back to the plain editor`
-    ! **And it takes the first place in the bar, which is where `Edit` belongs.** The button that goes back
-    ! to the plain editor is the leftmost of the five, whichever pane it is leaving — so in Blocks mode
-    ! nothing moves (Blocks is already first) and here the group shifts up by one to make room. **The
-    ! numbers are the ones `viz.json` states**, whose `order` on these five *is* the bar's sequence; the
-    ! earlier four children of the bar take the default `0` and hold their DOM order ahead of these.
-    ! Graham, 2026-10-12: *"the sequence is always Edit - Blocks - Launch - Record - Graph - Find, including
-    ! when 1 or more is missing."* A hidden button is `display: none`, so it takes no place and the rest keep
-    ! this order — which is what makes a missing `Launch` or a missing pane not shuffle anything.
-    set style `order` of GraphBtn to `4`
+    set style `order` of GraphBtn to `4` ! §3
     set style `order` of BlocksBtn to `5`
     set style `order` of LaunchBtn to `6`
     set style `order` of RecordBtn to `7`
@@ -2080,29 +2030,13 @@ EnterGraph:
     ! hidden: a hidden editor still answers, but reading it while it is up is the honest order.
     gosub to TabRemember
     gosub to LoadModules
-    ! **The section model is built for this file before the sidebar can be asked about a line.** This file
-    ! parses its own buffer in Blocks mode and only there, so a reader who opens a run without ever having
-    ! opened Blocks would otherwise have no sections at all — or worse, the ones left behind by the last
-    ! file that *was* blocked. It is done here, before the fetch, because the fetch is what puts the pane
-    ! on screen: after it there is a window in which a mark could be clicked against a stale model.
-    gosub to ParseSource
+    gosub to ParseSource ! §4
     gosub to FetchRunText
     gosub to SendRunToViz
     gosub to SendRunToSide
     stop
 
-!   The two files the run is made of, read and defaulted before either is fetched.
-!
-!   **Both reads point their failure clause at the send, and that is what makes this work.** `rest get`
-!   compiles its failure clause — `or` and `on failure` alike — as a clause that ends the thread, so a
-!   clause that merely set a default would leave the pane waiting for a message that never came: the
-!   recording is optional, but the *send* is not. Defaulting both to empty first and jumping to the
-!   send on failure means the pane is told either way, and an empty recording is what makes it name the
-!   file it looked for.
-!
-!   The recording is read first because a recording that will not answer is the failure worth naming;
-!   the script is the picture's background, and it is a different file.
-FetchRunText:
+FetchRunText: ! §5–§7
     put `` into TraceText
     put `` into SourceText
     index TabPath to ActiveTab
@@ -2112,24 +2046,13 @@ FetchRunText:
 VizSendTheRun:
     return
 
-!   Both modules: each fetched, compiled and run once, and messaged from then on.
-!
-!   **`run` compiles the *text*, not a path**, which is why the fetch comes first — and it is a
-!   fetch of a file beside this page, so a project that has the editor has both as well.
-!   `release parent` inside each module is what makes its `run` return: by the time it does, that
-!   module is attached, its handlers are registered and it is listening.
-LoadModules:
+LoadModules: ! §8–§9
     if VizLoaded is 0 gosub to LoadVizModule
     if SideLoaded is 0 gosub to LoadSideModule
     return
 
 LoadVizModule:
-    ! **This directory first, the served copy second, and that order is the page's.** The editor is a file a
-    ! project can be *given* — a pack used to carry one — and a copy of a thing that moves is a copy that goes
-    ! stale: a project could run an old editor beside a current runtime and plugin, and only found out when the
-    ! editor refused to compile its own source. A pack carries none now, so this falls through to the released
-    ! one and cannot be stale; a working tree carries its own, and an edit to the pane is visible in it.
-    put `` into VizSrc
+    put `` into VizSrc ! §10
     ! **The page's element first, then this directory.** A project cannot *fetch* the pane from the site — the
     ! site answers `access-control-allow-origin: *` for `.js` and `.css` but not for `.allspeak` — so the page
     ! hands it over in an element instead, the same channel the language comes through. A working tree has no
@@ -2156,16 +2079,7 @@ VizModuleHosted:
     if VizSrc starts with `<` go to VizLoadFailed
     go to VizModuleHere
 
-!   **The sidebar is not the pane, so it is loaded leniently.** Without it the picture still works —
-!   it is a reading aid beside a drawing — so a page that has one file and not the other says so on
-!   the status line and carries on, rather than dropping out of Graph mode over the half of the pane
-!   that is optional. The pane is the opposite case: with no pane there is nothing to look at, so a
-!   page without it leaves the mode entirely.
-!
-!   The default-then-read is `FetchRunText`'s pattern and for its reason: a failure clause ends the
-!   thread, so it has to point at the continuation rather than merely set a value. An empty source
-!   must not reach `run`, which would try to compile nothing.
-LoadSideModule:
+LoadSideModule: ! §11–§12
     ! The same two places as the pane, for the same reason and in the same order.
     put `` into SideSrc
     attach SideSrcDiv to `editor-side` or go SideModuleLocal
@@ -2187,13 +2101,7 @@ SideModuleHosted:
     go to SideModuleHere
 
 SideLoadFailed:
-    ! **The panel rather than the status line, and that is the fix this path always needed.** A module
-    ! that will not load is a fault in the page rather than news about the work, and the reader needs it
-    ! to still be there when they look up from the pointer — which is exactly what went wrong the first
-    ! time this path was hit: the sidebar was not beside the editor, the line flashed and went, and the
-    ! only symptom was that nothing happened when a mark was clicked. The status line could not hold it
-    ! (everything there is cleared after three seconds); the panel stays until it is closed.
-    put `The Graph sidebar could not be loaded. Without it the picture still works — the sidebar is a reading aid beside the drawing. Rebuild the editor payload with ./build-allspeak, or start the dev server from the repository root.` into AlertMsg
+    put `The Graph sidebar could not be loaded. Without it the picture still works — the sidebar is a reading aid beside the drawing. Rebuild the editor payload with ./build-allspeak, or start the dev server from the repository root.` into AlertMsg ! §13
     log `sidebar: could not fetch ` cat `viz-side.allspeak` cat ` — is it beside the editor?`
     gosub to ShowAlert
     return
@@ -2207,15 +2115,7 @@ VizLoadFailed:
     gosub to ShowAlert
     stop
 
-!   The run, as one dict — the whole of the interface in this direction. Built here rather than
-!   filled in place because the pane reads its fields by name, so a field added on one side is
-!   visible on the other.
-!
-!   **The `GraphMode` guard is not belt and braces.** Both fetches above hand control back to the event
-!   loop, so the reader can leave the pane — or switch to another file — while this is still waiting
-!   for the recording. Sending `open` then would leave the pane answering a pointer it no longer has,
-!   with the editor in flat mode and nothing left to send it the close.
-SendRunToViz:
+SendRunToViz: ! §14–§15
     if GraphMode is 0 return
     put `{}` into VizRun
     set property `open` of VizRun to 1
@@ -2262,20 +2162,11 @@ TellVizClosed:
     send VizRun to VizModule
     return
 
-!   Turn off every mode there is. The panes are alternatives, not layers, so each one's entry point
-!   has to turn the others off before turning itself on — and the list of "the others" belongs in one
-!   place, or the next pane added is missed by whichever entrant was written before it existed. That
-!   is exactly what happened to `EnterBlocks` and the Graph pane, and it showed as the Graph button
-!   still reading `Edit` (two buttons offering to leave a pane neither of which was on) with the
-!   graph left lying under the Blocks pane.
-!
-!   Called by `EnterBlocks`, `EnterGraph` and `ActivateTab`. A fourth pane means changing this and
-!   nothing else.
-DoExitPanes:
+DoExitPanes: ! §16–§17
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash 2777205f
+!! @hash 7a22679f
 !! @verified ecd231d6
 !!!
 !! The front door for what arrives from the pane, which is now two kinds of news and one registration.
@@ -2302,15 +2193,23 @@ VizFreezeReport:
 !! **This is the body of the inbound line report, entered from `VizInbound` above.** Everything else here is driven by the reader clicking one of the editor's own buttons; this is the one path that arrives from another program, and it arrives on the pane's pick — or, for the other kind, on the pane's freeze lifting. **The registration itself is not here** — a handler runs only if its line is executed, this file stops before this block, and the registration is in its own block above, where the flow reaches it.
 !!
 !! **The line is looked up rather than the block searched for.** `SecStart` and `SecEnd` already bound every section, so "which block holds line N" is a walk over them. A line in *no* block is an answer too, and the sidebar is told so rather than being left showing the last block it had. **And the model is built on the way in**, by the same `ParseSource` Blocks mode uses, because it used to be built *only* there: a reader who opened a run without ever opening Blocks had no sections at all — or, worse, the ones left behind by the last file that was blocked, which is the kind of stale answer that reads as a working panel.
+!!
+!! Appendix
+!!
+!! §1 **The report arrives as a dict, so its line is read as a property and never converted.** Two things are being avoided here, and both were live faults in the first cut: `put the message into SideSel` leaves a dict in a variable the look-up does arithmetic on, and `add 0 to` it throws rather than coercing; and the other tempting spelling, `the value of the message`, is `parseInt` of its argument — which on a dict is *0 for every click*, so the panel faithfully reported that line 0 is in no doc block. The one honest spelling is the property, because the property is what the pane set.
+!!
+!! §2 A line lies in at most one block, so the walk stops at the first it finds. The bounds are the block's own two documented lines — its opener and its terminator — and the code the click landed on is between them, which is why both tests are inclusive.
+!!
+!! §3 The heading is the block's first prose line, numbered as the Blocks view numbers it, because that number is how a reader gets from the sidebar back to the same block in the other pane.
+!!
+!! §4 **And the walk really does stop at the match — `From` and `To` are written on *every* pass**, so a walk that ran to the end left them holding the *last* section in the model while `SideFound` and the heading held the one that matched. The `Code` tab slices on those two, so it showed every block's code as the last block's: found by Graham in the browser, 2026-10-12, *"the code displayed is always that of the final doc-blocked item in the script"*, with the heading correct — and the check could not see it because its fixture's matching block was also its last. The two bounds are the *matched* block's, which is what the first line of this comment always said the walk did.
+!!
+!! §5 **And a line no block holds still has a pair of bounds, which is what the `Code` tab needs.** The walk carries the *gap* around the pointer as it goes: the line after the block before the pointer, and the line before the block after it. A file is blocks and the code between them, so a gap is a real run of code rather than an arbitrary window of lines — and a reader pointing between two blocks is handed those lines, which is Graham's rule for this panel (`TODO-viz.md`, "Settled decisions": a tab brings the reading to the reader). `SideFound` stays 0, so the doc-block tab keeps answering with its sentence — it is the same line, and the two tabs say different true things about it.
+!!
+!! §6 **And the two bounds the code tab slices on**, which `SideFindBlock` has just walked into `From` and `To`. **What they mean depends on `SideFound`**, and both readings are useful: the block's own documented lines when one holds the line, and the *gap's* first and last line when none does — the run of code between the block before the pointer and the block after it. The sidebar is told both and decides: a doc block's prose for the first, that run of code for the second, and the sentence for both when the doc-block tab is the one up.
 SideMarkLine:
     if GraphMode is 0 stop
-    ! **The report arrives as a dict, so its line is read as a property and never converted.** Two things
-    ! are being avoided here, and both were live faults in the first cut: `put the message into SideSel`
-    ! leaves a dict in a variable the look-up does arithmetic on, and `add 0 to` it throws rather than
-    ! coercing; and the other tempting spelling, `the value of the message`, is `parseInt` of its argument
-    ! — which on a dict is *0 for every click*, so the panel faithfully reported that line 0 is in no doc
-    ! block. The one honest spelling is the property, because the property is what the pane set.
-    put the message into SideIn
+    put the message into SideIn ! §1
     put property `line` of SideIn into SideSel
     ! The mark's own figures, which are the pane's to count and this file's only to pass on. They are read
     ! here rather than in `SendBlockToSide` because they belong to the *click* and not to the block: a line
@@ -2325,29 +2224,7 @@ SideMarkLine:
     stop
 
 SideFindBlock:
-    ! A line lies in at most one block, so the walk stops at the first it finds. The bounds are the
-    ! block's own two documented lines — its opener and its terminator — and the code the click landed
-    ! on is between them, which is why both tests are inclusive.
-    !
-    ! The heading is the block's first prose line, numbered as the Blocks view numbers it, because that
-    ! number is how a reader gets from the sidebar back to the same block in the other pane.
-    !
-    ! **And the walk really does stop at the match — `From` and `To` are written on *every* pass**, so a
-    ! walk that ran to the end left them holding the *last* section in the model while `SideFound` and the
-    ! heading held the one that matched. The `Code` tab slices on those two, so it showed every block's
-    ! code as the last block's: found by Graham in the browser, 2026-10-12, *"the code displayed is always
-    ! that of the final doc-blocked item in the script"*, with the heading correct — and the check could
-    ! not see it because its fixture's matching block was also its last. The two bounds are the *matched*
-    ! block's, which is what the first line of this comment always said the walk did.
-    !
-    ! **And a line no block holds still has a pair of bounds, which is what the `Code` tab needs.** The walk
-    ! carries the *gap* around the pointer as it goes: the line after the block before the pointer, and the
-    ! line before the block after it. A file is blocks and the code between them, so a gap is a real run of
-    ! code rather than an arbitrary window of lines — and a reader pointing between two blocks is handed
-    ! those lines, which is Graham's rule for this panel (`TODO-viz.md`, "Settled decisions": a tab brings
-    ! the reading to the reader). `SideFound` stays 0, so the doc-block tab keeps answering with its
-    ! sentence — it is the same line, and the two tabs say different true things about it.
-    put 0 into SideFound
+    put 0 into SideFound ! §2–§5
     put `` into SideTitle
     put `` into SideProse
     ! **The far end of a gap with no block after it.** A file runs out of lines rather than out of blocks,
@@ -2402,13 +2279,7 @@ SendBlockToSide:
     set property `found` of SideMsg to SideFound
     set property `title` of SideMsg to SideTitle
     set property `prose` of SideMsg to SideProse
-    ! **And the two bounds the code tab slices on**, which `SideFindBlock` has just walked into `From` and
-    ! `To`. **What they mean depends on `SideFound`**, and both readings are useful: the block's own
-    ! documented lines when one holds the line, and the *gap's* first and last line when none does — the
-    ! run of code between the block before the pointer and the block after it. The sidebar is told both and
-    ! decides: a doc block's prose for the first, that run of code for the second, and the sentence for
-    ! both when the doc-block tab is the one up.
-    set property `from` of SideMsg to From
+    set property `from` of SideMsg to From ! §6
     set property `to` of SideMsg to To
     send SideMsg to SideModule
     return
@@ -2436,7 +2307,7 @@ TellSideClosed:
     set property `open` of SideMsg to 0
     send SideMsg to SideModule
     return
-!! @hash 8fe9dd6b
+!! @hash e4eac7b5
 !! @verified 0c4a0949
 !!!
 !! Recording a run, from the button.
@@ -2452,6 +2323,14 @@ TellSideClosed:
 !! **The status line says what the recording *is*, not just that one was made.** A document holding nothing but its header is still a valid document, so a button reading only the trace reports a run that died on its first statement as a success — and the two ways a recording comes back empty are worth telling apart, because one is a script this runtime cannot compile and the other is a script that stopped. So the plugin answers with a sentence — `12 visits in 1 window`, or `could not run: I don't understand 'dictionary' at line 46` — and it is shown as it stands.
 !!
 !! **And a guard is armed, with the recorder's own defaults.** A script handed to the editor by a tool is not to be trusted with the editor's responsiveness: a busy loop and a never-returning wait both end here, and the recording says which.
+!!
+!! Appendix
+!!
+!! §1 **One button, two acts, and the script says which is right.** A script that names an app runs *as* an app — driven by its own page, clicked by a person — so it cannot be run here: the editor opens it instead and arms it from outside, and the recording is written when that window closes. Anything else is a script, and Record runs it here as it always has. The parse is what knows the difference, and it is the same parse the Blocks view uses, so `@app parser.html` means the same thing on both sides of the editor.
+!!
+!! §2 **The flavour is the plugin's answer, not a second reading of the same facts.** The `flavour |` record comes from the plugin's own resolution — the script's marker, then the project's `#editor-runtime`, then `js` — so the editor and the thing that actually records cannot disagree. This file used to read `#editor-runtime` itself and fall back to it when the tab said nothing: two implementations of one rule, and the reason the marker's case was invisible here is that the *attributes* it used to be read from do not exist on a script this runtime cannot compile. See `NoteFlavour`. **A script for the Python runtime is run by the project's server, and not here.** The editor is a page, so it has the JavaScript runtime and nothing else — which is why Record refused a `@py` script before this. The dev server has Python: `/record/<script>` runs it exactly as `allspeak <script>` would, puts what it printed in `<script>-stdout.txt` beside it (a script's output is unpredictable and would drown the console the server is also writing to) and the recording in `<script>.viz.json`, which is the file the pane already looks for. The server composes the sentence, so the file's name and the verdict are named once.
+!!
+!! §3 **Short, true, and out of the way in three seconds.** The message names no path: the pane does, when it reads the recording, and the toolbar is not the place for a filename. It used to say "Recording ... — close its window and the recording is saved to ...", which was both a promise the editor cannot keep (it printed whether or not a window opened) and the longest thing in the toolbar — Graham's two objections, in one line. A failure is the plugin's to report, in the console, where it names which of the two things went wrong.
 RecordRun:
     gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if TabCount is 0 stop
@@ -2467,25 +2346,8 @@ RecordRun:
     end
     codemirror get content of ContentEditor into RecordSource
     put EditorPath cat `.viz.json` into TracePath
-    ! **One button, two acts, and the script says which is right.** A script that names an app runs *as* an app —
-    ! driven by its own page, clicked by a person — so it cannot be run here: the editor opens it instead and arms
-    ! it from outside, and the recording is written when that window closes. Anything else is a script, and Record
-    ! runs it here as it always has. The parse is what knows the difference, and it is the same parse the Blocks
-    ! view uses, so `@app parser.html` means the same thing on both sides of the editor.
-    gosub to ParseSource
-    ! **The flavour is the plugin's answer, not a second reading of the same facts.** The `flavour |` record
-    ! comes from the plugin's own resolution — the script's marker, then the project's `#editor-runtime`, then
-    ! `js` — so the editor and the thing that actually records cannot disagree. This file used to read
-    ! `#editor-runtime` itself and fall back to it when the tab said nothing: two implementations of one rule,
-    ! and the reason the marker's case was invisible here is that the *attributes* it used to be read from do
-    ! not exist on a script this runtime cannot compile. See `NoteFlavour`.
-    ! **A script for the Python runtime is run by the project's server, and not here.** The editor is a page, so
-    ! it has the JavaScript runtime and nothing else — which is why Record refused a `@py` script before this.
-    ! The dev server has Python: `/record/<script>` runs it exactly as `allspeak <script>` would, puts what it
-    ! printed in `<script>-stdout.txt` beside it (a script's output is unpredictable and would drown the console
-    ! the server is also writing to) and the recording in `<script>.viz.json`, which is the file the pane
-    ! already looks for. The server composes the sentence, so the file's name and the verdict are named once.
-    if TabFlavour is `py`
+    gosub to ParseSource ! §1
+    if TabFlavour is `py` ! §2
     begin
         rest get RecordReply from `/record/` cat EditorPath or begin
             set the content of StatusSpan to `Could not run ` cat EditorPath cat ` — the server did not answer`
@@ -2499,13 +2361,7 @@ RecordRun:
     if AppPage is not empty
     begin
         record the app at AppPage to TracePath
-        ! **Short, true, and out of the way in three seconds.** The message names no path: the pane does, when
-        ! it reads the recording, and the toolbar is not the place for a filename. It used to say "Recording
-        ! ... — close its window and the recording is saved to ...", which was both a promise the editor cannot
-        ! keep (it printed whether or not a window opened) and the longest thing in the toolbar — Graham's two
-        ! objections, in one line. A failure is the plugin's to report, in the console, where it names which of
-        ! the two things went wrong.
-        set the content of StatusSpan to StrRecording
+        set the content of StatusSpan to StrRecording ! §3
         fork to ClearStatus
         stop
         stop
@@ -2531,7 +2387,7 @@ RecordFailed:
     set the content of StatusSpan to `Could not record this script`
     fork to ClearStatus
     stop
-!! @hash caa49d70
+!! @hash 0bbc24f6
 !! @verified df567fa6
 !!!
 !! Opening the project's app, from the editor.
@@ -2541,6 +2397,10 @@ RecordFailed:
 !! **Nothing about the app changes, and that is deliberate.** `parser.html` fetches its script and runs it; the editor does not run it, poke it, or wrap it. That is what keeps this half simple, and it is also what makes the *next* half — recording a launched app — a separate problem: the recorder has to be armed before the app's own `viz start` line runs, which means the app page carrying a bootstrap or the editor injecting one before its scripts run. Launching needs neither.
 !!
 !! **A script that names no app says so** rather than the button doing nothing, because "nothing happened" is the one report a reader cannot act on. The message names the spelling, says it goes on a line of its own, and says it is not a comment — the three things a reader needs and the three the first version got wrong: it pointed at a doc block, which is where the *analyser's* `@hash` and `@verified` live and where an attribute never reaches the compiler.
+!!
+!! Appendix
+!!
+!! §1 **The message says where, and that is the whole of its job.** It used to say "to a doc block", which is where an attribute must *not* go: a `@`-line inside a `!!` block is the analyser's metadata and never reaches the compiler, so a reader who followed that advice would have written something the program cannot see. Graham asked which it was, which is the message failing at the one moment it exists for. **The example is a real filename, not `<page>`, and that is not a style choice.** `set the content of` writes `innerHTML` (`Browser.js`), so a placeholder in angle brackets is parsed as an HTML tag and never rendered: the reader saw `add '@app ' on a line of its own` — the spelling this sentence exists to give them, gone. Measured 2026-10-05, from Graham's own status line, and the check below could not see it because the harness's stub stores the string it is given rather than parsing it.
 LaunchApp:
     gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if TabCount is 0 stop
@@ -2550,15 +2410,7 @@ LaunchApp:
     gosub to ParseSource
     if AppPage is empty
     begin
-        ! **The message says where, and that is the whole of its job.** It used to say "to a doc block", which is
-        ! where an attribute must *not* go: a `@`-line inside a `!!` block is the analyser's metadata and never
-        ! reaches the compiler, so a reader who followed that advice would have written something the program
-        ! cannot see. Graham asked which it was, which is the message failing at the one moment it exists for.
-        ! **The example is a real filename, not `<page>`, and that is not a style choice.** `set the content of`
-        ! writes `innerHTML` (`Browser.js`), so a placeholder in angle brackets is parsed as an HTML tag and
-        ! never rendered: the reader saw `add '@app ' on a line of its own` — the spelling this sentence exists
-        ! to give them, gone. Measured 2026-10-05, from Graham's own status line, and the check below could not
-        ! see it because the harness's stub stores the string it is given rather than parsing it.
+        ! §1
         set the content of StatusSpan to `No app named: add '@app mypage.html' on a line of its own — a script attribute, not a comment`
         fork to ClearStatus
         stop
@@ -2567,7 +2419,7 @@ LaunchApp:
     set the content of StatusSpan to `Opened ` cat AppPage
     fork to ClearStatus
     stop
-!! @hash 299d8de4
+!! @hash 6a3baf00
 !! @verified 0faead49
 !!!
 

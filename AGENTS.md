@@ -150,6 +150,18 @@ Rules:
 - **One paragraph = one line.** Each paragraph of prose is a single `!! ...` line, however long. Bare `!!` separates paragraphs. Don't insert hard line breaks for visual wrapping — they render badly in Blocks mode (which word-wraps the doc pane) and they fight you when editing. The flat-mode editor will show very long source lines; that's accepted, since the prose is meant to be read in Blocks mode and AI tools don't care about line length.
 - Don't start a prose line with `@hash` or `@verified` — the parser treats those as metadata. Quote them ("@verified") if you must mention the names.
 - After any code change inside a block, refresh hashes with `python3 tools/asdoc-check.py --write <file>`. Verifies that go stale show up as warnings — review the change and re-verify (viz's Blocks mode has a one-click "Mark verified" button).
+- **Explanatory comments belong in the block's prose, not in its code.** The code region carries short remarks — one to four lines, read *at* the statement they are about — and nothing longer. Anything that is design reasoning, a measurement, a trap or a history goes into the block's prose as an **appendix entry**, and its place in the code is a marker:
+
+        !! Appendix
+        !!
+        !! §1 A note, as one paragraph on one line.
+        !!
+        !! §2 Another note.
+            ! §1
+            put 14 into VizDotSize
+
+  `§N` numbers **within the block**: §1 is the first appendix entry of *the block you are reading*, which is unambiguous in Blocks mode (one block on screen, its code beside its prose). A reference to another block's entry therefore names the site rather than the number — *"see the note where the mark's size is set"* — because every block numbers from §1. A marker belongs **inline** on the label or statement below it (`VizAlertFinish: ! §3`, `while N is less than Limit ! §7`) where that is safe, and on a `! §N` line of its own otherwise; never inline onto a line carrying an `@` attribute, because `!` ends an attribute. A `! ---- the scrollbars ----` signpost is navigation and stays in the code where it points. A block whose code region is empty takes its paragraphs as prose, with no numbering and nothing to point into.
+- **This is standard style for this repository's scripts**, and the reason is the reader: code and documentation cannot be read at the same time, and a comment that cannot be taken in at a glance disrupts the picture the code is meant to form. The prose still reaches the reader, in the pane beside the code, and an AI reading the file follows the markers. `various/docmove.py` — a dev rig, present only in this checkout — does the move for a file, keeping the code byte-identical and self-checking that every moved paragraph arrived.
 
 Both implementations of the analyser validate the same convention:
 - `tools/asdoc-check.py` — Python CLI, recursive over a directory
