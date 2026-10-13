@@ -356,32 +356,40 @@ view), or left as the recording's fact. Not changed — the evidence went first.
   Everything the editor owns about the menu *is* asserted by `viz-modes-check` (8 claims). **These claims come
   home when the tick is moved out of the drawing**, and they are the first thing to move.
 
-- **What is left to split, measured 2026-10-13, after the alert and the clip** (Graham asked for the list).
-  Sizes are the sum of each cluster's label spans, so they are the *code* and not the prose:
-  - **the window and its gestures — 734 lines, 11 labels** (`VizPictureFit`, `VizWindow`, `VizPan`, `VizDrag`,
-    `VizSlideTo`, `VizScroll`, …): the plan's item (3) and the biggest remaining win, and the reason it is hard
-    is not its size but its *rate* — the gestures mutate the window while the picture draws from it, so a
-    module would have to be asked per pointer event, which is the one thing the module pattern refuses. **The
-    seam to look for is the arithmetic** (the fit, the clamp, the step↔x mapping), not the gestures.
-  - **the two drawing layers** (`VizSourceMeasure` 123 lines; the marks, heat, rules and flow 77): small, and
-    the plan's verdict stands — *last, or not at all*, because they share the frame, the em measurement and the
-    letterbox, and **a split there risks a second copy of the mapping**, this file's most expensive known fault.
-  - **the element build — 383 lines, `VizBuildElements`**: the frame's whole DOM, already one subroutine (it was
-    extracted on 2026-10-13 for the `VizBusy` fault) and purely "make the elements", so it is a real seam — a
-    small win, since it is called once at open.
-  - **what the pane tells the host — 484 lines, `VizRemember`**: a data/interface cluster with a message
-    boundary already in place, which is what made the clip a good split.
-  - **the line-name layer — 117 lines, `VizLabelNames`/`VizLabelCheck`/`VizLabelShape`**: a per-draw second
-    picture of right-aligned names, which its own prose calls *temporary*, built to settle one question about
-    where the text sits. **The question to ask first is whether it is still wanted at all**, not how to split it.
-  - **the freeze — 94 lines, `VizFreeze`/`VizFreezeTell`**: the pointer guard over a long job, small and
-    self-contained.
-  - **the two bars — 48 lines** (`VizBars`, `VizBarFit`) plus the redaction build: their handles are drags, so
-    they belong with the window rather than in a module of their own.
-  **And the honest measure of the whole list**: for every one of these clusters, almost none of the names it
-  uses are used *only* there. After the alert and the clip, what is left is shared state — so each remaining
-  split is a **design** job (what crosses, and at what rate) rather than a move, which is exactly why the plan
-  put the two layers last and hedged them with "or not at all".
+- **What is left to split — the survey corrected, and Graham's decisions taken (2026-10-13).** *The first survey
+  of this was wrong and is replaced here*: it summed each cluster's **label span**, and a span runs to the next
+  label, so it swallowed doc prose and, worse, code that belongs to nobody — in the header region it gave
+  `VizRemember` 484 lines and the overlay 484 too. What follows is the **code** count, statements and comments,
+  with prose and blank lines out. The lesson is the repository's own: measure the value, not the span.
+  - **the element build — 362 code lines, `VizBuildElements`, one label** (the most reliable reading in the
+    list, because the label's body is the whole cluster). Graham: *"a module that's only called once but
+    removes 383 lines is well worthwhile"* — **do it.** One design point to settle first: `plotview-check`
+    reads the elements the build makes (`ec-VizPane`, `ec-VizGlyphs`, the bars), so a build that moves out of
+    the pane leaves the harness holding nothing. The frame module has to be something the harness can run, or
+    the harness's picture claims go with it.
+  - **the window and its gestures — 525 code lines over 12 labels.** The plan's item (3) and the biggest
+    remaining win; hard because of its *rate* (the gestures mutate the window while the picture draws from it,
+    so a module would be asked per pointer event — the one thing the module pattern refuses). The seam to look
+    for is the arithmetic: the fit, the clamp, the step↔x mapping.
+  - **the line-name overlay — 58 code lines, and 118 lines all told** when its routine, its `<image>` element,
+    its creation, its six declarations, its comment and its call go together. **Graham: let it go** — the
+    overlay exists to answer one question about where a picture's text sits, and it is not wanted any more.
+    **`VizLabelCheck` and `VizLabelShape` are not part of it and must stay**: they are the two halves of the
+    check the *rules* use to find their right end, so deleting them would change the heat map. *The first cut
+    took `VizLabelShape` because of its name, which is the trap this line is here to prevent.*
+  - **the two drawing layers** (`VizSourceMeasure` 82 code lines; the marks, rules and flow 75): the plan's
+    verdict stands — *last, or not at all*, because a split there risks a second copy of the mapping, this
+    file's most expensive known fault.
+  - **the freeze — 16 code lines** (`VizFreeze`, `VizFreezeTell`): Graham's condition was "if it's
+    self-contained", and it is not: the frozen flag is read by the pane's own pointer handler, so the part a
+    module could own is the two messages, not the guard. Not worth its wiring.
+  - **`VizRemember` — 7 code lines**, a calibration write. It is not a cluster at all: the 484 lines the first
+    survey attributed to it were the header region's, prose and declarations. **Nothing to split.**
+  - **the bars — 45 code lines** (`VizBars`, `VizBarFit`), whose handles are drags, so they belong with the
+    window rather than in a module of their own.
+  **And Graham's principle, recorded because it governs the queue**: modules should be as readable as
+  possible, and *more* of them is a help rather than a handicap when it comes to understanding — the same
+  principle he applied when allocating EasyCoder's original functionality.
 - **The clip's kept set is a module now — stage one of two (2026-10-13).** `viz-clip.allspeak` holds the kept
   ranges, the history behind them and the arithmetic of a cut, and the pane is **untouched**: nothing is wired
   yet, so nothing can regress, and the module is not in the build. What *is* proved: the move is mechanical and
