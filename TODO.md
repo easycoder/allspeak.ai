@@ -313,3 +313,28 @@ Four source files cite this file by name, so these stay here until the citations
 **2026-10-13, eighth pass: the empty recording — Graham's console error, and the fault it was hiding.** He restarted Viz, opened `viz.allspeak` and pressed Graph: `Runtime error in 'VizGraph'` at `VizKeepRun`'s read of `VizParsed`. **It is reachable by any script with no `<script>.viz.json` beside it** — a fresh file, most files — not only the editor's own source. The cause: a draw with nothing to draw is supposed to *end* without drawing, but it got there by accident — the clip's filter read the parsed document, which is deliberately unset when there was nothing to parse, and the raise ended the draw. **The fix states it**: the draw now ends at an explicit guard (`if VizTrace is empty return`) where the empty-recording bookkeeping already is. **And guarding that read alone was not enough** — with the filter returning early the draw carried on and failed in `VizBars` (it walks an extent an empty run has not set), which is *worse*: a thrown handler rather than a reported error, and it killed `viz-modes-check` at 82 OK. So the draw stops where it always did, without an error, and `VizKeepRun` keeps a guard for the gesture path (a cut on an empty pane reaches it).
 
 **Measured in a browser, not only in the harness**: a probe opens `test-and-or.allspeak` (no recording) and presses Graph — before, the runtime error at the filter; after, **no page errors and no runtime errors**, the canvas built, no marks. `viz-modes-check` back to **100 OK / 2 FAIL** with no runtime errors; `plotview-check` **82 OK / 5 FAIL, identical in every line**; the browser rig **26 green, no page errors**; `asdoc-check` 0 errors. **The unfinished part is named** in `TODO-viz.md`: the empty state should draw the script as a picture with no arrivals, and that has never run through — the filter was the first hole, `VizBars` the second — so today the picture is empty-but-stale. **And a leftover of mine went with it**: `viz-alert.allspeak` still carried five `alert-probe` logs, which Graham's 14:19 deploy published; they are gone from the tree and the dist, and the next deploy clears the site.
+
+
+**2026-10-13, ninth pass: the empty state drawn, and the three faults that were stacked on it.** Graham's
+console error of the previous pass was the *first* of three, each hidden by the one before. (1) the clip's
+filter read the parsed document (unset when nothing was parsed → `Undefined value`); (2) with that guarded the
+failure moved into the **redaction bars** (`VizRedactBuild` — *the previous pass wrote `VizBars`, and the
+measurement corrected it: the scrollbars were never the fault*), which threw out of a handler rather than
+reporting; (3) the **frame pass never ran for an empty picture** at all, because "has anything changed?"
+compared `VizTrace`/`VizSource` against unset values and two unset values compare equal — the
+unset-comparison trap. And behind all three, the *real* last mile: the editor's `FetchRunText` read the
+recording first with `or go …`, so a missing `.viz.json` took the script's read with it (`on failure` is the
+clause that continues). The pane now draws the script plain — frame, text, redaction bars, no arrivals —
+verified with a screenshot in the browser (the only place it can be seen); `viz-modes-check` 100 OK / 2 FAIL
+with no runtime errors, `plotview-check` 82 OK / 5 FAIL **identical in every line** (the recorded picture is
+untouched), the browser rig 26 green, `asdoc-check` 0 errors.
+
+**Also fixed on the way**, both pre-existing: `VizClamp` capped the window to the run *before* applying its
+four-step floor, so **any run shorter than four steps** got an axis starting before the recording (the empty
+picture read `-3 … 0`; it now reads `0 … 1`) — floor first, then the run's own width. And
+`viz-modes-check`'s `enterWith` waited for the pane to hold *any* events, which the pane satisfies with the
+*previous* tab's, which is the very fault the checks below it exist to catch: it now waits for the recording to
+have been asked for. **Two of my own editing slips cost time in this pass and are worth naming**: silently
+matched-nothing replacements left a `log` probe in place and, worse, dropped `put TabPath cat '.viz.json' into
+TracePath` from `FetchRunText` — four harness checks went red on a fault that did not exist. *Assert every
+edit's match; the instrument first.*

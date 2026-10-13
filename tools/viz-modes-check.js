@@ -1498,6 +1498,13 @@ const enterWith = async file => {
 	served.length = 0;
 	run(`ToggleGraph`);
 	await waitFor(() => up(panes()).includes(`GraphArea`));
+	// **Wait for the recording to have been *asked for*, not merely for the pane to hold something.** The pane
+	// keeps what it was last told, so `VizEvents` is already non-empty the moment a look begins — which is the
+	// very thing the checks below exist to catch — and that satisfied this wait at once, on the *previous* tab's
+	// arrivals. It happened to be harmless while the editor fetched the recording first and the pane was
+	// messaged a tick later; it is not harmless in principle, and the fetch is the boundary these checks are
+	// about, so the fetch is what to wait on.
+	await waitFor(() => served.some(u => u.endsWith(file + `.viz.json`)));
 	await waitFor(() => vizValue(`VizEvents`) !== undefined && vizValue(`VizEvents`) !== ``);
 	return { events: String(vizValue(`VizEvents`) || ``), asked: served.slice() };
 };

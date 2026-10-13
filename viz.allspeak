@@ -2054,8 +2054,15 @@ FetchRunText: ! §5–§7
     put `` into SourceText
     index TabPath to ActiveTab
     put TabPath cat `.viz.json` into TracePath
-    rest get TraceText from `/read/` cat TracePath or go VizSendTheRun
-    rest get SourceText from `/read/` cat TabPath or go VizSendTheRun
+    ! **Either read may come up empty, and neither absence may hide the other.** `or go …` on a `rest get`
+    ! leaves the rest of the section behind (the trap in AGENTS.md), and with the *recording* read first a
+    ! script with no `.viz.json` beside it was sent to the pane with no script either — so the pane drew
+    ! nothing at all, where what it is for is the script plain: the frame, the text, no arrivals, which is
+    ! what the panel's "no recording beside this script" is about. The first fault Graham saw on 2026-10-13
+    ! was downstream of that (the clip filter's read, `viz-graph.allspeak` §30). `on failure` is the clause
+    ! that continues, so each read stands on its own and the pane gets whichever of the two is there.
+    rest get TraceText from `/read/` cat TracePath on failure put `` into TraceText
+    rest get SourceText from `/read/` cat TabPath on failure put `` into SourceText
 VizSendTheRun:
     return
 
@@ -2221,7 +2228,7 @@ DoExitPanes: ! §16–§17
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash a3e9107f
+!! @hash 2f912fca
 !! @verified 7a22679f
 !!!
 !! The front door for what arrives from the pane, which is now two kinds of news and one registration.

@@ -356,16 +356,30 @@ view), or left as the recording's fact. Not changed — the evidence went first.
   Everything the editor owns about the menu *is* asserted by `viz-modes-check` (8 claims). **These claims come
   home when the tick is moved out of the drawing**, and they are the first thing to move.
 
-- **The empty state is *stopped* rather than drawn, and that is unfinished work rather than a fault.** A pane
-  with no recording — any script without a `<script>.viz.json` beside it, which is most of them — ends its draw
-  at the guard in `Draw` (`if VizTrace is empty return`) instead of drawing the script as a picture with no
-  arrivals, which is what the code below it intends ("the empty state **is** drawn — the script plain, no
-  arrivals"). **Two holes were found on the way and only the first is closed**: the clip's filter read the
-  parsed document (Graham's console error, 2026-10-13), and with that read guarded the failure moved into
-  `VizBars`, which walks an extent an empty run has not set. So drawing the empty state means finding what
-  else assumes a recording — the extent and the two bars are known; there may be more — and each hole is
-  cheap once the guard is moved along. Worth doing because the pane is *most often* opened on a script with no
-  recording, and today that picture is empty-but-stale (the canvas keeps whatever it last drew).
+- **The empty state is drawn (done 2026-10-13), and three faults were stacked on that one path.** A pane with
+  no recording — any script without a `<script>.viz.json` beside it, which is most of them — now draws the
+  script plain: the frame, the text, the redaction bars, no arrivals. Verified in the browser, which is the only
+  place it can be seen (a screenshot, 15:2x): lines 1–40, the step axis `0…1`, no runtime error, no page error.
+  The three faults, in the order they were found — each one *hidden* by the one before it:
+  1. **the clip's filter** read the parsed document, which is deliberately unset when there was nothing to
+     parse: `Undefined value`, the console error Graham reported;
+  2. **the redaction bars** (`VizRedactBuild`, *not* the scrollbars — that is what I first wrote and the
+     measurement corrected) walked an extent the frame pass had never set, which is what the failure moved to
+     once (1) was guarded — and it throws out of a handler rather than reporting, so it is the worse fault;
+  3. **the frame pass was never run for the empty picture**, because "has anything changed?" compared
+     `VizTrace`/`VizSource` against *unset* values and two unset values compare equal — the unset-comparison
+     trap Graham has hit before. Fixed by naming the condition instead of inferring it: both absent is a draw
+     that stops (`if VizTrace is empty and VizSource is empty return`).
+  **And the pane was never sent the script** — the real last mile: the editor's `FetchRunText` read the
+  *recording* first with `or go …`, so a missing `.viz.json` took the script's own read with it (the `rest get`
+  trap in AGENTS.md). `on failure` is the clause that continues, so either read can now come up empty alone.
+- **And a clamp fault the empty run exposed, which was never the empty case's.** `VizClamp` capped the window to
+  the run *before* applying its four-step floor, so the pull-back that keeps the right edge at the run's end
+  set the left edge to `maxSteps - 4` — **any run shorter than four steps** got an axis starting before the
+  recording (the empty picture read `-3 … 0`). Order swapped: floor first, then the run's own width.
+- **`tools/viz-modes-check.js`'s `enterWith` waited on the wrong thing** (found while chasing the above): it
+  waited for the pane to hold *any* events, which the pane satisfies with the *previous* tab's — the very fault
+  the checks below it exist to catch. It now waits for the recording to have been asked for.
 
 - **`VizRowAt`'s missing `x` test is fixed, and its check is in `plotview-check`** — see "The intent on hover" for
   the measurement and the decision (2026-10-13, `dec-274a640ffe0aff5a`). `various/menu-measure.js` walks the

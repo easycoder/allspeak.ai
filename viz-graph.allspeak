@@ -377,7 +377,7 @@ VizRemember:
 !!
 !! §30 **And the panel is told here, at the start of *every* drawing, which is the fix for a clip that gave no sign of life.** It used to be armed by `VizBusyNotice` alone, and that is called only from `VizDrawRun` — the entry for a *new run* — so a gesture, and a clip is a gesture, drew without ever putting the panel up. Graham's report: *"the first clip of a large recording takes some time to run, but I didn't see a popup appear."* `Draw` is the one place every drawing passes through, run or gesture, so the message at its start and the one at its end cannot miss one. **The panel is another program now** (`viz-alert.allspeak`) and this is the arming message; the guard that keeps one ticker alive across many drawings lives there, where the ticker is.
 !!
-!! §31 **The arrivals are replaced, never left over, and the reading happens *inside* the guard that has a recording to read.** The draw also *ends* on an empty recording, deliberately, at the line below this entry's marker: everything under it is drawn from the recording, and one read of the parsed document was reached with nothing parsed — Graham's console error of 2026-10-13, found by opening any script with no recording beside it and pressing Graph. **That error was hiding a second hole**: with the read guarded alone, the failure moved into `VizBars`, which walks an extent an empty run has not set. So the empty state as *drawn* — the script as a picture with no arrivals, which the code below intends — is unfinished work, and `TODO-viz.md` has it. The old text of this note: Two faults met here and looked like one. The clearing must come first, because `put json of` raises on an empty value and the raise ends the draw; and the parse must not be consulted when there was nothing to parse, because `VizParsed` is scratch that keeps the *last* recording's document — so a guard reading it re-set the previous tab's arrivals and the pane went on showing a recording that belongs to another file. Both were found by asserting the empty state rather than by reading this. **Only when there is no recording at all.** This used to run on every draw, and it is the reason a clip could not be taken from the set on screen: it emptied `VizEvents` *before* the clip block read it, so every cut walked the whole recording — measured 2026-10-07, `VizEvents` was `[]` (two characters) at every filter run while `VizAll` held the recording. The swap fills `VizEvents` again later in the same draw, so the *picture* was always right and nothing looked wrong; what was wrong was that the kept set never survived to the next draw.
+!! §31 **The arrivals are replaced, never left over, and the reading happens *inside* the guard that has a recording to read.** **And an empty recording is always worth drawing**: the frame pass is skipped when nothing about the picture has changed, and two *unset* variables compare equal, so a pane with no recording concluded "no change" and skipped the pass that builds the source document — leaving the redaction bars to walk an extent that did not exist. The line below this entry's marker is that test made explicit, and with it the empty picture is the script drawn as it always is, minus every mark, rule and flow (there are none to draw). Measured in a browser on 2026-10-13, which is the only place it can be seen: `test-and-or.allspeak`, no recording, Graph → no runtime error, no page error, the source drawn, no marks. The old text of this note: Two faults met here and looked like one. The clearing must come first, because `put json of` raises on an empty value and the raise ends the draw; and the parse must not be consulted when there was nothing to parse, because `VizParsed` is scratch that keeps the *last* recording's document — so a guard reading it re-set the previous tab's arrivals and the pane went on showing a recording that belongs to another file. Both were found by asserting the empty state rather than by reading this. **Only when there is no recording at all.** This used to run on every draw, and it is the reason a clip could not be taken from the set on screen: it emptied `VizEvents` *before* the clip block read it, so every cut walked the whole recording — measured 2026-10-07, `VizEvents` was `[]` (two characters) at every filter run while `VizAll` held the recording. The swap fills `VizEvents` again later in the same draw, so the *picture* was always right and nothing looked wrong; what was wrong was that the kept set never survived to the next draw.
 !!
 !! §32 **The recording is parsed once, not once per draw.** Measured on a 435KB trace: one `element N of` costs about 15ms, because the runtime parses the whole array *and* stringifies the element it returns (`Core.js`, the `element` and `item` cases) — so every loop here is quadratic in the number of records, and re-parsing per draw paid that again for nothing. Keyed on the recording's own text, which is what "the same run" means.
 !!
@@ -802,18 +802,15 @@ Draw:
         end
     end
     if VizTrace is empty put `` into VizParsedFrom
-    ! **No recording, no picture: the draw ends here rather than walking a document that is not there.**
-    ! Everything below is drawn *from* the recording — the extent the axis is scaled to, the marks, the
-    ! rules, the flow, the scrollbars — and with none of it there the picture is the empty state the reader
-    ! is already being told about (`GraphNone` names the file it looked for). **This is what the raise was
-    ! doing by accident**: the clip's filter read the parsed document, which is deliberately unset when
-    ! there was nothing to parse, and the error ended the draw at that line. Graham found it on 2026-10-13 —
-    ! *"I restarted Viz, loaded `viz.allspeak` then immediately hit the Graph button"* — and the console
-    ! named the filter, one fault short of the truth: **guarding that read alone moves the failure into the
-    ! scrollbars** (`VizBars` walks an extent the empty run has not set), which is how the empty state's
-    ! second hole was found. Drawing the script-as-a-picture with no arrivals is a real piece of work and is
-    ! named in `TODO-viz.md`; stopping here is what happens today, minus the error.
-    if VizTrace is empty return
+    ! **Nothing at all to draw is a draw that stops here, and it is the *pair* that is tested.** A pane hands
+    ! over its script and its recording separately, so a draw can arrive with neither — the first draw after
+    ! Graph is pressed, on a script that has never been run, is exactly that. Everything below paints from a
+    ! frame pass, three of whose inputs are compared *against the previous draw*: with both unset, "no
+    ! change" was the conclusion, the pass was skipped, and the redaction bars walked a document nobody had
+    ! built. Graham found the first fault on this path on 2026-10-13 (the clip filter's read, §30) and this
+    ! draw is what was behind it. **A source without a recording is *not* this case**: that picture is the
+    ! script itself, built by the pass below like any other, and it is the ordinary way a pane opens.
+    if VizTrace is empty and VizSource is empty return
     if VizClipInit is 0 ! §33–§34
     begin
         put 0 into VizKeepN
@@ -840,7 +837,7 @@ Draw:
     put 0 into VizMinSteps
     if VizSetTag is not VizKeptKey gosub to VizKeepRun ! §35
     put VizKept into VizEvents ! §36
-!! @hash 79c02507
+!! @hash 51678a45
 !! @verified e9a06a05
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -2548,10 +2545,17 @@ VizClamp:
     ! — 0 to the last step with no clip, the clip's own range with one. `VizSpanSteps` is that width,
     ! and the lower clamp is where the run now begins, so both gestures stop at the clip's edges
     ! exactly as they stop at the recording's when there is no clip.
-    if VizViewXW is greater than VizSpanSteps put VizSpanSteps into VizViewXW
-    if VizViewYH is greater than VizSpanLines put VizSpanLines into VizViewYH
+    ! **The floor comes first and the run's own width second, and the order is the whole of it.** A window
+    ! may not be narrower than four steps (an axis needs something to label) and may not be wider than the
+    ! run; capping to the run first let the floor raise a one-step run's window to four, and the pull-back
+    ! below then put its left edge at `maxSteps - 4` — a window that starts *before* the recording. Found
+    ! on 2026-10-13 by drawing a script with no recording, whose run is a single step: the steps axis read
+    ! `-3` to `0`. **Any run shorter than four steps did this**, not only an empty one; the empty picture is
+    ! just where it became visible.
     if VizViewXW is less than 4 put 4 into VizViewXW
     if VizViewYH is less than 4 put 4 into VizViewYH
+    if VizViewXW is greater than VizSpanSteps put VizSpanSteps into VizViewXW
+    if VizViewYH is greater than VizSpanLines put VizSpanLines into VizViewYH
     if VizViewX0 is less than VizMinSteps put VizMinSteps into VizViewX0
     if VizViewY0 is less than VizMinLine put VizMinLine into VizViewY0
     put VizViewX0 into VizViewTemp
@@ -2580,7 +2584,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 514efb3d
+!! @hash d495f004
 !! @verified 0f1ac9ba
 !!!
 !! And a doc block is not drawn in it.
@@ -3111,7 +3115,7 @@ VizFreezeTell:
 !!
 !! §28 The partner's step is read *first*, because both markers have to be interpreted the same way whether or not a clip is already on — the other end is a drawn marker either way.
 !!
-!! §30 **The filter reads the parsed document, so it is guarded rather than trusting its callers.** `VizParsed` is deliberately left alone when there was nothing to parse, and this is the only place that reads it — reached from a draw and from a cutting gesture both. The draw stops before it now (§31), so what this guards is the *gesture*: a cut on a pane with no recording would otherwise walk into a document that is not there. The fault, for the record: Graham's console error of 2026-10-13, at this line, on a script with no recording beside it.
+!! §30 **The filter reads the parsed document, so it is guarded rather than trusting its callers.** `VizParsed` is deliberately left alone when there was nothing to parse, and this is the only place that reads it — reached from a draw *and* from a cutting gesture. With no recording the kept set is empty and the counts are zero because that is the truth about an empty run, not because a caller remembered to avoid it. The fault that found this: Graham's console error of 2026-10-13, at this line, on a script with no recording beside it — and **the read was only the first of three faults on the same path**, which is the reason it is written up as one story rather than three: the filter, then the redaction bars, then the frame pass that never ran.
 !!
 !! §29 **And a snap at the ends, within one floor's width.** A pointer cannot land exactly on the last step: the drag's x round-trips through pixels and truncates, so a marker dragged hard against the end stopped a step or two short, and a selection that was not quite the run. so "drag it home to clear the clip" did not work, measured on the 441-step trace while it happened to work on the 24-step one. Every scrollbar snaps at its ends for the same reason: the end is a place the reader means to reach, and it should not be a place they have to hit exactly.
     ! ---- the clip ----
@@ -3317,9 +3321,11 @@ VizUndo:
     return
 
 VizKeepRun:
-    ! **Nothing to filter without a recording, and the backstop is here because a cutting gesture arrives at
-    ! this label too** — the draw stops before it (see the note at the empty exit in `Draw`, §31), but a cut
-    ! on an empty pane would walk into the same missing document. §30 has the record of the fault.
+    ! **Nothing to filter without a recording, and the guard is here because a cutting gesture arrives at this
+    ! label where no draw does.** With no recording the picture is the script and nothing else, so there is
+    ! nothing to keep and nothing to count — and the parsed document below is deliberately unset when there
+    ! was nothing to parse, which is the read that started all this: §30 has the fault's record and §31 what
+    ! the empty picture turns out to need.
     if VizTrace is empty return
     json set VizKept to array ! §10–§13
     if VizKeepWhole is 1 put property `traceEvents` of VizParsed into VizAll ! §14
@@ -3505,5 +3511,5 @@ VizClipMove:
     if VizSlide is 4 set the text of VizClipNotice to `select steps ` cat VizClipOther cat `-` cat VizClipStep
     return
 
-!! @hash cf20bfc7
+!! @hash a5f463a3
 !!!
