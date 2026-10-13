@@ -249,6 +249,10 @@ VizOpen:
     put property `jump` of VizRun into StrFlowJump
     put property `return` of VizRun into StrFlowReturn
     put 1 into VizShown
+    ! **The elements before the notice that writes them.** A drawing announces itself and waits before it
+    ! builds anything, and that announcement goes into the pane's own corner readout — so the elements
+    ! exist first. `VizBuildElements` is a no-op once they do, so a second run pays nothing for the call.
+    gosub to VizBuildElements
     gosub to VizDrawRun
     stop
 
@@ -399,7 +403,7 @@ VizRemember:
     put `{` cat `"millis_per_kb": ` cat VizMillisPerKb cat `}` into VizCalibText
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
-!! @hash 99747aaf
+!! @hash 022025fe
 !! @verified e24be747
 !!!
 !! The view itself: everything from here down is the drawing.
@@ -978,11 +982,21 @@ Draw:
 !!
 !! §25 **The masks last, and that is the whole of their reason: SVG paints in document order, so an element created before the marks would sit *under* them and hide nothing.** One covers the recording before the range and one what follows it, so a reader choosing a range sees the part that is about to go. Their x and width are set per draw and per drag; only their shape is fixed here. **The wash has to be given as a *string*, not as the number 0.62** — the language has no fractions and `set attribute ... to 0.62` is a compile error ("not an integer"), where a backtick value is just the text of the attribute and never goes near the arithmetic.
     ! ---- built once, on the first draw ----
+    ! **The elements are built by a call, and `Draw` then jumps over its own subroutine.** They have to
+    ! exist before anything writes to them: the notice that a drawing is under way is written *before*
+    ! the draw is asked for, and it writes the corner readout, which is one of these elements — so on the
+    ! first drawing of a session that write reached an element that did not exist yet and threw
+    ! (`Cannot set properties of null`). That is Graham's `VizBusy` item, and it is why
+    ! `viz-modes-check` stops part-way through its checks. `VizOpen` calls the same subroutine before it
+    ! asks for a draw, so the elements are there by the time the notice runs.
+    gosub to VizBuildElements
+    go to VizBuilt
+VizBuildElements:
     ! The panel is the module's own (`VizHost`, attached by id to the editor's page) and the run
     ! arrives in `VizTrace`, fetched by the editor and handed over as a dict. Building the elements
     ! once is what makes a redraw a redraw — the marks are attributes, so a second call replaces them
     ! instead of adding a second picture.
-    if VizReady is 1 go to VizBuilt
+    if VizReady is 1 return
 
     put 60 into VizMargin ! §1–§2
     put 880 into VizPlotW
@@ -1358,9 +1372,10 @@ Draw:
     take 18 from VizKeyX
 
     put 1 into VizReady
+    return
 
 VizBuilt:
-!! @hash ea645742
+!! @hash 70cdf270
 !! @verified f99c111e
 !!!
 !! What a draw does, in order.
