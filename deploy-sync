@@ -60,15 +60,29 @@ copy_file() {
 echo "Syncing source -> deploy/"
 run_sync "codex/"           "deploy/codex/"
 run_sync "learn/"           "deploy/learn/"
-# The English-language Primer reads its assets from /en/primer/. Source primer/
-# is the single source of truth (project.allspeak is the feature-rich script,
-# strings.json is the English locale, duckthink.png is present, project.json
-# has deploy-friendly paths). The de/, fr/, it/ directories hold translated
-# copies and are NOT touched here — translate them as a separate pass.
-# README.md is dev-only. project.allspeak is excluded because /en/primer.html loads
-# /shared/primer/project.allspeak, not /en/primer/project.allspeak — copying it here would
-# leave an unused duplicate.
-run_sync "primer/"          "deploy/en/primer/" --exclude=README.md --exclude=project.allspeak
+# **The Primer's four trees are one shape now: English at `primer/`, the other languages at `primer/<lang>/`.**
+# That is the layout `learn/` already uses, and it is here for the reason that made it necessary: until
+# 2026-10-13 the translated Primers existed *only* under `deploy/`, so nothing mirrored them, nothing rebuilt
+# them and nothing flagged them — and three of them came to teach a setup command (`allspeak server` where the
+# other three languages' pages now say `allspeak viz`) that no longer exists, with nothing to notice it. A
+# source tree the sync owns is what makes the drift visible; the same gap in `learn/` had been visible all
+# along as a page count.
+#
+# The paths differ in one way worth naming, because it is what forces the extra lines rather than one sync:
+# `learn/`'s language directories sit at the level the URLs do (`learn/fr/manifest.json`), while the Primer's
+# language is *outside* its page directory (`/fr/primer/…`), so `primer/fr/` has to be written to
+# `deploy/fr/primer/` — a path the single `primer/ -> deploy/en/primer/` copy cannot express.
+#
+# `README.md` is dev-only, and `project.allspeak` is excluded because `/en/primer.html` loads
+# `/shared/primer/project.allspeak`, not `/en/primer/project.allspeak` — copying it here would leave an unused
+# duplicate. The `fr/ de/ it/` excludes are what keep the language trees out of the English page directory:
+# rsync honours them, which is why this is written for rsync rather than for the `cp` fallback below, which
+# does not — on a machine without rsync the fallback would copy them in, and that limitation is the reason it
+# is stated rather than assumed.
+run_sync "primer/"          "deploy/en/primer/" --exclude=README.md --exclude=project.allspeak --exclude=fr/ --exclude=de/ --exclude=it/
+run_sync "primer/fr/"       "deploy/fr/primer/"
+run_sync "primer/de/"       "deploy/de/primer/"
+run_sync "primer/it/"       "deploy/it/primer/"
 # dist/ is now built directly into deploy/dist/ by build-allspeak, so no sync needed.
 run_sync "resources/doc/"   "deploy/resources/doc/"
 # Images an article calls for that belong to no page's own asset directory.

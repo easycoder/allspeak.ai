@@ -1,0 +1,9 @@
+{
+  "lang": "it",
+  "title": "Introduzione ad AllSpeak",
+  "manualLoaded": "Manuale AI caricato. Seleziona un capitolo.",
+  "manualLoading": "Caricamento manuale AI...",
+  "manualFailed": "Caricamento manuale AI fallito.",
+  "chapterFailed": "Impossibile caricare il capitolo: ",
+  "viewing": "Visualizzazione "
+}

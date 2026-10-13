@@ -13,7 +13,7 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 | a tool an agent uses (`tools/asdoc-check.py` / `plotview-check.js` / `viz-align-measure.py` / `guard-check.js` / `capture-check.js` / `encoding-check.js` / `flush-check.js`) | `./build-starters` (it fails if one has gone missing) **and deploy** — the deploy publishes them at `/code/tools/`, which is where a project fetches one from. They are not shipped in a pack |
 | `server.allspeak`, on its way to projects | **deploy** — `allspeak server <port>` fetches `https://allspeak.ai/code/server.allspeak` at every start when the directory has none, so a deploy puts a change in front of every project at once. No version file, no bump, nothing to remember. A project's own `server.allspeak`, if it keeps one, is used instead and never replaced |
 | `viz.html` | **deploy** — the dev server fetches the deployed page for any project that has none of its own, and fills in that project's language from its `.allspeak-init` |
-| `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
+| `codex/*`, `learn/*`, `primer/*` (any language) or `resources/doc/*` | `./deploy-sync` (then commit) |
 | Any of the above, shipping to allspeak.ai | `./deploy-allspeak` (local) **or** trigger the GitHub `Deploy to allspeak.ai` workflow |
 | anything, when you want to *see* the change rather than review a diff | `./deploy-allspeak --dev` — publishes the same tree to <https://allspeak.ai/dev/> and leaves the live site alone |
 
@@ -113,7 +113,9 @@ Two consequences worth knowing:
   `python3 -c "import zipfile,glob;print([n for n in zipfile.ZipFile(max(glob.glob('allspeak-py/dist/*.whl'))).namelist() if 'as_viz' in n])"`
 
 ### `./deploy-sync`
-Mirrors `codex/`, `dist/`, and `resources/doc/` into the matching `deploy/` subdirectories so the committed `deploy/` tree matches the source tree. The GitHub deploy workflow rsyncs `deploy/` to the server **as-is**, so anything that lives under `deploy/codex/` or `deploy/resources/doc/` ships whatever was last committed there. Run + commit before deploying when you've changed those source dirs.
+Mirrors `codex/`, `learn/`, `primer/` (all four languages) and `resources/doc/` into the matching `deploy/` subdirectories so the committed `deploy/` tree matches the source tree. The GitHub deploy workflow rsyncs `deploy/` to the server **as-is**, so anything under those source trees ships whatever was last committed into `deploy/`. Run + commit before deploying when you've changed one.
+
+**`deploy/` is generated for those trees and hand-written for the rest, and knowing which is which saves a wasted edit.** Generated: `deploy/{en,fr,de,it}/primer/`, `deploy/learn/`, `deploy/codex/`, `deploy/resources/doc/`, `deploy/dist/` and `deploy/code/` (the last two by `build-allspeak` and `deploy-allspeak`). **Hand-written, so `deploy/` *is* the source: `deploy/<lang>/{home,nav,topnav}.md`** — there is no `home/` tree, and `resources/md/home.md` is a dead EasyCoder-era copy, which is why the home page is edited where it is served.
 
 ## Deploying to allspeak.ai
 
@@ -142,7 +144,7 @@ Triggered manually via `workflow_dispatch` on `.github/workflows/deploy.yml`. Th
 
 **Before triggering the GitHub workflow**, run locally and commit, if relevant to your changes:
 - `./sync-language-packs` — the Python `.json` packs aren't shipped by the workflow, but you should commit them in step with the JS source.
-- `./deploy-sync` — the workflow rsyncs `deploy/` as-is, so stale `deploy/codex/` or `deploy/resources/doc/` will go out unless you sync first.
+- `./deploy-sync` — the workflow rsyncs `deploy/` as-is, so stale `deploy/codex/`, `deploy/learn/` or `deploy/<lang>/primer/` will go out unless you sync first.
 
 The local script does both implicitly so there's nothing extra to remember.
 
