@@ -103,7 +103,23 @@ for dir in starter/*/; do
             zip_files="$zip_files $extra"
         fi
     done
-    ( cd "$work" && zip -q "$out" $zip_files )
+    # **`-X`: no extra file attributes, and without it the pack is a different file every day.**
+    #
+    # The `touch -r` above stabilises the *modification* time, which is what the zip's own date field carries —
+    # and that turned out to be only half of it. Info-ZIP also writes a `UT` extra field (`0x5455`) holding the
+    # entry's **access** time, and an access time moves whenever the file is read, which every build does. So
+    # the archive still drifted, by a handful of bytes inside the deflate stream of the first entry.
+    #
+    # Measured 2026-10-13, because the first fix looked finished and was not: the two builds of
+    # `allspeak-en.zip` differed in exactly three bytes, at the atime field, `c242cd6a` (2026-10-12 21:27:46)
+    # against `bf96ce6a` (2026-10-13 21:38:23), with the mtime field identical and the extracted contents
+    # `diff -rq` clean. **And the check that had passed was passing for the wrong reason** — three consecutive
+    # builds agreed because `relatime` suppresses the atime update for a file read twice in a day, so the test
+    # was measuring the mount options rather than the build. The test that can fail is the one that moves the
+    # access times first: `touch -a -t 202001010000 starter/*/*` then rebuild, and the bytes must not change.
+    #
+    # `-X` also drops the stored Unix uid/gid, which is no loss for a pack somebody downloads and unzips.
+    ( cd "$work" && zip -qX "$out" $zip_files )
 
     echo "  built: deploy/allspeak-$lang.zip"
     built=$((built + 1))

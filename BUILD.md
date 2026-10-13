@@ -41,7 +41,19 @@ Extracts the JS object literal from each `js/allspeak/LanguagePack_<lang>.js` an
 ### `./build-starters`
 Bundles the per-language starter zip `deploy/allspeak-<lang>.zip`, auto-discovering languages from `starter/*/`. **A pack is the project's own files and nothing else**: `AGENTS.md` (the agent's instructions for that language), `CLAUDE.md` (a short pointer at it) and `.allspeak-init`, which declares the language the project speaks (`lang: fr`). No tooling is in a pack — see "what a project holds" below. Run after editing anything under `starter/`.
 
-**The output is deterministic, and that is a requirement rather than a nicety.** The four packs are tracked in git, and both deploy paths run this script, so a build that produced different bytes each time would put four modified binaries in the working tree on every deploy — indistinguishable, in a diff being reviewed, from a change somebody made. `.allspeak-init` is the one entry that is *written* rather than copied, so it borrows its timestamp from `AGENTS.md` beside it; the other two arrive by `cp -p` and keep theirs. A pack's bytes therefore change when its contents change and at no other time. Measured 2026-10-13: three consecutive builds give identical md5s, `./deploy-allspeak --dev` leaves the tree byte-identical, and the packs' contents are unchanged from before the fix (checked by extracting and `diff -rq`).
+**The output is deterministic, and that is a requirement rather than a nicety.** The four packs are tracked in git, and both deploy paths run this script, so a build that produced different bytes each time would put four modified binaries in the working tree on every deploy — indistinguishable, in a diff being reviewed, from a change somebody made. Two things make it so, and **the first alone was not enough**:
+
+- **`.allspeak-init` is the one entry that is *written* rather than copied**, so it borrows its timestamp from `AGENTS.md` beside it (`touch -r`); the other two arrive by `cp -p` and keep theirs. That stabilises the zip's own date field.
+- **`zip -X`, which writes no extra file attributes.** Info-ZIP otherwise stores each entry's *access* time in a `UT` extra field — and an access time moves whenever a file is read, which every build does. So the archive still drifted, by three bytes inside the first entry's deflate stream, with identical contents and identical modification times.
+
+**Measured 2026-10-13, and the measurement is the point.** The obvious check — build twice and compare — passed while the second defect was live, because `relatime` suppresses the atime update for a file read twice in the same day: the test was reporting the mount options, not the build. **The test that can fail moves the access times first:**
+
+```
+touch -a -t 202001010000 starter/*/CLAUDE.md starter/*/AGENTS.md
+./build-starters          # the four md5s must not change
+```
+
+That fails against `zip -q` and passes against `zip -qX`, so the check has teeth. Also verified: the packs' extracted contents are unchanged by `-X` (checked by extracting and `diff -rq`), and the extra field's length is now `0`.
 
 ### The CLI's four words
 `allspeak-py/allspeak/as_program.py`'s `Main()` is the launcher, and its whole vocabulary is four lines — the help text is `HELP_TEXT` in that file, and it is the only place a user reads them:
