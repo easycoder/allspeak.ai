@@ -261,7 +261,7 @@ SideRenderHint:
     set the content of SideProse to ``
     set the content of SideHint to `Point at a line of the script in the picture to see the doc block it belongs to, or its code on the Code tab.`
     return
-!! @hash 200fab54
+!! @hash db46ae94
 !! @verified b04946e6
 !!!
 !! The status bar: what the script asked to have watched, at the mark it was watching.

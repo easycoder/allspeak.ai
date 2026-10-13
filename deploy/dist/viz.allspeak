@@ -251,7 +251,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 75fafb64
+!! @hash fb41cca7
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'viz-ui',
@@ -2436,7 +2436,7 @@ TellSideClosed:
     set property `open` of SideMsg to 0
     send SideMsg to SideModule
     return
-!! @hash a3fd9474
+!! @hash 8fe9dd6b
 !! @verified 0c4a0949
 !!!
 !! Recording a run, from the button.
