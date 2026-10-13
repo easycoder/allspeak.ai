@@ -211,10 +211,18 @@ SideRenderOutside:
     return
 
 SideRenderCode:
-    if SideFound is 0 go to SideRenderOutside
-    set the content of SideHead to SideTitle
+    ! **A line no block holds still has code, and this tab shows it.** The editor sends the *gap's* bounds
+    ! for such a line — the run of code between the block before the pointer and the block after it — so the
+    ! slice below is the same one a block gets, and the sentence that is the doc-block tab's whole answer
+    ! becomes this tab's footnote, under the code. That is Graham's rule for this panel doing its work
+    ! (`TODO-viz.md`, "Settled decisions"): a reader pointing at the code between two blocks is handed that
+    ! code rather than sent back to the editor for it. An *empty* gap — two blocks written back to back —
+    ! shows no code and the sentence, which is the truth about it.
+    if SideFound is 0 set the content of SideHead to `Line ` cat SideLine
+    if SideFound is 1 set the content of SideHead to SideTitle
     gosub to SideCodeBuild
     set the content of SideCode to SideCodeText
+    if SideFound is 0 set the content of SideHint to `This line is outside any doc block.`
     return
 
 SideCodeBuild:
@@ -253,7 +261,7 @@ SideRenderHint:
     set the content of SideProse to ``
     set the content of SideHint to `Point at a line of the script in the picture to see the doc block it belongs to, or its code on the Code tab.`
     return
-!! @hash 200fab54
+!! @hash db46ae94
 !! @verified b04946e6
 !!!
 !! The status bar: what the script asked to have watched, at the mark it was watching.

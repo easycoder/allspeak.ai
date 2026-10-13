@@ -233,6 +233,8 @@
     variable FirstLine     ! first prose line of a block (for TOC label)
     variable From          ! first line of a block, for the review-signal test
     variable To            ! and its last line
+    variable SideGapFrom   ! the line after the block before the pointer, for a line no block holds
+    variable SideGapTo     ! and the line before the block after it — the run the code tab shows as a gap
     variable BlockAfter    ! index of the block after this one, which bounds it
     variable FromCheck     ! the two bounds moved out by one, so both tests can be positive
     variable ToCheck
@@ -249,7 +251,7 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash 75fafb64
+!! @hash fb41cca7
 !! @verified 90e6973b
 !!!
 !! The UI is described by a DOM element 'viz-ui',
@@ -2337,9 +2339,22 @@ SideFindBlock:
     ! that of the final doc-blocked item in the script"*, with the heading correct — and the check could
     ! not see it because its fixture's matching block was also its last. The two bounds are the *matched*
     ! block's, which is what the first line of this comment always said the walk did.
+    !
+    ! **And a line no block holds still has a pair of bounds, which is what the `Code` tab needs.** The walk
+    ! carries the *gap* around the pointer as it goes: the line after the block before the pointer, and the
+    ! line before the block after it. A file is blocks and the code between them, so a gap is a real run of
+    ! code rather than an arbitrary window of lines — and a reader pointing between two blocks is handed
+    ! those lines, which is Graham's rule for this panel (`TODO-viz.md`, "Settled decisions": a tab brings
+    ! the reading to the reader). `SideFound` stays 0, so the doc-block tab keeps answering with its
+    ! sentence — it is the same line, and the two tabs say different true things about it.
     put 0 into SideFound
     put `` into SideTitle
     put `` into SideProse
+    ! **The far end of a gap with no block after it.** A file runs out of lines rather than out of blocks,
+    ! and the editor is not counting them here — the sidebar clamps a bound past its own script rather than
+    ! reading past the end, which it already does for a message from another file.
+    put 1 into SideGapFrom
+    put 999999 into SideGapTo
     put 0 into SideI
     while SideI is less than SecCount
     begin
@@ -2360,8 +2375,14 @@ SideFindBlock:
             put Tmp cat `. ` cat SideTitle into SideTitle
             go to SideFindDone
         end
+        ! This block does not hold the pointer, so the gap narrows on whichever side of it this block is.
+        if To is less than SideSel put To into SideGapFrom
+        if From is greater than SideSel and From is less than SideGapTo put From into SideGapTo
         add 1 to SideI
     end
+    ! No block holds it, so the bounds handed on are the gap's own — one line inside the blocks at either end.
+    add 1 to SideGapFrom giving From
+    take 1 from SideGapTo giving To
 SideFindDone:
     return
 
@@ -2381,9 +2402,12 @@ SendBlockToSide:
     set property `found` of SideMsg to SideFound
     set property `title` of SideMsg to SideTitle
     set property `prose` of SideMsg to SideProse
-    ! **And the block's two bounds**, which are what the code tab slices on. They are what `SideFindBlock`
-    ! has just walked — `From` and `To`, the block's own documented lines — and `SideFound` above is what
-    ! says whether they mean anything, so nothing extra has to be kept for the not-found case.
+    ! **And the two bounds the code tab slices on**, which `SideFindBlock` has just walked into `From` and
+    ! `To`. **What they mean depends on `SideFound`**, and both readings are useful: the block's own
+    ! documented lines when one holds the line, and the *gap's* first and last line when none does — the
+    ! run of code between the block before the pointer and the block after it. The sidebar is told both and
+    ! decides: a doc block's prose for the first, that run of code for the second, and the sentence for
+    ! both when the doc-block tab is the one up.
     set property `from` of SideMsg to From
     set property `to` of SideMsg to To
     send SideMsg to SideModule
@@ -2412,7 +2436,7 @@ TellSideClosed:
     set property `open` of SideMsg to 0
     send SideMsg to SideModule
     return
-!! @hash a3fd9474
+!! @hash 8fe9dd6b
 !! @verified 0c4a0949
 !!!
 !! Recording a run, from the button.

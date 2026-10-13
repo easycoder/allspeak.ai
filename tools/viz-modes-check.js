@@ -798,20 +798,30 @@ check(sideWidth() === 500, `and put back when the pane is opened again (${sideWi
 // and the temptation is to point the look-up at it too and pick line numbers out of `viz.allspeak` — a
 // check that would then fail whenever this file was edited, for a reason of its own making.
 const SIDEFIX = [
-	`!! The first block, and this line is its title.`,
-	`!!`,
-	`!! Its prose, which is what the panel shows.`,
-	`Alpha:`,
-	`    return`,
-	`!! @hash 00000000`,
-	`!!!`,
-	`!! The second block, and this one holds line twelve.`,
-	`!!`,
-	`!! Its prose too.`,
-	`Beta:`,
-	`    return`,
-	`    put \`Total < 20 & Row\` into Msg`,
-	`!!!`,
+	`!! The first block, and this line is its title.`,            // 1
+	`!!`,                                                          // 2
+	`!! Its prose, which is what the panel shows.`,                // 3
+	`Alpha:`,                                                      // 4
+	`    return`,                                                  // 5
+	`!! @hash 00000000`,                                           // 6
+	`!!!`,                                                         // 7
+	`!! The second block, and this one holds line twelve.`,        // 8
+	`!!`,                                                          // 9
+	`!! Its prose too.`,                                           // 10
+	`Beta:`,                                                       // 11
+	`    return`,                                                  // 12
+	`    put \`Total < 20 & Row\` into Msg`,                        // 13
+	`!!!`,                                                         // 14
+	`!   the code between the blocks, which no doc block holds`,    // 15
+	`Gamma:`,                                                      // 16
+	`    return`,                                                  // 17
+	`!! The third block, so the gap above it has a block on each side.`, // 18
+	`!!`,                                                          // 19
+	`!! Its prose the third.`,                                     // 20
+	`!!!`,                                                         // 21
+	`!   and the code after the last block`,                       // 22
+	`Delta:`,                                                      // 23
+	`    return`,                                                  // 24
 ].join(`\n`);
 // **The fixture is set and then Graph is entered again, because entering is what builds the model** —
 // `EnterGraph` parses the buffer with the same `ParseSource` Blocks mode uses. That is not decoration: the
@@ -822,7 +832,7 @@ const SIDEFIX = [
 run(`ToggleGraph`);                    // out — the pane is already up from the checks above
 scriptElement.innerText = SIDEFIX;
 run(`ToggleGraph`);                    // and in again: this is the parse
-const modelled = await waitFor(() => Number(valueOf(`SecCount`)) === 2);
+const modelled = await waitFor(() => Number(valueOf(`SecCount`)) === 3);
 check(modelled, `entering the pane builds the section model for the file being reviewed (SecCount=${valueOf(`SecCount`)})`);
 // **The report is delivered as the dict the pane actually sends, and that is the point of it.** A dict in
 // this language is a *JSON string* in a variable, so `send VizMark to parent` puts
@@ -894,6 +904,34 @@ check(codePlain() === `Alpha:\n    return\n`,
 	`and a line in the first block shows the *first* block's code (${JSON.stringify(codePlain())})`);
 check(sideValue(`SideTitle`) === `1. The first block, and this line is its title.`,
 	`with the heading naming that block, so the two halves of the report agree (${JSON.stringify(sideValue(`SideTitle`))})`);
+
+// **And a line no doc block holds, which is the case this tab used to answer with a sentence.** The file's
+// shape is blocks *and* the code between them, so the editor hands the sidebar the *gap's* bounds for such a
+// line — the run from the line after the block before it to the line before the block after it — and the tab
+// shows that run. Graham's rule for this panel is why (a tab brings the reading to the reader: `TODO-viz.md`,
+// "Settled decisions"), and the case is a fair one, because a script written to the doc-block convention still
+// has code between its blocks and after its last one.
+program.message = report(17, 2, 2);
+run(`SideMarkLine`);
+await waitFor(() => Number(sideValue(`SideLine`)) === 17);
+check(sideValue(`SideFound`) === 0,
+	`a line between two blocks is in no doc block (found=${sideValue(`SideFound`)})`);
+check(codePlain() === `Gamma:\n    return\n`,
+	`and the code tab shows the code between the blocks rather than a sentence (${JSON.stringify(codePlain())})`);
+check(/<span[^>]*>    return<\/span>/.test(codeHtml()),
+	`with the line the pointer named picked out in that run, as it is inside a block`);
+check(String(sideElText(`ec-SideHead`)) === `Line 17`
+	&& String(sideElText(`ec-SideHint`)).includes(`outside any doc block`),
+	`and the heading names the line with the sentence kept as a footnote under the code `
+	+ `(${JSON.stringify(String(sideElText(`ec-SideHead`)))}, ${JSON.stringify(String(sideElText(`ec-SideHint`)))})`);
+// The other end of the file's shape: a gap with no block *after* it, where the walk has no next block to be
+// bounded by. The slice runs to the end of the script the sidebar holds — the same guard that keeps a bound
+// from another file's message from reading past it.
+program.message = report(24, 2, 2);
+run(`SideMarkLine`);
+await waitFor(() => Number(sideValue(`SideLine`)) === 24);
+check(codePlain() === `Delta:\n    return\n`,
+	`and the code after the last block is shown to the end of the script (${JSON.stringify(codePlain())})`);
 setSide(`SideTabSel`, 0, true);
 await deliver();
 check(String(sideElText(`ec-SideCode`) || ``) === `` && String(sideElText(`ec-SideProse`) || ``).includes(`Its prose too`),
@@ -910,9 +948,9 @@ check(firstBlock && sideValue(`SideFound`) === 1 && sideValue(`SideTitle`) === `
 // A line in *no* block is an answer rather than a failure: the code before the first doc block, and
 // between two of them, is outside the convention by design, and saying so beats showing the last block
 // somebody looked at.
-program.message = report(20, 2, 2);
+program.message = report(17, 2, 2);
 run(`SideMarkLine`);
-const outside = await waitFor(() => Number(sideValue(`SideLine`)) === 20);
+const outside = await waitFor(() => Number(sideValue(`SideLine`)) === 17);
 check(outside && sideValue(`SideFound`) === 0,
 	`and a line in no block says so rather than leaving the last one up (found=${sideValue(`SideFound`)})`);
 // **And the status bar still says its piece**, which is the point of it being about the mark rather than
