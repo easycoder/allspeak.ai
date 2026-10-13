@@ -26,6 +26,7 @@
      working tree, and the editor reads them through the same `attach ... to` as the two above. -->
 <textarea id="editor-graph" style="display:none"></textarea>
 <textarea id="editor-side" style="display:none"></textarea>
+<textarea id="editor-alert" style="display:none"></textarea>
 <pre id="viz-ui" style="display:none"></pre>
 <pre id="allspeak-script" style="display:none"></pre>
 
@@ -113,7 +114,8 @@
 	// through hidden elements, which is the channel the page already uses for the language. A working tree gets
 	// none of this: its modules are beside it, and an edited pane must be visible in it.
 	if (!fromThisDirectory && parts) {
-		for (const [id, name] of [['editor-graph', 'viz-graph.allspeak'], ['editor-side', 'viz-side.allspeak']]) {
+		for (const [id, name] of [['editor-graph', 'viz-graph.allspeak'], ['editor-side', 'viz-side.allspeak'],
+			['editor-alert', 'viz-alert.allspeak']]) {
 			const holder = document.getElementById(id);
 			// **`value`, not `textContent`.** The holder is a `<textarea>`, and the editor reads this back with
 			// `the text of` — which is the element's `value` for a textarea. Text content would be *markup*:

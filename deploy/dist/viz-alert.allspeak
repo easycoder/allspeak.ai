@@ -9,8 +9,8 @@
 
     script VizAlert
 !! @hash 18dee45c
+!! @verified 18dee45c
 !!!
-
 !! What the module holds from the editor's page, and the state its boundary is kept in.
 !!
 !! The panel is attached **by id** — `viz.json` renders it, the same way the editor names every element it owns — so the module has a handle on the page without the editor creating anything for it. Both elements are the editor's own as well, which is the arrangement `se-alert` was built for: one panel, one place a message of this kind appears, and the module that owns each writer attaches to the same box by the same id.
@@ -37,19 +37,14 @@
     variable AlertWaited     ! scratch: milliseconds since the drawing began
     variable AlertWords      ! scratch: the sentence, assembled before it is put up
 
-    log `alert-probe: module starts`
     attach AlertPanel to `se-alert`
-    log `alert-probe: panel attached`
     attach AlertText to `se-alert-text`
-    log `alert-probe: text attached`
     on message go to AlertMessage
-    log `alert-probe: handler registered`
     release parent
-    log `alert-probe: released`
     stop
-!! @hash af0ae1b7
+!! @hash c57001d5
+!! @verified af0ae1b7
 !!!
-
 !! The panel's life: armed by a drawing, up when the wait turns out to be long, and away when it is done.
 !!
 !! Four things decide what it does — whether a drawing is in flight, whether the panel is up, how long the drawing has been going, and what the drawing cost — and **the wait is what decides whether the panel appears at all**: the ticker sleeps a second and only a drawing still running when it wakes has anything to say, so a fast gesture never flashes a box and no threshold is invented. The sentences are composed from what it was told at arming and what it is told at the end, which is why nothing in this module reads the picture.
@@ -153,8 +148,8 @@ AlertFinish: ! §8–§9
     gosub to AlertHide
     stop
 !! @hash 3d2160e9
+!! @verified 3d2160e9
 !!!
-
 !! The panel out of the way, and the ticker told to stop.
 !!
 !! Both, always, because either alone leaves one of them running: a hidden panel still being written to once a second, or a ticker stopped with the box still standing. It is reached two ways — the run being closed, and a drawing that ended too quickly to have said anything — so it is a subroutine with its own stop, and the boundary above decides which of those it is.
@@ -164,4 +159,5 @@ AlertHide:
     set style `display` of AlertPanel to `none`
     return
 !! @hash 94a1cc73
+!! @verified 94a1cc73
 !!!

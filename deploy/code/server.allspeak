@@ -76,8 +76,10 @@
     variable InitAt
     variable GraphText
     variable SideText
+    variable PanelText
     variable GraphDiv
     variable SideDiv
+    variable PanelDiv
     variable Page
     server Files
 
@@ -435,6 +437,11 @@
                     begin
                         put empty into SideText
                     end
+                get PanelText from url DistBase cat `viz-alert.allspeak`
+                    on failure
+                    begin
+                        put empty into PanelText
+                    end
                 ! A `<textarea>` rather than a `<pre>`, because the text inside a textarea is text and cannot be
                 ! read as markup: the pane has 25 `<` in it, and markup-shaped content would be mangled here and
                 ! escaped on the way back out.
@@ -447,6 +454,11 @@
                 begin
                     put `id="editor-side" style="display:none">` cat SideText cat `</textarea>` into SideDiv
                     replace `id="editor-side" style="display:none"></textarea>` with SideDiv in Page
+                end
+                if PanelText is not empty
+                begin
+                    put `id="editor-alert" style="display:none">` cat PanelText cat `</textarea>` into PanelDiv
+                    replace `id="editor-alert" style="display:none"></textarea>` with PanelDiv in Page
                 end
                 return Page to Files with type `text/html`
             end

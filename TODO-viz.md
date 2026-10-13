@@ -356,6 +356,17 @@ view), or left as the recording's fact. Not changed — the evidence went first.
   Everything the editor owns about the menu *is* asserted by `viz-modes-check` (8 claims). **These claims come
   home when the tick is moved out of the drawing**, and they are the first thing to move.
 
+- **The empty state is *stopped* rather than drawn, and that is unfinished work rather than a fault.** A pane
+  with no recording — any script without a `<script>.viz.json` beside it, which is most of them — ends its draw
+  at the guard in `Draw` (`if VizTrace is empty return`) instead of drawing the script as a picture with no
+  arrivals, which is what the code below it intends ("the empty state **is** drawn — the script plain, no
+  arrivals"). **Two holes were found on the way and only the first is closed**: the clip's filter read the
+  parsed document (Graham's console error, 2026-10-13), and with that read guarded the failure moved into
+  `VizBars`, which walks an extent an empty run has not set. So drawing the empty state means finding what
+  else assumes a recording — the extent and the two bars are known; there may be more — and each hole is
+  cheap once the guard is moved along. Worth doing because the pane is *most often* opened on a script with no
+  recording, and today that picture is empty-but-stale (the canvas keeps whatever it last drew).
+
 - **`VizRowAt`'s missing `x` test is fixed, and its check is in `plotview-check`** — see "The intent on hover" for
   the measurement and the decision (2026-10-13, `dec-274a640ffe0aff5a`). `various/menu-measure.js` walks the
   natural route again, which is itself the browser evidence that the sideways jump is gone.
