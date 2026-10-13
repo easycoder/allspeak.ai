@@ -15,6 +15,7 @@ le esprimono solo in modo diverso.</p>
 <li>Costruire pagine web e applicazioni interattive</li>
 <li>Elaborare dati, testo e JSON</li>
 <li>Collegarsi a API REST e servizi MQTT</li>
+<li>Creare server HTTP personalizzati per applicazioni in rete locale</li>
 <li>Creare animazioni ed effetti visivi</li>
 </ul>
 

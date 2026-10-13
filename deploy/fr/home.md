@@ -14,6 +14,7 @@ ils l'expriment simplement différemment.</p>
 <li>Créer des pages web et des applications interactives</li>
 <li>Traiter des données, du texte et du JSON</li>
 <li>Se connecter à des API REST et à des services MQTT</li>
+<li>Créer des serveurs HTTP personnalisés pour des applications en réseau local</li>
 <li>Créer des animations et des effets visuels</li>
 </ul>
 

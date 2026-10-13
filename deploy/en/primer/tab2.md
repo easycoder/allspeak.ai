@@ -10,7 +10,21 @@ Three things:
 - **A terminal** — the window you type commands into. PowerShell on Windows, Terminal on macOS or Linux.
 - **An AI coding agent.** Either of the two below will do.
 
-One thing worth knowing before you begin: **the agent writes the AllSpeak, you review it.** You will not type any code at all.
+One thing worth knowing before you begin: **the agent writes the AllSpeak, you review it.** You will not type any code at all, with one exception — the single command that starts Viz.
+
+## Getting Viz running
+
+Viz is a web page, but it is not a website you visit. It is served from your own machine, and one command starts it:
+
+```
+allspeak viz
+```
+
+**There are two halves to that, and the distinction is worth a moment.** The command starts the AllSpeak *development server* — a small AllSpeak program, running on the Python runtime — on `localhost:8080`, and opens the page it serves in your browser. The **server** lives in that terminal and has to keep running; **Viz** is the page, and it lives in the browser. Close the terminal and Viz stops answering, which is why everything below tells you to leave it open.
+
+The reason for the split is that a web page cannot read a folder. A server can: it is what lists your project's files, opens them, writes them back when you save, and runs your scripts. And because it is on `localhost` rather than on the internet, your project stays on your machine.
+
+The same server also answers `http://localhost:8080/<your-page>.html` — your own application's page — so one command gives you both the tool and the thing you are building. Running `allspeak viz` a second time is harmless: it finds the server already there and just opens the page again.
 
 ## Set up
 
@@ -22,7 +36,7 @@ Claude Code is an AI coding agent that runs in your terminal.
 2. Create an empty folder for your project.
 3. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into that folder. That is the *starter pack* — your agent's instructions, and the note saying which language this project speaks. There is no tooling in it, deliberately: everything else is fetched when it is needed, so nothing in your folder can go stale.
 4. Install Claude Code — see [claude.ai/code](https://claude.ai/code).
-5. In the project folder, start the visualiser: `allspeak viz`. Your browser opens at `http://localhost:8080/viz.html` — that is Viz, and it stays open beside you while you work. Leave this terminal running.
+5. In the project folder, start Viz: `allspeak viz`. Leave this terminal running.
 6. Open a **second** terminal in the same folder and type `claude`.
 7. When Claude starts, type **go**.
 
@@ -34,7 +48,7 @@ Reasonix is an AI coding agent with a desktop app, which many people find easier
 2. Download and install the Reasonix desktop app from [reasonix.io](https://reasonix.io).
 3. Create an empty folder for your project.
 4. Download [allspeak-en.zip](https://allspeak.ai/allspeak-en.zip) and unzip it into that folder — the same starter pack as above.
-5. In the project folder, start the visualiser: `allspeak viz`. Your browser opens at `http://localhost:8080/viz.html` — that is Viz. Leave this terminal running; it is the only one you will need.
+5. In the project folder, start Viz: `allspeak viz`. Leave this terminal running; it is the only one you will need.
 6. Start Reasonix, click **Add new project**, and choose your project folder.
 7. Tell Reasonix what you would like to build. On first use it will ask for your DeepSeek API key and keep it for you.
 

@@ -14,6 +14,7 @@ they just express them differently.</p>
 <li>Build interactive web pages and applications</li>
 <li>Process data, text and JSON</li>
 <li>Connect to REST APIs and MQTT services</li>
+<li>Create custom HTTP servers for local networked applications</li>
 <li>Create animations and visual effects</li>
 </ul>
 

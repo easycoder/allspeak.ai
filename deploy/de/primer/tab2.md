@@ -10,7 +10,21 @@ Drei Dinge:
 - **Ein Terminal** — das Fenster, in das man Befehle tippt. PowerShell unter Windows, Terminal unter macOS oder Linux.
 - **Ein KI-Programmieragent.** Einer der beiden unten genügt.
 
-Eines sollten Sie vorher wissen: **Der Agent schreibt das AllSpeak, Sie prüfen es.** Sie werden keine einzige Zeile Code tippen.
+Eines sollten Sie vorher wissen: **Der Agent schreibt das AllSpeak, Sie prüfen es.** Sie werden keine einzige Zeile Code tippen — mit einer Ausnahme: dem einen Befehl, der Viz startet.
+
+## Viz starten
+
+Viz ist eine Webseite, aber keine Website, die Sie besuchen. Sie wird von Ihrem eigenen Rechner ausgeliefert, und ein einziger Befehl startet sie:
+
+```
+allspeak viz
+```
+
+**Dahinter stecken zwei Hälften, und der Unterschied ist einen Moment wert.** Der Befehl startet den *Entwicklungsserver* von AllSpeak — ein kleines AllSpeak-Programm, das auf der Python-Laufzeitumgebung läuft — auf `localhost:8080` und öffnet die Seite, die er ausliefert, in Ihrem Browser. Der **Server** lebt in diesem Terminal und muss weiterlaufen; **Viz** ist die Seite, und sie lebt im Browser. Schließen Sie das Terminal, und Viz antwortet nicht mehr — deshalb sagen Ihnen alle Anweisungen unten, es offen zu lassen.
+
+Der Grund für diese Trennung ist, dass eine Webseite keinen Ordner lesen kann. Ein Server schon: Er ist es, der die Dateien Ihres Projekts auflistet, sie öffnet, sie zurückschreibt, wenn Sie speichern, und Ihre Skripte ausführt. Und weil er auf `localhost` läuft und nicht im Internet, bleibt Ihr Projekt auf Ihrem Rechner.
+
+Derselbe Server beantwortet auch `http://localhost:8080/<ihre-seite>.html` — die Seite Ihrer eigenen Anwendung —, sodass ein Befehl Ihnen sowohl das Werkzeug als auch das Gebaute gibt. `allspeak viz` ein zweites Mal auszuführen ist harmlos: Der Befehl findet den Server bereits vor und öffnet nur die Seite erneut.
 
 ## Einrichtung
 
@@ -22,7 +36,7 @@ Claude Code ist ein KI-Programmieragent, der in Ihrem Terminal läuft.
 2. Legen Sie einen leeren Ordner für Ihr Projekt an.
 3. Laden Sie [allspeak-de.zip](https://allspeak.ai/allspeak-de.zip) herunter und entpacken Sie es in diesen Ordner. Das ist das *Starterpaket* — die Anweisungen für Ihren Agenten, und die Notiz, welche Sprache dieses Projekt spricht. Es enthält bewusst keine Werkzeuge: Alles andere wird geholt, wenn es gebraucht wird, sodass in Ihrem Ordner nichts veralten kann.
 4. Installieren Sie Claude Code (siehe [claude.ai/code](https://claude.ai/code)).
-5. Starten Sie im Projektordner den Visualisierer: `allspeak viz`. Ihr Browser öffnet sich auf `http://localhost:8080/viz.html` — das ist Viz, und es bleibt neben Ihnen geöffnet, während Sie arbeiten. Lassen Sie dieses Terminal laufen.
+5. Starten Sie im Projektordner Viz: `allspeak viz`. Lassen Sie dieses Terminal laufen.
 6. Öffnen Sie ein **zweites** Terminal im selben Ordner und tippen Sie `claude`.
 7. Wenn Claude startet, tippen Sie **go**.
 
@@ -34,7 +48,7 @@ Reasonix ist ein KI-Programmieragent mit einer Desktop-Anwendung, die viele leic
 2. Laden Sie die Reasonix-Desktop-App von [reasonix.io](https://reasonix.io) herunter und installieren Sie sie.
 3. Legen Sie einen leeren Ordner für Ihr Projekt an.
 4. Laden Sie [allspeak-de.zip](https://allspeak.ai/allspeak-de.zip) herunter und entpacken Sie es in diesen Ordner — dasselbe Starterpaket wie oben.
-5. Starten Sie im Projektordner den Visualisierer: `allspeak viz`. Ihr Browser öffnet sich auf `http://localhost:8080/viz.html` — das ist Viz. Lassen Sie dieses Terminal laufen; es ist das einzige, das Sie brauchen.
+5. Starten Sie im Projektordner Viz: `allspeak viz`. Lassen Sie dieses Terminal laufen; es ist das einzige, das Sie brauchen.
 6. Starten Sie Reasonix, klicken Sie auf **Add new project** und wählen Sie Ihren Projektordner.
 7. Sagen Sie Reasonix, was Sie bauen möchten. Bei der ersten Benutzung fragt es nach Ihrem DeepSeek-API-Schlüssel und merkt ihn sich.
 

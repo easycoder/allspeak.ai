@@ -10,7 +10,21 @@ Tre cose:
 - **Un terminale** — la finestra in cui si digitano i comandi. PowerShell su Windows, Terminale su macOS o Linux.
 - **Un agente AI di programmazione.** Uno dei due qui sotto andrà bene.
 
-Una cosa da sapere prima di cominciare: **l'agente scrive l'AllSpeak, tu lo rileggi.** Non digiterai una sola riga di codice.
+Una cosa da sapere prima di cominciare: **l'agente scrive l'AllSpeak, tu lo rileggi.** Non digiterai una sola riga di codice — con una sola eccezione: il comando che avvia Viz.
+
+## Avviare Viz
+
+Viz è una pagina web, ma non è un sito che si visita. Viene servita dalla tua macchina, e un solo comando la avvia:
+
+```
+allspeak viz
+```
+
+**Ci sono due metà in questo, e la distinzione merita un momento.** Il comando avvia il *server di sviluppo* di AllSpeak — un piccolo programma AllSpeak, eseguito dal runtime Python — su `localhost:8080`, e apre nel browser la pagina che serve. Il **server** vive in quel terminale e deve continuare a girare; **Viz** è la pagina, e vive nel browser. Chiudi il terminale e Viz smette di rispondere: è per questo che tutte le istruzioni qui sotto ti dicono di lasciarlo aperto.
+
+Il motivo di questa separazione è che una pagina web non può leggere una cartella. Un server sì: è lui che elenca i file del tuo progetto, li apre, li riscrive quando salvi ed esegue i tuoi script. E poiché sta su `localhost` e non su internet, il tuo progetto resta sulla tua macchina.
+
+Lo stesso server risponde anche a `http://localhost:8080/<la-tua-pagina>.html` — la pagina della tua applicazione — così un solo comando ti dà sia lo strumento sia quello che stai costruendo. Rieseguire `allspeak viz` è innocuo: il comando trova il server già lì e si limita a riaprire la pagina.
 
 ## Configurazione
 
@@ -22,7 +36,7 @@ Claude Code è un agente AI di programmazione che funziona nel tuo terminale.
 2. Crea una cartella vuota per il tuo progetto.
 3. Scarica [allspeak-it.zip](https://allspeak.ai/allspeak-it.zip) e decomprimilo in quella cartella. È lo *starter pack* — le istruzioni per il tuo agente, e la nota che dice quale lingua parla questo progetto. Non contiene strumenti, ed è voluto: tutto il resto viene scaricato nel momento in cui serve, così nella tua cartella nulla può diventare obsoleto.
 4. Installa Claude Code (vedi [claude.ai/code](https://claude.ai/code)).
-5. Nella cartella del progetto, avvia il visualizzatore: `allspeak viz`. Il browser si apre su `http://localhost:8080/viz.html` — quello è Viz, e resta aperto accanto a te mentre lavori. Lascia girare questo terminale.
+5. Nella cartella del progetto, avvia Viz: `allspeak viz`. Lascia girare questo terminale.
 6. Apri un **secondo** terminale nella stessa cartella e digita `claude`.
 7. Quando Claude si avvia, digita **go**.
 
@@ -34,7 +48,7 @@ Reasonix è un agente AI di programmazione con un'applicazione desktop, che molt
 2. Scarica e installa l'app Reasonix da [reasonix.io](https://reasonix.io).
 3. Crea una cartella vuota per il tuo progetto.
 4. Scarica [allspeak-it.zip](https://allspeak.ai/allspeak-it.zip) e decomprimilo in quella cartella — lo stesso starter pack di sopra.
-5. Nella cartella del progetto, avvia il visualizzatore: `allspeak viz`. Il browser si apre su `http://localhost:8080/viz.html` — quello è Viz. Lascia girare questo terminale; è l'unico che ti serve.
+5. Nella cartella del progetto, avvia Viz: `allspeak viz`. Lascia girare questo terminale; è l'unico che ti serve.
 6. Avvia Reasonix, clicca su **Add new project** e scegli la cartella del tuo progetto.
 7. Di' a Reasonix cosa vuoi costruire. Al primo utilizzo ti chiederà la chiave API DeepSeek e la conserverà.
 
