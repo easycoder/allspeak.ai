@@ -1,10 +1,10 @@
 # Coder sans coder
 
-Vous avez sans doute entendu parler du *vibe coding* — vous dites à une IA ce que vous voulez et elle écrit le logiciel. Cela semble magique, et parfois ça l'est. Mais il y a un piège : le code produit est dans des langages comme JavaScript ou Python, et si vous ne connaissez pas déjà ces langages, vous n'avez aucun moyen de juger si l'IA a fait du bon travail. Vous avancez à l'aveugle, et quand quelque chose casse — et cela arrivera — vous êtes coincé.
+Vous avez sans doute entendu parler du *vibe coding* — vous dites à une IA ce que vous voulez et elle écrit le logiciel. Cela semble magique, et parfois ça l'est. Mais il y a un piège : le langage dans lequel elle écrit est JavaScript, ou Python, ou autre chose avec des crochets et des points-virgules, et si vous ne lisez pas déjà ce langage, vous n'avez aucun moyen de juger si le travail a été bien fait. Vous faites confiance à l'IA, et quand quelque chose casse — et cela arrivera — vous êtes coincé.
 
-À l'autre extrême, la programmation traditionnelle demande des mois d'apprentissage avant de produire quoi que ce soit d'utile. La plupart des gens n'ont pas ce temps.
+Apprendre à programmer vraiment est l'autre route, et il faut des mois avant la première chose utile. La plupart des gens n'ont pas ce temps.
 
-AllSpeak se place entre les deux. C'est un langage de script conçu pour se lire comme du français (ou de l'anglais, ou toute autre langue), de sorte que lorsque l'IA écrit du code pour vous, vous pouvez suivre ce qu'elle fait. Vous gardez le contrôle sans avoir besoin d'un diplôme d'informatique.
+AllSpeak se place entre les deux. C'est un langage de script qui se lit comme du français — ou de l'anglais, ou de l'italien : le même moteur exécute les quatre langues, chacune avec sa propre syntaxe naturelle.
 
 ## À quoi ça ressemble ?
 
@@ -24,78 +24,26 @@ Pas de crochets, pas de points-virgules, pas de mystère. Si vous savez lire une
 
 AllSpeak construit de vrais logiciels. Des applications web avec pages interactives et mises en page stylisées. Des outils en ligne de commande qui dialoguent avec des API, traitent des données et gèrent des fichiers. Des applications multi-écrans avec navigation, formulaires et saisies utilisateur. Des connexions temps réel via REST et MQTT. AllSpeak tourne dans n'importe quel navigateur (la version JavaScript) ou depuis le terminal (la version Python) — ou les deux ensemble.
 
-Le secret, c'est que l'IA se moque du langage dans lequel elle écrit. Donnez-lui un langage de haut niveau capable, et elle fournit les mêmes fonctionnalités qu'en JavaScript — mais sous une forme que vous pouvez lire, vérifier et modifier.
+Le secret, c'est qu'une IA se moque du langage dans lequel elle écrit. Donnez-lui un langage de haut niveau capable, et elle fournit les mêmes fonctionnalités qu'en JavaScript — mais sous une forme que vous pouvez lire, vérifier et modifier.
 
-## Comment commencer
+## Et il existe un outil qui sait déjà tout cela
 
-La voie la plus rapide est **AllSpeak + Claude Code**. Claude Code est un agent IA de programmation qui tourne dans votre terminal. Combiné à notre pack de démarrage, il mettra en place un projet fonctionnel en moins de cinq minutes — avec une explication de chaque fichier créé.
+C'est la partie que les autres langages ne vous donnent pas, et c'est pourquoi nous avons écrit **Viz** — l'éditeur AllSpeak, que la commande `allspeak viz` ouvre.
 
-Voici la marche à suivre :
+Viz n'est pas un éditeur générique qui se trouverait prendre AllSpeak en charge. Il connaît le langage, et c'est ce qui lui permet de vous montrer un seul fichier de trois façons, dont aucune n'exige un second fichier ni un second outil :
 
-1. Créez un dossier vide pour votre projet.
-2. Téléchargez [allspeak-fr.zip](https://allspeak.ai/allspeak-fr.zip) et décompressez-le dans ce dossier.
-3. Installez AllSpeak : `pip install -U allspeak-ai`
-4. Installez Claude Code (voir [claude.ai/code](https://claude.ai/code)).
-5. Ouvrez un terminal dans ce dossier et tapez `claude`.
-6. Quand Claude démarre, tapez **go**.
+- **Comme texte.** Tout le script, les mots mis en évidence — et avec le compilateur du langage derrière lui, de sorte qu'il peut vérifier ce que vous regardez sans étape de compilation. La moins remarquable des trois, et celle qu'il partage avec tous les autres éditeurs.
+- **Comme blocs**, ce qui change votre façon de lire un script. Il cesse d'être un mur de texte et devient une suite de sections : une courte note dans les mots de celui qui l'a écrite, à côté du code qu'elle décrit, avec la liste des sections sur le côté pour passer de l'une à l'autre. Vous lisez la note, et le code dont elle parle est juste là. Cela fonctionne parce que la prose est *dans le fichier*, écrite dans la syntaxe de commentaire du langage — et non dans un document séparé qu'il faudrait tenir en accord avec lui.
+- **Comme image d'une exécution** : quelles parties du programme ont été atteintes, dans quel ordre, et à quelle fréquence. Chaque exécution est conservée sous forme de fichier et peut donc être rouverte plus tard — par vous, ou par quelqu'un d'autre, sur une machine qui ne sait même pas exécuter le code.
 
-Claude vous posera quelques questions, créera les fichiers de votre projet et vous expliquera comment tout s'articule. Ensuite, il vous suffit de lui dire ce que vous voulez construire.
+Ces trois choses seraient trois produits ailleurs : un générateur de documentation, un débogueur ou un profileur, un rapport de couverture — chacun avec ses propres conventions, et aucun n'étant tenu de s'accorder avec la source. Ici, le langage porte déjà la prose et les marqueurs : ce sont donc des **vues d'un seul fichier** plutôt que des choses distinctes à tenir en accord.
 
----
+Une trace d'appel vous dit qu'un programme a échoué. Un journal est quelque chose que vous avez choisi d'écrire. Un enregistrement, c'est l'exécution elle-même — et même ses marqueurs, `viz start` et `viz stop`, sont des mots-clés ordinaires : un script qui les porte s'exécute exactement comme sans eux, et il n'y a pas de « version de débogage » à tenir à côté de la vraie.
 
-**AllSpeak + Reasonix** est une alternative avec un flux de travail similaire. Reasonix est un agent IA de programmation qui tourne dans votre terminal et utilise les modèles DeepSeek (appelé DSeek au Royaume-Uni). Combiné à notre pack de démarrage, il mettra en place un projet fonctionnel en moins de cinq minutes.
+## Ce que vous faites, en réalité
 
-Voici la marche à suivre :
+Vous n'écrivez pas le code. Vous décrivez ce que vous voulez à un agent — Claude Code, Reasonix, ou celui que vous utilisez déjà — et il écrit l'AllSpeak. Votre travail est de lire ce qu'il a écrit et de dire si c'est juste.
 
-1. Créez un dossier vide pour votre projet.
-2. Téléchargez [allspeak-fr.zip](https://allspeak.ai/allspeak-fr.zip) et décompressez-le dans ce dossier.
-3. Installez AllSpeak : `pip install -U allspeak-ai`
-4. Installez Reasonix : `npm install -g reasonix`
-5. Configurez votre clé API : créez le fichier `.reasonix/.env` dans votre dossier personnel et ajoutez `DEEPSEEK_API_KEY=sk-...` (obtenez une clé sur [platform.deepseek.com](https://platform.deepseek.com)).
-6. Ouvrez un terminal dans ce dossier et tapez `reasonix`.
-7. Dites à Reasonix ce que vous voulez construire.
+C'est pourquoi le langage est aussi simple, et pourquoi chaque section d'un script porte une courte note en langage clair, écrite par l'IA, disant ce qu'elle voulait dire. Vous relisez de l'*intention*, pas du code à déchiffrer.
 
-Reasonix vous posera quelques questions, créera les fichiers de votre projet et vous expliquera comment tout s'articule. Ensuite, il vous suffit de lui dire quoi faire ensuite.
-
-## Pour aller plus loin
-
-- **Onglet Exemple** — une construction guidée pas à pas pour voir le flux de travail en action.
-- **Onglet Manuel IA** — l'argumentaire complet en faveur du développement IA structuré par opposition au vibe coding.
-- **[Codex](https://allspeak.ai/codex.html)** — un tutoriel interactif, une référence et un bac à sable pour le langage AllSpeak.
-
-## À propos des variantes linguistiques
-
-AllSpeak est en développement actif. Les variantes autres que l'anglais peuvent contenir des mots-clés ou des tournures que le moteur ne prend pas encore pleinement en charge. Si vous rencontrez une erreur de compilation sur un mot-clé qui paraît correct, signalez-le à [info@allspeak.ai](mailto:info@allspeak.ai) — les corrections sont généralement rapides.
-
-## Auto-hébergement pour la stabilité
-
-Le starter et les modèles chargent le runtime depuis `https://allspeak.ai/dist/`, qui reflète toujours la dernière version. C'est parfait pour les tutoriels et les expériences courtes — mais pour les projets que vous comptez maintenir, fixez une version stable afin qu'une future mise à jour ne casse pas votre script de façon imprévue.
-
-Deux options s'offrent à vous :
-
-### 1. Fixer un instantané daté (recommandé)
-
-Chaque déploiement est aussi archivé sous un chemin daté :
-
-```html
-<script src="https://allspeak.ai/dist/260508/allspeak.js"></script>
-```
-
-Cette URL sert le build déployé le 8 mai 2026 et ne changera pas — le `/dist/allspeak.js` glissant continue d'avancer en parallèle. Pour mettre à niveau, changez un seul nombre après avoir testé.
-
-### 2. Auto-héberger
-
-Pour un contrôle total ou un usage hors-ligne, copiez le runtime sur votre propre serveur. Les fichiers essentiels sont :
-
-- `dist/allspeak.js` (ou `dist/allspeak-min.js`) — le runtime
-- `dist/LanguagePack_*.js` — les packs de langue non anglais
-- `dist/plugins/` — les plugins utilisés par votre projet
-- `dist/vendor/` — Showdown et les extensions CodeMirror
-
-Modifiez ensuite les URL `src=` de votre HTML pour pointer vers votre copie. Pour mettre à jour ultérieurement, récupérez un instantané daté depuis `https://allspeak.ai/dist/<AAMMJJ>/` et remplacez les fichiers.
-
-Pour les tutoriels et les expériences courtes, aucune de ces étapes n'est nécessaire — gardez l'URL glissante.
-
-## Des questions ?
-
-Contactez-nous à [info@allspeak.ai](mailto:info@allspeak.ai).
+**Ensuite : l'onglet Démarrer.** Il installe un projet et en construit un avec vous, en cinq minutes environ.

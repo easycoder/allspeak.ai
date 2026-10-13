@@ -63,19 +63,21 @@
     "#element": "div",
     "@id": "TabBar",
     "display": "flex",
+    "flex-wrap": "wrap",
     "gap": "0.5em",
     "margin-bottom": "0.1em",
     "#": [
       "$TabStart",
       "$TabExample",
-      "$TabManual",
-      "$TabCodex"
+      "$TabLearn",
+      "$TabCodex",
+      "$TabManual"
     ],
 
     "$TabStart": {
       "#element": "button",
       "@id": "TabStart",
-      "#content": "Démarrer",
+      "#content": "Pourquoi",
       "background": "#1e3450",
       "color": "#eaf0ff",
       "border": "1px solid #253545",
@@ -88,7 +90,20 @@
     "$TabExample": {
       "#element": "button",
       "@id": "TabExample",
-      "#content": "Exemple",
+      "#content": "Démarrer",
+      "background": "#0b1018",
+      "color": "#eaf0ff",
+      "border": "1px solid #253545",
+      "border-radius": "9px",
+      "padding": "0.55em 0.9em",
+      "font-weight": "600",
+      "cursor": "pointer"
+    },
+
+    "$TabLearn": {
+      "#element": "button",
+      "@id": "TabLearn",
+      "#content": "Apprendre",
       "background": "#0b1018",
       "color": "#eaf0ff",
       "border": "1px solid #253545",
