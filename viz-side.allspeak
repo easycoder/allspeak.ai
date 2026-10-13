@@ -346,7 +346,6 @@ SideBlockArrived:
     ! Said here as well as in the editor, so that the two halves of the relay can be told apart when only
     ! one of them is working: this line means the panel was reached, and its absence means the message
     ! never crossed. It names its own subject so a copied line still makes sense on its own.
-    log `sidebar: showing line ` cat SideLine cat ` visit ` cat SideVisit cat ` found=` cat SideFound cat ` title=` cat SideTitle
     gosub to SideRender
     stop
 
@@ -355,6 +354,6 @@ SideBlockArrived:
 !   reader returning to the same run expects.
 SideClosed:
     stop
-!! @hash 41deff7c
+!! @hash 57774bc1
 !! @verified cd2f39fb
 !!!

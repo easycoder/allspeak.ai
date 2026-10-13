@@ -2345,7 +2345,6 @@ SendBlockToSide:
         log `sidebar: not loaded, so the block for line ` cat SideSel cat ` has nowhere to go`
         return
     end
-    log `sidebar: line ` cat SideSel cat ` visit ` cat SideVisit cat ` of ` cat SideTotal cat ` found=` cat SideFound cat ` title=` cat SideTitle
     put `{}` into SideMsg
     set property `kind` of SideMsg to `block`
     set property `line` of SideMsg to SideSel
@@ -2393,7 +2392,7 @@ TellAlertClosed:
     set property `what` of PanelMsg to `hide`
     send PanelMsg to AlertModule
     return
-!! @hash 91cb30f5
+!! @hash ec715ae3
 !! @verified e4eac7b5
 !!!
 !! Recording a run, from the button.
