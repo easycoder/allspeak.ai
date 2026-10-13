@@ -11,7 +11,6 @@
 !! §2 **Every number that arrives has to be a number again, because a message carries text.** AllSpeak holds a json value as its text and compares two texts lexically — `9 is not less than 10` — so a cut would keep the wrong records. `add 0 to` is the conversion the filter makes per record, made here once per request.
 !!
 !! §3 **A cut that keeps nothing is answered like any other, and it is the reason the reply exists at all.** The old path wrote the sentence into the pane's own element and returned; from a module the sentence has to travel, and `changed` is what tells the pane that this answer carries no new set — so the picture is left standing while the sentence is still shown.
-
     script VizClip
 !   -- the boundary's own state --
     variable ClipIn          ! the dict the editor relayed, as it arrived
@@ -50,9 +49,9 @@
     release parent
     stop
 
-!! @hash 9130ba05
+!! @hash 1499a8ea
+!! @verified 1499a8ea
 !!!
-
 !! The boundary: one message in, one message out, and nothing else in this module knows about either.
 !!
 !! The dispatch is on `what`, and every target ends the turn, because a module's handler is entered by the runtime rather than called: there is no caller to return to. The reply is composed in one place so that the pane's copy of the set and the sentence beside it can never disagree — and **the opening note has the reason** the set travels as ranges rather than records.
@@ -60,7 +59,6 @@
 !! Appendix
 !!
 !! §1 **A cut that keeps nothing is answered like any other, and it is the reason the reply exists at all.** The old path wrote the sentence into the pane's own element and returned; from a module a sentence has to travel, and `changed` is what tells the pane that this answer carries no new set — so the picture is left standing while the sentence is still shown.
-
 ClipMessage:
     put the message into ClipIn
     put property `what` of ClipIn into ClipWhat
@@ -90,9 +88,9 @@ ClipReply:
     send ClipOut to sender
     stop
 
-!! @hash 83f0f796
+!! @hash 3ff7e64c
+!! @verified 3ff7e64c
 !!!
-
 !! The cut: what a range of steps keeps, and the history that makes it undoable.
 !!
 !! Every entry here is the note that used to sit in the pane's own code block, carried over with its marker: a cut is taken from **what is on screen** and not from the recording, so the arithmetic is about ranges of steps alone. The marker's number is this block's.
@@ -107,7 +105,6 @@ ClipReply:
 !! §6 **The tag is no longer bumped here.** What it does *not* do is ask for a cut's re-fit: it sets `ClipKeepSet` to 0, and the fit reads that to tell the two apart — a cut re-fits the steps and leaves the lines, while giving the whole recording back fits both, which is what `reset` means. Without the bump a reset left the picture clipped: the filter's cache key did not change, so the kept set was never rebuilt (found by the harness, 2026-10-07).
 !! §7 One range into the list being built. Ranges go in in order — a live list is ordered and the two halves of a split are added left first — so the built list is ordered too, which is what lets the axis take its ends from the first and last entries and lets the filter's walk stay a walk.
 !! §8 **`ClipKeepCap` is a ceiling and not a promise.** At it, a cut that would split a range further simply keeps less of it than it should — sixteen outer cuts, on one recording, without resetting. Said rather than hidden: an overrun here would be a wrong picture with no sign that anything was dropped.
-
 ClipCut:
     ! **The request, off the message.** The pane owns the gesture and the picture, so the range it means arrives
     ! here as three numbers: what the cut keeps (`tail` — the window, the outside, or the whole recording), the
@@ -300,5 +297,6 @@ ClipUndo:
     put 1 into ClipKeepWhole
     put 1 into ClipChanged
     gosub to ClipReply
-!! @hash eda70bf3
+!! @hash 613052d7
+!! @verified 613052d7
 !!!

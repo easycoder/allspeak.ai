@@ -356,6 +356,32 @@ view), or left as the recording's fact. Not changed — the evidence went first.
   Everything the editor owns about the menu *is* asserted by `viz-modes-check` (8 claims). **These claims come
   home when the tick is moved out of the drawing**, and they are the first thing to move.
 
+- **What is left to split, measured 2026-10-13, after the alert and the clip** (Graham asked for the list).
+  Sizes are the sum of each cluster's label spans, so they are the *code* and not the prose:
+  - **the window and its gestures — 734 lines, 11 labels** (`VizPictureFit`, `VizWindow`, `VizPan`, `VizDrag`,
+    `VizSlideTo`, `VizScroll`, …): the plan's item (3) and the biggest remaining win, and the reason it is hard
+    is not its size but its *rate* — the gestures mutate the window while the picture draws from it, so a
+    module would have to be asked per pointer event, which is the one thing the module pattern refuses. **The
+    seam to look for is the arithmetic** (the fit, the clamp, the step↔x mapping), not the gestures.
+  - **the two drawing layers** (`VizSourceMeasure` 123 lines; the marks, heat, rules and flow 77): small, and
+    the plan's verdict stands — *last, or not at all*, because they share the frame, the em measurement and the
+    letterbox, and **a split there risks a second copy of the mapping**, this file's most expensive known fault.
+  - **the element build — 383 lines, `VizBuildElements`**: the frame's whole DOM, already one subroutine (it was
+    extracted on 2026-10-13 for the `VizBusy` fault) and purely "make the elements", so it is a real seam — a
+    small win, since it is called once at open.
+  - **what the pane tells the host — 484 lines, `VizRemember`**: a data/interface cluster with a message
+    boundary already in place, which is what made the clip a good split.
+  - **the line-name layer — 117 lines, `VizLabelNames`/`VizLabelCheck`/`VizLabelShape`**: a per-draw second
+    picture of right-aligned names, which its own prose calls *temporary*, built to settle one question about
+    where the text sits. **The question to ask first is whether it is still wanted at all**, not how to split it.
+  - **the freeze — 94 lines, `VizFreeze`/`VizFreezeTell`**: the pointer guard over a long job, small and
+    self-contained.
+  - **the two bars — 48 lines** (`VizBars`, `VizBarFit`) plus the redaction build: their handles are drags, so
+    they belong with the window rather than in a module of their own.
+  **And the honest measure of the whole list**: for every one of these clusters, almost none of the names it
+  uses are used *only* there. After the alert and the clip, what is left is shared state — so each remaining
+  split is a **design** job (what crosses, and at what rate) rather than a move, which is exactly why the plan
+  put the two layers last and hedged them with "or not at all".
 - **The clip's kept set is a module now — stage one of two (2026-10-13).** `viz-clip.allspeak` holds the kept
   ranges, the history behind them and the arithmetic of a cut, and the pane is **untouched**: nothing is wired
   yet, so nothing can regress, and the module is not in the build. What *is* proved: the move is mechanical and
