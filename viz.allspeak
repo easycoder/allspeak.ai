@@ -2329,6 +2329,14 @@ SideFindBlock:
     !
     ! The heading is the block's first prose line, numbered as the Blocks view numbers it, because that
     ! number is how a reader gets from the sidebar back to the same block in the other pane.
+    !
+    ! **And the walk really does stop at the match — `From` and `To` are written on *every* pass**, so a
+    ! walk that ran to the end left them holding the *last* section in the model while `SideFound` and the
+    ! heading held the one that matched. The `Code` tab slices on those two, so it showed every block's
+    ! code as the last block's: found by Graham in the browser, 2026-10-12, *"the code displayed is always
+    ! that of the final doc-blocked item in the script"*, with the heading correct — and the check could
+    ! not see it because its fixture's matching block was also its last. The two bounds are the *matched*
+    ! block's, which is what the first line of this comment always said the walk did.
     put 0 into SideFound
     put `` into SideTitle
     put `` into SideProse
@@ -2350,9 +2358,11 @@ SideFindBlock:
             put SideI into Tmp
             add 1 to Tmp
             put Tmp cat `. ` cat SideTitle into SideTitle
+            go to SideFindDone
         end
         add 1 to SideI
     end
+SideFindDone:
     return
 
 SendBlockToSide:
@@ -2402,7 +2412,7 @@ TellSideClosed:
     set property `open` of SideMsg to 0
     send SideMsg to SideModule
     return
-!! @hash 499ec9d8
+!! @hash a3fd9474
 !! @verified 0c4a0949
 !!!
 !! Recording a run, from the button.
@@ -2537,7 +2547,7 @@ LaunchApp:
 !! @verified 0faead49
 !!!
 
-!! The popup menu: where the pointer's other button is answered, what it offers, and what closes it again.
+!! The popup menu: the pointer's other button, what it offers, and what closes it.
 !!
 !! **One menu, owned here, for two surfaces.** The picture and the sidebar are separate programs in separate boxes, and a menu is neither's: it must be able to appear over either, and what it lists is the *editor's* to know — the sidebar's tabs and the pane's freeze. So the editor listens for the right-click on both boxes and draws the box itself, and each module is told what the item meant without ever learning that a menu exists.
 !!

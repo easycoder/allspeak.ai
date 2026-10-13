@@ -880,6 +880,20 @@ check(codeHtml().includes(`&lt; 20 &amp; Row`),
 	`and code that looks like markup is escaped rather than eaten, so a script full of it reads as written`);
 check(/<span[^>]*>    return<\/span>/.test(codeHtml()),
 	`and the line the pointer named is picked out — the section's own line 12, not the line above it`);
+// **And the same for a line in the *first* block, which is the claim that catches a pair of bounds being
+// taken from the wrong block.** `From` and `To` are written on *every* pass of the look-up's walk, so a walk
+// that does not stop at its match leaves them holding the last section in the model — and every code claim
+// above this one passes anyway, because line 12 happens to be in that last block. **Which is the fault
+// Graham found in the browser on 2026-10-12**: *"the code displayed is always that of the final doc-blocked
+// item in the script"*, with the heading right. A fixture whose matched block is also the last one cannot
+// see this, so this claim names a block that is not.
+program.message = report(5, 1, 4);
+run(`SideMarkLine`);
+await waitFor(() => Number(sideValue(`SideLine`)) === 5);
+check(codePlain() === `Alpha:\n    return\n`,
+	`and a line in the first block shows the *first* block's code (${JSON.stringify(codePlain())})`);
+check(sideValue(`SideTitle`) === `1. The first block, and this line is its title.`,
+	`with the heading naming that block, so the two halves of the report agree (${JSON.stringify(sideValue(`SideTitle`))})`);
 setSide(`SideTabSel`, 0, true);
 await deliver();
 check(String(sideElText(`ec-SideCode`) || ``) === `` && String(sideElText(`ec-SideProse`) || ``).includes(`Its prose too`),

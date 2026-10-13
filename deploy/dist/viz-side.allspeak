@@ -9,7 +9,7 @@
 
     script VizSide
 !! @hash 5424350d
-!! @verified 62b44485
+!! @verified 5424350d
 !!!
 !! What the module holds from the editor's page, and the state the boundary is kept in.
 !!
@@ -64,7 +64,7 @@
     release parent
     stop
 !! @hash 77dbfaec
-!! @verified b6b4b753
+!! @verified 77dbfaec
 !!!
 !! Building the panel, once, and the tabs as the one pool of elements they are.
 !!
@@ -167,7 +167,6 @@ SideTabClick:
 !! @hash c6dc05c2
 !! @verified e76c1079
 !!!
-
 !! Put the selected tab up, which is one act however it was asked for.
 !!
 !! **Two ways in and one answer.** A tab can be chosen by clicking the strip or by the editor's popup menu, and both end here: the strip's own handler sets `SideTabSel` and comes here, and so does the menu's message. That is deliberate rather than tidy — a reader who could reach a tab two ways that disagreed would be looking at a panel nobody could predict — and it is why the rendering below takes no argument: the state it draws from was set by whoever asked.

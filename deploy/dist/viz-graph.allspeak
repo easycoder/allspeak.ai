@@ -13,7 +13,7 @@
 
     script VizGraph
 !! @hash ff50e871
-!! @verified a078a83d
+!! @verified ff50e871
 !!!
 !! What the module holds from the editor's page, and the state the boundary is kept in.
 !!
@@ -99,7 +99,7 @@
     variable VizClipInit
     put 0 into VizClipInit
 !! @hash 9030b091
-!! @verified a04b40d6
+!! @verified 9030b091
 !!!
 !! The pane is the module's from the moment it loads, and the gestures come with it.
 !!
@@ -144,7 +144,7 @@
     end
 
 !! @hash b34c4656
-!! @verified 10f33ffc
+!! @verified a09323c1
 !!!
 !! The boundary: one message in, and the module parks until the next one.
 !!
@@ -190,7 +190,7 @@ ClearStatus:
     stop
 
 !! @hash 06d18b21
-!! @verified 5b1f9f95
+!! @verified 4695d2e5
 !!!
 !! The module's messages: take the run, stand down, or hold the picture still.
 !!
@@ -470,7 +470,7 @@ VizRemember:
     rest post VizCalibText to `/write/.viz-calibration.json` or return
     return
 !! @hash e24be747
-!! @verified 3fce0448
+!! @verified e24be747
 !!!
 !! The view itself: everything from here down is the drawing.
 !!
@@ -1120,7 +1120,7 @@ Draw:
     ! with a probe on his recording: after a clip to 96 of 533 records the *next* draw walked 533 again.
     put VizKept into VizEvents
 !! @hash e9a06a05
-!! @verified 1ae42b87
+!! @verified e9a06a05
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
 !!
@@ -1641,7 +1641,7 @@ Draw:
 
 VizBuilt:
 !! @hash f99c111e
-!! @verified 20bf4472
+!! @verified f99c111e
 !!!
 !! What a draw does, in order.
 !!
@@ -1674,7 +1674,7 @@ VizBuilt:
     put `` into VizFlowReturnD
     put `` into VizRulesD
 !! @hash 55620f7b
-!! @verified 466d9a4e
+!! @verified 55620f7b
 !!!
 !! The frame the picture is drawn in is the run's own extent, not the file's.
 !!
@@ -1785,7 +1785,7 @@ VizBuilt:
         put VizSetTag into VizSelKey
     end
 !! @hash 6e051bfd
-!! @verified 92278436
+!! @verified 6e051bfd
 !!!
 !! A mark has to stay legible at the pane's scale, or it is not a mark.
 !!
@@ -1908,7 +1908,7 @@ VizWindow:
     multiply VizWindowH by VizPlotW giving VizWindowW
     divide VizWindowW by VizPlotH
 !! @hash b8945c8a
-!! @verified 91fd04ef
+!! @verified b8945c8a
 !!!
 !! The source is drawn behind the heat, once, and shown through a window.
 !!
@@ -2133,7 +2133,7 @@ VizWindow:
     ! the row is fixed for the life of the drawing, and `VizSelect` only changes the words.
     move VizHitStatus to 60 728
 !! @hash 62d40caf
-!! @verified 52b8170a
+!! @verified 62d40caf
 !!!
 !! The axis is the picture's yardstick, and it is the same grid as the text.
 !!
@@ -2363,7 +2363,7 @@ VizWindow:
     end
     return
 !! @hash cd84104b
-!! @verified ca7a095f
+!! @verified cd84104b
 !!!
 !! The gestures are four entry points, and this module registers them.
 !!
@@ -3187,7 +3187,7 @@ VizRuleAdd:
 
 VizSourceMeasure:
 !! @hash 0f1ac9ba
-!! @verified dc725895
+!! @verified 0f1ac9ba
 !!!
 !! And a doc block is not drawn in it.
 !!
@@ -3365,7 +3365,7 @@ VizSourceMeasure:
 
 VizLabelNames:
 !! @hash efac97e5
-!! @verified da070898
+!! @verified efac97e5
 !!!
 !! Every label is named at the right-hand edge, and the rules make room for it.
 !!
@@ -3612,7 +3612,7 @@ VizRedactBuild:
 
 VizSourcePicture:
 !! @hash cf6e1925
-!! @verified 2d741f7c
+!! @verified cf6e1925
 !!!
 !! The picture never changes; the window over it does.
 !!
@@ -3648,7 +3648,7 @@ VizSourcePicture:
     set attribute `href` of VizGlyphs to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="` cat VizGlyphWidth cat `" height="` cat VizGlyphHeight cat `">` cat VizGlyphBody cat `</svg>`
     return
 !! @hash dc572580
-!! @verified 78dcffaf
+!! @verified dc572580
 !!!
 !! The mappings: the one place a line's y and a step's x are worked out.
 !!
@@ -3740,10 +3740,9 @@ VizRowTell:
     send VizRowMsg to parent
     return
 !! @hash f74b0721
-!! @verified 3de4d772
+!! @verified f74b0721
 !!!
-
-!! Holding the picture still while the pointer goes across to the sidebar, and letting go when it comes back.
+!! Holding the picture still while the pointer goes to the sidebar, and letting go on the way back.
 !!
 !! **What the freeze is for.** A reader points at a line, the sidebar shows the block it belongs to, and then they move the pointer across to *read* that block — and the journey itself changes the answer, because the pointer crosses rows on the way out. The freeze is the journey's protection: while it is set the pane reports nothing at all, so the sidebar keeps the block the reader chose. It is set from the editor's popup menu and cleared here, because the gesture that ends it is a pointer's.
 !!
@@ -3782,6 +3781,7 @@ VizFreezeTell:
     send VizFreezeMsg to parent
     return
 !! @hash c2162976
+!! @verified c2162976
 !!!
 !! Keep the picture to a range of steps, and give the whole recording back.
 !!
