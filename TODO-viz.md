@@ -213,10 +213,14 @@ Each of these was decided by Graham and is not to be re-opened without him.
   it compiles (**208 commands / 41 symbols**) and `asdoc-check` is clean at **0 errors, 0 warnings** — the
   copied appendix entries were renamed to the module's own names, and the entry that said "it bumps the tag"
   now says the tag is bumped by the pane.
-- **What stage two has to do, in order.** (1) **The behavioural check first**, `tools/clip-check.js`: load the
-  module in node, send it `{what:'cut', tail:1, from, to, run}` and read `ClipOut`, asserting the ranges for a
-  window cut, an outside cut (which splits a range in two), a second cut **from the set on screen**, an `undo`
-  back to the previous list, and a cut that keeps nothing — `changed:0` with its sentence. That file is the
+- **What stage two has to do, in order.** (1) **The behavioural check** — written 2026-10-13 and living in
+  **`various/clip-check.js`** while it is unfinished (6 of 8 checks pass): it compiles the module in node, sends
+  it `{what:'cut', tail, from, to, run, cap}` and reads `ClipOut`. **It has already earned its place**, having
+  found three real things: the module was never given `ClipKeepCap` (so every cut kept nothing), a json holder
+  crosses a property as one of its slots rather than as the set (so the reply now carries one text in the
+  history's form), and — **live in the pane as well** — keeping the *outside* of a window beyond a range
+  *widened* that range (`10-29` for a 10-20 range against a 30-40 window), which is fixed in both copies.
+  **What is left there is `undo`: it restores nothing.** That file is the
   instrument the rest needs, and it is the honest home for the claim `plotview-check` makes today from the
   pane's side ("a cut is taken from what is on screen", which is the *filter*'s half). (2) **Wire it**, exactly
   as the alert module is wired: a fourth payload in `viz.html` and `server.allspeak`, `build-allspeak`'s

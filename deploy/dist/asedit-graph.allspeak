@@ -3072,12 +3072,20 @@ VizCut:
                 put VizKeepA into VizRangeFrom
                 put VizSelFrom into VizRangeTo
                 take 1 from VizRangeTo
+                ! **And it cannot reach past the range it came from.** Without this the piece ran to the
+                ! window's edge however far short of it the range ended, so keeping the *outside* of a window
+                ! beyond a range *widened* that range: a 10-20 range against a 30-40 window gave `10-29`.
+                ! Found 2026-10-13 by `tools/clip-check.js`, in both copies of this arithmetic.
+                if VizRangeTo is greater than VizKeepB put VizKeepB into VizRangeTo
                 if VizRangeFrom is not greater than VizRangeTo gosub to VizCutAdd
             end
             if VizKeepB is greater than VizSelTo
             begin
                 put VizSelTo into VizRangeFrom
                 add 1 to VizRangeFrom
+                ! The mirror of the cap above: a range that starts past the window's far edge keeps its own
+                ! start rather than the window's.
+                if VizRangeFrom is less than VizKeepA put VizKeepA into VizRangeFrom
                 put VizKeepB into VizRangeTo
                 if VizRangeFrom is not greater than VizRangeTo gosub to VizCutAdd
             end

@@ -18,6 +18,7 @@
     variable ClipChanged     ! whether the reply carries a new set or only a sentence
     variable ClipNotice      ! the sentence a cut that kept nothing leaves behind
     variable ClipOut         ! the dict this module sends back: the set, its counts and the notice
+    variable ClipRangeText   ! the kept ranges as the text the pane reads, `10-20` or `0-29;41-100`
     variable ClipSelFrom     ! the selection's two ends, as the request carried them
     variable ClipSelTo
     variable ClipRunTo       ! the recording's own last step, which only the pane can measure
@@ -45,11 +46,13 @@
     variable ClipHistPiece
     variable ClipHistParts     ! scratch: the list split on `;` by the loader
     variable ClipHistPair      ! scratch: one range split on `-` by it
+    put 16 into ClipKeepCap        ! the pane's figure, restated here so a request without a cap still cuts
+
     on message go to ClipMessage
     release parent
     stop
 
-!! @hash 1499a8ea
+!! @hash ed88d1ca
 !! @verified 1499a8ea
 !!!
 !! The boundary: one message in, one message out, and nothing else in this module knows about either.
@@ -61,6 +64,9 @@
 !! §1 **A cut that keeps nothing is answered like any other, and it is the reason the reply exists at all.** The old path wrote the sentence into the pane's own element and returned; from a module a sentence has to travel, and `changed` is what tells the pane that this answer carries no new set — so the picture is left standing while the sentence is still shown.
 ClipMessage:
     put the message into ClipIn
+    ! **A request changes the set unless it says otherwise**, and the one path that does not — a cut that kept
+    ! nothing — sets this back to 0 itself.
+    put 1 into ClipChanged
     put property `what` of ClipIn into ClipWhat
     if ClipWhat is `cut` go to ClipCut
     if ClipWhat is `undo` go to ClipUndo
@@ -74,13 +80,36 @@ ClipNewRun:
     put 0 into ClipKeepSet
     go to ClipCutWhole
 
+ClipWire:
+    ! The live list, as the text the pane reads, in the history's own form — built the way `ClipHistPush`
+    ! builds it, so a range set has one spelling in this file.
+    put `` into ClipRangeText
+    put 0 into ClipKeepI
+    while ClipKeepI is less than ClipKeepN
+    begin
+        if ClipRangeText is not empty put ClipRangeText cat `;` into ClipRangeText
+        index ClipKeepFrom to ClipKeepI
+        put ClipKeepFrom into ClipRangeFrom
+        put ClipRangeText cat ClipRangeFrom into ClipRangeText
+        put ClipRangeText cat `-` into ClipRangeText
+        index ClipKeepTo to ClipKeepI
+        put ClipKeepTo into ClipRangeTo
+        put ClipRangeText cat ClipRangeTo into ClipRangeText
+        add 1 to ClipKeepI
+    end
+    return
+
 ClipReply:
-    ! **The set, as the pane wants it.** The two arrays are json, and a json value travels as its text, so they cross the message unchanged — the same thing the editor does with a recording of 435 KB. `from` and `to` are the filter's own two arrays in its own order, so the pane assigns them and neither side has to parse anything.
+    ! **The set travels as one text**, in the same form the history keeps: `10-20`, or `0-29;41-100`. It is not
+    ! sent as the two json arrays the arithmetic works on, because **a json holder crosses a property as one of
+    ! its slots rather than as the set** — measured 2026-10-13, the day this module was written, when
+    ! `tools/clip-check.js` read back `from: 10` for a list holding one range and would have read the wrong
+    ! thing for two. The encoding is the history's own, so the file has one spelling of a range set, not two.
+    gosub to ClipWire
     put `{}` into ClipOut
     set property `what` of ClipOut to `kept`
     set property `changed` of ClipOut to ClipChanged
-    set property `from` of ClipOut to ClipKeepFrom
-    set property `to` of ClipOut to ClipKeepTo
+    set property `ranges` of ClipOut to ClipRangeText
     set property `n` of ClipOut to ClipKeepN
     set property `whole` of ClipOut to ClipKeepWhole
     set property `tail` of ClipOut to ClipKeepSet
@@ -88,7 +117,7 @@ ClipReply:
     send ClipOut to sender
     stop
 
-!! @hash 3ff7e64c
+!! @hash 81bb6b76
 !! @verified 3ff7e64c
 !!!
 !! The cut: what a range of steps keeps, and the history that makes it undoable.
@@ -111,6 +140,12 @@ ClipCut:
     ! selection's two ends in steps, and the recording's own last step, which only the pane can measure because
     ! the pane is what reads the recording. §1 has the coercion's own note.
     put property `tail` of ClipIn into ClipKeepTail
+    ! **The cap is the pane's, because it is the pane that draws the holders** — it is how many ranges its own
+    ! arrays can hold — so it arrives with the request. The default is here as well because an unset cap is
+    ! not a big cap: `VizKeepN2 is not less than VizKeepCap` with nothing in it compared false and every cut
+    ! kept nothing, which is how `tools/clip-check.js` found it on 2026-10-13, the day the module was written.
+    if property `cap` of ClipIn is not empty put property `cap` of ClipIn into ClipKeepCap
+    add 0 to ClipKeepCap
     put property `from` of ClipIn into ClipSelFrom
     put property `to` of ClipIn into ClipSelTo
     put property `run` of ClipIn into ClipRunTo
@@ -170,12 +205,20 @@ ClipCut:
                 put ClipKeepA into ClipRangeFrom
                 put ClipSelFrom into ClipRangeTo
                 take 1 from ClipRangeTo
+                ! **And it cannot reach past the range it came from.** Without this the piece ran to the
+                ! window's edge however far short of it the range ended, so keeping the *outside* of a window
+                ! beyond a range *widened* that range: a 10-20 range against a 30-40 window gave `10-29`.
+                ! Found 2026-10-13 by `tools/clip-check.js`, in both copies of this arithmetic.
+                if ClipRangeTo is greater than ClipKeepB put ClipKeepB into ClipRangeTo
                 if ClipRangeFrom is not greater than ClipRangeTo gosub to ClipCutAdd
             end
             if ClipKeepB is greater than ClipSelTo
             begin
                 put ClipSelTo into ClipRangeFrom
                 add 1 to ClipRangeFrom
+                ! The mirror of the cap above: a range that starts past the window's far edge keeps its own
+                ! start rather than the window's.
+                if ClipRangeFrom is less than ClipKeepA put ClipKeepA into ClipRangeFrom
                 put ClipKeepB into ClipRangeTo
                 if ClipRangeFrom is not greater than ClipRangeTo gosub to ClipCutAdd
             end
@@ -297,6 +340,6 @@ ClipUndo:
     put 1 into ClipKeepWhole
     put 1 into ClipChanged
     gosub to ClipReply
-!! @hash 613052d7
+!! @hash 4e1c1b0e
 !! @verified 613052d7
 !!!
