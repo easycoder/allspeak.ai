@@ -565,12 +565,6 @@ VizRemember:
     ! The diagnostic's own scratch: the document it builds, the line it is on, where that line lands, and
     ! the two measurements the copy of the text needs — its size and how far its baseline sits below the
     ! middle of a row. See the create block for why it exists at all.
-    variable VizLabelBody
-    variable VizLabelLine
-    variable VizLabelEnd
-    variable VizLabelY
-    variable VizLabelSize
-    variable VizLabelDrop
     variable VizLabelSpace     ! the width a label's name and its one-em gap take, in frame units
     ! And what `VizLabelCheck` answers: whether the line in `VizSourceLine` is a label, and how long its
     ! name is — the line without the colon.
@@ -715,7 +709,6 @@ VizRemember:
     svgimage VizGlyphs
     ! The diagnostic's own layer: the label lines of the script, right-aligned at the frame's edge, so
     ! that the picture's text and the drawing's mapping can be compared side by side. Temporary.
-    svgimage VizLabelText
     path VizRules         ! a faint rule across the frame for every line the run touched
     path VizHeat0           ! the marks, coloured by how much work the line carried
     path VizHeat1
@@ -837,7 +830,7 @@ Draw:
     put 0 into VizMinSteps
     if VizSetTag is not VizKeptKey gosub to VizKeepRun ! §35
     put VizKept into VizEvents ! §36
-!! @hash 51678a45
+!! @hash bb765cdc
 !! @verified e9a06a05
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -871,31 +864,27 @@ Draw:
 !!
 !! §12 This is the mechanism the picture already used — see `VizPane` — rather than a `clipPath`, which the plugin has no element for and which would take a second element anyway. A nested viewport clips by default; the style is here for the same reason it is there: with no style of its own the plugin defaults the element to `width:100%;height:100%`, and CSS beats the attributes.
 !!
-!! §13 **The diagnostic: the name of every label at the right-hand end of its own line.** A second picture, built per draw, holding nothing but the label lines of the script — each copied verbatim and right-aligned at the frame's right-hand edge, in a font size the source's own size scaled to the frame. It is *temporary*, and it exists to settle one question that reading the code cannot: whether the picture's text and the drawing agree about where a line is.
 !!
-!! §14 The reason it works is that both copies are the *same string* in the *same font* at the *same size*, drawn through two independent mappings — the source's own document (inside the pane, whose `viewBox` is the window) and the canvas's units (this image, one unit to one canvas unit). If the two mappings agree, each name sits on its own source line; if they are half a row apart, the eye sees the name floating above or below the text it copies. Graham's idea, and the right instrument: a comparison of identical things rather than a judgement of small offsets.
 !!
-!! §15 It is one `<image>` rather than a pool of text elements because the number of labels in view is the file's business, not the pane's: at the widest zoom every label in the script is on screen.
 !!
-!! §16 **Created after the plot, so it sits above the marks and the flow** — it is the reading aid, and nothing should be drawn over it. It is also outside the plot's clipping, for the same reason the instruments are: it is drawn inside the frame by construction, so there is nothing to clip, and keeping it out means no zoom can ever cut a name out of it.
 !!
-!! §17 Created last, so they are drawn over everything: nothing overlaps them, and last is the safe default. Both of the *troughs* are fixed — a bar is always the whole of its axis — so their geometry is set once here and only the handles move. The handles are pills rather than rectangles because a scrollbar handle reads as a pill; `rx` of half the thickness is what makes one.
+!! §13 Created last, so they are drawn over everything: nothing overlaps them, and last is the safe default. Both of the *troughs* are fixed — a bar is always the whole of its axis — so their geometry is set once here and only the handles move. The handles are pills rather than rectangles because a scrollbar handle reads as a pill; `rx` of half the thickness is what makes one.
 !!
-!! §18 The colours are the canvas's own greys: the trough a shade darker than the panel, the handle lighter again, so the pair reads as a groove with something in it rather than as two rectangles. The cursors are the whole of what makes a bar *feel* like a bar — `ns-resize` down the side and `ew-resize` along the foot — and they are the reason the style clause is here rather than plain attributes.
+!! §14 The colours are the canvas's own greys: the trough a shade darker than the panel, the handle lighter again, so the pair reads as a groove with something in it rather than as two rectangles. The cursors are the whole of what makes a bar *feel* like a bar — `ns-resize` down the side and `ew-resize` along the foot — and they are the reason the style clause is here rather than plain attributes.
 !!
-!! §19 **The clip bar, above the picture.** It sits in the pane's top margin, which held nothing: the plot begins at 60 and the step numbers are down at the foot, so this is the one free band, and above is where the bar does the most good — its markers carry guides down the whole plot, so the reader dragging one sees the exact x it is at, over the very marks they are choosing between.
+!! §15 **The clip bar, above the picture.** It sits in the pane's top margin, which held nothing: the plot begins at 60 and the step numbers are down at the foot, so this is the one free band, and above is where the bar does the most good — its markers carry guides down the whole plot, so the reader dragging one sees the exact x it is at, over the very marks they are choosing between.
 !!
-!! §20 The rail is two units of a pale grey, the band is the range, and the markers are twenty units tall so there is something to grab; the cursor style says so, as it does on the scrollbar handles.
+!! §16 The rail is two units of a pale grey, the band is the range, and the markers are twenty units tall so there is something to grab; the cursor style says so, as it does on the scrollbar handles.
 !!
-!! §21 **The three controls above the bar, drawn from the numbers the hit test uses.** They sit in their own strip above the rail and against its right end, laid out from `VizPlotRight` rather than from constants so they follow the frame if it ever stops being 1000 wide. Their legends are the arrow pairs of the design, drawn *in* them; the words that explain each one belong to a tooltip, which is owed and not built yet — until then the notice names what the last cut kept.
+!! §17 **The three controls above the bar, drawn from the numbers the hit test uses.** They sit in their own strip above the rail and against its right end, laid out from `VizPlotRight` rather than from constants so they follow the frame if it ever stops being 1000 wide. Their legends are the arrow pairs of the design, drawn *in* them; the words that explain each one belong to a tooltip, which is owed and not built yet — until then the notice names what the last cut kept.
 !!
-!! §22 A mark is a *stroked* hairline with a round cap, not a filled one: `M x y h0.01` alone fills to nothing at all, and stroked without the cap it is a 0.01-long rectangle — so the cap belongs to the mark, not to a scheme. Its width is set with the geometry on every draw, where the span is known; see the note where the mark's size is set.
+!! §18 A mark is a *stroked* hairline with a round cap, not a filled one: `M x y h0.01` alone fills to nothing at all, and stroked without the cap it is a 0.01-long rectangle — so the cap belongs to the mark, not to a scheme. Its width is set with the geometry on every draw, where the span is known; see the note where the mark's size is set.
 !!
-!! §23 The heat ramp's four bands, coolest first, and the only scheme. The marks were once drawn a second time by a plain single-colour path; the fold removed the duplication, and with it the template that the mark-size and line-cap mistakes were both copied from. **The ramp, and it is a spectrum between blue and red.** It used to run blue, yellow, orange, red, which is not a progression a reader can read as one — the eye has no way to say whether yellow is between blue and red or off to the side of them. These four are on the line the eye does interpolate: blue, violet, magenta, red. The *coldest* is what every mark starts as, which is what makes a picture of a run show the program warming up; see the shading in the mark loop.
+!! §19 The heat ramp's four bands, coolest first, and the only scheme. The marks were once drawn a second time by a plain single-colour path; the fold removed the duplication, and with it the template that the mark-size and line-cap mistakes were both copied from. **The ramp, and it is a spectrum between blue and red.** It used to run blue, yellow, orange, red, which is not a progression a reader can read as one — the eye has no way to say whether yellow is between blue and red or off to the side of them. These four are on the line the eye does interpolate: blue, violet, magenta, red. The *coldest* is what every mark starts as, which is what makes a picture of a run show the program warming up; see the shading in the mark loop.
 !!
-!! §24 The flow, a path per kind, in the prototype's own colours. A transfer says where control went, and *how* it went is the interesting part: a `gosub` and a `return` are the same gesture drawn the same way until the colour tells them apart. `branch` is not drawn at all — see the note on the flow paths' declarations, §1, for why the scaffolding is left out rather than greyed. One place for each, because the key draws them too: a legend that named a colour other than the one on the wires would be worse than no legend, and two copies is how that happens.
+!! §20 The flow, a path per kind, in the prototype's own colours. A transfer says where control went, and *how* it went is the interesting part: a `gosub` and a `return` are the same gesture drawn the same way until the colour tells them apart. `branch` is not drawn at all — see the note on the flow paths' declarations, §1, for why the scaffolding is left out rather than greyed. One place for each, because the key draws them too: a legend that named a colour other than the one on the wires would be worse than no legend, and two copies is how that happens.
 !!
-!! §25 **The masks last, and that is the whole of their reason: SVG paints in document order, so an element created before the marks would sit *under* them and hide nothing.** One covers the recording before the range and one what follows it, so a reader choosing a range sees the part that is about to go. Their x and width are set per draw and per drag; only their shape is fixed here. **The wash has to be given as a *string*, not as the number 0.62** — the language has no fractions and `set attribute ... to 0.62` is a compile error ("not an integer"), where a backtick value is just the text of the attribute and never goes near the arithmetic.
+!! §21 **The masks last, and that is the whole of their reason: SVG paints in document order, so an element created before the marks would sit *under* them and hide nothing.** One covers the recording before the range and one what follows it, so a reader choosing a range sees the part that is about to go. Their x and width are set per draw and per drag; only their shape is fixed here. **The wash has to be given as a *string*, not as the number 0.62** — the language has no fractions and `set attribute ... to 0.62` is a compile error ("not an integer"), where a backtick value is just the text of the attribute and never goes near the arithmetic.
     ! ---- built once, on the first draw ----
     ! **The elements are built by a call, and `Draw` then jumps over its own subroutine.** They have to
     ! exist before anything writes to them: the notice that a drawing is under way is written *before*
@@ -973,12 +962,6 @@ VizBuildElements:
     set attribute `height` of VizPlot to VizPlotH
     set attribute `viewBox` of VizPlot to VizMargin cat ` ` cat VizMargin cat ` ` cat VizPlotW cat ` ` cat VizPlotH
 
-    create VizLabelText in VizCanvas ! §13–§16
-    set attribute `preserveAspectRatio` of VizLabelText to `none`
-    set attribute `x` of VizLabelText to 0
-    set attribute `y` of VizLabelText to 0
-    set attribute `width` of VizLabelText to 1000
-    set attribute `height` of VizLabelText to 740
 
     ! A rule per line the run touched, faint and across the whole frame. It is drawn *over* the source
     ! so a line can be picked out of the texture, and *under* everything else so it never competes
@@ -1017,7 +1000,7 @@ VizBuildElements:
     set attribute `text-anchor` of VizHitStatus to `start`
 
     ! ---- the scrollbars ----
-    create VizBarV in VizCanvas ! §17–§18
+    create VizBarV in VizCanvas ! §13–§14
     set attribute `x` of VizBarV to 944
     set attribute `y` of VizBarV to VizMargin
     set attribute `width` of VizBarV to 10
@@ -1041,7 +1024,7 @@ VizBuildElements:
     set attribute `height` of VizHandleH to 10
     set attribute `rx` of VizHandleH to 5
     set attribute `fill` of VizHandleH to `#c9ced8`
-    create VizBarClip in VizCanvas ! §19–§20
+    create VizBarClip in VizCanvas ! §15–§16
     set attribute `x` of VizBarClip to VizMargin
     set attribute `y` of VizBarClip to 40
     set attribute `width` of VizBarClip to VizPlotW
@@ -1100,7 +1083,7 @@ VizBuildElements:
     put VizPlotRight into VizClipOutX
     put VizMargin into VizClipInXW
     put VizPlotRight into VizClipOutXW
-    put 8 into VizCtlY ! §21
+    put 8 into VizCtlY ! §17
     put 18 into VizCtlH
     put 84 into VizResetW
     put 84 into VizOuterW
@@ -1190,7 +1173,7 @@ VizBuildElements:
     set the elements of VizKeepTo2 to VizKeepCap
     set the elements of VizHist to 32
 
-    create VizHeat0 in VizPlot ! §22–§23
+    create VizHeat0 in VizPlot ! §18–§19
     set attribute `fill` of VizHeat0 to `none`
     set attribute `stroke` of VizHeat0 to `#3b7dd8`
     set attribute `stroke-linecap` of VizHeat0 to `round`
@@ -1207,7 +1190,7 @@ VizBuildElements:
     set attribute `stroke` of VizHeat3 to `#e5484d`
     set attribute `stroke-linecap` of VizHeat3 to `round`
 
-    put `#e0a44a` into VizColourCall ! §24
+    put `#e0a44a` into VizColourCall ! §20
     put `#43c6a8` into VizColourJump
     put `#c07ad0` into VizColourReturn
     create VizFlowCall in VizPlot
@@ -1218,7 +1201,7 @@ VizBuildElements:
     set attribute `stroke` of VizFlowJump to VizColourJump
     set attribute `stroke-width` of VizFlowJump to 2
     set attribute `fill` of VizFlowJump to `none`
-    create VizClipMaskIn in VizCanvas ! §25
+    create VizClipMaskIn in VizCanvas ! §21
     set attribute `y` of VizClipMaskIn to VizMargin
     set attribute `height` of VizClipMaskIn to VizPlotH
     set attribute `fill` of VizClipMaskIn to `#f2efe9`
@@ -1290,7 +1273,7 @@ VizBuildElements:
     return
 
 VizBuilt:
-!! @hash 70cdf270
+!! @hash 765a73c5
 !! @verified f99c111e
 !!!
 !! What a draw does, in order.
@@ -1871,7 +1854,6 @@ VizWindow:
     ! and the `href` naming the document.
     gosub to VizSourcePicture
     ! And the labels, which are rebuilt on every draw because they follow the window.
-    gosub to VizLabelNames
     ! And the scrollbars, which are the same window read a second way.
     gosub to VizBars
     ! And the clip bar, which is the recording read a second way: the two markers stand where the range
@@ -1913,7 +1895,7 @@ VizWindow:
         gosub to Draw
     end
     return
-!! @hash 9bf4e606
+!! @hash aa30c655
 !! @verified cd84104b
 !!!
 !! The gestures are four entry points, and this module registers them.
@@ -2706,109 +2688,6 @@ VizSourceMeasure:
     set attribute `height` of VizGlyphs to VizGlyphHeight
     return
 
-VizLabelNames:
-!! @hash 562a10b9
-!! @verified efac97e5
-!!!
-!! Every label is named at the right-hand edge, and the rules make room for it.
-!!
-!! A label is a line at the left margin ending in a colon — the pane is given the script as text and nothing else, and the recording carries no label names, so `VizLabelCheck` is where a label is recognised — and its name, without the colon, is drawn level with its own line in a strong indigo the picture uses nowhere else. The rule for such a line stops one em short of the name, so the two read as a signpost beside the line rather than as one long line with a word on the end. It began as a diagnostic, at Graham's suggestion, to test whether the drawing and the text agreed about where a line is; it settled that, then caught a fault no check could see, and he kept it because a column of names down the edge is a way to navigate a long file — so it stays, and it stays honest about its origin.
-!!
-!! Appendix
-!!
-!! §1 **This began as a diagnostic and stays because it earns its place.** Graham asked for it to test the alignment — "render the name of that label onto the right-hand end of its line, using the same size font" — and it did that job twice over: it showed that the drawing's mapping was right, and later that the picture's *rows* were being misplaced. He then kept it on his own judgement: it collides with nothing, and a column of label names down the right-hand edge is a way to navigate a long file.
-!!
-!! §2 It is *folded into the drawing* rather than drawn beside it: each name is put where `VizPlaceY` says its line is, in the same font at the same size as the source, in a strong indigo the picture uses nowhere else. So it is also a standing check on the mapping — if the names ever stop sitting level with the lines they name, the mapping has moved again — which is worth knowing given that the last fault of that kind cost a morning.
-!!
-!! §3 **The numbers are what put it on the line rather than near it.** The size is the source's thirteen units scaled by the same factor the picture is — `VizPlotW` across `VizWindowW` — and rounded rather than truncated, because a fifth of a font size shows where a fifth of a unit does not. The drop is where a source row's baseline sits: five document units below the middle of the row, a row being eighteen tall with the baseline fourteen below its top. Both are derived from the same numbers the picture is drawn from.
-!!
-!! §4 **And it draws nothing when the copy would be too small to read**, clearing the layer rather than leaving it: below four units the picture's own text is a smudge, and a name that cannot be compared with the line it names is noise. Clearing matters more than the threshold — an annotation left behind by a zoom is a stale artefact, and a stale artefact in a picture is a wrong answer.
-!!
-!! §5 **Is this line a label, and how long is its name?** A label is a whole line at the left margin whose last character is a colon — the language has no other shape for one, the pane is given the script as *text* and nothing else, and the recording carries no label names (its anchors are the `viz` markers, named `viz-start@206` and the like). So this is where a label is recognised.
-!!
-!! §6 **One routine because two things ask.** The rules stop short of a label so that the name at the frame's edge reads as a signpost rather than as the end of the line, and the names themselves are drawn from the same answer — so the whole meaning of "a label" is here, and there is no second copy of it to drift. A doc block is blanked by both callers before they come here, which takes care of the `!!` lines; a bare `!` comment is excluded by hand because a comment can end in a colon too. What is left is a label in every case, and the cost of a false positive is a stray name at the frame's edge.
-!!
-!! §7 `VizSourceLine` holds the line on the way in; `VizIsLabel` is 0 or 1 on the way out and `VizLabelLen` is the length of the name — the line without its colon.
-!!
-!! §8 **A column of the picture is eight units, and this is what makes the text agree with them.** The geometry's eight units a column is assumed by the rules, the label names, the document's width and the bars; the text is laid out by the browser at whatever advance the font it picks actually has. So read the advance off a hidden element and solve for the em whose advance *is* eight units:
-!!
-!! §9 advance = ratio x em, ratio = width / (count x 13) (measured at 13px) em = 8 x 13 x count / width
-!!
-!! §10 held in hundredths, because the language has no fractions and the value is wanted to two places — 13.28 rather than 13 is the whole difference between a staircase and a fan.
-!!
-!! §11 **The string is doubled up from nine characters rather than typed out**, so the count is `the length of` it rather than a number a reader would have to count in a run of spaces. A monospace font's advance is the same for every character, which is why an `x` measures the column a space occupies.
-!!
-!! §12 reads nothing; leaves `VizGlyphEm` (whole units, for the rules' gap) and `VizGlyphEmText` (the two-place spelling the `<text>` element carries).
-!!
-!! §13 **A width that is not a font's is not a measurement.** A pane with no layout — a hidden host, a stub DOM under a harness — answers with a box of its own rather than with the text's width, and solving the em from that gives a nonsense size. Outside these bounds the em stays as it is, and the picture is the one this pane drew before the ruler existed: worse than a measured one, and far better than a broken one.
-!!
-!! §14 **How far a line is indented, which is part of the shape the bars draw.** The redaction is the *code's* silhouette rather than the file's — the blanking says that already — and indentation is part of a code shape: a bar beginning at the margin says every line starts at column zero, which is true of `Main:` and false of everything under it.
-!!
-!! §15 Counted by *trimming*, because the language has no `trim` and no `position of`: `from 1 of` gives everything after the first character, so the walk shortens its own copy until the copy no longer begins with a space. That ends on an empty line and on a line of nothing but spaces as well as on one that is only indented, so no flag and no length test is needed.
-!!
-!! §16 Cost is bounded by the indentation and paid once per line, in the pass that builds the picture — which happens once per recording and not once per draw, because the bars are a function of the *source* rather than of the window.
-!!
-!! §17 reads `VizSourceLine`, leaves `VizIndentLen`.
-!!
-!! §18 **The bars are a redaction of the text and they are read with it, so the text is what they are measured against.** A bar's left edge is its line's own first character, in the document's units — the `viewBox` puts it on that character at whatever the zoom is. Its width is the line's length *as a reader reads it*, pinned, so that narrowing the window does not shrink the whole redaction into the margin. Those two are the same value at the legible floor, where the text is at its own size, and differ at every other zoom — which is why the bars are built here rather than with the picture.
-!!
-!! §19 Graham's specification, 2026-10-11: *"the right end should never change — it's always fixed at the end of the text at normal size. The left end should move with the starting position at all zoom levels"*, and its purpose in his words: *"to keep the indents visible but prevent the entire redaction shrinking"*. The left edge used to be scaled by the pin along with the width, so a deep indent began to the right of the text it belongs to, and the gap grew as the window narrowed.
-!!
-!! §20 **Two measures a row and one string per zoom, because the obvious routes are both closed.** The path cannot be built once and left, since its width depends on the window; it must not be built from the *source* either, because that means a second walk of `VizSourceLines` on every zoom, and `element N of` on a json array re-parses the whole array — the cost that made this a once-per-picture job to begin with. So the pass that reads the source anyway keeps each row's indentation and each row's body length, in two number arrays, and this builds the path from them.
-!!
-!! §21 **The width is the line's length as a reader reads it, and only the pin makes it that.** Eight units a column is the document's own measure, so that part would shrink with the text; multiplying by the pin puts the width back at the size the text is read at, which is what stops the whole redaction shrinking into the margin. Integer throughout, so a bar can come out a unit short of its exact length, which is under a pixel on any zoom this pane draws.
-    ! ---- every label, named at the right-hand end of its own line ----
-    multiply 13 by VizPlotW giving VizLabelSize ! §1–§4
-    divide VizWindowW by 2 giving VizLabelDrop
-    add VizLabelDrop to VizLabelSize
-    divide VizLabelSize by VizWindowW
-    if VizLabelSize is less than 1 put 1 into VizLabelSize
-    multiply 5 by VizPlotW giving VizLabelDrop
-    divide VizLabelDrop by VizWindowW
-    if VizLabelSize is less than 4
-    begin
-        set attribute `href` of VizLabelText to `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="740"></svg>`
-        return
-    end
-
-    put `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="740">` into VizLabelBody
-    put VizViewY0 into VizLabelLine
-    put VizViewY0 into VizLabelEnd
-    add VizViewYH to VizLabelEnd
-    while VizLabelLine is less than VizLabelEnd
-    begin
-        take 1 from VizLabelLine giving VizSourceAt
-        put `` into VizSourceLine
-        if VizSourceAt is less than VizSourceCount put element VizSourceAt of VizSourceLines into VizSourceLine
-        if VizSourceLine starts with `!!` put `` into VizSourceLine
-        gosub to VizLabelCheck
-        if VizIsLabel is 1
-        begin
-            ! The name without its colon: it is a signpost, and the colon belongs to the line of code the
-            ! pane does not draw. `left` of the line is the language's own way to say that, and it is done
-            ! before the escaping below so the length is the character count and not a byte count.
-            put left VizLabelLen of VizSourceLine into VizSourceLine
-            ! The entities first, ampersand first, as the picture does — and the `%`/`#` pass at the end
-            ! covers the colour written into the text element below.
-            replace `&` with `&amp;` in VizSourceLine
-            replace `<` with `&lt;` in VizSourceLine
-            replace `>` with `&gt;` in VizSourceLine
-            put VizLabelLine into VizTickValue
-            gosub to VizPlaceY
-            add VizLabelDrop to VizTickPos giving VizLabelY
-            put VizLabelBody
-                cat `<text x="` cat VizPlotRight cat `" y="` cat VizLabelY cat `" font-family="monospace" font-size="` cat VizLabelSize
-                cat `" fill="#4338ca" text-anchor="end">` cat VizSourceLine cat `</text>`
-                into VizLabelBody
-        end
-        add 1 to VizLabelLine
-    end
-    put VizLabelBody cat `</svg>` into VizLabelBody
-    replace `%` with `%25` in VizLabelBody
-    replace `#` with `%23` in VizLabelBody
-    set attribute `href` of VizLabelText to `data:image/svg+xml;charset=utf-8,` cat VizLabelBody
-    return
-
 VizLabelCheck:
     put 0 into VizIsLabel ! §5–§7
     put 0 into VizLabelLen
@@ -2898,7 +2777,7 @@ VizRedactBuild: ! §18–§20
     return
 
 VizSourcePicture:
-!! @hash d7d0bce7
+!! @hash f12010c6
 !! @verified cf6e1925
 !!!
 !! The picture never changes; the window over it does.

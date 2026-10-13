@@ -558,18 +558,8 @@ const drawing = () => {
 		.flatMap(ys => ys));
 	const markYs = [`ec-VizHeat0`, `ec-VizHeat1`, `ec-VizHeat2`, `ec-VizHeat3`].flatMap(id => ysIn(dOf(id)));
 	const pane = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizPane`));
-	// Two images now — the source's picture and the diagnostic's copy of the label lines — so the source's
-	// is picked by its id rather than by being the only one.
 	const picture = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizGlyphs`));
 	const href = (picture && picture.attributes.href) || ``;
-	const annotation = Object.values(byId).find(e => String(e.attributes.id || ``).startsWith(`ec-VizLabelText`));
-	const annHref = (annotation && annotation.attributes.href) || ``;
-	let annDoc = ``;
-	try {
-		annDoc = annHref ? decodeURIComponent(annHref.slice(annHref.indexOf(`,`) + 1)) : ``;
-	} catch (err) { /* reported as no document */ }
-	const notes = [...annDoc.matchAll(/<text x="([0-9.]+)" y="([0-9.]+)"[^>]*>([^<]*)<\/text>/g)]
-		.map(m => ({ x: Number(m[1]), y: Number(m[2]), text: m[3] }));
 	const viewBox = (pane && pane.attributes.viewBox) || ``;
 	const box = viewBox.trim().split(/\s+/).map(Number);
 	// The y-axis ticks, as "line → where the axis says it is". They are the picture's yardstick: the
@@ -601,8 +591,6 @@ const drawing = () => {
 		viewBox,
 		box,
 		flow,
-		notes,
-		annHref,
 		rules,
 		segEnds,
 		flowMarks: flow.map(d => (d.match(/M/g) || []).length),
@@ -1119,8 +1107,6 @@ for (const [name, state] of taken) {
 	console.log(`    marks:   ${state.marks.map(([id, n]) => `${id}:${n}`).join(` `)}`);
 	console.log(`    inside:  ${state.bounds} ${state.framed ? `(all inside the 1000x740 frame)` : `(OUTSIDE THE FRAME)`}`);
 	console.log(`    source:  ${state.picture}`);
-	console.log(`    diag:    ${state.notes.length} label name(s)${state.notes.length ? `, first at y=${state.notes[0].y} x=${state.notes[0].x}` : ``}`);
-	console.log(`    labels:  ${state.labels.join(` | `)}`);
 }
 // ---- the ramp ----
 // **The marks are a picture of the run warming up, not of its totals.** Each mark's colour is its
@@ -1438,37 +1424,6 @@ if (!fittedState) {
 	// is checked across the phases where it does draw, and *both* directions matter: a phase that should
 	// have the name and has not is as wrong as a name where none belongs.
 	const labelLine = 150;
-	const dropFor = s => Math.floor(5 * FRAME_WIDTH / s.box[2]);
-	const labelYFor = s => {
-		// The drawing's own arithmetic, mirrored rather than re-derived: `VizPlaceY` adds half a row before
-		// dividing and the runtime truncates, so this must truncate in the same place or be a unit out.
-		const y0 = 1 + s.box[1] / 18;                    // the picture is the whole file, so its first line is 1
-		const rows = s.box[3] / 18;
-		return FRAME_TOP + Math.floor(((labelLine - y0) * FRAME_HEIGHT + FRAME_HEIGHT / 2) / rows);
-	};
-	const readableFor = s => Math.floor((13 * FRAME_WIDTH + s.box[2] / 2) / s.box[2]) >= 4;
-	const inWindowFor = s => {
-		const first = 1 + s.box[1] / 18;
-		return labelLine >= first && labelLine < first + s.box[3] / 18;
-	};
-	let notesBad = 0;
-	let notesSeen = 0;
-	let notesPhases = 0;
-	for (const [name, s] of withPicture) {
-		const want = readableFor(s) && inWindowFor(s);
-		if (want) notesPhases++;
-		if (s.notes.length !== (want ? 1 : 0)) notesBad++;
-		for (const n of s.notes) {
-			notesSeen++;
-			const y = labelYFor(s);
-			if (n.text !== `ChooseUnit`) notesBad++;
-			if (Math.abs(n.x - (FRAME_TOP + FRAME_WIDTH)) > 1) notesBad++;
-			if (n.y < y || n.y - y > dropFor(s)) notesBad++;
-		}
-	}
-	console.log(notesBad === 0 && notesPhases > 0 && notesSeen > 0
-		? `  OK: the labels name the fixture's one label wherever the name is legible — without its colon, at the frame's edge, on the y the drawing gives that line (${notesSeen} name(s) over ${notesPhases} phase(s), and no lookalike named)`
-		: `  FAIL: the label layer is wrong in ${notesBad} way(s) — ${notesSeen} name(s) over ${notesPhases} phase(s) that should have one`);
 }
 
 // The source's picture and the window it is shown through. Three things have to hold at once, and

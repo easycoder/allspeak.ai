@@ -154,6 +154,17 @@ Each of these was decided by Graham and is not to be re-opened without him.
 ---
 ## Owed — [mine, queued]
 
+- **The line-name overlay is deleted (2026-10-13).** 58 code lines with the routine, and 120 lines all told with
+  its `<image>`, its creation, six declarations, its comment and its call; its four appendix entries went with
+  the numbering rebuilt, and `plotview-check`'s one claim about it and the four helpers only it used. What
+  stayed is `VizLabelCheck`/`VizLabelShape` — the two halves of the check the *rules* use to find their right
+  end — which is worth stating because the first attempt cut `VizLabelShape` on the strength of its name.
+- **One block's appendix entries are out of order, and it was like that before this pass.** `viz-graph.allspeak`'s
+  last block (the filter and the clip bar) holds 30 entries numbered 1..30 with no repeat and no gap, but not in
+  ascending order in the file. It costs a reader following the numbers nothing, and `asdoc-check` is content
+  (0 errors), so it is written here rather than churned: fixing it means renumbering the block and moving every
+  marker that names one, with the same check the overlay's removal used.
+
 - **The sidebar's bar has no check.** It now shows only the `@show` values, and nothing asserts that its values
   survive the move or that an empty bar is left when a mark asked to watch nothing. `plotview-check` covers the
   pane's new line; the sidebar has no harness of its own.
@@ -182,12 +193,6 @@ Each of these was decided by Graham and is not to be re-opened without him.
     remaining win; hard because of its *rate* (the gestures mutate the window while the picture draws from it,
     so a module would be asked per pointer event — the one thing the module pattern refuses). The seam to look
     for is the arithmetic: the fit, the clamp, the step↔x mapping.
-  - **the line-name overlay — 58 code lines, and 118 lines all told** when its routine, its `<image>` element,
-    its creation, its six declarations, its comment and its call go together. **Graham: let it go** — the
-    overlay exists to answer one question about where a picture's text sits, and it is not wanted any more.
-    **`VizLabelCheck` and `VizLabelShape` are not part of it and must stay**: they are the two halves of the
-    check the *rules* use to find their right end, so deleting them would change the heat map. *The first cut
-    took `VizLabelShape` because of its name, which is the trap this line is here to prevent.*
   - **the two drawing layers** (`VizSourceMeasure` 82 code lines; the marks, rules and flow 75): the plan's
     verdict stands — *last, or not at all*, because a split there risks a second copy of the mapping, this
     file's most expensive known fault.
