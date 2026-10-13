@@ -342,3 +342,18 @@ edit's match; the instrument first.*
 **2026-10-13, tenth pass: the console quieted at Graph, and a rig that had been reporting zeros.** Graham asked to remove the log lines that obscure major actions and left it to me. Measured first, in the browser: during a reading session with a recording and the pointer over the picture, **9 console lines in six seconds, 6 of them the two pointer-rate logs** (`viz.allspeak`'s per-report `sidebar: line …` and `viz-side.allspeak`'s per-show line) — so those two go, and the three `Compiled …` lines (the runtime's, one per module) and the refusal notices stay: the refusals fire only when something is missing and are the copyable evidence the house style wants. **After: 3 lines, none from the pointer.** `Compiled …` at Graph would need a runtime quiet flag — noted, not done.
 
 **And the removal found a dead instrument**: `various/hover-measure.js` read that log with `^sidebar: line `, which stopped matching when the runtime began prefixing `log` with `time:script:line->` — so its `line` column had been empty and its counts `0` on every run, and it was the **only** tool that depended on log text (checked). It now reads the page's own state (`VizSide`'s `SideLine`/`SideFound`/`SideTitle`, with a `try` because `getSymbolRecord` throws on a name a program does not have) and counts writes to `se-graph-side` with a `MutationObserver`. Same run after: `line 5, 11, 16, 22` down block 1, `27, 33` into block 2, `found=1` each, **160 writes across a 60-move sweep**, picture markup unchanged (9852 bytes). `viz-check` ×4 ✓, `asdoc-check` 0 errors ✓, `viz-modes-check` **100 OK / 2 FAIL** ✓, `plotview-check` **82 OK / 5 FAIL identical** ✓, the browser rig 26 green ✓.
+
+
+**2026-10-13, eleventh pass: the clip's kept set becomes a module — stage one.** The agreed split's item (2) is
+started the safe way: `viz-clip.allspeak` now holds the kept ranges, the history and the arithmetic of a cut,
+**and the pane is untouched** — nothing is wired, nothing can regress, and the module is not in the build. The
+move is mechanical and *checked*: the cut family was extracted from `viz-graph.allspeak`, given its interface
+edits by asserted pattern, renamed to the module's own prefix, and asserted to name no symbol of the pane's; the
+body renamed back is diffed against the pane's own lines, and the 31 lines that differ are the interface and
+nothing else. It compiles (**208 commands / 41 symbols**) and `asdoc-check` reports **0 errors, 0 warnings**
+after the copied appendix entries were renamed and the one that said "it bumps the tag" was corrected — the
+module answers, the pane bumps. **Two slips of mine in the moving script, both caught by the script's own
+checks**: a `\s*$` in an edit pattern ate whole lines (a `return` vanished), and the first rename was a no-op
+because `\b` after a prefix never matches — the proof-by-diff printed False for that and I explained it away
+instead of reading it, which is the trap this repository writes down in caps. **Next, in `TODO-viz.md`'s
+order**: the behavioural check (`tools/clip-check.js`) first, then the wiring, then the pane's copy removed.

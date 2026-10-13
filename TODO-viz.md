@@ -356,6 +356,26 @@ view), or left as the recording's fact. Not changed — the evidence went first.
   Everything the editor owns about the menu *is* asserted by `viz-modes-check` (8 claims). **These claims come
   home when the tick is moved out of the drawing**, and they are the first thing to move.
 
+- **The clip's kept set is a module now — stage one of two (2026-10-13).** `viz-clip.allspeak` holds the kept
+  ranges, the history behind them and the arithmetic of a cut, and the pane is **untouched**: nothing is wired
+  yet, so nothing can regress, and the module is not in the build. What *is* proved: the move is mechanical and
+  checked (the body, renamed back, differs from the pane's own lines only at the interface — printed and read),
+  it compiles (**208 commands / 41 symbols**) and `asdoc-check` is clean at **0 errors, 0 warnings** — the
+  copied appendix entries were renamed to the module's own names, and the entry that said "it bumps the tag"
+  now says the tag is bumped by the pane.
+- **What stage two has to do, in order.** (1) **The behavioural check first**, `tools/clip-check.js`: load the
+  module in node, send it `{what:'cut', tail:1, from, to, run}` and read `ClipOut`, asserting the ranges for a
+  window cut, an outside cut (which splits a range in two), a second cut **from the set on screen**, an `undo`
+  back to the previous list, and a cut that keeps nothing — `changed:0` with its sentence. That file is the
+  instrument the rest needs, and it is the honest home for the claim `plotview-check` makes today from the
+  pane's side ("a cut is taken from what is on screen", which is the *filter*'s half). (2) **Wire it**, exactly
+  as the alert module is wired: a fourth payload in `viz.html` and `server.allspeak`, `build-allspeak`'s
+  `names`, the editor's `LoadClipModule` (forked, as the notice is) and a relay branch on the reply's `what`
+  (`kept`), since a module may only send to `parent`, `sender` or one it declares. (3) **Then remove the pane's
+  copy**: `VizCut`…`VizUndo` and their state, its `VizClip`/`VizUnclip` become senders, the reply fills the
+  pane's own arrays and `VizKeepWhole`, the pane bumps its tag and writes its notice. (4) **The pane's block
+  renumbers**: the entries the cut carried leave with it, and every marker in that block has to move — do it
+  with a check that every marker names an entry which exists, the same check `structure-clip.py` used.
 - **The empty state is drawn (done 2026-10-13), and three faults were stacked on that one path.** A pane with
   no recording — any script without a `<script>.viz.json` beside it, which is most of them — now draws the
   script plain: the frame, the text, the redaction bars, no arrivals. Verified in the browser, which is the only

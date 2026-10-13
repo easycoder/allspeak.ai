@@ -1,0 +1,304 @@
+!! The clip's kept set, and the history that makes it undoable, as a data module.
+!!
+!! The pane keeps the recording, the picture and the gestures; this module keeps the *decision* — which records the reader has kept, and how to get back to a set they had before. It is the shape the plan called for: a data module that tells the picture what to draw on every change, **one message per cut** and nothing at a pointer rate, which is what makes the round trip cost nothing that matters. A cut is *not* answered from the recording: it narrows **what is on screen**, which is the behaviour Graham asked for on 2026-10-07 — *"the second clip took the same time as the first"* was the symptom of the opposite — and `plotview-check` still pins that from the pane's side, where the filter lives.
+!!
+!! **What crosses, and in which direction.** The pane sends one dict per request: `what` (`cut`, `undo`, or `run` for a new recording), `tail` for a cut — 0 the whole recording, 1 the window, 2 the two parts outside it — the selection's two ends in steps, and `run`, the recording's last step, which only the pane can measure because the pane is what reads the recording. This module answers with one dict of its own: the kept ranges as the two json arrays the pane's filter indexes (`from`, `to`), how many are live, whether the whole recording stands, what the last cut kept, and the sentence a cut that kept nothing leaves behind. It is addressed to `sender`, which is how a reply has to go: a module may send to `parent`, to `sender`, or to a module it declares itself, and the editor is what relayed the request, so the editor is what relays the answer back to the pane.
+!!
+!! Appendix
+!!
+!! §1 **The kept list is ranges of steps, never records.** A range is two numbers however big the recording is, so the history — a list of lists of ranges — is a handful of bytes, and thirty of them cost nothing; a saved *set* of records would be a copy of the recording. The pane's filter is what turns ranges back into records, once per picture it draws.
+!!
+!! §2 **Every number that arrives has to be a number again, because a message carries text.** AllSpeak holds a json value as its text and compares two texts lexically — `9 is not less than 10` — so a cut would keep the wrong records. `add 0 to` is the conversion the filter makes per record, made here once per request.
+!!
+!! §3 **A cut that keeps nothing is answered like any other, and it is the reason the reply exists at all.** The old path wrote the sentence into the pane's own element and returned; from a module the sentence has to travel, and `changed` is what tells the pane that this answer carries no new set — so the picture is left standing while the sentence is still shown.
+
+    script VizClip
+!   -- the boundary's own state --
+    variable ClipIn          ! the dict the editor relayed, as it arrived
+    variable ClipWhat        ! which of the three it is
+    variable ClipChanged     ! whether the reply carries a new set or only a sentence
+    variable ClipNotice      ! the sentence a cut that kept nothing leaves behind
+    variable ClipOut         ! the dict this module sends back: the set, its counts and the notice
+    variable ClipSelFrom     ! the selection's two ends, as the request carried them
+    variable ClipSelTo
+    variable ClipRunTo       ! the recording's own last step, which only the pane can measure
+!   -- the kept list, and the history behind it --
+    variable ClipKeepFrom      ! array: each kept range's first step
+    variable ClipKeepTo        ! array: each kept range's last step
+    variable ClipKeepN         ! how many of them are live
+    variable ClipKeepFrom2     ! array: the list being built by a cut, before it replaces the live one
+    variable ClipKeepTo2
+    variable ClipKeepN2
+    variable ClipKeepI         ! scratch: the index over the ranges
+    variable ClipKeepA         ! scratch: one range's start, while it is being rewritten
+    variable ClipKeepB
+    variable ClipKeepTail      ! what a cut keeps: 0 the whole recording, 1 the window, 2 the two parts outside it
+    variable ClipKeepWhole
+    variable ClipKeepSet       ! and what the last cut kept, which is what the notice names
+    variable ClipRangeFrom     ! scratch: one range, on its way into the list being built
+    variable ClipRangeTo
+    variable ClipKeepCap       ! how many ranges the holders hold: past it a splitting cut keeps less
+    variable ClipHist           ! array: the kept list before each cut, as text
+    variable ClipHistN
+    variable ClipHistAt
+    variable ClipHistI          ! scratch over it
+    variable ClipHistText       ! scratch: the list as text, and the piece being read back
+    variable ClipHistPiece
+    variable ClipHistParts     ! scratch: the list split on `;` by the loader
+    variable ClipHistPair      ! scratch: one range split on `-` by it
+    on message go to ClipMessage
+    release parent
+    stop
+
+!! @hash 9130ba05
+!!!
+
+!! The boundary: one message in, one message out, and nothing else in this module knows about either.
+!!
+!! The dispatch is on `what`, and every target ends the turn, because a module's handler is entered by the runtime rather than called: there is no caller to return to. The reply is composed in one place so that the pane's copy of the set and the sentence beside it can never disagree — and **the opening note has the reason** the set travels as ranges rather than records.
+!!
+!! Appendix
+!!
+!! §1 **A cut that keeps nothing is answered like any other, and it is the reason the reply exists at all.** The old path wrote the sentence into the pane's own element and returned; from a module a sentence has to travel, and `changed` is what tells the pane that this answer carries no new set — so the picture is left standing while the sentence is still shown.
+
+ClipMessage:
+    put the message into ClipIn
+    put property `what` of ClipIn into ClipWhat
+    if ClipWhat is `cut` go to ClipCut
+    if ClipWhat is `undo` go to ClipUndo
+    if ClipWhat is `run` go to ClipNewRun
+    stop
+
+ClipNewRun:
+    ! **A new recording takes the history with it**: those ranges are steps in a run that is no longer on screen, so an undo into them would cut the picture to a set nobody asked for. The pane reaches the same conclusion for its own copy of the set; this is the half that owns the history.
+    put 0 into ClipHistN
+    put 0 into ClipHistAt
+    put 0 into ClipKeepSet
+    go to ClipCutWhole
+
+ClipReply:
+    ! **The set, as the pane wants it.** The two arrays are json, and a json value travels as its text, so they cross the message unchanged — the same thing the editor does with a recording of 435 KB. `from` and `to` are the filter's own two arrays in its own order, so the pane assigns them and neither side has to parse anything.
+    put `{}` into ClipOut
+    set property `what` of ClipOut to `kept`
+    set property `changed` of ClipOut to ClipChanged
+    set property `from` of ClipOut to ClipKeepFrom
+    set property `to` of ClipOut to ClipKeepTo
+    set property `n` of ClipOut to ClipKeepN
+    set property `whole` of ClipOut to ClipKeepWhole
+    set property `tail` of ClipOut to ClipKeepSet
+    set property `notice` of ClipOut to ClipNotice
+    send ClipOut to sender
+    stop
+
+!! @hash 83f0f796
+!!!
+
+!! The cut: what a range of steps keeps, and the history that makes it undoable.
+!!
+!! Every entry here is the note that used to sit in the pane's own code block, carried over with its marker: a cut is taken from **what is on screen** and not from the recording, so the arithmetic is about ranges of steps alone. The marker's number is this block's.
+!!
+!! Appendix
+!!
+!! §1 **`add 0 to` the four numbers before any arithmetic on them.** A step read out of a parsed recording is *text*, and text compares lexically — an unconverted `10` is less than `9` — so the ranges this makes would cut the wrong records: measured in isolation before the filter was written, `10 is less than 9` is 1 without the conversion and 0 with it. This is where the selection, the remembered recording end and the range arithmetic all meet, so it is where the conversion belongs.
+!! §2 **The one operation the controls share: rewrite the list to what the reader chose to keep.** `ClipKeepTail` says which part of the window that is — 0 the whole recording, 1 the window itself, 2 the two parts outside it — and the selection (`ClipSelFrom`/`ClipSelTo`) is the window the markers make. Keeping the inside intersects each live range with the window; keeping the outside subtracts it, and a subtraction can split one range into two, which is why the list is a list and why the new one is built in the spare pair before it replaces the live one.
+!! §3 **Nothing is rewritten but the list.** The recording is re-read on every draw, so a cut is a handful of numbers and the next draw's filter, and `reset` is the empty list. That also means a cut does not survive leaving the pane — the same deal the window itself makes, and the honest one: a recording is a file, and a set of ranges over it is a way of looking, not a property of the run.
+!! §4 **A cut that would keep nothing is refused, and the reader is told why.** Subtracting a selection from a list it already covers leaves nothing, and an empty list means "the whole recording" — so the pane would *widen* at a press, which is the one thing this control must never do. The history entry the cut had already saved goes back, and the notice says what happened rather than leaving a reader to work out which button was ignored. It is the notice and not the status line for the reason the design gives: an explanation of a control belongs where the controls are.
+!! §5 The whole recording, which is the empty list — both the starting state and what `reset` restores.
+!! §6 **The tag is no longer bumped here.** What it does *not* do is ask for a cut's re-fit: it sets `ClipKeepSet` to 0, and the fit reads that to tell the two apart — a cut re-fits the steps and leaves the lines, while giving the whole recording back fits both, which is what `reset` means. Without the bump a reset left the picture clipped: the filter's cache key did not change, so the kept set was never rebuilt (found by the harness, 2026-10-07).
+!! §7 One range into the list being built. Ranges go in in order — a live list is ordered and the two halves of a split are added left first — so the built list is ordered too, which is what lets the axis take its ends from the first and last entries and lets the filter's walk stay a walk.
+!! §8 **`ClipKeepCap` is a ceiling and not a promise.** At it, a cut that would split a range further simply keeps less of it than it should — sixteen outer cuts, on one recording, without resetting. Said rather than hidden: an overrun here would be a wrong picture with no sign that anything was dropped.
+
+ClipCut:
+    ! **The request, off the message.** The pane owns the gesture and the picture, so the range it means arrives
+    ! here as three numbers: what the cut keeps (`tail` — the window, the outside, or the whole recording), the
+    ! selection's two ends in steps, and the recording's own last step, which only the pane can measure because
+    ! the pane is what reads the recording. §1 has the coercion's own note.
+    put property `tail` of ClipIn into ClipKeepTail
+    put property `from` of ClipIn into ClipSelFrom
+    put property `to` of ClipIn into ClipSelTo
+    put property `run` of ClipIn into ClipRunTo
+    add 0 to ClipSelFrom ! §1
+    add 0 to ClipSelTo
+    add 0 to ClipRunTo
+    if ClipKeepTail is 0 go to ClipCutWhole ! §2–§3
+    ! A cut filters the set on screen; only the whole-recording path and an undo read the recording.
+    put 0 into ClipKeepWhole
+    ! The list the cut replaces, so `undo` can put it back, and the tag, which is what makes a cut
+    ! *visible* to the two places that decide a picture.
+    put ClipKeepTail into ClipKeepSet
+    gosub to ClipHistPush
+    put 0 into ClipKeepN2
+    put 0 into ClipKeepI
+    ! With nothing kept yet, the window *is* the answer — no range to intersect.
+    if ClipKeepN is 0 and ClipKeepTail is 1
+    begin
+        put ClipSelFrom into ClipRangeFrom
+        put ClipSelTo into ClipRangeTo
+        gosub to ClipCutAdd
+    end
+    ! And with nothing kept yet, the outside is the two ends of the recording. `0` is where the fit starts,
+    ! and `ClipRunTo` is the recording's own last step, remembered in pass one while the list is still empty.
+    if ClipKeepN is 0 and ClipKeepTail is 2
+    begin
+        put 0 into ClipRangeFrom
+        take 1 from ClipSelFrom giving ClipRangeTo
+        if ClipRangeTo is not less than 0 gosub to ClipCutAdd
+        add 1 to ClipSelTo giving ClipRangeFrom
+        put ClipRunTo into ClipRangeTo
+        if ClipRangeFrom is not greater than ClipRangeTo gosub to ClipCutAdd
+    end
+    ! Otherwise every live range is rewritten.
+    while ClipKeepI is less than ClipKeepN
+    begin
+        index ClipKeepFrom to ClipKeepI
+        put ClipKeepFrom into ClipKeepA
+        index ClipKeepTo to ClipKeepI
+        put ClipKeepTo into ClipKeepB
+        if ClipKeepTail is 1
+        begin
+            if ClipSelFrom is greater than ClipKeepA put ClipSelFrom into ClipKeepA
+            if ClipSelTo is less than ClipKeepB put ClipSelTo into ClipKeepB
+            if ClipKeepA is not greater than ClipKeepB
+            begin
+                put ClipKeepA into ClipRangeFrom
+                put ClipKeepB into ClipRangeTo
+                gosub to ClipCutAdd
+            end
+        end
+        if ClipKeepTail is 2
+        begin
+            ! What is left of this range on each side of the window.
+            if ClipKeepA is less than ClipSelFrom
+            begin
+                put ClipKeepA into ClipRangeFrom
+                put ClipSelFrom into ClipRangeTo
+                take 1 from ClipRangeTo
+                if ClipRangeFrom is not greater than ClipRangeTo gosub to ClipCutAdd
+            end
+            if ClipKeepB is greater than ClipSelTo
+            begin
+                put ClipSelTo into ClipRangeFrom
+                add 1 to ClipRangeFrom
+                put ClipKeepB into ClipRangeTo
+                if ClipRangeFrom is not greater than ClipRangeTo gosub to ClipCutAdd
+            end
+        end
+        add 1 to ClipKeepI
+    end
+    if ClipKeepN2 is 0 ! §4
+    begin
+        take 1 from ClipHistN
+        put ClipHistN into ClipHistAt
+        put 0 into ClipChanged
+        put `nothing left to keep — the whole recording stands` into ClipNotice
+        gosub to ClipReply
+        stop
+    end
+    gosub to ClipCutSwap
+    gosub to ClipReply
+    return
+
+ClipCutWhole:
+    put 0 into ClipKeepN ! §5–§6
+    put `[]` into ClipKeepFrom
+    put `[]` into ClipKeepTo
+    put 0 into ClipKeepSet
+    put 1 into ClipKeepWhole
+    put 1 into ClipChanged
+    gosub to ClipReply
+
+ClipCutAdd:
+    if ClipKeepN2 is not less than ClipKeepCap return ! §7–§8
+    index ClipKeepFrom2 to ClipKeepN2
+    put ClipRangeFrom into ClipKeepFrom2
+    index ClipKeepTo2 to ClipKeepN2
+    put ClipRangeTo into ClipKeepTo2
+    add 1 to ClipKeepN2
+    return
+
+ClipCutSwap:
+    ! The built list becomes the live one. A loop rather than a swap, because a swap would need a third
+    ! pair of holders, and either way this is a handful of numbers.
+    put ClipKeepN2 into ClipKeepN
+    put 0 into ClipKeepI
+    while ClipKeepI is less than ClipKeepN
+    begin
+        index ClipKeepFrom2 to ClipKeepI
+        put ClipKeepFrom2 into ClipRangeFrom
+        index ClipKeepFrom to ClipKeepI
+        put ClipRangeFrom into ClipKeepFrom
+        index ClipKeepTo2 to ClipKeepI
+        put ClipKeepTo2 into ClipRangeTo
+        index ClipKeepTo to ClipKeepI
+        put ClipRangeTo into ClipKeepTo
+        add 1 to ClipKeepI
+    end
+    return
+
+ClipHistPush:
+    ! **The list a cut is about to replace, as one string** — `0-20`, or `0-4;12-20`. The whole history in
+    ! a handful of bytes is what makes an undo worth having: a saved *set* would be a copy of the
+    ! recording, while this is a few numbers however big the run is, so keeping thirty of them costs
+    ! nothing. An empty list is the recording unreduced, which is what undoing past the first cut restores.
+    put `` into ClipHistText
+    put 0 into ClipHistI
+    while ClipHistI is less than ClipKeepN
+    begin
+        if ClipHistText is not empty put ClipHistText cat `;` into ClipHistText
+        index ClipKeepFrom to ClipHistI
+        put ClipKeepFrom into ClipHistPiece
+        put ClipHistText cat ClipHistPiece into ClipHistText
+        put ClipHistText cat `-` into ClipHistText
+        index ClipKeepTo to ClipHistI
+        put ClipKeepTo into ClipHistPiece
+        put ClipHistText cat ClipHistPiece into ClipHistText
+        add 1 to ClipHistI
+    end
+    index ClipHist to ClipHistN
+    put ClipHistText into ClipHist
+    add 1 to ClipHistN
+    put ClipHistN into ClipHistAt
+    return
+
+ClipHistLoad:
+    ! The text back into the list. Empty text is the recording unreduced — undo, past the first cut, is the
+    ! whole run again. `split` fills a slot per piece, so the walk is `index` and `has element`, the same
+    ! shape the editor's own buffer walk uses.
+    put 0 into ClipKeepN2
+    if ClipHistText is empty go to ClipCutSwap
+    split ClipHistText by `;` into ClipHistParts
+    put 0 into ClipHistI
+    while ClipHistParts has element ClipHistI
+    begin
+        index ClipHistParts to ClipHistI
+        put ClipHistParts into ClipHistPiece
+        split ClipHistPiece by `-` into ClipHistPair
+        index ClipHistPair to 0
+        put ClipHistPair into ClipRangeFrom
+        index ClipHistPair to 1
+        put ClipHistPair into ClipRangeTo
+        ! **And back to numbers.** A list read out of the history is *text*, and the next cut's arithmetic on
+        ! it would compare lexically — `10 is less than 9` — so an undo followed by a cut would keep the
+        ! wrong records. The same conversion the filter makes per record, made here for the same reason.
+        add 0 to ClipRangeFrom
+        add 0 to ClipRangeTo
+        gosub to ClipCutAdd
+        add 1 to ClipHistI
+    end
+    go to ClipCutSwap
+
+ClipUndo:
+    ! **Back to the list the last cut replaced**, and it is instant because it is a parse and a draw rather
+    ! than a re-filter of the recording: the tag is bumped so the next draw rebuilds the set from the
+    ! restored list, which is the same path a cut takes and is why an undo cannot drift from cutting.
+    if ClipHistAt is less than 1 stop
+    take 1 from ClipHistAt
+    index ClipHist to ClipHistAt
+    put ClipHist into ClipHistText
+    gosub to ClipHistLoad
+    ! An undo widens, so it cannot be answered from what is on screen: it reads the recording again.
+    put 1 into ClipKeepWhole
+    put 1 into ClipChanged
+    gosub to ClipReply
+!! @hash eda70bf3
+!!!
