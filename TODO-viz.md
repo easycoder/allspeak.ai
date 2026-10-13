@@ -277,8 +277,12 @@ Each of these was decided by Graham and is not to be re-opened without him.
 
 **If the comments move and (1) and (3) happen, the arithmetic is**: 4,330 → ~3,400 (appendix) → ~3,100 (alert) → ~1,700 (window+clip) → with the layers split as well, four modules of 250–1,500 lines each. That is the shape to choose from.
 
+**Two standing faults this pass ran into, both pre-existing and neither introduced by the clip — reported, not fixed.**
+
+- **A later `window` record overwrites `VizMaxSteps`.** Pass one does `put property `steps` of VizArgs into VizMaxSteps` for every `window` record, so on a recording that opens more than one window the extent collapses to the *last* window's step count (anchors can only raise it, and they have already been seen). Measured: the JS recording of `tools/trace-run.allspeak` has three windows and fits to `steps -1-2`, where the Python host's single-window recording of the same script is the well-behaved 24-step one the harness's expectations are tuned to. `VizMaxSteps` should be a maximum, not an assignment — a one-line fix, but it changes the unclipped picture for any multi-window trace, so it wants its own measurement.
+- **`steps` is per window, not per recording.** So a clip range is approximate on a multi-window recording: the steps of one window land on top of another's. That is the pane's existing step model rather than anything the clip introduced, but a clip magnifies it, and it is the reason the harness is run on the *Python* recording.
+
 ## Rescued from the narratives — still live
 
 - **The `---→ ←---` control was never driven by the harness, and that is why the clip's split does not yet remove `VizClip` from the pane.** The pane cuts correctly for it (`ClipCut` with `ClipKeepTail` 2 rewrites the list to the outside of the window), but no headless check presses it; `various/menu-measure.js` drives the pane in a browser and says so. When the clip's stage two lands, its check has to cover this control and the two beside it.
-- **`steps` is per window, not per recording**, so on a multi-window recording a clip range is approximate: the same step number means different work in different windows, and a later `window` record overwrites `VizMaxSteps` in pass one. Anything that turns a step range into a promise about work has to say which window it means.
 - **The pane's calibration route is dead in the harness.** `tools/plotview-check.js` has no `rest` stub, so the write `VizRemain` makes cannot happen there and the prediction it feeds is never exercised headlessly; in a browser it only runs when the pane draws a real recording twice.

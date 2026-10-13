@@ -1026,7 +1026,7 @@ const PHASES = [
 	// never reaches the control, which is a phase-ordering fault in this file and not a fault in the pane.
 	// Left as a stated gap rather than an assertion that cannot fail: `..:` is the shape this harness already
 	// uses for the JS recording, and the whole point of the note is that the next session picks it up.
-	// `TODO-viz.md`, "The clip's interaction", carries it.
+	// `TODO-viz.md`, "Rescued from the narratives", carries it.
 	// ---- the controls' own tooltips ----
 	// **The pointer resting on a control, which is the one gesture here that must not draw.** A hover
 	// arrives at pointer rate, so the claim is two-fold: the tip names the box under the pointer, and the
