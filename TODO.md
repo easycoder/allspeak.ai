@@ -29,6 +29,8 @@
 
 ### What's next, in order
 
+**The next session is *runtime values*** — the capture pipeline and the `Values` tab, which Graham named on 2026-10-13 as the work he wants started next. **Open `prompt-261013-values.md` first**: it is the definition he asked for, and its **four numbered decisions are his** (names only or a small expression form; whether captures outside `@viz` windows are wanted; how the tab gets its arrival; whether `Values` is a tab or folded into `Doc block`). Item 4 below is the same work, and the debugger brief beside it (`prompt-261007-debugger.md`) is the half that would read the captures. The visualiser's own queue — the clip's module wired, then the element build — stands behind it in `TODO-viz.md`.
+
 The order was chosen for stated reasons and is Graham's to change: **the item with no open design question goes first, and the container the others land in goes early, because it is visible.**
 
 1. **The traffic lights** — decided in full on 2026-10-03 and **not built**, and by the rule above it goes first because nothing about it is undecided and its first half needs no change to any app. Per-tab state, and `Record`/`Graph`/`Launch` tinted from it; then the app reporting back. The design is in `TODO-viz.md` and, in full, in `various/record-and-launch.md`.
