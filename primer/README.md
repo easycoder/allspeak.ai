@@ -1,21 +1,13 @@
-# Starter template
+# The Primer page
 
-The files here are the bare minimum to get started with AllSpeak. If you are developing a command-line application, nothing is needed; just tell your agent what you want to achieve. If you are developing a browser app, you'll need 3 files:
+`project.allspeak` is the page's script, `project.json` its Webson layout and `strings.json` its strings. This source is the English tree; `./deploy-sync` copies all of it to `deploy/en/primer/` (excluding this file and `project.allspeak`, which the page fetches from `deploy/shared/primer/` — one canonical copy for all four languages).
 
-```
-index.html
-project.allspeak
-project.json
-```
+The three tab bodies are markdown, rendered by the runtime because `StartCard` and `ExampleCard` carry `@data-markdown: 1`:
 
-Aim your browser at index.html and you should see a blank screen with the word (empty) in the middle. Now tell your agent what you want next.
+- `tab1.md` — **Why**: what AllSpeak is and why it exists. No instructions.
+- `tab2.md` — **Get started**: setup, the colour-grid prompts, and what to look at in Viz. Self-contained on purpose — it is the tab a new reader is sent to.
+- `tab3.md` — the AI Manual overview, with `ch01..ch08.md` beside it.
 
-If you are developing a client-server application you will need a 4th file, `server.allspeak`. Run it as follows:
+`duckthink.png` is the title bar's logo.
 
-```
-allspeak server {port}
-```
-
-where {port} is some number such as 5500. Aim your browser at `http://localhost:{port}`.
-
-See the instructions in our [Primer](https://allspeak.ai/en/primer.html).
+For a reader, the entry point is <https://allspeak.ai/en/primer.html>.

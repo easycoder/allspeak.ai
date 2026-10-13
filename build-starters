@@ -63,6 +63,20 @@ for dir in starter/*/; do
     # a marker on every file. A pack is chosen by *language*, not by kind, so it cannot know which this project
     # is: the AGENTS.md beside it tells the agent to change this line for a CLI or desktop project.
     printf 'lang: %s\nruntime: js\n' "$lang" > "$work/.allspeak-init"
+    # **And it must not carry the time of day, or the pack is a different file every time it is built.**
+    #
+    # The two files beside it arrive by `cp -p`, so they keep their source's timestamp; this one is *written*,
+    # so it gets the moment the build ran. `zip` stores each entry's modified time, so that made the finished
+    # `.zip` differ byte-for-byte on every build while its contents were identical — which is worse than noise:
+    # the four packs are tracked in git, so every deploy showed four modified binaries, and a change being
+    # reviewed sat among them indistinguishably. Measured 2026-10-13: same 21 bytes and same CRC (`04ada0b6`),
+    # timestamps `17:51` and `20:19`, extracted trees `diff -rq` identical.
+    #
+    # It now borrows the timestamp of the instructions beside it — the file whose edit is the reason a pack
+    # changes at all — so a pack's bytes change when its *contents* change and at no other time, and the
+    # timestamp still reads as a real date to whoever unzips it. (A fixed epoch would do the same job and lie
+    # to the reader; `SOURCE_DATE_EPOCH` is not honoured by `zip`.)
+    touch -r "$dir"AGENTS.md "$work/.allspeak-init"
     for extra in DEEPSEEK.md CODEWHALE.md AGENTS.md; do
         if [ -f "$dir$extra" ]; then
             cp -p "$dir$extra" "$work/"

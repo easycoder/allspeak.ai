@@ -15,6 +15,7 @@ The repo has four dev scripts at the root. Each one has a narrow purpose; this f
 | `viz.html` | **deploy** — the dev server fetches the deployed page for any project that has none of its own, and fills in that project's language from its `.allspeak-init` |
 | `codex/*` or `resources/doc/*` | `./deploy-sync` (then commit) |
 | Any of the above, shipping to allspeak.ai | `./deploy-allspeak` (local) **or** trigger the GitHub `Deploy to allspeak.ai` workflow |
+| anything, when you want to *see* the change rather than review a diff | `./deploy-allspeak --dev` — publishes the same tree to <https://allspeak.ai/dev/> and leaves the live site alone |
 
 Editing the editor's three files needs no build — what it needs is a check:
 `node tools/viz-check.js viz.allspeak`, `node tools/viz-check.js viz-graph.allspeak`,
@@ -39,6 +40,8 @@ Extracts the JS object literal from each `js/allspeak/LanguagePack_<lang>.js` an
 
 ### `./build-starters`
 Bundles the per-language starter zip `deploy/allspeak-<lang>.zip`, auto-discovering languages from `starter/*/`. **A pack is the project's own files and nothing else**: `AGENTS.md` (the agent's instructions for that language), `CLAUDE.md` (a short pointer at it) and `.allspeak-init`, which declares the language the project speaks (`lang: fr`). No tooling is in a pack — see "what a project holds" below. Run after editing anything under `starter/`.
+
+**The output is deterministic, and that is a requirement rather than a nicety.** The four packs are tracked in git, and both deploy paths run this script, so a build that produced different bytes each time would put four modified binaries in the working tree on every deploy — indistinguishable, in a diff being reviewed, from a change somebody made. `.allspeak-init` is the one entry that is *written* rather than copied, so it borrows its timestamp from `AGENTS.md` beside it; the other two arrive by `cp -p` and keep theirs. A pack's bytes therefore change when its contents change and at no other time. Measured 2026-10-13: three consecutive builds give identical md5s, `./deploy-allspeak --dev` leaves the tree byte-identical, and the packs' contents are unchanged from before the fix (checked by extracting and `diff -rq`).
 
 ### The CLI's four words
 `allspeak-py/allspeak/as_program.py`'s `Main()` is the launcher, and its whole vocabulary is four lines — the help text is `HELP_TEXT` in that file, and it is the only place a user reads them:
@@ -118,6 +121,21 @@ Two equivalent paths:
 
 ### Local: `./deploy-allspeak`
 Runs `build-allspeak`, `deploy-sync`, the `cp` into `deploy/code/`, `build-starters`, then rsyncs `deploy/` to `allspeak@allspeak.ai:allspeak.ai/`. Uses your default SSH key. Fastest iteration: skip the commit/push round-trip.
+
+**Add `--dev` to publish the same tree as a preview at <https://allspeak.ai/dev/> without touching the live site** — the same six steps, minus the dated `dist/<YYMMDD>/` snapshot, with the rsync pointed at `allspeak.ai/dev/`:
+
+```
+./deploy-allspeak --dev        # preview:  https://allspeak.ai/dev/en/primer.html
+./deploy-allspeak              # live:     https://allspeak.ai/
+```
+
+A page is easier to judge than a diff, so this is the way to read a change to the site's prose, layout or styling before it goes out. **It is a static directory, not a subdomain**: Apache serves the docroot directory by directory, so `deploy/en/primer.html` arrives at `/dev/en/primer.html`, relative paths resolve exactly as they do at the root, and the mirror inherits the docroot's `.htaccess` (the CORS and no-cache rules). No DNS entry, vhost or certificate is involved.
+
+**Three things about `/dev/` are worth knowing.**
+
+- It is **public and unlisted** — anyone with the URL can read it — so it is a preview of things not yet announced.
+- **Nothing in this repo excludes it from crawlers.** The site's `robots.txt` is not part of this tree (it is neither in `deploy/` nor on the docroot, yet it is served), so excluding `/dev/` is an edit wherever that file does live, not here.
+- It **must stay protected from the live rsync's `--delete`.** `/dev` sits outside the `deploy/` tree's own extent, so both `./deploy-allspeak` and `.github/workflows/deploy.yml` carry `--filter='P /dev'` beside the older `P /dist/[0-9]*`. Without that line the next production deploy removes the mirror silently, and the next preview 404s with nothing to explain why.
 
 ### GitHub: `Deploy to allspeak.ai` workflow
 Triggered manually via `workflow_dispatch` on `.github/workflows/deploy.yml`. The workflow itself runs `./build-allspeak` and `./build-starters` on the runner, then rsyncs `deploy/` to the server. Uses the deploy SSH key stored as a repo secret.

@@ -63,6 +63,7 @@
     "#element": "div",
     "@id": "TabBar",
     "display": "flex",
+    "flex-wrap": "wrap",
     "gap": "0.5em",
     "margin-bottom": "0.1em",
     "#": [
@@ -76,7 +77,7 @@
     "$TabStart": {
       "#element": "button",
       "@id": "TabStart",
-      "#content": "Start",
+      "#content": "Why",
       "background": "#1e3450",
       "color": "#eaf0ff",
       "border": "1px solid #253545",
@@ -89,7 +90,7 @@
     "$TabExample": {
       "#element": "button",
       "@id": "TabExample",
-      "#content": "Example",
+      "#content": "Get started",
       "background": "#0b1018",
       "color": "#eaf0ff",
       "border": "1px solid #253545",

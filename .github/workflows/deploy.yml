@@ -56,10 +56,14 @@ cp -p tools/viz-align-measure.py deploy/code/tools/viz-align-measure.txt
 
       - name: Deploy via rsync
         run: |
-          # Protect server-side dist/<YYMMDD>/ snapshot directories from --delete,
-          # since they aren't kept in the repo.
+          # Two protected paths, and neither is kept in the repo:
+          #   `P /dist/[0-9]*`  the server-side dated snapshot directories.
+          #   `P /dev`          the preview mirror published by `./deploy-allspeak --dev` from a dev machine.
+          # Without the second, this workflow's --delete would remove the mirror on every CI deploy — silently,
+          # and with the next preview 404ing for no visible reason. Kept in step with ./deploy-allspeak.
           rsync -avz --delete \
             --filter='P /dist/[0-9]*' \
+            --filter='P /dev' \
             -e "ssh -i ~/.ssh/id_ed25519" \
             deploy/ \
             allspeak@allspeak.ai:allspeak.ai/

@@ -7,8 +7,8 @@
 #   2. ./deploy-sync          — mirror codex/, docs/, primer/ → deploy/
 #   3. Refresh deploy/code/ and deploy/dist/ — server, edit, the editor and its modules
 #   4. ./build-starters       — rebuild deploy/allspeak-<lang>.zip
-#   5. rsync deploy/ → server (with --delete; protects snapshot dirs)
-#   6. rsync deploy/dist/ → server's dist/<YYMMDD>/ (additive snapshot)
+#   5. rsync deploy/ → server (with --delete; protects the snapshot dirs and the /dev preview)
+#   6. rsync deploy/dist/ → server's dist/<YYMMDD>/ (additive snapshot) — live deploy only
 #
 # Order note: build-allspeak writes directly to deploy/dist/, so step 5
 # picks it up for the rolling path and step 6 publishes the dated snapshot.
@@ -20,13 +20,49 @@
 # accumulate server-side; the main rsync's --delete is filtered to leave
 # them untouched.
 #
-# Usage: ./deploy-allspeak
+# Usage: ./deploy-allspeak [--dev]
+#
+#   (no argument)  deploy to the live docroot — https://allspeak.ai/
+#   --dev          publish the same tree to https://allspeak.ai/dev/ as a preview, and write no dated
+#                  snapshot. The live site is not touched. See the note below for why a path rather than a
+#                  subdomain, and why `/dev` has to be protected from the live rsync's --delete.
 
 set -euo pipefail
 
 cd "$(dirname "$0")"
 
-REMOTE="allspeak@allspeak.ai:allspeak.ai/"
+# **`--dev` publishes the same tree to `/dev/` as a preview, instead of the live docroot.**
+#
+# The point is to read a change in a browser at https://allspeak.ai/dev/ before it goes live, so a page can
+# be judged as it will appear rather than as a diff. **Nothing about the build differs** — the six steps below
+# are the same ones, which is what makes the mirror worth looking at — and exactly one thing is skipped: the
+# dated `dist/<YYMMDD>/` snapshot, because a preview is not a release and a snapshot is a promise that says
+# "this runtime was live on that day".
+#
+# **`/dev/` is a plain static directory, so this needs no DNS, no vhost and no certificate.** Apache serves
+# the docroot directory by directory, and the mapping was checked before any of this was written: the live
+# `en/primer.html` and the one on disk are byte-identical, and `/dev/` answered `404` until this script first
+# ran. A subdomain (`dev.allspeak.ai`) would need a DNS entry and a vhost, and would buy nothing — relative
+# paths inside the tree resolve the same way under a path prefix as they do at the root.
+#
+# **The live docroot's rsync protects `/dev` from `--delete`** (see step 5), and that is load-bearing rather
+# than tidy: the mirror is not part of this tree's own extent, so without the filter the *next* production
+# deploy would remove it silently, and the next preview would 404 with nothing to explain why.
+DEV=0
+case "${1:-}" in
+    --dev)  DEV=1 ;;
+    "")     DEV=0 ;;
+    *)
+        echo "usage: ./deploy-allspeak [--dev]" >&2
+        exit 2
+        ;;
+esac
+
+if [ "$DEV" = 1 ]; then
+    REMOTE="allspeak@allspeak.ai:allspeak.ai/dev/"
+else
+    REMOTE="allspeak@allspeak.ai:allspeak.ai/"
+fi
 VERSION="$(date +%y%m%d)"
 
 # SSH connection multiplexing — share a single SSH session across rsync
@@ -85,12 +121,26 @@ echo "==> 4/6 build-starters"
 ./build-starters
 
 echo "==> 5/6 rsync deploy/ to ${REMOTE}"
-# Protect server-side dist/<YYMMDD>/ snapshot directories from --delete,
-# since they aren't kept locally.
+# **Two protected paths, one reason each — and both are `P` rather than excluded on purpose.** `P` protects
+# from `--delete`; a path this tree never writes is not one it should be deleting, and excluding it would also
+# stop rsync *reading* it, which is not what either of these needs.
+#
+#   `P /dist/[0-9]*`  the dated snapshot directories, made server-side and not kept locally.
+#   `P /dev`          the preview mirror, which lives outside this tree's own extent. Without this the next
+#                    production deploy would delete it silently and the next preview would 404 with nothing
+#                    to explain why.
 rsync -avz --delete --no-perms \
     --filter='P /dist/[0-9]*' \
+    --filter='P /dev' \
     -e "$SSH_OPTS" \
     deploy/ "$REMOTE"
+
+if [ "$DEV" = 1 ]; then
+    echo "==> 6/6 snapshot — skipped for a preview (a preview is not a release)"
+    echo "Done. Preview: https://allspeak.ai/dev/en/primer.html"
+    echo "      Live site untouched: https://allspeak.ai/"
+    exit 0
+fi
 
 echo "==> 6/6 snapshot deploy/dist/ to ${REMOTE}dist/${VERSION}/"
 rsync -avz --no-perms -e "$SSH_OPTS" deploy/dist/ "${REMOTE}dist/${VERSION}/"

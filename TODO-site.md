@@ -10,7 +10,7 @@ The detail behind `TODO.md`'s site row. The dated reasoning is in `git log -p --
 
 **The claim, in the form that should go on the site.** Not "AllSpeak is readable" — that is the old sentence and others can say it. The new one: **a run is an artefact you can be handed.** It is a file, it travels with the project, it carries the author's own prose in the author's own language, and it can be read on a machine that cannot run the code. No conventional language ships that — a stack trace is a failure, a log is a choice, a debugger is interactive, a profiler is aggregate. It is a comprehension claim for the vibe coder and a governance claim for the professional.
 
-**What is invisible today, which is the reason this matters.** Nothing on allspeak.ai mentions the visualiser; no recording ships anywhere (`find . -name '*.viz.json'` finds none); and the live editor cannot open a project at all on the static host — `/list/` and `/read/…` are the Python server's routes and answer `404`. Also not published anywhere: `resources/md/ai-article.md` (the "quick brief", `404` on the site), `dev-to-article.md`, and the four `*-agent-primer.md` files.
+**What is invisible today, which is the reason this matters.** *Amended 2026-10-13: the Primer now names Viz and both of its setup routes end at it* — the rest of the sentence stood until then and the claim itself is still unstated anywhere. The **claim** is invisible: no page says a run is an artefact, no recording ships anywhere (`find . -name '*.viz.json'` finds none), and the live editor cannot open a project at all on the static host — `/list/` and `/read/…` are the Python server's routes and answer `404`. Also not published anywhere: `resources/md/ai-article.md` (the "quick brief", `404` on the site), `dev-to-article.md`, and the four `*-agent-primer.md` files.
 
 ### Three decisions taken (Graham, 2026-10-04)
 
@@ -40,6 +40,30 @@ Synopsis at `deploy/<lang>/why.html`, the long read linked from it, one shared s
 2. **The synopsis** — `why/synopsis.md`, ~700–900 words, short sentences, no adjectives where a mechanism will do: the problem in one paragraph; three mechanisms rather than three claims; one figure with three captions; **what it is not**; one sentence to each audience; where to go next.
 3. **The hero**, which is the one page change that wants all four languages at once.
 4. **Retire the Manual and add `TabWhy`.**
+
+---
+
+## The onboarding: the Primer, Viz, and the two assistants — [mine, queued], slices 2–4
+
+**Slice 1 done, 2026-10-13.** `primer/tab1.md` is now the **Why** tab — what AllSpeak is and why you would use it — with the "How to get started" half gone. `primer/tab2.md` is the **Get started** tab and is *self-contained*, which is what it was chosen for: prerequisites, the two setup routes, the four colour-grid prompts, "what to look for", and a closing **"Now look at the run"** that ends the worked example inside Viz. `primer/project.json` relabels the tabs (`Start` → `Why`, `Example` → `Get started`) and gives `TabBar` `flex-wrap`, because the new label is wider than the old one and the bar had none. Both markdown files were checked by rendering them through the runtime's own renderer (`AllSpeak_Markdown.renderToHtml`, which is line-based — one paragraph per line — so a wrapped paragraph becomes several `<p>`s). **They were not opened in a browser**: there is none in this environment, so the tab bar's width on a narrow screen is reasoned about rather than measured.
+
+**The Reasonix route was wrong and is fixed.** It said `allspeak server` — which serves the project and opens nothing — so half the readers the page is about to send to Viz would never have seen it. Both routes now say `allspeak viz` and state the URL once. **The three translations are a revision behind the English**: `deploy/{fr,it,de}/primer/tab1.md` still carry the older setup (no server step at all, Reasonix via `npm install -g reasonix` and a hand-written `.reasonix/.env`), and their `project.json` has no `TabLearn` node, so the Learn door is English-only.
+
+**What a recording needs, which is now the Primer's problem — and the page it needed is written.** A recording exists only inside a `viz start` window, and a script without one verdicts as `nothing recorded: the run finished without reaching a marker` (`js/plugins/asviz.js`, `vizVerdictEmpty`). So "Now look at the run" cannot say "press Record" and stop; it routes through the agent (*"Mark the click handler, and record a run for me"*), which is the shape Graham asked for — the agent guides, the reader reviews.
+
+**Done 2026-10-13: `learn/reference/23-recordings.md`**, with its `manifest.json` entry and its line in `contents.md`. It covers the markers and their options, `@show`, `@app`, the four ways a recording is asked for (Viz's Record button, the `<script>.record` flag file, `record the script … giving …` / `record this run` / `save the recording to <path>`, and `allspeak --record=<path>`), where the file lands and what the verdict says, the guard and why the flag recorder has none, and the table of which runtime has which. **It is the page an agent fetches**, and every claim in it was checked by running the project's own instruments rather than by reading: `tools/flush-check.js` all green, `tools/capture-check.js` all green (`@show`'s values, the `?` for an unknown name, both runtimes agreeing), `tools/record-flag-check.py` **every claim holds** — including the one that fails if the flag recorder is ever given the editor's guard. `tools/learn-link-check.py` reports 0 errors.
+
+**What remains of it.**
+
+1. **Nothing yet points an agent at it from the pack.** `AGENTS.md` says to read `learn/contents.md` first, and the page is in that index — so it is reachable, but the recommended-first-reads list does not name it, and the Primer now instructs the reader to ask for a recording. One line in `starter/<lang>/AGENTS.md`, and it lands in four languages.
+2. **`learn/{fr,de,it}` are four reference pages behind English** (33 manifest entries against 37) and cannot carry this one until they are translated. English-first stands.
+3. **The `learn/` reader cannot link to a section.** `AllSpeak_Markdown.renderToHtml` writes headings with no `id`, so an in-page `#anchor` link does nothing — `reference/07-arithmetic.md` and `09-control-flow.md` both already rely on one, and the new page therefore names its sections in prose instead. A defect with a one-line fix in the renderer, but it belongs to the runtime's own workstream, not this one.
+
+**Slices 2–4, in the order chosen.**
+
+2. **The home page** (`deploy/<lang>/home.md`): hero, a few bullets, and the Viz line in "How is AllSpeak used?" — with the ten-entry FAQ moved to its own page and the stale "AllSpeak code editor" name gone. Plus a **Home** link in `topnav.md`/`nav.md`, since there is no way back to the landing page today. The FAQ page needs `deploy/shared/home.allspeak` to parameterise its filename (`Page` as well as `Lang`) and one loader per language. **Moving the FAQ costs nothing in search terms that is not already lost**: the served HTML of every content page is an empty body plus a loader, so no page's text — nor `home.md`'s `application/ld+json` — is in what the server returns.
+3. **The starter pack** (`starter/<lang>/AGENTS.md`): step 8, "About the visualizer", describes syntax highlighting; it becomes a *required* first-session walkthrough of Viz, dialled back to a line once `.allspeak-init` names a project — the branch its initialisation step already has. **`CLAUDE.md` has no Reasonix counterpart**, and `build-starters` already copies `DEEPSEEK.md`/`CODEWHALE.md`/`AGENTS.md` when present, so a `REASONIX.md` has a place to land.
+4. **The four languages**: translate slices 1–3, and correct the setup in the three that have gone stale.
 
 ---
 
