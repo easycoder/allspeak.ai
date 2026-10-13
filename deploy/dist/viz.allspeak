@@ -4,7 +4,7 @@
 
     script Viz
 !! @hash 9e6e7696
-!! @verified 57eacdb1
+!! @verified 9e6e7696
 !!!
 !! Variable declarations
 !! The script uses a lot of variables; they are grouped here by function.
@@ -143,6 +143,10 @@
     module SideModule      ! the Graph sidebar, a second companion module beside the pane
     variable SideSrc        ! its source, as fetched
     variable SideLoaded     ! 1 once it is running
+    module AlertModule     ! the drawing notice, a third companion module — the panel the editor shares
+    variable AlertSrc       ! its source, as fetched
+    variable AlertLoaded    ! 1 once it is running
+    variable PanelMsg       ! the dict the notice is told with when it must stand down
     variable SideIn         ! the dict the pane reported, as it arrived
     variable SideInKind     ! which report it is: the line under the pointer, or the freeze lifting
     variable SideSel        ! the line the pane last reported, which is what the sidebar is about
@@ -251,8 +255,8 @@
     variable Model         ! array: what the plugin returned
     variable NL
     variable J
-!! @hash fb41cca7
-!! @verified 90e6973b
+!! @hash cb3848c7
+!! @verified fb41cca7
 !!!
 !! The UI is described by a DOM element 'viz-ui',
 !! a <pre> element that contains all the DOM elements that go to make up the editor.
@@ -319,7 +323,7 @@
     ! loops, for what a tooltip is here and why it is a subroutine rather than lines in this block.
     gosub to SetTips
 !! @hash d61f049f
-!! @verified 414ea5b9
+!! @verified d61f049f
 !!!
 !! Some general initialisation
 !   -- CodeMirror --
@@ -328,7 +332,13 @@
     put 0 into TabCount
     put 0 into ActiveTab
     put `` into CurrentPath
-!! @hash 3a601096
+    ! **The three module flags start at 0 rather than merely set nowhere.** A variable with nothing in it
+    ! is not zero to a comparison, so `if AlertLoaded is 0` would never fire and the notice would never be
+    ! fetched — the trap that also cost the pane its hover guard (`AGENTS.md`, and `VizReady`).
+    put 0 into VizLoaded
+    put 0 into SideLoaded
+    put 0 into AlertLoaded
+!! @hash d66872e1
 !! @verified 3a601096
 !!!
 !! Language detection
@@ -341,6 +351,7 @@
 !   -- Detect language and set strings for each supported language --
     div LangDiv
     textarea VizSrcDiv ! §1
+    textarea AlertSrcDiv
     textarea SideSrcDiv
     put `en` into Lang
     attach LangDiv to `editor-lang` or go to SetStrings
@@ -466,8 +477,8 @@ SetStrings:
     set the content of WelcomeNote to StrWelcomeNote
     set the content of WelcomePre to StrWelcomePre
     set the content of WelcomePost to StrWelcomePost
-!! @hash 8a667163
-!! @verified 3f450398
+!! @hash 8ac5f712
+!! @verified 8a667163
 !!!
 !! Tells the reader when the dev server they are running has been superseded.
 !!
@@ -478,7 +489,7 @@ SetStrings:
         alert StrUpdated
 VersionDone:
 !! @hash b847cbd5
-!! @verified 96465c41
+!! @verified b847cbd5
 !!!
 !! Set up click handlers for the various editor functions.
 !! Blocks-mode handlers (toggle, navigate, mark verified) live alongside
@@ -584,7 +595,7 @@ VersionDone:
     put 0 into GraphMode
     put 0 into BlockDirty
 !! @hash a046db0d
-!! @verified 3efa1530
+!! @verified a046db0d
 !!!
 !! One `on message`, registered here rather than with the code it runs.
 !!
@@ -593,7 +604,7 @@ VersionDone:
 !! It is named here with its body for that reason: the handler is `VizInbound`, in the Graph sidebar section, and the two are one thing split by the shape of the file rather than by design. `VizInbound` is a front door rather than the body itself because the pane now reports two kinds of news — the line under the pointer, and the freeze lifting — and one registration has to answer for both.
 on message go to VizInbound
 !! @hash 3e648bef
-!! @verified f327f0fa
+!! @verified 3e648bef
 !!!
 !! While editor is running it periodically saves changes made by the user
 !! and updates the display to show updates made externally.
@@ -628,6 +639,7 @@ SetTips:
     set attribute `title` of AlertCloseBtn to `Put this message away`
     return
 !! @hash 21476b47
+!! @verified 21476b47
 !!!
 !! The alert panel: one box that says what is happening and stays until it is read.
 !!
@@ -652,6 +664,7 @@ HideAlert:
     set style `display` of AlertPanel to `none`
     stop
 !! @hash 5b38b66f
+!! @verified 5b38b66f
 !!!
 !! Every half-second, changes to the content are saved.
 !!
@@ -759,7 +772,7 @@ PollNext:
     fork to PollFile
     stop
 !! @hash 6d5bfafb
-!! @verified bbd67e70
+!! @verified 6d5bfafb
 !!!
 !! File browser overlay behind the Open button: lists the current directory, navigates into folders and back to the project root, and hands the chosen file to the tab-management section to open.
 !   -- File browser with directory navigation --
@@ -867,7 +880,7 @@ CloseBrowser:
     set style `display` of Overlay to `none`
     stop
 !! @hash 4dfa3b5b
-!! @verified ac5d5c01
+!! @verified 4dfa3b5b
 !!!
 !! This section is tab management; creating a new tab, opening a file, selecting a tab and closing a tab.
 !! Activating a tab leaves Blocks mode first. A tab is a different file, and Blocks mode belongs to the file you were reading — so switching tabs, and opening a file, both land in the flat editor rather than refusing to move until you leave the mode by hand.
@@ -1051,7 +1064,7 @@ ActivateTab:
     gosub to RebuildTabBar
     stop
 !! @hash 8a69e9c5
-!! @verified e6bbb6c8
+!! @verified 8a69e9c5
 !!!
 !! Rebuilding the tab bar is done by assigning styles to each tab to indicate which one is current.
 RebuildTabBar:
@@ -1085,7 +1098,7 @@ RebuildTabBar:
     end
     return
 !! @hash 2ade580b
-!! @verified 1347598c
+!! @verified 2ade580b
 !!!
 !! Here are some utility functions.
 !! DoFind searches in flat mode via CodeMirror's find dialog; in Blocks mode it jumps to the next block whose code or prose contains the text selected in either pane (wrapping around), highlighting the match so repeated presses walk through the hits.
@@ -1184,7 +1197,7 @@ ClearStatus:
     set the content of StatusSpan to ``
     stop
 !! @hash 674162f4
-!! @verified 74b13222
+!! @verified 674162f4
 !!!
 !! Blocks parser. Walks the current Source line-by-line and populates the per-section arrays (Start, End, Prose, Code, Hash, Verified, HashState, VerifyState) plus the Outside-content array used to preserve text between sections during rebuild.
 !!
@@ -1480,7 +1493,7 @@ ScoreWithCode:
     else put `verified-stale` into VerifyState
     return
 !! @hash 5fc18a1f
-!! @verified d37980ab
+!! @verified 5fc18a1f
 !!!
 !! Blocks view.
 !! ToggleBlocks switches between flat and Blocks panes.
@@ -1631,7 +1644,7 @@ UpdateBadge:
     end
     return
 !! @hash a8e720ab
-!! @verified 4464102e
+!! @verified a8e720ab
 !!!
 !! Blocks save.
 !! FlushBlock pushes the current pane edits back into the
@@ -2049,7 +2062,48 @@ VizSendTheRun:
 LoadModules: ! §8–§9
     if VizLoaded is 0 gosub to LoadVizModule
     if SideLoaded is 0 gosub to LoadSideModule
+    ! **The notice is fetched in its own thread, because nothing waits for it.** The pane and the sidebar are
+    ! needed for the picture and the reading, so the run is not fetched until they are ready; the notice is a
+    ! message about a wait, and holding the first drawing back for it would cost the reader the very thing the
+    ! message explains. Fetched beside them, the only cost is that a drawing which begins before it has loaded
+    ! goes unannounced — which the relay logs rather than disguising.
+    if AlertLoaded is 0 fork to LoadAlertModule
     return
+
+!   **The third module, and it is loaded last because it is the least load-bearing of the three.** The pane
+!   is the picture and the mode depends on it; the sidebar is a reading aid and the mode survives without
+!   it; the notice is a message about a wait, and without it the picture draws exactly as it did — so its
+!   failure is said on the status line and nothing changes mode. It reuses the editor's own panel
+!   (`se-alert`), so no new page element is declared for it: the page hands it the source and the module
+!   attaches by id, the same way the pane and the sidebar do.
+LoadAlertModule:
+    put `` into AlertSrc
+    attach AlertSrcDiv to `editor-alert` or go AlertModuleLocal
+    put the text of AlertSrcDiv into AlertSrc
+    if AlertSrc is not empty go to AlertModuleHere
+AlertModuleLocal:
+    rest get AlertSrc from `viz-alert.allspeak?v=` cat now or go AlertModuleHosted
+    if AlertSrc starts with `<` put `` into AlertSrc
+    if AlertSrc is empty go to AlertModuleHosted
+AlertModuleHere:
+    if AlertSrc is empty go to AlertLoadFailed
+    run AlertSrc as AlertModule
+    put 1 into AlertLoaded
+    stop
+
+AlertModuleHosted:
+    rest get AlertSrc from `https://allspeak.ai/dist/viz-alert.allspeak?v=` cat now or go AlertLoadFailed
+    if AlertSrc starts with `<` go to AlertLoadFailed
+    go to AlertModuleHere
+
+AlertLoadFailed:
+    ! **The status line, not the panel, and it is the one module whose failure is not worth a panel.** The
+    ! panel is what failed to arrive, and a reader whose drawings will go unannounced needs to know it once
+    ! rather than be stopped by it — the picture, the sidebar and every gesture are unaffected.
+    set the content of StatusSpan to `The drawing notice could not be loaded; the picture is unaffected`
+    log `alert: could not fetch ` cat `viz-alert.allspeak` cat ` — is it beside the editor?`
+    fork to ClearStatus
+    stop
 
 LoadVizModule:
     put `` into VizSrc ! §10
@@ -2154,6 +2208,7 @@ DoExitGraph:
     set style `display` of EditorArea to `block`
     if VizLoaded is 1 gosub to TellVizClosed
     if SideLoaded is 1 gosub to TellSideClosed
+    if AlertLoaded is 1 gosub to TellAlertClosed
     return
 
 TellVizClosed:
@@ -2166,8 +2221,8 @@ DoExitPanes: ! §16–§17
     if BlocksMode is 1 gosub to DoExitBlocks
     if GraphMode is 1 gosub to DoExitGraph
     return
-!! @hash 7a22679f
-!! @verified ecd231d6
+!! @hash a3e9107f
+!! @verified 7a22679f
 !!!
 !! The front door for what arrives from the pane, which is now two kinds of news and one registration.
 !!
@@ -2178,14 +2233,28 @@ VizInbound:
     put the message into SideIn
     put property `kind` of SideIn into SideInKind
     if SideInKind is `freeze` go to VizFreezeReport
+    if SideInKind is `alert` go to VizAlertRelay
     go to SideMarkLine
+
+!   **The relay, and it exists because a module can only `send` to its parent.** The pane is the one that
+!   measures a drawing, and the panel is a third program it does not declare — so the pane says what it
+!   knows to this file, and this file hands the same dict on unchanged. Nothing is read here: the message
+!   is the panel's vocabulary, not this file's, which is what keeps the panel replaceable.
+VizAlertRelay:
+    if AlertLoaded is 0
+    begin
+        log `alert: the notice is not loaded, so ` cat property `what` of SideIn cat ` has nowhere to go`
+        stop
+    end
+    send SideIn to AlertModule
+    stop
 
 VizFreezeReport:
     put property `frozen` of SideIn into MenuFrozen
     stop
-!! @hash bab238ee
+!! @hash 6f5006c8
+!! @verified bab238ee
 !!!
-
 !! The sidebar: what the pane reports back, and what the sidebar is shown.
 !!
 !! **The pane cannot look a line up, and this file already can.** A doc block is prose about a *line*; the click names the line; and the model that knows which block holds it is the one Blocks mode is built from. So the click travels here rather than the model travelling there — which is also why the editor, and not the pane, knows that a sidebar exists at all.
@@ -2307,8 +2376,18 @@ TellSideClosed:
     set property `open` of SideMsg to 0
     send SideMsg to SideModule
     return
-!! @hash e4eac7b5
-!! @verified 0c4a0949
+
+!   The panel goes away with the pane: a notice about a drawing nobody is looking at is a box over an
+!   editor that has moved on. It is told rather than hidden by the pane itself, because the pane's last
+!   word on the subject may be a cost sentence still on screen — and this is the only path that knows both
+!   that the run is closed and that the panel is up.
+TellAlertClosed:
+    put `{}` into PanelMsg
+    set property `what` of PanelMsg to `hide`
+    send PanelMsg to AlertModule
+    return
+!! @hash 91cb30f5
+!! @verified e4eac7b5
 !!!
 !! Recording a run, from the button.
 !!
@@ -2422,7 +2501,6 @@ LaunchApp:
 !! @hash 6a3baf00
 !! @verified 0faead49
 !!!
-
 !! The popup menu: the pointer's other button, what it offers, and what closes it.
 !!
 !! **One menu, owned here, for two surfaces.** The picture and the sidebar are separate programs in separate boxes, and a menu is neither's: it must be able to appear over either, and what it lists is the *editor's* to know — the sidebar's tabs and the pane's freeze. So the editor listens for the right-click on both boxes and draws the box itself, and each module is told what the item meant without ever learning that a menu exists.
@@ -2454,7 +2532,6 @@ HideMenu:
     return
 !! @hash 73041cd8
 !!!
-
 !! The menu's rows, built once from a list of names.
 !!
 !! **A row is a symbol, so the list is a name in `MenuItemName` and a row in the pool** — the same constraint the sidebar's tabs live under, and the same shape it uses to get round it: `MenuItem` is declared in this file and every row is *created* here, which is why `se-menu` is an empty box in `viz.json` rather than a list of rows. **The styles are set here for the same reason**, exactly as the tab strip sets its own: an element the runtime creates is a bare `div` of that kind, so a row that carried no padding or colour would be a row a reader could not read — measured in a browser on 2026-10-12, where the rows sat flush against one another in the browser's default colour on the menu's own dark ground. `MenuPad` holds that one styling for every row; nothing in it changes per row, so it is written once.
@@ -2493,7 +2570,6 @@ MenuBuild:
     return
 !! @hash 09499d4a
 !!!
-
 !! What each row does when it is pressed.
 !!
 !! **One handler for three rows, and which row it was comes from the row.** A row is an element of the `MenuItem` pool, so `the index of MenuItem` is the whole of what tells them apart — the shape the sidebar's tab strip already uses. **The rows are the sidebar's two tabs in the sidebar's own order, then the pane's freeze**, so for the first two a row's index *is* a tab's index and nothing maps between them; the third is the row that is not a tab. That is the one coupling in this menu, and it is why both lists are in that order and each says so.
@@ -2553,7 +2629,6 @@ MenuFreezeRow:
     return
 !! @hash e277ef59
 !!!
-
 !! Puts the welcome panel away, and is the only thing that does.
 !!
 !! **The panel goes on the first click of anything that works, and there is no single line that says so.** `on click document` reads as "any click anywhere" and is not: the runtime runs a document click handler only for an `<a href>` into this same page (`Browser.js`, `clickDocument` — the editor's own file links are what it exists for). Measured in a browser, 2026-10-12, a click on `Blocks` left the panel standing. So the dismissal is a `gosub to DismissWelcome` as the first line of each of the bar's handlers — `ShowBrowser`, `NewFile`, `DoFind`, `ToggleBlocks`, `ToggleGraph`, `RecordRun` and `LaunchApp` — with the panel itself clickable too, for a reader who clicks the prose rather than a button. **The cost is that a new button has to carry its own `gosub`**, which no list can imply: `tools/viz-modes-check.js` asks the *source* of all seven, because running them for real opened the file browser and broke the checks below it.

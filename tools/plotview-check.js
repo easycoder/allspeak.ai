@@ -152,13 +152,13 @@ if (viewStart < 0) {
 // `VizShown` is the host's (`script`, above) rather than this header's: a statement here is below the
 // host's `stop`, so it would never run — see the note where it is declared.
 //
-// **And the alert panel's two ends are stubbed, because the view calls into the module's plumbing for
-// them.** `Draw` arms the panel at its start and disarms it at its end (`VizAlertStart`/`VizAlertStop`),
-// and both of those live above the view marker with the rest of the host half — so the slice would
-// compile a `gosub` to a label that is not in it. The stubs are the honest stand-in for a harness that
-// deliberately compiles the view alone, and they are *deliberately empty*: the panel is a message about
-// a drawing's cost rather than any part of the picture, and a stub that pretended to show one would be a
-// check on this file rather than on the pane. The panel itself is measured in a browser (`TODO-viz.md`).
+// **And the alert panel used to need two stubs, which are now gone with the panel itself.** `Draw` armed
+// and disarmed it (`VizAlertStart`/`VizAlertStop`) and both lived above the view marker with the rest of
+// the host half, so the slice compiled a `gosub` to a label that was not in it. Since 2026-10-13 the
+// panel is a module of its own (`viz-alert.allspeak`) and the two ends are **messages** — `send … to
+// parent`, which the slice compiles happily and which the harness's stub swallows. So the slice needs
+// nothing stubbed, and the panel is measured where it lives: the browser rig, and `viz-modes-check` for
+// the editor's half of it.
 const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn\nvariable VizPending\nvariable VizSlide\nvariable VizClipInit\nput 0 into VizClipInit\nvariable DrawMillis\nvariable VizEstimate\nvariable DrawStarted\nsvgtext VizBusy\n`
 	// **The freeze's four names are the same case one more time**: they are declared with the boundary's
 	// own state above the marker (the message that sets the freeze arrives through `VizOpen`, and a
@@ -166,7 +166,10 @@ const view = `variable StrFlowCall\nvariable StrFlowJump\nvariable StrFlowReturn
 	// `VizHover` and `VizFrozenLook` — is the view's. Declaring them here is what the plumbing does for
 	// real, and without them the slice does not compile at all.
 	+ `variable VizFrozen\nvariable VizAway\nvariable VizMsgKind\nvariable VizFreezeMsg\n`
-	+ `VizAlertStart:\n    return\nVizAlertStop:\n    return\n`
+	// **And the dict the panel is told with, since 2026-10-13 the same case again**: `Draw` builds it at
+	// both ends of every drawing and sends it to the parent, so the slice needs the name even though the
+	// declaration sits with the boundary's own state above the marker.
+	+ `variable VizAlertMsg\nvariable VizAlertWhy\nvariable VizBusyText\n`
 	+ moduleSource.slice(viewStart);
 const trace = fs.readFileSync(tracePath, `utf8`);
 // What the recording says the transfers were, by kind. The view decides which of these to draw and
