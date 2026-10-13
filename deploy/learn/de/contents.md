@@ -31,6 +31,7 @@ Siehe [README.md](../README.md) für die Nutzung dieses Kurses und das Hinzufüg
 18. [JSON](reference/18-json.md) — `save` kodiert dict/Liste automatisch ; `ergänze … zur json-Datei` ; `json von` für das Parsen ; der Elternverzeichnis-Vorbehalt.
 19. [Testen](reference/19-testing.md) — `check`-Prüfungen, `test … ende test`-Fälle, Fehlerklauseln, der `--test`-Laufmodus und Exit-Codes.
 20. [Stilkonventionen](reference/21-house-style.md) — wohin `beginn` und `ende` gehören, und wie eine lange Anweisung gebrochen wird.
+21. [Aufzeichnungen](reference/23-recordings.md) — `viz start` / `viz stop`, `@show`, `@app`, wie eine Aufzeichnung angefordert wird, und welches Urteil sie fällt.
 
 ## Idiome
 

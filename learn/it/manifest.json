@@ -102,6 +102,11 @@
       "title": "Convenzioni di stile"
     },
     {
+      "slug": "recordings",
+      "path": "reference/23-recordings.md",
+      "title": "Registrazioni"
+    },
+    {
       "slug": "cat-and-string-building",
       "path": "idioms/01-cat-and-string-building.md",
       "title": "cat e costruzione di stringhe"

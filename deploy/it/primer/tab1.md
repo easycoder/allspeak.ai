@@ -1,10 +1,10 @@
-# Programmare Senza Programmare
+# Programmare senza programmare
 
-Probabilmente hai sentito parlare del vibe coding: dici a un'AI cosa vuoi e lei scrive il software. Sembra magia, e a volte lo è. Ma c'è un problema: il codice che produce è in linguaggi come JavaScript o Python, e se non conosci già quei linguaggi, non hai modo di capire se l'AI ha fatto un buon lavoro. Stai volando alla cieca, e quando qualcosa si rompe — e succederà — sei bloccato.
+Probabilmente hai sentito parlare del *vibe coding* — dici a un'AI cosa vuoi e lei scrive il software. Sembra magia, e a volte lo è. Ma c'è un problema: il linguaggio in cui scrive è JavaScript, o Python, o qualcos'altro con parentesi e punti e virgola, e se non lo leggi già non hai modo di capire se il lavoro è stato fatto bene. Ti fidi dell'AI, e quando qualcosa si rompe — e succederà — sei bloccato.
 
-All'estremo opposto, la programmazione tradizionale richiede mesi di apprendimento prima di costruire qualcosa di utile. La maggior parte delle persone non ha tutto quel tempo.
+Imparare a programmare davvero è l'altra strada, e passano mesi prima della prima cosa utile. La maggior parte delle persone non ha tutto quel tempo.
 
-AllSpeak sta nel mezzo. È un linguaggio di scripting progettato per essere letto come una lingua naturale, così quando l'AI scrive codice per te, puoi seguire quello che sta facendo. Mantieni il controllo senza bisogno di una laurea in informatica.
+AllSpeak sta in mezzo. È un linguaggio di scripting che si legge come italiano — o come inglese, francese o tedesco: la stessa runtime esegue tutte e quattro, ciascuna con la propria sintassi naturale.
 
 ## Come si presenta?
 
@@ -26,76 +26,24 @@ AllSpeak costruisce software vero. Applicazioni web con pagine interattive e lay
 
 Il segreto è che all'AI non importa in quale linguaggio scrive. Dagli un linguaggio ad alto livello capace e fornirà le stesse funzionalità che darebbe in JavaScript — ma in una forma che puoi effettivamente leggere, controllare e modificare.
 
-## Come iniziare
+## E c'è uno strumento che sa già tutto questo
 
-Il percorso più veloce è **AllSpeak + Claude Code**. Claude Code è un agente AI di programmazione che funziona nel tuo terminale. Combinato con il nostro starter pack, creerà un progetto funzionante in meno di cinque minuti — completo di spiegazione per ogni file creato.
+Questa è la parte che gli altri linguaggi non ti danno, ed è per questo che abbiamo scritto **Viz** — l'editor di AllSpeak, che il comando `allspeak viz` apre.
 
-Ecco cosa devi fare:
+Viz non è un editor generico che si trova a supportare AllSpeak. Conosce il linguaggio, ed è proprio questo che gli permette di mostrarti un unico file in tre modi, nessuno dei quali richiede un secondo file o un secondo strumento:
 
-1. Crea una cartella vuota per il tuo progetto.
-2. Scarica [allspeak-it.zip](https://allspeak.ai/allspeak-it.zip) e decomprimilo in quella cartella.
-3. Installa AllSpeak: `pip install -U allspeak-ai`
-4. Installa Claude Code (vedi [claude.ai/code](https://claude.ai/code)).
-5. Apri un terminale in quella cartella e digita `claude`.
-6. Quando Claude si avvia, digita **go**.
+- **Come testo.** Tutto lo script, con le parole evidenziate — e con il compilatore del linguaggio dietro, così può controllare quello che stai guardando senza uno step di build. Il meno notevole dei tre, e quello che condivide con ogni altro editor.
+- **Come blocchi**, che cambia il modo in cui leggi uno script. Smette di essere un muro di testo e diventa una serie di sezioni: una breve nota nelle parole di chi l'ha scritta, accanto al codice che descrive, con l'elenco delle sezioni sul lato per passare dall'una all'altra. Leggi la nota, e il codice di cui parla è proprio lì. Funziona perché la prosa è *nel file*, scritta nella sintassi dei commenti del linguaggio — e non in un documento separato da tenere allineato con esso.
+- **Come immagine di un'esecuzione**: quali parti del programma sono state raggiunte, in quale ordine e quante volte. Ogni esecuzione viene conservata come file e può quindi essere riaperta più tardi — da te o da qualcun altro, su una macchina che non sa nemmeno eseguire il codice.
 
-Claude ti farà un paio di domande, creerà i file del progetto e ti guiderà attraverso come funziona il tutto. Da lì, basta dirgli cosa vuoi costruire.
+Queste tre cose altrove sarebbero tre prodotti: un generatore di documentazione, un debugger o un profiler, un report di copertura — ciascuno con le proprie convenzioni, e nessuno obbligato a essere d'accordo con il sorgente. Qui il linguaggio porta già la prosa e i marcatori: sono quindi **viste di un unico file** invece di cose distinte da tenere allineate.
 
----
+Uno stack trace ti dice che un programma è fallito. Un log è qualcosa che hai scelto di scrivere. Una registrazione è l'esecuzione stessa — e persino i suoi marcatori, `viz start` e `viz stop`, sono parole chiave ordinarie: uno script che li porta si esegue esattamente come senza, e non c'è nessuna «build di debug» da mantenere accanto a quella vera.
 
-**AllSpeak + Reasonix** è un'alternativa con un flusso di lavoro simile. Reasonix è un agente AI di programmazione basato su terminale che utilizza i modelli DeepSeek (chiamato DSeek nel Regno Unito). Combinato con il nostro starter pack, creerà un progetto funzionante in meno di cinque minuti.
+## Cosa fai davvero
 
-Ecco cosa devi fare:
+Non scrivi il codice. Descrivi a un agente quello che vuoi — Claude Code, Reasonix, o quello che già usi — e lui scrive l'AllSpeak. Il tuo compito è leggere quello che ha scritto e dire se è giusto.
 
-1. Crea una cartella vuota per il tuo progetto.
-2. Scarica [allspeak-it.zip](https://allspeak.ai/allspeak-it.zip) e decomprimilo in quella cartella.
-3. Installa AllSpeak: `pip install -U allspeak-ai`
-4. Installa Reasonix: `npm install -g reasonix`
-5. Configura la tua chiave API: crea il file `.reasonix/.env` nella tua home directory e aggiungi `DEEPSEEK_API_KEY=sk-...` (ottieni una chiave su [platform.deepseek.com](https://platform.deepseek.com)).
-6. Apri un terminale in quella cartella e digita `reasonix`.
-7. Di' a Reasonix cosa vuoi costruire.
+È per questo che il linguaggio è così semplice, e per questo ogni sezione di uno script porta una breve nota in linguaggio chiaro, scritta dall'AI, che dice cosa intendeva. Stai rileggendo l'*intenzione*, non codice da decifrare.
 
-Reasonix ti farà un paio di domande, creerà i file del progetto e ti guiderà attraverso come funziona il tutto. Da lì, basta dirgli cosa fare dopo.
-
-## Per saperne di più
-
-- **Scheda Esempio** — una guida passo-passo per vedere il flusso di lavoro in azione.
-- **Scheda Manuale AI** — la spiegazione completa dello sviluppo strutturato con AI vs vibe coding.
-- **[Codex](https://allspeak.ai/codex.html)** — un tutorial interattivo, riferimento e ambiente di prova per il linguaggio AllSpeak.
-
-## Nota sulle varianti linguistiche
-
-AllSpeak è in sviluppo attivo. Le varianti in lingue diverse dall'inglese possono contenere parole chiave o pattern non ancora completamente supportati dal motore. Se incontri un errore di compilazione su una parola chiave che sembra corretta, segnalalo a [info@allspeak.ai](mailto:info@allspeak.ai) — di solito la correzione è rapida.
-
-## Auto-hosting per la stabilità
-
-Lo starter e i modelli caricano il runtime da `https://allspeak.ai/dist/`, che riflette sempre l'ultima versione. È perfetto per i tutorial e gli esperimenti brevi — ma per progetti che intendi mantenere nel tempo, fissa una versione stabile in modo che un aggiornamento futuro non rompa lo script in modo imprevisto.
-
-Hai due opzioni:
-
-### 1. Fissare uno snapshot datato (consigliato)
-
-Ogni deploy viene anche archiviato sotto un percorso datato:
-
-```html
-<script src="https://allspeak.ai/dist/260508/allspeak.js"></script>
-```
-
-Quell'URL serve la build distribuita l'8 maggio 2026 e non cambierà — il `/dist/allspeak.js` corrente continua ad avanzare in parallelo. Per aggiornare, basta cambiare un numero dopo aver testato.
-
-### 2. Auto-hosting
-
-Per il controllo completo o l'uso offline, copia il runtime sul tuo server. I file essenziali sono:
-
-- `dist/allspeak.js` (oppure `dist/allspeak-min.js`) — il runtime
-- `dist/LanguagePack_*.js` — i pacchetti di lingua non inglesi
-- `dist/plugins/` — i plugin usati dal tuo progetto
-- `dist/vendor/` — Showdown e le estensioni CodeMirror
-
-Poi modifica gli URL `src=` nel tuo HTML perché puntino alla tua copia. Per aggiornare in seguito, scarica uno snapshot datato da `https://allspeak.ai/dist/<AAMMGG>/` e sostituisci i file.
-
-Per tutorial e esperimenti brevi, nessuno dei due passaggi è necessario — usa l'URL corrente.
-
-## Domande?
-
-Contattaci a [info@allspeak.ai](mailto:info@allspeak.ai).
+**Poi: la scheda Iniziare.** Prepara un progetto e ne costruisce uno con te, in circa cinque minuti.
