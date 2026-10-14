@@ -2430,7 +2430,9 @@ TellAlertClosed:
 !!
 !! §2 **The flavour is the plugin's answer, not a second reading of the same facts.** The `flavour |` record comes from the plugin's own resolution — the script's marker, then the project's `#editor-runtime`, then `js` — so the editor and the thing that actually records cannot disagree. This file used to read `#editor-runtime` itself and fall back to it when the tab said nothing: two implementations of one rule, and the reason the marker's case was invisible here is that the *attributes* it used to be read from do not exist on a script this runtime cannot compile. See `NoteFlavour`. **A script for the Python runtime is run by the project's server, and not here.** The editor is a page, so it has the JavaScript runtime and nothing else — which is why Record refused a `@py` script before this. The dev server has Python: `/record/<script>` runs it exactly as `allspeak <script>` would, puts what it printed in `<script>-stdout.txt` beside it (a script's output is unpredictable and would drown the console the server is also writing to) and the recording in `<script>.viz.json`, which is the file the pane already looks for. The server composes the sentence, so the file's name and the verdict are named once.
 !!
-!! §3 **Short, true, and out of the way in three seconds.** The message names no path: the pane does, when it reads the recording, and the toolbar is not the place for a filename. It used to say "Recording ... — close its window and the recording is saved to ...", which was both a promise the editor cannot keep (it printed whether or not a window opened) and the longest thing in the toolbar — Graham's two objections, in one line. A failure is the plugin's to report, in the console, where it names which of the two things went wrong.
+!! §3 **Short, true, and out of the way in three seconds — which is right for a tick and wrong for a fault.** The *success* message names no path: the pane does, when it reads the recording, and the toolbar is not the place for a filename. It used to say "Recording ... — close its window and the recording is saved to ...", which was both a promise the editor cannot keep (it printed whether or not a window opened) and the longest thing in the toolbar — Graham's two objections, in one line.
+!!
+!! §4 **Every failure goes to the panel, and every success stays on the strip.** A verdict is the one message here a reader has to *act* on — it names the symbol, the line and the fix — and the strip holds it for three seconds and takes it away whether or not anybody read it, which is the argument this file already makes for the module-load failures below. So all four ways a record can fail — a buffer with no path to record beside, a server that does not answer, a script this runtime cannot run, and a recording the server will not take — write `AlertMsg` and reach `ShowAlert`, and so stay until the Close button puts them away. **Graham asked for it on 2026-10-14**, having watched the compiler's message go by in a demo clip: *"The compiler error message doesn't immediately catch the eye."*
 RecordRun:
     gosub to DismissWelcome   ! the welcome panel goes on the first click of anything that works
     if TabCount is 0 stop
@@ -2440,8 +2442,8 @@ RecordRun:
     ! would look for — so say the same thing here rather than record beside a name that is not there.
     if EditorPath is empty
     begin
-        set the content of StatusSpan to `Save this script first: a recording goes beside it`
-        fork to ClearStatus
+        put `Save this script first: a recording goes beside it` into AlertMsg ! §4
+        gosub to ShowAlert ! §4
         stop
     end
     codemirror get content of ContentEditor into RecordSource
@@ -2450,8 +2452,8 @@ RecordRun:
     if TabFlavour is `py` ! §2
     begin
         rest get RecordReply from `/record/` cat EditorPath or begin
-            set the content of StatusSpan to `Could not run ` cat EditorPath cat ` — the server did not answer`
-            fork to ClearStatus
+            put `Could not run ` cat EditorPath cat ` — the server did not answer` into AlertMsg ! §4
+            gosub to ShowAlert ! §4
             stop
         end
         set the content of StatusSpan to RecordReply
@@ -2472,8 +2474,8 @@ RecordRun:
     ! what tells a reader that this is not the runtime the script was written for.
     if RecordTrace is empty
     begin
-        set the content of StatusSpan to `Could not record this script — ` cat RecordVerdict
-        fork to ClearStatus
+        put `Could not record this script — ` cat RecordVerdict into AlertMsg ! §4
+        gosub to ShowAlert ! §4
         stop
     end
     rest post RecordTrace to `/write/` cat TracePath or go RecordFailed
@@ -2484,10 +2486,10 @@ RecordRun:
     stop
 
 RecordFailed:
-    set the content of StatusSpan to `Could not record this script`
-    fork to ClearStatus
+    put `Could not record this script — the server would not take the recording` into AlertMsg ! §4
+    gosub to ShowAlert ! §4
     stop
-!! @hash 0bbc24f6
+!! @hash 76452458
 !! @verified df567fa6
 !!!
 !! Opening the project's app, from the editor.
