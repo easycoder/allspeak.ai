@@ -192,6 +192,8 @@ Each of these was decided by Graham and is not to be re-opened without him.
   does now (the values), or to delete them as superseded. Graham's call, and the sidebar no longer lacks a
   harness — the section that holds them covers the panel, the tab strip, the relay, the Code tab, the Values tab
   and the menu, and it grew five claims on 2026-10-14.
+
+- **A click in a scrollbar's trough has no check.** Built 2026-10-14 and confirmed working by Graham in a browser, so the *behaviour* is not in doubt — but `plotview-check` asserts only that a trough *drag* still pans, which is the claim that had to keep passing. A harness claim for the click was written and **withdrawn**: on the run tried, the phase never reached `VizHandleAt` (the pointer read back as the previous hover's position) and an unrelated phase then reported `no mark was drawn to press on` — that harness's own flakiness, not the feature. Put the click into `various/values-measure.js` (the instrument for a gesture, and it already drives the page), and a headless claim back into `plotview-check` once the harness holds still.
 - **The pane's mark line is English-only** (`line ...   visit ... of ...`), as the sidebar's wording was before it
   moved — the editor's string table has the flow words but not these. It moved the gap rather than widening it.
 

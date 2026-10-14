@@ -584,6 +584,8 @@ VizRemember:
     ! drifts, because the runtime's division truncates and every step loses its remainder.
     variable VizGrabPos
     variable VizGrabbed
+    variable VizTroughV      ! 1 above the lines bar's handle, 2 below it, 0 on it or off the bar
+    variable VizTroughH      ! and the same either side of the steps bar's handle
     variable VizGrabX
     variable VizGrabY
     variable VizGrabFromX
@@ -835,7 +837,7 @@ Draw:
     put 0 into VizMinSteps
     if VizSetTag is not VizKeptKey gosub to VizKeepRun ! §35
     put VizKept into VizEvents ! §36
-!! @hash 231aa702
+!! @hash 157dd69e
 !! @verified e9a06a05
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -2023,6 +2025,8 @@ VizWindow:
 !! §56 Note a line the recording names, once. The rules are drawn for *these* lines and not for every line the run executed, which is what the window's counts carry: on a recording that walks a chain of labels the counts cover more than twice as many lines as carry anything, and a grid that dense stops being a guide. A line qualifies if an arrival landed on it or a transfer began or ended on it — which is exactly the set of lines the picture has something to say about.
 !!
 !! §57 The set is a padded string and the test is `includes`, because the language has one of those and no set type. The dedupe is not an optimisation: a rule is a line drawn right across the frame, so a line visited two hundred times would contribute two hundred identical rules to the same path attribute — invisible, and a waste that grows with the recording.
+!!
+!! §58 **A scrollbar's trough pages the view, and it is a *click* that does it rather than a press.** The handle is a share of the run and the trough is everything else in the strip, so a press in a bar is a trough press unless it is on the handle — which is what `VizTroughV`/`VizTroughH` classify at the one place a press is classified. **The trough already had a gesture** — a drag there pans the picture, as a drag anywhere else does — so paging could not take the press without taking the pan away. It takes the *release* instead, and tells a click from a drag by whether the pointer went anywhere in between: a flag set by `VizPan` would swallow every click that wobbled, because a drag event fires for a hand that is not perfectly still. A page is the window's own extent, which is what the trough means elsewhere and what keeps a click and a wheel from being the same amount; a window already at its end is left there by the clamp.
 !   ---- the gestures ----
 VizWheel: ! §1–§2
     put the wheel amount into VizWheelAmount ! §3–§5
@@ -2048,6 +2052,9 @@ VizGrab:
     put the pick position into VizGrabPos ! §6–§7
     put property `x` of VizGrabPos into VizGrabX
     put property `y` of VizGrabPos into VizGrabY
+    ! §58 The drag point starts at the press, so a release that never moved is the click it looks like.
+    put VizGrabX into VizDragX
+    put VizGrabY into VizDragY
     put VizViewX0 into VizGrabFromX
     put VizViewY0 into VizGrabFromY
     put 0 into VizSlide
@@ -2066,6 +2073,30 @@ VizGrab:
 
 VizRelease:
     put 0 into VizGrabbed ! §10
+    ! **A click in a bar's trough pages the view; a drag there still pans.** Told apart by whether the
+    ! pointer went anywhere between press and release — a flag set by `VizPan` would swallow every click
+    ! that wobbled — with a few units of slack for a hand that is not perfectly still.
+    if VizTroughV is 0 and VizTroughH is 0 return ! §58
+    ! The drag point is seeded at the press, so a gesture that never moved reads as the click it is
+    ! without depending on what `on drop` carries.
+    take VizGrabX from VizDragX giving VizPtrA
+    if VizPtrA is less than 0 multiply VizPtrA by -1
+    if VizPtrA is greater than 4 return
+    take VizGrabY from VizDragY giving VizPtrA
+    if VizPtrA is less than 0 multiply VizPtrA by -1
+    if VizPtrA is greater than 4 return
+    gosub to VizPage
+    return
+
+VizPage:
+    gosub to VizNote ! §58
+    ! A page is the window's own extent: a click moves by what is showing, not by a wheel's notch.
+    if VizTroughV is 1 take VizViewYH from VizViewY0 giving VizViewY0
+    if VizTroughV is 2 add VizViewYH to VizViewY0
+    if VizTroughH is 1 take VizViewXW from VizViewX0 giving VizViewX0
+    if VizTroughH is 2 add VizViewXW to VizViewX0
+    gosub to VizClamp
+    gosub to VizRedraw
     return
 
 VizPan:
@@ -2164,25 +2195,41 @@ VizDrag:
 VizHandleAt:
     put VizGrabX into VizRawX ! §20–§22
     put VizGrabY into VizRawY
+    ! **Which side of a handle a press landed, or on it.** A press in a bar's band is a trough press unless
+    ! it is on the handle itself, and the side is what a *click* pages toward — a drag in the same place
+    ! still pans, which is the gesture the trough has always had. Both flags are cleared here because this
+    ! is the one place a press is classified, so a stale one from the last press cannot survive.
+    put 0 into VizTroughV
+    put 0 into VizTroughH
     gosub to VizPointerUnits
     if VizPtrX is greater than 940 and VizPtrX is less than 958
     begin
+        put 2 into VizTroughV ! below the handle unless the press is above it
         take VizHandleVPos from VizPtrY giving VizPtrA
+        if VizPtrA is less than 4 put 1 into VizTroughV
         add 4 to VizPtrA
         if VizPtrA is not less than 0
         begin
             take VizHandleVSize from VizPtrA
-            if VizPtrA is less than 5 put 1 into VizSlide
+            if VizPtrA is less than 5 begin
+                put 1 into VizSlide
+                put 0 into VizTroughV
+            end
         end
     end
     if VizPtrY is greater than 642 and VizPtrY is less than 660
     begin
+        put 2 into VizTroughH ! to the right of the handle unless the press is to the left of it
         take VizHandleHPos from VizPtrX giving VizPtrA
+        if VizPtrA is less than 4 put 1 into VizTroughH
         add 4 to VizPtrA
         if VizPtrA is not less than 0
         begin
             take VizHandleHSize from VizPtrA
-            if VizPtrA is less than 5 put 2 into VizSlide
+            if VizPtrA is less than 5 begin
+                put 2 into VizSlide
+                put 0 into VizTroughH
+            end
         end
     end
     ! **The controls, tested before the bar's own strip.** They sit *in* that strip, so a press meant for
@@ -2613,7 +2660,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash 75a69f9d
+!! @hash 1a8bfa0b
 !! @verified 0f1ac9ba
 !!!
 !! And a doc block is not drawn in it.

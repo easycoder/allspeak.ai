@@ -101,3 +101,13 @@ Synopsis at `deploy/<lang>/why.html`, the long read linked from it, one shared s
 5. `resources/ecs/README.md` describes a five-file bundle but sits in a folder of unrelated pages.
 
 **Why nothing can be lost:** all 33 files are tracked, so any is recoverable with `git log -- resources/ecs/<file>`. Run `./deploy-sync` afterwards, because `deploy/` holds a mirror. **When:** with the `resources/` prune as a whole — not during a deploy freeze, and not with a release in flight.
+
+---
+
+## Examples, and video above all — Graham's call, 2026-10-14
+
+**The claim and the gap, in his words at the close of the session that built the Values tab and the scope bands:** *"Viz is now at a point it can make a claim to be a credible player in the AI coding world. What it needs is some good examples, particularly video."* Recorded here because it is a *publishing* job rather than a tooling one, and the site workstream is where the material that carries a claim lives.
+
+**What is already in hand, and is the reason this is not a screen-recording job.** `various/values-measure.js` and `various/menu-measure.js` drive the real page in a real browser through the real editor — the dev server serving this working tree, the file browser, the Graph pane, the hover, the press — so a demonstration is a *rig* before it is a recording. Playwright, which those rigs already use, is also the thing that can capture video, so the same run that asserts a behaviour can produce the clip of it. **Check that first**: it decides whether an example is reproducible (a script anyone can re-run) or a one-off capture that goes stale the next time the pane changes.
+
+**And the discipline a claim of that size is held to is already written**: `why/REVIEW-LOG.md` — every checkable claim in a user-facing document listed against what would make it stale. "A credible player in the AI coding world" is the largest claim the project has made, and the examples are what would have to carry it.
