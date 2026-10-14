@@ -30,7 +30,7 @@ from .as_border import Border
 from .as_keyboard import Keyboard, TextReceiver
 from .debugger.as_debug import Debugger
 from PySide6.QtCore import Qt, QTimer, Signal, QRect
-from PySide6.QtGui import QPixmap, QPainter, QPen, QBrush, QColor
+from PySide6.QtGui import QPixmap, QPainter, QPen, QBrush, QColor, QTextDocument
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -212,6 +212,23 @@ class ECPlainTextEditWidget(QPlainTextEdit):
         if self.container != None: self.container.setClickSource(self)
 
 #############################################################################
+# How the markdown panel is told to read its text: the GitHub dialect, with HTML left out of it.
+#
+# Qt's markdown importer takes a tag it meets for an element, and an element it has no format for
+# contributes none of its text — so an *unpaired* tag, which is never closed, takes the rest of the
+# document with it. Measured 2026-10-14 on this widget: a `<person>` left in the middle of a
+# six-section conversation log emptied every paragraph below it, and a bare `<br>` — the one tag any
+# hand-written markdown file may carry — does the same on its own. Only the runs carrying a format of
+# their own (code spans, headings, an explicit `</close>`) still came through.
+#
+# `MarkdownNoHTML` keeps the dialect and drops the HTML, so a tag reaches the reader as the text it
+# was written as and nothing after it is lost. That is what the browser runtime's markdown renderer
+# already does — `MarkdownRenderer.js` escapes HTML before converting it — so the two runtimes agree,
+# and it is what a viewer opened on a file from outside this project needs, since no author can be
+# asked to pair every tag they write.
+MARKDOWN_FEATURES = QTextDocument.MarkdownFeature.MarkdownDialectGitHub | QTextDocument.MarkdownFeature.MarkdownNoHTML
+
+#############################################################################
 # EC MDPanel widget class
 class ECMDPanelWidget(QTextEdit):
     clicked = Signal()
@@ -229,6 +246,15 @@ class ECMDPanelWidget(QTextEdit):
         font = self.font()
         font.setPointSize(self.FONT_SIZE)
         self.setFont(font)
+
+    # Read markdown the way `MARKDOWN_FEATURES` says. Every caller arrives here — the script's
+    # `set the text of`, which is the only way a panel is given text — so what a file looks like on
+    # screen is decided in this one place rather than at each call site.
+    #
+    # The features go to the document rather than to `QTextEdit.setMarkdown`, which takes only the
+    # text: Qt's own method is the one-argument shorthand for `document().setMarkdown(text)`.
+    def setMarkdown(self, markdown):
+        self.document().setMarkdown(markdown, MARKDOWN_FEATURES)
 
     def setContainer(self, container):
         self.container = container
