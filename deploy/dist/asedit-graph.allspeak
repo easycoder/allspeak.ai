@@ -99,10 +99,11 @@
         if VizShown is 0 return
         gosub to VizWheel
     end
-    ! **The fifth pointer event, and the one that does not move the window.** A hover says what a control
-    ! would do before it is pressed, so it reads the pointer and writes words — it never draws, and
-    ! `VizHover` says why that is the whole of its design. `mouseleave` arrives here too, with the
-    ! coordinates the pointer crossed the boundary at, so the same arithmetic carries the words away.
+    ! **The fifth pointer event, and the one that does not move the window.** A hover does two things and
+    ! draws nothing, which is the whole of its design: it names the line (and the arrival in effect on it)
+    ! to the sidebar, and it says what a control would do before it is pressed. `VizHover` says why the
+    ! second is words rather than a drawing. `mouseleave` arrives here too, with the coordinates the
+    ! pointer crossed the boundary at, so the same arithmetic carries the words away.
     on hover VizHost
     begin
         if VizShown is 0 return
@@ -117,7 +118,7 @@
         if VizShown is 1 gosub to VizRelease
     end
 
-!! @hash 5eed42a2
+!! @hash d836ad91
 !! @verified a09323c1
 !!!
 !! The boundary: one message in, and the module parks until the next one.
@@ -592,27 +593,30 @@ VizRemember:
     variable VizDragY
     variable VizDx
     variable VizDy
-    ! What a press on a *mark* needs: which line the nearest one names, how near it was, and the
-    ! scratch the walk over the recording uses. `VizMark` is the dict that carries the answer back to
-    ! the editor — the one thing that leaves this module, and only when a press names a line.
+    ! What the pointer's own arrival needs: which line it is on, which arrival is *in effect* there, and
+    ! the scratch the walk over the recording uses. `VizMark` is the dict a press carries back to the
+    ! editor — the one thing that leaves this module. `VizHitText` is the pane's own foot, which says the
+    ! same thing beside the picture so a reader's eye does not have to travel to the sidebar for it.
     variable VizHit
-    variable VizHitDist
-    variable VizHitReach
-    variable VizHitI
-    variable VizHitX
-    variable VizHitY
-    variable VizHitDx
-    variable VizHitDy
-    variable VizHitNear
-    variable VizHitTmp
-    ! What the report says about the mark itself: how many arrivals this dot is on its line, and how many
-    ! that line had in the whole recording. `VizHitSeen` is the table the walk fills as it goes.
-    variable VizHitSeen
     variable VizHitVisit
+    variable VizHitTotal
     variable VizHitValues      ! what that arrival captured, if the script asked for anything
     variable VizHitText        ! the report as one line, under the row the status line is on
-    variable VizHitTotal
-    variable VizHitCount
+    variable VizHitI           ! the walk over the kept arrivals
+    variable VizHitX           ! one arrival's x, in the picture's own units
+    variable VizHitAnchor      ! which anchor the innermost band belongs to, so its total can be read back
+    variable VizEffSeen        ! the walk's per-anchor arrival count, keyed by pc: the visit number
+    variable VizEffPc          ! scratch: one arrival's anchor, used as that key
+    variable VizEffCount       ! scratch: this arrival's number on its anchor
+    variable VizEffBand        ! scratch: the block it heads, `[first, last]` — or its own line, unscoped
+    variable VizEffFirst       ! scratch: the band's first line
+    variable VizEffLast        ! scratch: the band's last line
+    variable VizEffDepth       ! scratch: the deepest band head taken so far, which is the innermost
+    variable VizEffValues      ! scratch: one arrival's captured values, before they are merged
+    variable VizValueKeys      ! scratch: the names in them
+    variable VizValueK         ! scratch: the walk over those names
+    variable VizValueName      ! scratch: one of them
+    variable VizValueText      ! scratch: its value
     variable VizMark
     variable VizPixelsW
     variable VizPixelsH
@@ -683,6 +687,7 @@ VizRemember:
     ! at all (the frame, the bars above, the key below, or outside the pane).
     variable VizRowLine
     variable VizRowSent
+    variable VizRowSentVisit ! and which arrival it named, so a move *along* a row is heard when it crosses one
     variable VizRowTmp
     variable VizRowMsg
     variable VizFrzX ! §16
@@ -830,7 +835,7 @@ Draw:
     put 0 into VizMinSteps
     if VizSetTag is not VizKeptKey gosub to VizKeepRun ! §35
     put VizKept into VizEvents ! §36
-!! @hash bb765cdc
+!! @hash 231aa702
 !! @verified e9a06a05
 !!!
 !! Geometry is in viewBox units, and the run is shown through a window.
@@ -1978,21 +1983,22 @@ VizWindow:
 !!
 !! §37 reads `VizHoverShown`; writes the tip's words, its box and both their places. `VizHoverShown` 0 is the resting state, which is an empty box rather than a hidden one.
 !!
-!! §38 **Which mark the pointer went down on, if any — and why this is a walk rather than a hit box.** Every mark of a kind is one path, which is the same constraint that makes a layer cost string building rather than DOM nodes, so there is nothing for the DOM to hit and the answer has to be arithmetic — exactly as it is for the bars above. The walk is over the recording's *arrivals* rather than over what was drawn, and it runs once per press: a pass of a few hundred integer operations is the cheapest thing in this file, and it is paid only when somebody clicks.
+!! §38 **Which arrival the pointer is *in effect* at — and why this is a walk rather than a hit box.** Every mark of a kind is one path, which is the same constraint that makes a layer cost string building rather than DOM nodes, so there is nothing for the DOM to hit and the answer has to be arithmetic — exactly as it is for the bars above. The walk is over the recording's *arrivals* rather than over what was drawn.
 !!
-!! §39 The comparison is in the picture's own units, which is what `VizPlaceX` and `VizPlaceY` produce. **Reads `VizPtrX`/`VizPtrY`, the pointer converted into those units** — `VizHandleAt` has already done that work by the time this runs, and converting a second time would be a second copy of the letterbox arithmetic, which is the one thing here that has already been got wrong once. Both mappings are *called* rather than written out again, for the reason they exist: a mark and a rule that disagreed about where a line is was a real fault, found by measurement.
+!! §39 **The reading follows the pointer's *block*, not the row it is on, and that is the whole of why this is a band.** A visit is a few steps wide — a median of seven on a real recording, which at the fit is about twenty units of an eight-hundred-unit pane — so an arrival's own line is too narrow a thing to point at anywhere but the closest zoom. Its **block** is not: `scope` on the arrival gives the block it heads, `[first, last]`, and a row is always at least a row tall. So the walk takes every arrival whose band contains the pointed line, and for each takes its last occurrence at or before the pointer. **The values are the union of those**, so an inner block's sit on top of its caller's and each drops away when the pointer leaves its own band — which is what a period of interest means, and deliberately not variable scoping. The nearest-dot rule this replaced made a reader hunt for the dot to see anything, and it left the values blank everywhere except one row; the in-effect rule that followed it still could not be read at a zoom where a visit is thin.
 !!
-!! §40 The reach is the dot's own radius plus a few units. A mark is fourteen units across, which is a hard thing to hit exactly, and every scrollbar a reader has used forgives a near miss. The *nearest* mark wins rather than the first found: two arrivals a line apart are a row apart, so a press between them is closer to one of them, and that is the one the reader is pointing at.
+!! §40 The comparison is in the picture's own units, which is what `VizPlaceX` produces. **Reads `VizPtrX`, the pointer converted into those units** — `VizHandleAt` has already done that work for a press and `VizPointerUnits` for a hover, and converting a second time would be a second copy of the letterbox arithmetic, which is the one thing here that has already been got wrong once. The mapping is *called* rather than written out again, for the reason it exists: a mark and a rule that disagreed about where a line is was a real fault, found by measurement.
 !!
-!! §41 A mark whose line is off the window is skipped by the same reasoning the draw uses: it is not in the picture, so it cannot be pointed at.
+!! §41 **An arrival with no band falls back to its own line, and that is one code path rather than two.** `scope` is absent on an arrival that heads no block — one in the linear flow — and from every recording made before the field existed; treating its band as `[line, line]` makes the test the same one test, and old recordings then behave exactly as they did. An arrival whose band misses the frame is skipped by the same rule the draw uses: it is not in the picture, so the pointer cannot be inside it.
 !!
-!! §42 **The running count of arrivals on each line, counted here as the walk goes.** This is the number the dot's colour is drawn from — the draw counts the same thing in the same order over the same events — and it is the one thing that tells two dots on a row apart, since the line and the doc block they name are identical. Counting it here rather than reading the draw's own table keeps the two halves of a report (this arrival's number, and the line's total) from the same pass, so they can never disagree.
+!! §42 **The visit number is counted per *anchor*, not per row, and the total is read back at the end.** A band spans several rows, so counting arrivals a row at a time would misnumber `visit V of T` for every row but the head. `pc` is the anchor's identity in the trace, so the counts go in a dict keyed by it; and because a name's total is only known once the walk has finished, the innermost band's anchor is remembered and its count read out after the loop rather than during it.
 !!
-!! §43 **The pane reports and does not decide.** Which doc block holds a line is the editor's model and the sidebar's to show, so one small dict goes back and nothing here changes on screen — the panel beside the picture *is* the feedback. It travels on a press rather than on a move, for the same reason the gestures are registered here: a report per pointer move would put a message round trip inside every drag.
+!! §43 **The pane reports and does not decide.** Which doc block holds a line is the editor's model and the sidebar's to show, so one small dict goes back and nothing here changes on screen — the panel beside the picture *is* the feedback. And it now travels on a *move* as well as on a press, which is the change this feature is: the values have to follow the pointer for a reader to see them change, and the report is memoised on the arrival so a move that crosses no arrival sends nothing at all.
 !!
-!! §44 A press that names no mark reports nothing rather than reporting "nothing found". The selection the reader made a moment ago is still what they are looking at, and a pan that began on empty picture would otherwise clear the panel on its way past.
+!! §44 **A press on empty picture names the arrival in effect there, and a memo on the arrival is what keeps that from being work.** It used to name nothing, on the reasoning that a pan beginning on empty picture must not clear the panel on its way past. That reasoning is spent: the hover reports the line and the arrival as the pointer moves, so the panel is *already* showing the point the pan begins at, and a press that named nothing would be the one gesture with no visible effect. What survives is the property the old rule was protecting — the panel does not change across a press — and `plotview-check` asserts that directly instead of asserting the old proxy.
 !!
-!! §45 **And said here, where both numbers are in hand, rather than sent to be said elsewhere.** The wording is the panel's own — the subject first, then the figures, in plain words rather than symbols, because what a reader copies out of a status line should still read as a sentence. The total can be missing (a report from a pane that did not count) and "visit 3 of 0" would be worse than saying less.
+!! §45 **And said here, where both numbers are in hand, rather than sent to be said elsewhere.** The wording is the panel's own — the subject first, then the figures, in plain words rather than symbols, because what a reader copies out of a status line should still read as a sentence. The total can be missing (a report from a pane that did not count) and "visit 3 of 0" would be worse than saying less. Said by `VizFootSay`, which both the press and the hover go through, so the pane's foot and the sidebar's heading cannot word the same arrival differently.
+
 !!
 !! §46 **Holding a handle, which is not a pan.** Holding the picture moves the window one unit per unit of pointer travel, so the drawing stays under the finger. Holding a *handle* moves the whole run past the window instead, so the handle follows the pointer — the two differ by the ratio of the run to the window, which is exactly what the handle's length already says. That ratio is why the familiar mapping is the right one rather than decoration: a drag that moved one line per line of handle would take a hundred drags to cross a hundred-line file.
 !!
@@ -2303,68 +2309,88 @@ VizTipDraw:
     move VizTip to VizPtrA 45
     return
 
-VizMarkAt:
-    put 0 into VizHit ! §38–§41
-    put json of `{}` into VizHitValues
-    put 1000000 into VizHitDist
-    divide VizDotSize by 2 giving VizHitReach
-    add 4 to VizHitReach
-    put 0 into VizHitI
-    put json of `{}` into VizHitSeen ! §42
+VizArrivalAt:
+    put 0 into VizHit ! §38–§42
     put 0 into VizHitVisit
     put 0 into VizHitTotal
+    put 0 into VizHitAnchor
+    put json of `{}` into VizHitValues
+    ! **The walk is over the bands the pointer is inside, not over the one row it names.** A visit is a
+    ! few steps wide and a row is always a row, so an arrival's own line is too narrow a thing to point
+    ! at at any zoom but the closest; its *block* is what a reader can keep the pointer in.
+    put json of `{}` into VizEffSeen
+    put 0 into VizEffDepth
+    put 0 into VizHitI
     while VizEvents has element VizHitI
     begin
         put element VizHitI of VizEvents into VizEvent
         if property `cat` of VizEvent is `anchor`
         begin
             put property `args` of VizEvent into VizArgs
-            put property `steps` of VizArgs into VizSteps
-            add 0 to VizSteps
-            put VizSteps into VizTickValue
-            gosub to VizPlaceX
-            put VizTickPos into VizHitX
             put property `line` of VizArgs into VizLine
             add 0 to VizLine
-            ! This arrival's number on its line, which is the count *including* it: the first dot on a row
-            ! is visit 1. The guard mirrors the draw's, for the same reason — an absent property reads as
-            ! nothing at all rather than as zero, and one arithmetic step away from that is a number that
-            ! is not a count.
-            put property VizLine of VizHitSeen into VizHitCount
-            if VizHitCount is not greater than 0 put 0 into VizHitCount
-            add 1 to VizHitCount
-            set property VizLine of VizHitSeen to VizHitCount
-            put VizLine into VizTickValue
-            gosub to VizPlaceY
-            put VizTickPos into VizHitY
-            ! Outside the frame is outside the picture, and the margin is where the frame begins.
-            if VizHitX is not less than VizMargin and VizHitX is not greater than VizPlotRight
+            ! The block this arrival heads — or its own line when it heads none, which is what an
+            ! arrival in the linear flow is, and what every recording made before `scope` existed
+            ! gives. Either way the test below is one test.
+            put property `scope` of VizArgs into VizEffBand
+            if VizEffBand is empty
             begin
-                if VizHitY is not less than VizMargin and VizHitY is not greater than VizPlotBottom
+                put VizLine into VizEffFirst
+                put VizLine into VizEffLast
+            end
+            else
+            begin
+                put element 0 of VizEffBand into VizEffFirst
+                put element 1 of VizEffBand into VizEffLast
+                add 0 to VizEffFirst
+                add 0 to VizEffLast
+            end
+            if VizEffFirst is not greater than VizRowLine and VizEffLast is not less than VizRowLine
+            begin
+                ! This arrival's number on its *anchor*, which is the count including it: the first
+                ! arrival at a block is visit 1. Counted per anchor and not per row, because a band
+                ! covers several rows and a row count would misnumber the visit the reader is shown.
+                put property `pc` of VizArgs into VizEffPc
+                put property VizEffPc of VizEffSeen into VizEffCount
+                if VizEffCount is not greater than 0 put 0 into VizEffCount
+                add 1 to VizEffCount
+                set property VizEffPc of VizEffSeen to VizEffCount
+                put property `steps` of VizArgs into VizSteps
+                add 0 to VizSteps
+                put VizSteps into VizTickValue
+                gosub to VizPlaceX
+                put VizTickPos into VizHitX
+                ! Outside the frame is outside the picture, and the margin is where the frame begins.
+                if VizHitX is not less than VizMargin and VizHitX is not greater than VizPlotRight
                 begin
-                    take VizPtrX from VizHitX giving VizHitDx
-                    take VizPtrY from VizHitY giving VizHitDy
-                    ! Absolute without a function: the language has no `abs`, and the axis clamp
-                    ! spells the same test out.
-                    if VizHitDx is less than 0 multiply VizHitDx by -1
-                    if VizHitDy is less than 0 multiply VizHitDy by -1
-                    if VizHitDx is not greater than VizHitReach and VizHitDy is not greater than VizHitReach
+                    if VizHitX is not greater than VizPtrX
                     begin
-                        ! Squared, so no square root is needed and the comparison is exact — the
-                        ! scaled-integer rule this file uses everywhere a proportion is wanted.
-                        multiply VizHitDx by VizHitDx giving VizHitNear
-                        multiply VizHitDy by VizHitDy giving VizHitTmp
-                        add VizHitTmp to VizHitNear
-                        if VizHitNear is less than VizHitDist
+                        ! **Additive, and a later arrival wins a name.** Every band the pointer is
+                        ! inside contributes what it was watching at this moment, so an inner block's
+                        ! values sit on top of its caller's and each drops away when the pointer
+                        ! leaves its own band — which is what a period of interest means here, and
+                        ! is deliberately not variable scoping.
+                        put property `values` of VizArgs into VizEffValues
+                        if VizEffValues is not empty
                         begin
-                            put VizHitNear into VizHitDist
+                            put the json keys of VizEffValues into VizValueKeys
+                            put 0 into VizValueK
+                            while VizValueK is less than the json count of VizValueKeys
+                            begin
+                                put element VizValueK of VizValueKeys into VizValueName
+                                put property VizValueName of VizEffValues into VizValueText
+                                set property VizValueName of VizHitValues to VizValueText
+                                add 1 to VizValueK
+                            end
+                        end
+                        ! And the *innermost* band names the reading: the deepest head wins, and the
+                        ! last arrival of it at or before the pointer is the one it is showing.
+                        if VizEffFirst is not less than VizEffDepth
+                        begin
+                            put VizEffFirst into VizEffDepth
                             put VizLine into VizHit
-                            put VizHitCount into VizHitVisit
-                            ! **`@show N, Total` arrives with the arrival it belongs to**, so the values
-                            ! travel with the mark and the sidebar never has to find the trace again. They are
-                            ! taken here, where the winning arrival is known, rather than off the drawn dots —
-                            ! a dot is not where the values live, and the walk already has the event.
-                            put property `values` of VizArgs into VizHitValues
+                            put VizEffCount into VizHitVisit
+                            put VizEffPc into VizHitAnchor
                         end
                     end
                 end
@@ -2372,17 +2398,37 @@ VizMarkAt:
         end
         add 1 to VizHitI
     end
+    ! The anchor's own total, read out of the table the walk filled. It is the whole of what "visit 3 of
+    ! 40" needs, and it is only known once every arrival has been counted — which is why the number the
+    ! innermost band's arrival was given during the walk is not the one printed.
+    if VizHit is not 0
+    begin
+        put property VizHitAnchor of VizEffSeen into VizHitTotal
+    end
+    return
+
+VizFootSay:
+    ! The pane's own report, on the line under its status line. Written only here, so the figures a reader
+    ! copies off the foot are the figures the message carried — the same two numbers, said once.
+    if VizHit is 0 ! §45
+    begin
+        set the text of VizHitStatus to ``
+        return
+    end
+    put `line ` cat VizHit cat `   visit ` cat VizHitVisit into VizHitText
+    if VizHitTotal is greater than 0 put VizHitText cat ` of ` cat VizHitTotal into VizHitText
+    set the text of VizHitStatus to VizHitText
     return
 
 VizSelect:
-    gosub to VizMarkAt ! §43–§44
+    ! **The row first, because the arrival is on it.** A press is a place on the picture like a hover is,
+    ! and the two have to name the same arrival or a press would move the panel to a dot the reader was
+    ! not pointing at — which is why this is `VizRowAt` and `VizArrivalAt` and not a hit test of its own.
+    ! `VizHandleAt` has already put the pointer in the picture's units by the time this runs.
+    gosub to VizRowAt ! §43–§44
+    gosub to VizArrivalAt
     if VizHit is 0 return
-    ! The line's own total, read out of the table the walk filled: a reader told "visit 3" has no way to
-    ! know whether that is all of them or the third of forty, and the answer is already in hand.
-    put property VizHit of VizHitSeen into VizHitTotal
-    put `line ` cat VizHit cat `   visit ` cat VizHitVisit into VizHitText ! §45
-    if VizHitTotal is greater than 0 put VizHitText cat ` of ` cat VizHitTotal into VizHitText
-    set the text of VizHitStatus to VizHitText
+    gosub to VizFootSay
     put `{}` into VizMark
     set property `kind` of VizMark to `mark`
     set property `line` of VizMark to VizHit
@@ -2393,6 +2439,7 @@ VizSelect:
     if VizHitValues is not empty set property `values` of VizMark to VizHitValues
     send VizMark to parent
     return
+
 
 VizSlideTo:
     if VizGrabbed is 0 return ! §46–§47
@@ -2566,7 +2613,7 @@ VizRuleAdd:
     return
 
 VizSourceMeasure:
-!! @hash d495f004
+!! @hash 75a69f9d
 !! @verified 0f1ac9ba
 !!!
 !! And a doc block is not drawn in it.
@@ -2825,9 +2872,10 @@ VizSourcePicture:
 !!
 !! §7 **And "the script" means the plot in *both* directions, which is what the first version of this got wrong.** Only `y` was tested, so any `x` in the plot's band of heights named a line: the left margin, the right margin and the vertical scrollbar strip beside it, and a pointer past the canvas altogether. **Measured in chromium against the dev server, 2026-10-12** — the panel changed from block 1 to block 2 as the pointer's `y` moved over the scrollbar strip (x = 98.5% of the pane) and over the left margin (x = 0.5%) alike. It mattered most on the way out: **a pointer leaving the picture for the sidebar carries the coordinates of where it went, so a departure through the right edge re-named a line and the panel jumped** — the one thing the menu's `Freeze` had been covering for. Found by the browser rig the menu work built (`various/menu-measure.js`) and fixed by Graham's call on 2026-10-13, in the stated shape: the `y` test's own pair, applied to `x`.
 !!
-!! §8 **The shared trigger: one report per line the pointer settles on, not one per pointer event.** Every tab in the sidebar is a view of *this* line — the doc block today, captured values and the code block to come — so the report is about the line and says nothing about what to do with it. What the reader is shown is the sidebar's business, which is why the pane decides nothing here.
+!! §8 **The shared trigger: one report per arrival the pointer settles on, not one per pointer event.** Every tab in the sidebar is a view of *this* — the doc block and the code are of the line, and the captured values are of the arrival in effect on it — so the report carries the line and, when the row has an arrival in effect at the pointer, that arrival's visit and values. What the reader is shown is the sidebar's business, which is why the pane decides nothing here.
 !!
-!! §9 **Why the memo and not a watcher.** A hover arrives at pointer rate, and `VizHover` already refuses to write the tip back in the same words for exactly this reason. The same argument settles this: the file says one thing per *line*, so sweeping a pointer down a file costs one message a line crossed and nothing between the crossings. There is no queue to manage because there is no per-event work to queue — and nothing here draws, so no drawing can be interrupted either. A `fork`ed monitor was the other shape worth considering and it buys nothing the comparison below does not already do.
+!! §9 **Why the memo and not a watcher.** A hover arrives at pointer rate, and `VizHover` already refuses to write the tip back in the same words for exactly this reason. The same argument settles this: a sweep down a file costs one message a **line** crossed, and a sweep *along* a row one per **arrival** crossed, with nothing sent in between — no queue to manage, because there is no per-event work to queue, and nothing here draws, so no drawing can be interrupted either. **The walk behind the arrival is the one thing on this path, and it is O(kept records) per hover** (`VizArrivalAt` reads `VizEvents` for the pointed row alone); §38's own note used to justify it by the press being rare, which a hover is not. It is one integer pass with no drawing, memoised so nothing downstream repeats, and if it ever reads as the pane's heavy gesture on a big recording the fix is the obvious one: cache the pointed row's arrivals and re-walk only when the row changes — one walk a row crossed, which is exactly what this memo already gates. Not built, because a measurement has to ask for it first.
+
     ! ---- the mappings ----
 VizPlaceY:
     take VizViewY0 from VizTickValue giving VizTickPos ! §1–§3
@@ -2868,17 +2916,30 @@ VizRowAt:
 
 VizRowTell:
     if VizRowLine is 0 return ! §8–§9
-    if VizRowLine is VizRowSent return
+    ! **The arrival in effect on this row, so the values a script asked to see follow the pointer.** The
+    ! report is memoised on the *arrival* and no longer on the line: moving along a row crosses visits and
+    ! each crossing is news, while moving between two of them is not — so a sweep down a file still costs
+    ! one message a change rather than one a pointer event.
+    gosub to VizArrivalAt
+    if VizRowLine is VizRowSent and VizHitVisit is VizRowSentVisit return
     put VizRowLine into VizRowSent
-    ! The dict the press sends, with the line and nothing else. No visit and no values: those belong to an
-    ! *arrival*, and a pointer over a row has not named one. A click still does, and still refines the panel
-    ! to "visit 3 of 12" and whatever `@show` collected.
+    put VizHitVisit into VizRowSentVisit
+    gosub to VizFootSay
     put `{}` into VizRowMsg
     set property `kind` of VizRowMsg to `line`
     set property `line` of VizRowMsg to VizRowLine
+    ! The arrival, when the row carries one. A row carrying none is still a *line* worth reporting — a doc
+    ! block and a section of code are about the line, and most lines have no mark on them — so the line
+    ! goes on its own and the tabs that are about the line still have something to show.
+    if VizHit is not 0
+    begin
+        set property `visit` of VizRowMsg to VizHitVisit
+        set property `total` of VizRowMsg to VizHitTotal
+        if VizHitValues is not empty set property `values` of VizRowMsg to VizHitValues
+    end
     send VizRowMsg to parent
     return
-!! @hash 7001622a
+!! @hash 3fd2ba02
 !! @verified f74b0721
 !!!
 !! Holding the picture still while the pointer goes to the sidebar, and letting go on the way back.

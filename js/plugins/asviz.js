@@ -1936,6 +1936,56 @@ AllSpeak_Viz_Recorder.prototype = {
 		return program._vizAnchorLines;
 	},
 
+	// The block each arrival heads, as a pair of source lines — `[first, last]`. This is the band a reader
+	// points into to keep a captured value on screen while the run is still anywhere inside the block the
+	// value was requested in, rather than only on the arrival's own line.
+	//
+	// Derived rather than read off the program, because neither end is a command in its own right: a label
+	// emits nothing at all, and a loop's `end` is a line the compiler never emits for. So a label's body runs
+	// to the last command before the next label, and a loop runs to the line before the first command *after*
+	// it — which is the `end` line whenever `end` sits on its own, as this project's house style writes it.
+	//
+	// A `viz` marker is an anchor but heads nothing, and an arrival in the linear flow heads nothing either:
+	// both are left out, and a viewer falls back to matching the arrival's own line for them, which is what
+	// every viewer did before this table existed.
+	scopeTable: function (program) {
+		if (!program._vizScopes) {
+			const lines = this.anchorLineTable(program);
+			const labels = this.labelsOf(program);
+			const labelPcs = Object.keys(labels).map(Number).sort(function (a, b) { return a - b; });
+			const lineAt = function (from, step) {
+				for (let at = from; at >= 0 && at < program.length; at += step) {
+					const line = lines[at];
+					if (typeof line === `number` && line > 0) return line;
+				}
+				return 0;
+			};
+			const nextLabelPc = function (pc) {
+				for (const at of labelPcs) if (at > pc) return at;
+				return program.length;
+			};
+			const table = {};
+			for (let pc = 0; pc < program.length; pc++) {
+				const command = program[pc];
+				if (!command || !lines[pc]) continue;
+				const head = lines[pc];
+				if (labels[pc] || vizIsEvent(command)) {
+					table[pc] = [head, Math.max(head, lineAt(nextLabelPc(pc) - 1, -1))];
+					continue;
+				}
+				if (command.keyword === `while`) {
+					const exit = program[pc + 1];
+					if (exit && typeof exit.goto === `number` && exit.goto > pc) {
+						const end = lineAt(exit.goto, 1);
+						if (end) table[pc] = [head, Math.max(head, end - 1)];
+					}
+				}
+			}
+			program._vizScopes = table;
+		}
+		return program._vizScopes;
+	},
+
 	// The pcs worth timestamping: labels, loop tests, events, and the markers. Computed from
 	// the running program rather than from a file, so it is the same program the numbers come
 	// from. A label claims its pc — without that a block entry would be invisible here, since
@@ -1989,6 +2039,7 @@ AllSpeak_Viz_Recorder.prototype = {
 			counts: new Array(program.length).fill(0),
 			lines: this.lineTable(program).slice(),
 			anchorLines: this.anchorLineTable(program).slice(),
+			scopes: this.scopeTable(program),
 			steps: 0,
 			transfers: [],
 			// Bookkeeping for the transfer rule: the command that ran before the current one,
@@ -2347,6 +2398,11 @@ const vizTraceDocument = function (script, windows, firstTid) {
 			// the script says nothing worth watching — so a trace of a script with no `@show` is byte-for-byte
 			// what it was before this existed, and the two runtimes stay comparable on what they share.
 			if (visit.values) args.values = visit.values;
+			// **And the block the arrival heads, when it heads one.** This is what lets a value stay on
+			// screen while the pointer is anywhere inside that block; an arrival heading nothing carries
+			// no field, and a reader falls back to the arrival's own line for it.
+			const scope = window.scopes[visit.pc];
+			if (scope) args.scope = scope;
 			timeline.push([visit.at, {
 				name: name || `line ${line}`, cat: `anchor`, ph: `X`, pid: 1, tid: tid,
 				ts: visit.at, dur: Math.max(0, following - visit.at),

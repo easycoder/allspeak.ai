@@ -23,6 +23,7 @@
     span SideHead           ! what the body is showing, as a line
     div SideProse           ! and the prose itself, in the reader's serif
     div SideCode            ! the section's code, for the tab that shows code instead of prose
+    div SideValueList       ! the Values tab: what the arrival the pointer is in effect at captured
     div SideHint            ! what stands in for both before a mark is clicked
     div SideStatus          ! the strip along the foot: what the last clicked mark was
     variable SideBuilt      ! 1 once the elements exist, because a message can arrive twice
@@ -38,12 +39,15 @@
     variable SidePath       ! the script or its recording, named for the reader
     variable SideLine       ! the line the clicked mark named
     variable SideVisit      ! which arrival on that line the clicked mark was
+    variable SideTotal      ! how many arrivals that line had, so the tab can say "visit V of T"
     variable SideStatusText ! scratch: the status line, assembled before it is put up
     variable SideValues     ! what the clicked arrival captured: the names the script asked to watch
     variable SideValueKeys  ! scratch: those names, in the script's own order
     variable SideValueText  ! scratch: them and their values, as one run of text
     variable SideValueI     ! scratch: the walk over them
     variable SideValueName  ! scratch: one of those names
+    variable SideValueHtml  ! scratch: the Values tab's table, assembled before it is put up
+    variable SideValueEsc   ! scratch: one name or value, escaped for the markup it goes into
     variable SideFound      ! 1 if a doc block holds that line
     variable SideTitle      ! the block's heading, numbered as Blocks mode numbers it
     variable SideProseText  ! its prose
@@ -63,14 +67,14 @@
     on message go to SideMessage
     release parent
     stop
-!! @hash 77dbfaec
+!! @hash bffa5944
 !! @verified 77dbfaec
 !!!
 !! Building the panel, once, and the tabs as the one pool of elements they are.
 !!
 !! **An AllSpeak element is a declared symbol, so a tab is a symbol rather than something grown at run time** — the same constraint the drawing's marks live under. The pool is `SideTab`, sized here to the number of tabs and created one element at a time at its own index, which is the shape Blocks mode's table of contents already uses; **so a tab is a name in `SideTabName`, a branch in `SideRender`, and whatever that branch shows** — the next one after the code tab was those three things and nothing else, which is the shape to keep.
 !!
-!! The strip is built before the body so that it sits above it, and the three body elements are created once and emptied rather than replaced: a panel that rebuilt its own children on every click would flicker, and a hidden panel that keeps them is the cheaper thing to show again.
+!! The strip is built before the body so that it sits above it, and the four body elements are created once and emptied rather than replaced: a panel that rebuilt its own children on every click would flicker, and a hidden panel that keeps them is the cheaper thing to show again.
 !!
 !! Appendix
 !!
@@ -100,6 +104,8 @@ SideBuild:
     ! the font is the one the editor uses so the two panes look like the same script.
     create SideCode in SideBody
     set the style of SideCode to `font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.45;white-space:pre;overflow-x:auto;color:#222;margin:0 16px 16px 16px`
+    create SideValueList in SideBody
+    set the style of SideValueList to `font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.45;color:#222;margin:0 16px 16px 16px`
     create SideHint in SideBody
     set the style of SideHint to `color:#8a8a80;font-size:12px;font-style:italic;margin:14px 16px`
 
@@ -108,12 +114,14 @@ SideBuild:
 
     ! The names first, then the strip built from them, so the strip and this list cannot disagree
     ! about how many tabs there are.
-    put 2 into SideTabCount
+    put 3 into SideTabCount
     set the elements of SideTabName to SideTabCount
     index SideTabName to 0
     put `Doc block` into SideTabName
     index SideTabName to 1
     put `Code` into SideTabName
+    index SideTabName to 2
+    put `Values` into SideTabName
 
     put 0 into SideTabSel
     set the elements of SideTab to SideTabCount
@@ -131,7 +139,7 @@ SideBuild:
     end
     gosub to SideTabsDraw
     return
-!! @hash 01f12ebf
+!! @hash 9b6e0a45
 !! @verified 8ee3c368
 !!!
 !! The tab strip's one piece of state, which is which tab is up.
@@ -166,7 +174,7 @@ SideTabShow:
     return
 !! @hash 09024525
 !!!
-!! What the body shows, which is one of three things: a block, a line in no block, or nothing yet — and each of them in one of two ways, the doc block's prose or the section's code.
+!! What the body shows, which is one of three things: a block, a line in no block, or nothing yet — and each of them in one of three ways, the doc block's prose, the section's code, or the values captured at the arrival the pointer is in effect at.
 !!
 !! **The middle case is a real answer rather than an error.** The lines before the first doc block and the code between two of them are outside the convention by design, and a reader who clicks a mark there should be told that rather than shown the last block somebody looked at — which is what a panel that only ever replaced its contents on a hit would do.
 !!
@@ -190,9 +198,11 @@ SideRender:
     set the content of SideHead to ``
     set the content of SideProse to ``
     set the content of SideCode to ``
+    set the content of SideValueList to ``
     set the content of SideHint to ``
     if SideKind is not `block` go to SideRenderHint
     if SideTabSel is 1 go to SideRenderCode
+    if SideTabSel is 2 go to SideRenderValues
     if SideFound is 0 go to SideRenderOutside
     set the content of SideHead to SideTitle
     set the content of SideProse to SideProseText
@@ -246,11 +256,72 @@ SideCodeDone:
 SideRenderHint:
     set the content of SideHead to ``
     set the content of SideProse to ``
-    set the content of SideHint to `Point at a line of the script in the picture to see the doc block it belongs to, or its code on the Code tab.`
+    set the content of SideHint to `Point at a line of the script in the picture to see the doc block it belongs to, its code on the Code tab, or what it asked to watch on the Values tab.`
     return
-!! @hash 55b7306e
+!! @hash ca388d0d
 !! @verified b04946e6
 !!!
+!! The Values tab: what the script asked to have watched, at the arrival the pointer is in effect at.
+!!
+!! **Why it is a tab and not a wider status bar.** The status bar was the first home for these — a reader pointed at a dot and read `Total=123` at the foot of the panel — and it stays, because it is the glance that is there whichever tab is up. But a foot is one line wide and every value it carries shares one row, so a run of them reflows as the names and values change length and nothing can be read *down*. Graham's ask was a third tab for exactly that: room to see the values properly, and the shape the other two tabs already have.
+!!
+!! **A table, and the reason is the moving read.** The values are read *as the pointer traverses the run* — they change under it — so the one thing the layout must not do is let a name's column move as the values change. A table gives the names a fixed left column and the values a right one, so a reader's eye stays on the values as they move; the same names in one run of text (which is what the status bar shows) put a different column position on every arrival, because a longer value pushes the next name along.
+!!
+!! **Somebody else's text goes in, so it is escaped.** A value is the script's own, and it may contain an angle bracket or an ampersand — the same case `SideCodeBuild` escapes for, and for the same reason: what reaches the element as markup would be eaten, and a table cell holding half a JSON object is a worse lie than an escaped one.
+!!
+!! **The three things it can have to say, and they are three because they are different truths.** A row the run never arrived at has no arrival under the pointer at all, and is told so rather than shown the last one; an arrival the script asked to watch nothing at is told that, which is what makes a missing `@show` visible rather than looking like a failure; and an arrival that *did* capture something is shown it. A pointer over a line with no mark is the common case — most lines of a file are not arrived at — so the first of the three is the one a reader meets most.
+!!
+!! Appendix
+!!
+!! §1 **The heading names the arrival, and that is the panel's own rule rather than a repetition of the pane.** `TODO-viz.md`'s "Settled decisions" is that a tab brings the reading to the reader: a reader on this tab must not have to look back at the picture to find out *which* visit the numbers are. The pane's own foot says the same figures beside the picture, and the two agree because they are built the same way — both read `visit` and `total` off one message.
+!!
+!! §2 **`of T` only when there is a total to give.** A report from a pane that did not count one can arrive with no total, and "visit 3 of 0" would be worse than saying less — the same rule the pane's own foot follows.
+SideRenderValues:
+    set the content of SideHead to `Line ` cat SideLine
+    if SideVisit is less than 1 go to SideRenderNoArrival
+    if SideTotal is greater than 0 set the content of SideHead to `Line ` cat SideLine cat `, visit ` cat SideVisit cat ` of ` cat SideTotal ! §1–§2
+    if SideTotal is not greater than 0 set the content of SideHead to `Line ` cat SideLine cat `, visit ` cat SideVisit
+    if SideValues is empty go to SideRenderNoValues
+    gosub to SideValuesBuild
+    set the content of SideValueList to SideValueHtml
+    return
+
+SideRenderNoArrival:
+    set the content of SideHint to `No arrival of the run is on this line, so there is nothing captured here. Move the pointer onto a mark to see what the script asked to watch.`
+    return
+
+SideRenderNoValues:
+    set the content of SideHint to `This arrival captured nothing: the script asked to watch nothing at this point.`
+    return
+
+SideValuesBuild:
+    put `<table style="border-collapse:collapse">` into SideValueHtml
+    put the json keys of SideValues into SideValueKeys
+    put 0 into SideValueI
+    while SideValueI is less than the json count of SideValueKeys
+    begin
+        put element SideValueI of SideValueKeys into SideValueName
+        put SideValueName into SideValueEsc
+        gosub to SideEscText
+        put SideValueHtml cat `<tr><td style="padding:1px 12px 1px 0;color:#8a8a80;vertical-align:top;white-space:nowrap">` cat SideValueEsc cat `</td>` into SideValueHtml
+        put property SideValueName of SideValues into SideValueEsc
+        gosub to SideEscText
+        put SideValueHtml cat `<td style="padding:1px 0;color:#222;word-break:break-word">` cat SideValueEsc cat `</td></tr>` into SideValueHtml
+        add 1 to SideValueI
+    end
+    put SideValueHtml cat `</table>` into SideValueHtml
+    return
+
+SideEscText:
+    ! The same three characters the code tab escapes and the pane escapes, and the ampersand first: the
+    ! other two write ampersands, and escaping it after them would escape their own work.
+    replace `&` with `&amp;` in SideValueEsc
+    replace `<` with `&lt;` in SideValueEsc
+    replace `>` with `&gt;` in SideValueEsc
+    return
+!! @hash 0c654eee
+!!!
+
 !! The status bar: what the script asked to have watched, at the mark it was watching.
 !!
 !! **It is the values and not the mark, and that is a division made on 2026-10-05.** It used to carry the mark's own figures too — "line 254 visit 23 of 44" — and Graham moved them out: they are read while pointing at a dot, and on a big screen the foot of this panel is the other side of the room from the picture, so the pane says them itself, one line under its own status line, where the eye already is. What is left here is the other half of the same message: the numbers the script asked to have shown by writing `@show`, which belong beside the block because they are about the work the line did rather than about which dot was clicked.
@@ -322,6 +393,7 @@ SideMessage:
     ! script — the picture has been replaced, and so has everything the sidebar was saying about it. The
     ! mark's figures go with it: they counted a line in a run that is no longer on screen.
     put 0 into SideVisit
+    put 0 into SideTotal
     put json of `{}` into SideValues
     gosub to SideRender
     stop
@@ -335,6 +407,7 @@ SideTabArrived:
 SideBlockArrived:
     put property `line` of SideRun into SideLine
     put property `visit` of SideRun into SideVisit
+    put property `total` of SideRun into SideTotal
     ! The values the script asked to have watched, if it asked for any. Passed through, not interpreted:
     ! what `@show Total` means was settled by the recorder that read it.
     put property `values` of SideRun into SideValues
@@ -354,6 +427,6 @@ SideBlockArrived:
 !   reader returning to the same run expects.
 SideClosed:
     stop
-!! @hash 57774bc1
+!! @hash 0b948322
 !! @verified cd2f39fb
 !!!

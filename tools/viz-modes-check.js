@@ -978,6 +978,46 @@ check(valuesCleared,
 	`and a mark with no captured values clears the last one's rather than leaving them standing `
 	+ `(${JSON.stringify(String(sideElText(`ec-SideStatus`)))})`);
 
+// ---- the Values tab: the third name in the strip, and the table behind it ------------------------
+//
+// The values reach the sidebar as `SideValues` (checked above); this is the tab that shows them as a
+// *table* rather than as the status bar's one-line run. The claims are about the shape a reader meets —
+// a name and its value in one row, a heading naming the arrival they belong to, and the two empty states
+// told apart — because these are the things a reader would notice and the things a change here could
+// quietly break: the table is built as markup, and the empty cases are what most lines of a script meet.
+const valuesHtml = () => String(sideElText(`ec-SideValueList`) || ``);
+setSide(`SideTabSel`, 2, true);
+program.message = report(12, 3, 7, { Total: `0`, N: `0` });
+run(`SideMarkLine`);
+await waitFor(() => Number(sideValue(`SideLine`)) === 12);
+check(valuesHtml().includes(`Total`) && valuesHtml().includes(`>0<`) && valuesHtml().includes(`<table`),
+	`the Values tab lays the captured values out in a table (${JSON.stringify(valuesHtml())})`);
+check(String(sideElText(`ec-SideHead`)).includes(`visit 3 of 7`),
+	`and its heading names the arrival the values belong to (${JSON.stringify(String(sideElText(`ec-SideHead`)))})`);
+// **A value that looks like markup is escaped rather than eaten**, the same case the code tab carries —
+// a captured value may be a JSON object or a comparison, and a table cell holding half of one is a lie.
+program.message = report(12, 3, 7, { Row: `<b>&</b>` });
+run(`SideMarkLine`);
+await waitFor(() => valuesHtml().includes(`&lt;b&gt;`));
+check(valuesHtml().includes(`&lt;b&gt;&amp;&lt;/b&gt;`),
+	`and a captured value that looks like markup is escaped rather than eaten (${JSON.stringify(valuesHtml())})`);
+// The two empty states, told apart because they are different truths: an arrival that captured nothing,
+// and a line the run never arrived at at all.
+program.message = report(12, 3, 7);
+run(`SideMarkLine`);
+const noValues = await waitFor(() => String(sideElText(`ec-SideHint`)).includes(`captured nothing`));
+check(noValues && valuesHtml() === ``,
+	`an arrival that captured nothing says so rather than showing the last table `
+	+ `(${JSON.stringify(String(sideElText(`ec-SideHint`)))})`);
+program.message = report(17, 0, 0);
+run(`SideMarkLine`);
+const noArrival = await waitFor(() => String(sideElText(`ec-SideHint`)).includes(`No arrival`));
+check(noArrival && valuesHtml() === ``,
+	`and a line the run never arrived at says that instead `
+	+ `(${JSON.stringify(String(sideElText(`ec-SideHint`)))})`);
+setSide(`SideTabSel`, 0, true);
+await deliver();
+
 // ---- the popup menu: what opens it, what it offers, and what its rows do --------------------------
 //
 // **This section sits here rather than with the Graph pane's own work, and the placement is the point.**
@@ -1019,8 +1059,8 @@ check(displayOf(`se-menu`).display === `block` && displayOf(`se-menu-mask`).disp
 check(displayOf(`se-menu`).left === `300px` && displayOf(`se-menu`).top === `200px`,
 	`and it opens where the pointer was rather than in a corner `
 	+ `(${displayOf(`se-menu`).left}, ${displayOf(`se-menu`).top})`);
-check(JSON.stringify(menuLabels()) === JSON.stringify([`Doc block`, `Code`, `Freeze`]),
-	`and its rows are the sidebar's two tabs and the freeze, in that order (${JSON.stringify(menuLabels())})`);
+check(JSON.stringify(menuLabels()) === JSON.stringify([`Doc block`, `Code`, `Values`, `Freeze`]),
+	`and its rows are the sidebar's three tabs and the freeze, in that order (${JSON.stringify(menuLabels())})`);
 
 // The click-away, checked as the *wiring* rather than by driving it: the runtime attaches `onclick` to the
 // sheet when `on click MenuMask go to HideMenu` is executed, so a function being there is that registration
@@ -1055,6 +1095,15 @@ check(switched && displayOf(`se-menu`).display === `none`,
 check(String(sideElText(`ec-SideCode`)).includes(`return`),
 	`and the tab it switched to is showing the section's code `
 	+ `(${JSON.stringify(String(sideElText(`ec-SideCode`)).slice(0, 48))})`);
+// **And the row a *third* tab added, which is the one place two lists in two files have to agree.** A
+// row's index is sent as a tab's index, so a name inserted before the freeze — which is exactly where the
+// Values tab went — lands the reader on the freeze if the two lists fall out of step, and it looks like a
+// tab that does nothing rather than like a wiring fault.
+pickRow(2);
+const valuesTab = await waitFor(() => Number(sideValue(`SideTabSel`)) === 2);
+check(valuesTab,
+	`and a name added to the strip reaches the menu in step, so the Values row is the third tab `
+	+ `(SideTabSel=${sideValue(`SideTabSel`)})`);
 
 // **The freeze is deliberately not driven from here, and the reason is worth the paragraph.** Its row
 // sends a message to the *pane*, and this harness cannot survive one: the pane's first draw arms a ticker

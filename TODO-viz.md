@@ -39,7 +39,7 @@ Each of these was decided by Graham and is not to be re-opened without him.
 - **Nothing in the picture is a DOM element.** Each kind of mark is one merged path (`ec-VizFlowCall-0` carries four arrows in a single `d`), so a click or a hover is arithmetic against the view's own geometry, exactly as the scrollbar handles' hit test is. **This is the constraint the tooltip shares with the mark selection.**
 - **Draft 2 of the trace format is spec-first work.** The format is the contract the sidebar, the pane and both recorders all read, so a format change begins with the spec and stays in step with `tools/check-trace.py`.
 - **Working from a trace file** is agreed: the view needs nothing new from the runtime.
-- **A sidebar tab brings the reading to the reader; it never sends them hunting** (Graham's own discovery, 2026-10-13, after using the `Code` tab: *"That's a most effective addition, that brings the code to the reader instead of the latter having to hunt for it. It's a genuine discovery for me."*). The picture names a line and the panel shows what that line *is* — its prose, its code — so a reviewer reading a run never leaves the pane for the text. **This is the rule a new tab is measured against**, and it is *why* the trigger carries only the line and a tab is a name in `SideTabName` plus a branch in `SideRender`: what the line means is the panel's business, not the trigger's. **It has one consequence that is open** — a line *not* inside a doc block answers the `Code` tab with a sentence rather than the code the pointer is on, which is the one case where the reader is still sent hunting. See the question at the foot of "The intent on hover".
+- **A sidebar tab brings the reading to the reader; it never sends them hunting** (Graham's own discovery, 2026-10-13, after using the `Code` tab: *"That's a most effective addition, that brings the code to the reader instead of the latter having to hunt for it. It's a genuine discovery for me."*). The picture names a line and the panel shows what that line *is* — its prose, its code, its captured values — so a reviewer reading a run never leaves the pane for the text. **This is the rule a new tab is measured against**, and it is *why* the trigger carries a line (and, since 2026-10-14, the arrival in effect on it) and a tab is a name in `SideTabName` plus a branch in `SideRender`: what the line *means* is the panel's business, not the trigger's. **It has one consequence that is open** — a line *not* inside a doc block answers the `Code` tab with a sentence rather than the code the pointer is on, which is the one case where the reader is still sent hunting. See the question at the foot of "The intent on hover". **And the third tab's arrival is settled**: the pointer names the arrival *in effect* where it is, on the pointed row, and a press names the same one — so the values hold between two marks rather than vanishing, and a press changes nothing but the tab.
 ## Open work, in the order it was chosen — [mine, queued]
 
 ### First: the traffic lights — decided, designed, not built (2026-10-03)
@@ -60,7 +60,7 @@ Each of these was decided by Graham and is not to be re-opened without him.
 - **A marker highlight in the picture**, so the panel's selection is visible there too. It costs a new path, and the harness's "exactly eight paths" structural check moves with it.
 - **A second path into the panel** — selecting a block directly rather than only through a mark.
 - **A way to close it.** The 6-px grip is where it belongs: a drag to the floor, or a double-click, rather than a third control.
-- **One decision waiting for the second tab.** The mark click fills the tab it belongs to. The moment there *are* others, a click while another tab is up would change nothing visible — indistinguishable from a bug. So: does a mark click bring the Docs tab forward (the click is always "tell me about this line"), or leave the tab where the reader put it? Decide it **with** the second tab, not after it.
+- **The second tab's click, decided with the third (2026-10-14).** *"Does a mark click bring the Docs tab forward, or leave the tab where the reader put it?"* — **it brings it forward**, on Graham's reasoning that *"a click without any visible effect can be confusing"*. With the pointer filling every tab as it moves, a press has nothing else to change, so the tab coming forward *is* the press's effect. The pointer's own reports (a `line` message) leave the tab alone; only a `mark` — a press — switches it, and the editor sends the tab selection as the same `tab` message the menu's rows send.
 - **A debug tab** — item 5 below.
 
 ### Then: rollover tooltips (item 3)
@@ -78,7 +78,25 @@ Each of these was decided by Graham and is not to be re-opened without him.
 - **An app is not a script.** `parser.html` fetches its script and runs it into *that* page; in the editor's page there is no such page, so it stops at once. Recording a launched app means arming the recorder **before the app's own `viz start` line runs** — attach one after startup and the window has already passed.
 
 
-### Then: annotations, capturing values into the recording (item 5)
+### Annotations, capturing values into the recording (item 5) — **built 2026-10-14**, with two halves left
+
+**The tab Graham asked for is in the tree.** The pane names the arrival *in effect* at the pointer (`VizArrivalAt`, one rule for hover and press), the sidebar's third tab is `Values` — a two-column table of what the run captured at that arrival, with the arrival named in the heading and three distinct empty states — the menu gained the row, and a press brings the doc block forward. The definition is `prompt-261013-values.md`; its four decisions were answered on 2026-10-14 and are recorded in `TODO.md` item 4. **The three routes into a recording were not touched**, which was the test of the definition: the format already carried the values, so what was missing was the reader's route to them.
+
+**What is left, and neither is owed.** The **expression form** (`the <property> of <name>`, or more) was left open on purpose — the sidebar passes a value through uninterpreted, so it is a change to the recorder's `capture:` and a reference sentence, not to the tab. And the **debugger runner** (`prompt-261007-debugger.md`) is the half that reads the captures and the reason to collect them at all.
+
+**And the one cost to watch.** The hover now walks the kept records to find the arrival, where the walk used to be paid only on a press (§38's own justification). It is one integer pass with no drawing, memoised on the arrival, so nothing repeats downstream — but on a big recording the hover is the pane's heaviest gesture. **The measured fix is named in `viz-graph.allspeak` §9**: cache the pointed row's arrivals and re-walk only when the row changes. Not built, because a measurement has to ask for it first.
+
+### The scope bands — the field is in, the viewer is next (2026-10-14)
+
+**Graham's finding, from the first real use of the Values tab:** *"really only effective at high zoom levels as it operates only for the line under the pointer."* Measured, and it is a definition problem rather than a drawing one: a visit's span in **steps** has a median of **7** on a real recording, and at the fit that is about 20 units of an 880-unit pane — so no step-based rule can be generous at low zoom. **Rows are the only axis that survives it**, so the scope had to become a *band of rows*: an annotation's block, head to terminator, alive while the pointer is anywhere inside it, with nested annotations **additive** — *"this is not true variable scoping, it just defines a period of interest."*
+
+**Built and verified: the capture half.** `args.scope` on `anchor` (`spec/viz-trace-format.md`), the same `scopeTable` in `asviz.js` and `as_viz.py`, both runtimes measured identical — a label `[15, 17]`, a loop `[8, 12]`, and on Graham's own script `loop@385` → `[385, 394]`. `check-trace.py` and `capture-check` green.
+
+**And the viewer, built the same day.** `VizArrivalAt` walks the arrivals whose **band contains the pointed line** and unions their values (an inner block's on top of its caller's, each dropping out when the pointer leaves its band). The visit number is counted **per anchor (`pc`)** — a band spans rows, so a row count would misnumber — and the anchor's total is read back after the walk, when every arrival has been counted. `plotview-check` is **byte-identical** on an unscoped recording, so the `scope`-less path still behaves exactly as it did; `viz-modes-check` reports only its two long-standing failures. **Measured in the browser** (`various/values-measure.js`): one sweep gives **50 readings up from 10**, and **40 of them are on body rows the run never arrived at** — the thing Graham asked for, and impossible before the band.
+
+**Owed, and small:** a `capture-check` claim that both runtimes emit `scope` — the field is verified by hand in both and end to end in the browser rig, but nothing asserts it the way `capture-check` asserts the values. And the sidebar's heading still names the **pointer's** line (`Line 13, visit 1 of 9`) while the values come from the block head at 11; it is coherent where it sits — the pane's own foot names the arrival's line — but naming the band would read better and is one field on the message.
+
+
 
 
 
@@ -165,9 +183,15 @@ Each of these was decided by Graham and is not to be re-opened without him.
   (0 errors), so it is written here rather than churned: fixing it means renumbering the block and moving every
   marker that names one, with the same check the overlay's removal used.
 
-- **The sidebar's bar has no check.** It now shows only the `@show` values, and nothing asserts that its values
-  survive the move or that an empty bar is left when a mark asked to watch nothing. `plotview-check` covers the
-  pane's new line; the sidebar has no harness of its own.
+- **Two stale claims about the sidebar's status bar, and they are the only red in `viz-modes-check`.** The bar
+  now shows the `@show` values — and *that* is asserted (`viz-modes-check`'s "a mark's captured values are shown
+  with it, in name order" and "a mark with no captured values clears the last one's"). What still fails are the
+  two claims written before the division of 2026-10-05, which expect the bar to carry the mark's own **figures**
+  (`3 of 7`, `2 of 2`) — they were moved to the pane, so the bar is empty and the claims read red. They are a
+  truthful-looking pair with nothing behind them, which is why they mislead: the fix is to assert what the bar
+  does now (the values), or to delete them as superseded. Graham's call, and the sidebar no longer lacks a
+  harness — the section that holds them covers the panel, the tab strip, the relay, the Code tab, the Values tab
+  and the menu, and it grew five claims on 2026-10-14.
 - **The pane's mark line is English-only** (`line ...   visit ... of ...`), as the sidebar's wording was before it
   moved — the editor's string table has the flow words but not these. It moved the gap rather than widening it.
 

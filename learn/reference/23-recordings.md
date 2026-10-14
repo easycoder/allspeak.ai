@@ -45,9 +45,9 @@ A `viz start` with no `viz stop` is not a mistake. It is the "watch until the en
 
 The values ride on the **visit** they fall inside — a visit being an anchor's residence, from an arrival to the next one — so `@show` on a `while` attaches to the arrival it belongs to, and a `@show` further down a block attaches to the visit in flight, which covers it. A second `@show` within one span rewrites the same names rather than adding a second reading: one value per name per visit is what a reader can take in without the pane becoming a log.
 
-They travel in the recording, on the anchor record's `values`. What the visualiser does with them is still being built.
+They travel in the recording, on the anchor record's `values`, and the visualiser shows them. In the Graph pane the **Values** tab beside the picture reads out what the run captured at the arrival the pointer is *in effect* at, and it follows the pointer — so watching a value change through a run is a matter of traversing the picture, with no clicks to make. Two arrivals on one line are told apart by their visit number, and a line the run never arrived at says so rather than showing the last one's numbers.
 
-Two details worth knowing. A name the program does not hold is captured as `?` rather than vanishing — so a typo shows itself in the recording instead of silently dropping the value. And a `@show` inside a block is read as the statement is reached, *before* it runs, so it reports what the test saw rather than what the statement left behind.
+Three details worth knowing. A name the program does not hold is captured as `?` rather than vanishing — so a typo shows itself in the recording instead of silently dropping the value. A `@show` inside a block is read as the statement is reached, *before* it runs, so it reports what the test saw rather than what the statement left behind. And **values are captured only inside a `viz` window** — a reading rides on a *visit*, and a visit needs an anchor, which is emitted only between `viz start` and `viz stop` — so a script that writes `@show` and no markers records nothing at all. Put the two markers beside the values you want to see; they change nothing about what the run does.
 
 ## Asking for a recording
 

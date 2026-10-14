@@ -22,7 +22,7 @@ Nothing above changes what the script does. Run it with the `@`-lines deleted an
 
 The audience is a tool running alongside the script — an analyser, a viewer, a recorder, a project's own build step — rather than the script itself. So an attribute is a place to say what a tool could not otherwise work out:
 
-- **What a value is worth watching.** `@show Total, Row` on the statement that changes them saves a viewer from guessing which of a loop's variables matter, and it is more honest than a heuristic over the finished picture.
+- **What a value is worth watching.** `@show Total, Row` on the statement that changes them saves a viewer from guessing which of a loop's variables matter, and it is more honest than a heuristic over the finished picture. Two rules govern the reading, and both bite silently: it is taken as the statement is *reached*, before it runs, and it is captured only inside a `viz` window — see [recordings](recordings.md).
 - **What a block is for.** A label is where a reader's question ("what is this?" ) already gets asked, so `Parse: @the weight table, one row at a time` is the natural home for a heading a tool can quote.
 - **What the script is.** A file-level attribute names something about the whole script rather than any one statement.
 - **Anything else a project invents.** The language does not police the vocabulary, and no tool is obliged to understand it.

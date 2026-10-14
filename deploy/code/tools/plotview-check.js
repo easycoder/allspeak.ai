@@ -1916,7 +1916,10 @@ const pressedTicks = (pressed && pressed[1].ticks) || [];
 // the press was made on; the marks that phase drew are the ones its line has to agree with.
 const pressedMarks = (pressed && pressed[1].heat ? pressed[1].heat.flat() : []);
 const pressedPlace = pressedMarks.length ? [pressedMarks[0].x, pressedMarks[0].y] : null;
-const named = Number(viewVar(`VizHit`));
+// **Read from the press phase's own snapshot, not from the live variable.** The hover reports the arrival
+// it is in effect at now, so every hover phase after the press moves `VizHit` — and this claim is about
+// what the *press* named. The snapshot carries it as `hitLine`, taken at the phase.
+const named = Number(pressed[1].hitLine);
 if (!pressedPlace || pressedTicks.length < 2) {
 	console.log(`  ..: a press on a mark cannot be checked here (${allMarks().length} mark(s) drawn, `
 		+ `${pressedTicks.length} axis tick(s)) — the fixture is too small to say`);
@@ -1930,10 +1933,34 @@ if (!pressedPlace || pressedTicks.length < 2) {
 			+ `(pressed y=${pressedPlace[1]}, the axis says line ${expected}, the pane reported ${named})`
 		: `  FAIL: a press on a mark named line ${named}; the axis puts line ${expected} at that height`);
 }
-// And a press *away* from every mark must name nothing at all: the selection the reader made a moment
-// ago is still what they are looking at, so a pan that began on empty picture must not clear the panel
-// on its way past. The point chosen is the frame's corner furthest from any mark, and the check says
-// when the fixture has no such point rather than failing on a mark it could not avoid.
+// **A hover is a real handler, so a check that drives one has to put the shared state back.** `VizRowSent`
+// is the memo the phase-based claims below assert against — the line the pane last told the editor about —
+// so a traversal that left it somewhere else would change *their* answer for a reason that has nothing to
+// do with them. This is the trap this file's own notes warn about (a check that runs real handlers changes
+// the editor for every check after it), and the fix is the same one: give back what was standing.
+const hoverReading = (x, y) => {
+	const sent = Number(viewVar(`VizRowSent`));
+	const sentVisit = Number(viewVar(`VizRowSentVisit`));
+	const rowLine = Number(viewVar(`VizRowLine`));
+	hoverAt(x, y);
+	const reading = {
+		line: Number(viewVar(`VizHit`)),
+		visit: Number(viewVar(`VizHitVisit`)),
+		total: Number(viewVar(`VizHitTotal`)),
+	};
+	setViewVar(`VizRowSent`, sent);
+	setViewVar(`VizRowSentVisit`, sentVisit);
+	setViewVar(`VizRowLine`, rowLine);
+	return reading;
+};
+
+// **A press must not move the panel.** A pan begins with a press, so a press that named a different
+// arrival from the one the pointer was already showing would change what the reader is looking at in the
+// middle of a gesture that is not about the panel at all. It used to be asserted as "a press away from
+// every mark names nothing"; that rule went with the nearest-dot pick (viz-graph's §44), and the *property*
+// it protected is asserted directly here instead: press where no mark is and the arrival named is the one
+// the hover had already put there. The point chosen is the frame's corner furthest from any mark, and the
+// check says when the fixture has no such point rather than failing on a mark it could not avoid.
 const marks = allMarks();
 if (!marks.length) {
 	console.log(`  ..: no marks drawn, so there is no empty picture to press on`);
@@ -1946,12 +1973,15 @@ if (!marks.length) {
 		console.log(`  ..: every corner is within ${Math.round(away.d)} units of a mark, so an empty `
 			+ `press cannot be made on this recording`);
 	} else {
+		const hoveredThere = hoverReading(away.c[0], away.c[1]);
 		pressAt(away.c[0], away.c[1]);
-		const empty = Number(viewVar(`VizHit`));
-		console.log(empty === 0
-			? `  OK: a press ${Math.round(away.d)} units clear of every mark names no line, so the last `
-				+ `selection stands`
-			: `  FAIL: a press on empty picture named line ${empty}`);
+		const pressedThere = { line: Number(viewVar(`VizHit`)), visit: Number(viewVar(`VizHitVisit`)) };
+		console.log(pressedThere.line === hoveredThere.line && pressedThere.visit === hoveredThere.visit
+			? `  OK: a press ${Math.round(away.d)} units clear of every mark names the arrival the pointer `
+				+ `was already in effect at (line ${pressedThere.line}, visit ${pressedThere.visit}), so a `
+				+ `pan does not move the panel`
+			: `  FAIL: a press on empty picture named line ${pressedThere.line} visit ${pressedThere.visit} `
+				+ `where the hover at the same point named line ${hoveredThere.line} visit ${hoveredThere.visit}`);
 	}
 }
 
@@ -2005,6 +2035,38 @@ console.log(saidLine === wantLine
 		: `  FAIL: the dots on row y=${rowWithTwo.y} reported line ${first.line}/${last.line}, `
 			+ `visits ${first.visit}/${last.visit}, totals ${first.total}/${last.total} — they should share `
 			+ `a line and a total, and rise along the row`);
+}
+
+// **And the arrival the pointer names is the one *in effect* where it is, which is what traversing the
+// picture reads.** The rule is a timeline rather than a nearest dot: at a point between two marks the
+// arrival named is the one to the left, so the values hold from each dot until the pointer crosses the
+// next, and a reader does not have to land on a dot to see anything. The claim is made against the drawn
+// dots, so it needs no fixture of its own — a row's marks are read off the picture, and the traversal asks
+// that the numbers hold between them and rise along them. Only the dots the frame can show are used (a dot
+// outside the window is not a thing the pointer can be to the right of), and the frame's own bounds come
+// from the view rather than being typed in here.
+const plotRight = Number(viewVar(`VizPlotRight`));
+const plotLeft = Number(viewVar(`VizMargin`));
+const traversable = rowWithTwo ? rowWithTwo.xs.filter(x => x >= plotLeft && x < plotRight) : [];
+if (traversable.length < 2) {
+	console.log(`  ..: no row here carries two marks the frame can show, so a traversal cannot be checked`);
+} else {
+	const y = rowWithTwo.y;
+	const head = hoverReading(traversable[0], y);
+	const between = hoverReading(Math.floor((traversable[0] + traversable[1]) / 2), y);
+	const lastX = traversable[traversable.length - 1];
+	const tail = hoverReading(lastX, y);
+	const past = hoverReading(Math.max(lastX, plotRight - 1), y);
+	const held = head.line > 0 && between.line === head.line && between.visit === head.visit
+		&& tail.line === head.line && tail.visit > head.visit && past.visit === tail.visit;
+	console.log(held
+		? `  OK: the pointer names the arrival in effect where it is — on row y=${y} a point between the `
+			+ `first two dots reads visit ${between.visit}, the first dot's own; the last dot reads visit `
+			+ `${tail.visit}, and a point past it still reads ${past.visit} of ${past.total} — so the values `
+			+ `hold rather than vanishing between dots`
+		: `  FAIL: a traversal along row y=${y} named line ${head.line}/${between.line}/${tail.line} at visit `
+			+ `${head.visit}/${between.visit}/${tail.visit}, then ${past.visit} past the last dot — the arrival `
+			+ `should hold from each dot to the next and rise along the row`);
 }
 
 // ---- the clip ----

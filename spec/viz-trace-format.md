@@ -149,6 +149,15 @@ Required `args`, emitted by both runtimes:
   **Text rather than a typed value**, deliberately: it is what the script asked to *see*, so it is rendered the
   way that runtime renders a value in its own output, and the two runtimes differ only where their own printing
   already does.
+- `scope` — the source lines the arrival's block occupies, as `[first, last]`. Written **only when the arrival
+  heads a block**: a label's body (its own line to its terminator), a loop (its `while` line to its `end`), an
+  event handler's body. An arrival in the linear flow, and a `viz` marker, carry none. It is what lets a reader
+  show a captured value for as long as the pointer is anywhere **in the block the value was requested in**,
+  rather than only on the arrival's own line — the difference between a value visible at any zoom and one you
+  can only hit when a row is wide enough to name a single step. Absent from every recording made before this
+  field existed, and a viewer then falls back to matching the arrival's own `line`, which is what it did before.
+  **Additive by construction**: a script with no `@show` still records byte-for-byte what it always did, and so
+  does one whose arrivals head no block.
 
 When a window has `truncated: true`, visit collection stopped at the cap while counting went on:
 the final interval therefore covers everything after the last collected arrival, and a viewer

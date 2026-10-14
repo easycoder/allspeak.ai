@@ -402,6 +402,55 @@ class Recorder:
             program._vizAnchors = found
         return program._vizAnchors
 
+    def scopeTable(self, program):
+        """The block each arrival heads, as ``[first, last]`` source lines.
+
+        This is the band a reader points into to keep a captured value on screen while the run
+        is still anywhere inside the block the value was requested in, rather than only on the
+        arrival's own line. A label's body runs to the last command before the next label; a
+        loop runs to the line before the first command after it, which is its ``end`` whenever
+        ``end`` sits on its own, as this project's house style writes it. An arrival that heads
+        nothing carries no band, and a viewer then falls back to the arrival's own line, which
+        is what it did before this existed.
+        """
+        if getattr(program, '_vizScopes', None) is None:
+            code = program.code
+            linos = [c.get('lino', 0) + 1 for c in code]
+            labelPcs = [pc for pc, c in enumerate(code) if c.get('domain') is None]
+
+            def lineAt(start, step):
+                at = start
+                while 0 <= at < len(code):
+                    if linos[at]:
+                        return linos[at]
+                    at += step
+                return 0
+
+            def nextLabelPc(pc):
+                for at in labelPcs:
+                    if at > pc:
+                        return at
+                return len(code)
+
+            table = {}
+            for pc, c in enumerate(code):
+                head = linos[pc]
+                if not head:
+                    continue
+                if c.get('domain') is None or c.get('keyword') == 'on':
+                    end = lineAt(nextLabelPc(pc) - 1, -1)
+                    table[pc] = [head, max(head, end)]
+                    continue
+                if c.get('keyword') == 'while':
+                    nxt = code[pc + 1] if pc + 1 < len(code) else None
+                    target = nxt.get('goto') if nxt else None
+                    if isinstance(target, int) and not isinstance(target, bool) and target > pc:
+                        end = lineAt(target, 1)
+                        if end:
+                            table[pc] = [head, max(head, end - 1)]
+            program._vizScopes = table
+        return program._vizScopes
+
     def arm(self, program, command, pc):
         # `once` records one window and nothing more until the recording is cleared: with
         # a start and a stop inside a subroutine, every call would otherwise open and
@@ -433,6 +482,7 @@ class Recorder:
             'values': {},
             'counts': [0] * len(program.code),
             'linos': [c.get('lino', 0) + 1 for c in program.code],
+            'scopes': self.scopeTable(program),
             'steps': 0,
             'transfers': [],
             # Bookkeeping for the transfer test: the command that ran before the current one,
@@ -1695,6 +1745,11 @@ def traceDocument(script, windows):
             # what it was before this existed, and the two runtimes stay comparable on what they share.
             if window['values'].get(position):
                 args['values'] = window['values'][position]
+            # **And the block the arrival heads, when it heads one.** This is what lets a value stay on
+            # screen while the pointer is anywhere inside that block; an arrival heading nothing carries
+            # no band, and a reader falls back to the arrival's own line for it.
+            if window['scopes'].get(pc):
+                args['scope'] = window['scopes'][pc]
             timeline.append((stamp, {
                 'name': name or f'line {line}',
                 'cat': 'anchor',
