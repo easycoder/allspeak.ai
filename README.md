@@ -38,6 +38,7 @@ Three ways in, depending on how much time you have:
 
 - **AI-native.** Mainstream languages have huge surface areas that lead AI to hallucinate. AllSpeak's small, regular grammar collapses that surface — AI writes correct AllSpeak almost reliably, and when it doesn't, the error sits in plain sight on a single line.
 - **Readable by domain experts, not just programmers.** A doctor, accountant, or operations lead can read a maintained AllSpeak script and tell whether it's doing what the business needs. JavaScript, even more so React or Python frameworks, are opaque to that audience.
+- **Reviewable, not just readable.** A script can be told to record what it did — which parts were reached, in what order, how often — and the editor draws that run as a picture, so a reviewer can see where the code went before reading it. See [`VIZ.md`](VIZ.md).
 - **Multilingual by design.** The runtime is language-neutral. A French team and a German team can share one engine, one set of plugins, one set of tutorials — each in their own language.
 - **No build environment for browser apps.** Drop a `<script>` tag, write your script in a `<pre>`, refresh. Compilation is tens of milliseconds, even on a phone.
 - **Pluggable.** Anything wrappable in JavaScript or Python — Google Maps, Markdown, MQTT, REST, SVG, SQLite — becomes a plugin with a script-friendly vocabulary. See [`spec/allspeak-plugin-contract.md`](spec/allspeak-plugin-contract.md).
@@ -87,9 +88,9 @@ The `.allspeak` extension may be omitted from the script name.
 
 ## Quick start — AI-assisted
 
-Each non-English language ships a starter pack at `deploy/allspeak-<lang>.zip` containing the agent instructions (`AGENTS.md`, plus a short `CLAUDE.md` pointer), the dev server, and the editor. Drop the contents into a project directory, point an AI coding agent at it, and ask it to build something.
+Each non-English language ships a starter pack at `deploy/allspeak-<lang>.zip`: the agent instructions (`AGENTS.md`, plus a short `CLAUDE.md` pointer) and `.allspeak-init`, which declares the language the project speaks. Drop the contents into a project directory, point an AI coding agent at it, and ask it to build something. The dev server and the editor are not in the pack — they are fetched when they are needed, so a project never carries a copy that can go stale.
 
-The starter pack drives the **AI writes, human reviews** workflow that is core to using AllSpeak in practice. See [`starter/<lang>/AGENTS.md`](starter/) for the agent-facing instructions.
+The starter pack drives the **AI writes, human reviews** workflow that is core to using AllSpeak in practice. See [`starter/<lang>/AGENTS.md`](starter/) for the agent-facing instructions, and [`VIZ.md`](VIZ.md) for the editor and visualiser you review in.
 
 ## Repository layout
 
