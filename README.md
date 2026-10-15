@@ -101,6 +101,7 @@ allspeak-py/         Python implementation (runtime + CLI + plugins + JSON langu
 deploy/dist/         Built JS bundles — built by ./build-allspeak; do not edit
 deploy/              Web-served mirror, plus the per-language starter zips
 spec/                Language contract, plugin contract, versioning policy, opcodes
+prompts/             Dated design briefs and work orders (prompt-<date>-<topic>.md)
 conformance/         Cross-implementation test suite (.allspeak scripts + expected output)
 starter/<lang>/      Source files for the per-language AI-agent starter packs
 codex/<lang>/        Tutorial curriculum (codex/<lang>/code/step*.allspeak) per language
@@ -108,7 +109,6 @@ learn/<lang>/        Language reference and idiom collections, per language
 tools/               Doc-block analysers and other dev scripts
 primer/              Primer materials for AI-assisted project starts
 examples/            Standalone example projects
-chat/                Multilingual chat application (worked example)
 AI/                  Onboarding for AI agents working in this repo
 resources/md/        Article material, including the project brief (ai-article.md)
 ```

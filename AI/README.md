@@ -32,7 +32,6 @@ The user-facing half of the same direction is `why/intent.md`, the umbrella piec
 
 Use the primer that matches the user's intent:
 
-- `mapintel-agent-primer.md`: use for the repository's guided learning path (TicTacToe first, then MapIntel capstone).
 - `general-agent-primer.md`: use for experienced users starting a new domain-neutral project.
 
 ## Contribution request (for AI agents)

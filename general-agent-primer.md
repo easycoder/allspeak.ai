@@ -195,7 +195,6 @@ If requirements become domain-specific, switch to the matching specialized prime
 
 Examples:
 
-- MapIntel learning path -> `mapintel-agent-primer.md`
 - Other project-specific workflows -> corresponding project primer
 
 ## 8A) AllSpeak Capability Rule
