@@ -60,6 +60,8 @@ Das mentale Modell ist dasselbe — eine Abbildung von Schlüsseln auf Werte, di
 
 Auf Python: schreibe `dictionary X; reset X; setze eintrag K von X zu V`. Auf JS: schreibe `variable X; setze X zu objekt; setze eigenschaft K von X zu V`.
 
+Um einen Schlüssel zu löschen, akzeptieren beide Dialekte `lösche eintrag K von X`. Unter JS ist das dieselbe Operation wie `json lösche eigenschaft K von X`, das weiterhin verfügbar ist.
+
 Um ein Wörterbuch zu durchlaufen, materialisiere zuerst seine Schlüssel in eine Liste und gehe die Liste ab. Es gibt keinen direkten `indexiere`-Zugriff auf Wörterbücher; siehe [Ein Wörterbuch durchlaufen](../idioms/03-looping-patterns.md#iterating-a-dictionary) für das kanonische Muster.
 
 ### 4. Geordnete Sequenzen (Listen)
@@ -136,7 +138,9 @@ Eine häufige Verwechslung: Variablen-Arrays sehen aus wie Listen, sind es aber 
 |---------|-----|--------|
 | Variablen-Array | `variable X` + `setze die elemente von X zu N` | dasselbe |
 | Wörterbuch | `variable X` + `setze X zu objekt`; `eigenschaft K von X` | `dictionary X`; `reset X`; `eintrag K von X` |
+| Schlüssel löschen | `lösche eintrag K von X`; auch `json lösche eigenschaft K von X` | `delete entry K of X` |
 | Liste | `variable X` + `setze X zu feld`; `element N von X` | `list X`; `reset X`; `element N von X` |
+| Eine Stelle löschen | `lösche element N von X`; auch `json lösche element N von X` | `delete item N of X` für eine Liste; `delete element N of X` für ein Variablen-Array |
 | Objekt-Eigenschaft | `setze eigenschaft K von X zu V` — derselbe Mechanismus wie Wörterbuch-Zugriff; die Variable muss als Objekt gesetzt sein | `setze eigenschaft K von X zu V` — eine separate Metadaten-Ebene, unabhängig von jedem Wert, den die Variable hält |
 
 Python hat explizitere Typdeklarationen, ein eigenes `eintrag`-Schlüsselwort für den Wörterbuch-Zugriff und behandelt Objekt-Eigenschaften als eine Ebene, die mit dem Wert der Variable koexistiert. JS speichert Wörterbuch- und Listeninhalte als JSON-förmige Daten innerhalb einer `variable` und verwendet `eigenschaft` für den Schlüsselzugriff; es gibt in JS keinen Unterschied zwischen einem Wörterbuch-Eintrag und einer Objekt-Eigenschaft. Beide Implementierungen unterstützen beliebig verschachtelte Strukturen.

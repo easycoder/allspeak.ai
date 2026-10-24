@@ -32,6 +32,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 21. [House style](reference/21-house-style.md) — where `begin` and `end` go, and how a long statement is split across lines.
 22. [Attributes](reference/22-attributes.md) — `@`-notes a script carries for other tooling, and why they change nothing about a run.
 23. [Recordings](reference/23-recordings.md) — `viz start` / `viz stop`, `@show`, `@app`, how a recording is asked for, and the verdict it reports.
+24. [IndexedDB (`idb`)](reference/24-indexeddb.md) — the browser's own database: schema and upgrades, reading and writing, `where`, batches, cursors, blobs, the Storage API.
 
 ## Idioms
 

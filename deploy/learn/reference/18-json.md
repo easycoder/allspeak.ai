@@ -129,7 +129,7 @@ See [collections](04-collections.md) for the longer explanation of why the curso
 
 The same surface vocabulary works on both runtimes, but the runtime-side details differ:
 
-- **JS browser side**: `rest get`/`rest post` handle JSON automatically — the response body of an `application/json` reply is parsed before being placed in the target variable, and a dict/list target is JSON-encoded as the request body. The dedicated `json` keyword family (`json add`, `json delete`, `json sort` …) provides in-place manipulation.
+- **JS browser side**: `rest get`/`rest post` handle JSON automatically — the response body of an `application/json` reply is parsed before being placed in the target variable, and a dict/list target is JSON-encoded as the request body. The dedicated `json` keyword family (`json add`, `json delete`, `json sort` …) provides in-place manipulation. The Python-style `delete entry <key> of <variable>` is accepted too, and is the same operation as `json delete property`.
 - **Python side**: There is no `rest` keyword family today; HTTP I/O on the Python side goes through `get from url`, `download`, and the `server` plugin's request handlers. Those server-plugin handlers auto-encode the return value, so `return Rows to Files` ships JSON when `Rows` is a dict or list.
 
 Write scripts that need to work on both runtimes against the `save`/`load`/`json of` core and leave HTTP I/O to one runtime or the other.

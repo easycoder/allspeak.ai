@@ -38,3 +38,9 @@ then visit `http://localhost:8080/learn/index.html`. The reader is itself an All
 3. Add a one-line entry to `contents.md` in the appropriate section so the landing page links to it.
 
 Pages can link to each other by slug — the JS shim in `index.html` intercepts any link whose `href` matches a manifest slug and tells the reader to navigate, rather than letting the browser follow the link.
+
+## Plugin pages
+
+A plugin gets a page of its own under `reference/` when it adds vocabulary a script author writes in an application — not when it is an example, and not when a page already covers it. `reference/13-plugins.md` is the register: it names every bundled plugin, says what each adds, and links the ones with a page. A new plugin page is numbered after the last reference page and added to `contents.md` and the manifest like any other.
+
+**The curriculum must not grow one page per plugin.** The audience leaves at the first steep step, and every page is a step; a plugin with no page still costs the reader one line in the register instead of a page they did not ask for. `reference/24-indexeddb.md` is the model for one that earns it: the vocabulary in the order a script uses it, the traps, and one example that runs.

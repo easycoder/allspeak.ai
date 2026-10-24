@@ -309,3 +309,9 @@ Dans tous les modèles, remplacez `<projet>` par le nom du projet (en minuscules
 ## Politique d'extension du langage
 
 Si une construction nécessaire n'existe pas en AllSpeak, **n'invente pas de syntaxe**. Au lieu de cela, fais une pause et propose une nouvelle commande à l'utilisateur, en restant cohérent avec le style d'AllSpeak, proche du langage naturel français.
+
+## Demandes de fonctionnalités (REQUESTS.md)
+
+Lorsqu'une tâche a besoin d'une fonctionnalité que le dialecte AllSpeak ou le runtime JS épinglé ne fournit pas, ne te contente pas de la contourner. Ajoute une entrée à `REQUESTS.md` à la racine du projet — en créant le fichier s'il n'existe pas encore — dès que le contournement est choisi : date, domaine, demande, contournement, statut. Mentionne-la dans le résumé de fin de session. La liste est la transmission pour organiser la fonctionnalité ; une fonctionnalité souhaitée ne doit pas vivre seulement dans la conversation.
+
+L'`AGENTS.md` et le `REQUESTS.md` du dépôt AllSpeak sont le lieu principal des demandes de langage et de runtime ; cette liste est le relevé du projet. Transmets les demandes en amont à AllSpeak dans une session ancrée sur AllSpeak plutôt que de modifier une copie miroir.

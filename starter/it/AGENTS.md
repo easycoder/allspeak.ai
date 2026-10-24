@@ -309,3 +309,9 @@ In tutti i modelli, sostituisci `<progetto>` con il nome del progetto (minuscolo
 ## Politica di estensione del linguaggio
 
 Se un costrutto necessario non esiste in AllSpeak, **non inventare sintassi**. Invece, fermati e proponi un nuovo comando all'utente, mantenendolo coerente con lo stile naturale di AllSpeak.
+
+## Richieste di funzionalità (REQUESTS.md)
+
+Quando un compito richiede una funzionalità che il dialetto AllSpeak o il runtime JS bloccato non fornisce, non limitarti a un workaround. Aggiungi una voce a `REQUESTS.md` nella radice del progetto — creando il file se non esiste ancora — non appena il workaround è scelto: data, area, richiesta, workaround, stato. Menzionala nel riepilogo di fine sessione. L'elenco è il passaggio per organizzare la funzionalità; una funzionalità desiderata non deve vivere solo nella conversazione.
+
+L'`AGENTS.md` e il `REQUESTS.md` del repository AllSpeak sono la sede principale delle richieste di linguaggio e runtime; questo elenco è il registro del progetto. Trasmetti le richieste upstream ad AllSpeak in una sessione ancorata ad AllSpeak invece di modificare una copia specchiata.

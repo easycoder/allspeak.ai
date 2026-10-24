@@ -3391,10 +3391,25 @@ const AllSpeak_Browser = {
 			case `landscape`:
 			case `br`:
 			case `location`:
-			case `key`:
 			case `hostname`:
 			case `path`:
 			case `query`:
+				compiler.next();
+				return {
+					domain: `browser`,
+					type
+				};
+			case `key`:
+				// **`the key` is a bare value — the key of the last key event — and it is written
+				// with nothing after it.** `the key of <handle>` is another domain's value (the
+				// `idb` plugin reads a cursor's key that way), so a following `of` says this is
+				// not the bare reading and the domain after this one should be asked instead.
+				// Without the test this branch claims the words `the key` and leaves `of …` in
+				// the stream, which compiles as a value followed by nonsense.
+				if (compiler.getIndex() + 1 < compiler.getTokens().length
+					&& AllSpeak_Language.matchesWord(compiler.peek(), `of`)) {
+					return null;
+				}
 				compiler.next();
 				return {
 					domain: `browser`,

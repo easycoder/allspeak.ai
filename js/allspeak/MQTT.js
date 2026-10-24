@@ -970,8 +970,13 @@ const AllSpeak_MQTT = {
     /////////////////////////////////////////////////////////////////////////////
     // Condition handlers
     condition: {
+        // **null, not `{}`.** The condition compiler takes the first domain that answers, and
+        // this one is asked before every plugin's — so returning an object claimed every
+        // condition no earlier domain understood, and a plugin's `DB is open` was never reached.
+        // A `{}` condition then failed at run time anyway, with no domain to dispatch to.
+        // MQTT has no conditions of its own; saying so lets the domains after it be asked.
         compile: () => {
-            return {};
+            return null;
         },
 
         test: () => {

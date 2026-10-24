@@ -121,6 +121,12 @@ Date-time-based: `YYMMDDHHMM` (e.g. `2605101119` = 2026-05-10 at 11:19). Set in 
 - Plugins loaded separately from the `plugins/` path served alongside the runtime
 - Each plugin follows the contract in `/spec/allspeak-plugin-contract.md`
 
+## Feature requests (REQUESTS.md)
+
+When a task needs a feature that the AllSpeak dialect or the pinned JS runtime does not provide, do not only work around it. Append an entry to `REQUESTS.md` as soon as the workaround is chosen — date, area, request, workaround, status — and mention it in the end-of-session summary. The list is the hand-off for arranging the feature; a wished-for feature must not live only in the conversation.
+
+This repository's `REQUESTS.md` is the primary home for language and runtime requests. A consumer project keeps its own `REQUESTS.md` as its side of the record; carry requests upstream here in an AllSpeak-anchored session rather than editing a mirrored copy.
+
 ## Doc blocks — required for new `.allspeak` code
 
 Every section of new `.allspeak` code must be wrapped in a doc block:

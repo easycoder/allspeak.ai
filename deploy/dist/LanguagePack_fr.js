@@ -374,7 +374,8 @@ var AllSpeak_LanguagePack_fr = {
     "JSON_DELETE": {
       "keyword": "json",
       "patterns": [
-        "json supprime propriété|élément {value} depuis|de {variable}"
+        "json supprime propriété|élément {value} depuis|de {variable}",
+        "supprime entrée|article|élément|propriété {value} de {variable}"
       ]
     },
     "JSON_FORMAT": {

@@ -60,6 +60,8 @@ Le modèle mental est le même — une correspondance de clés vers des valeurs,
 
 Sur Python : écris `dictionary X; reset X; set entry K of X to V`. Sur JS : écris `variable X; définis X à objet; définis propriété K de X à V`.
 
+Pour supprimer une clé, les deux dialectes acceptent `supprime entrée K de X`. En JS, c'est la même opération que `json supprime propriété K de X`, qui reste disponible.
+
 Pour itérer sur un dictionnaire, matérialise d'abord ses clés dans une liste puis parcours la liste. Il n'y a pas d'accès `indexe` direct sur les dictionnaires ; voir [itération d'un dictionnaire](../idioms/03-looping-patterns.md#iterating-a-dictionary) pour le motif canonique.
 
 ### 4. Les séquences ordonnées (listes)
@@ -136,7 +138,9 @@ Une confusion courante : les tableaux de variables ressemblent à des listes mai
 |---------|-----|--------|
 | Tableau de variables | `variable X` + `définis les éléments de X à N` | pareil |
 | Dictionnaire | `variable X` + `définis X à objet` ; `propriété K de X` | `dictionary X` ; `reset X` ; `entry K de X` |
+| Supprimer une clé | `supprime entrée K de X` ; aussi `json supprime propriété K de X` | `delete entry K of X` |
 | Liste | `variable X` + `définis X à tableau` ; `élément N de X` | `list X` ; `reset X` ; `élément N de X` |
+| Supprimer une case | `supprime article N de X` ; aussi `json supprime élément N de X` | `delete item N of X` sur une liste ; `delete element N of X` sur un tableau de variables |
 | Propriété d'objet | `définis propriété K de X à V` — même mécanisme que l'accès au dictionnaire ; la variable doit être définie comme objet | `set property K of X to V` — une couche de métadonnées distincte, indépendante de toute valeur que la variable détient |
 
 Python a des déclarations de types plus explicites, un mot-clé `entry` dédié à l'accès aux dictionnaires, et traite les propriétés d'objet comme une couche qui coexiste avec la valeur de la variable. JS stocke le contenu des dictionnaires et des listes comme des données en forme de JSON dans une `variable` et utilise `propriété` pour l'accès par clé ; en JS, il n'y a pas de distinction entre une entrée de dictionnaire et une propriété d'objet. Les deux implémentations supportent des structures arbitrairement imbriquées.

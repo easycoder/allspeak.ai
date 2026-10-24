@@ -60,6 +60,8 @@ The mental model is the same — a map of keys to values, accepting nested struc
 
 On Python: write `dictionary X; reset X; set entry K of X to V`. On JS: write `variable X; set X to object; set property K of X to V`.
 
+To remove a key, both dialects accept `delete entry K of X`. On JS this is the same operation as `json delete property K of X`, which remains available.
+
 To iterate a dictionary, materialise its keys into a list first and walk the list. There is no direct `index` access on dictionaries; see [iterating a dictionary](../idioms/03-looping-patterns.md#iterating-a-dictionary) for the canonical pattern.
 
 ### 4. Ordered sequences (lists)
@@ -196,7 +198,9 @@ A common confusion: variable arrays look like lists but aren't. Variable arrays 
 |---------|-----|--------|
 | Variable array | `variable X` + `set the elements of X to N` | same |
 | Dictionary | `variable X` + `set X to object`; `property K of X` | `dictionary X`; `reset X`; `entry K of X` |
+| Delete a key | `delete entry K of X`; also `json delete property K of X` | `delete entry K of X` |
 | List | `variable X` + `set X to array`; `set element N of X to V` grows it; `element N of X` reads | `list X`; `reset X`; `append V to X` grows it; `item N of X` reads — `element` is the *array* form, and assigning to a slot that does not exist is an error |
+| Delete a slot | `delete item N of X`; also `json delete element N of X` | `delete item N of X` on a list; `delete element N of X` on a variable array |
 | Object property | `set property K of X to V` — same mechanism as dictionary access; variable must be set as object | `set property K of X to V` — a separate metadata layer, independent of any value the variable holds |
 
 Python has more explicit type declarations, a dedicated `entry` keyword for dictionary access, and treats object properties as a layer that coexists with the variable's value. JS stores dictionary and list contents as JSON-shaped data inside a `variable` and uses `property` for key access; there's no distinction in JS between a dictionary entry and an object property. Both implementations support arbitrarily nested structures.

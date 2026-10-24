@@ -69,11 +69,19 @@ The class derives from a `Handler` base and provides keyword methods with the st
 
 In `/js/plugins/`:
 
+- **`idb`** — IndexedDB: persistent, transactional storage, with declarative schema upgrades, atomic batches, cursors, blobs and the Storage API. [Its own page](indexeddb.md).
+- **`svg`** — SVG drawing: shapes, paths, groups, text, events.
+- **`gmap`** — Google Maps: maps, markers, clicks, bounds. Needs a Google Maps API key.
 - **`ui`** — additional UI vocabulary (date pickers, panes, etc.).
-- **`svg`** — SVG drawing.
-- **`gmap`** — Google Maps.
+- **`vfx`** — animation: an `animation` element, `create … in`, `on`, `set`, `start`, `step`.
 - **`float`** — extended floating-point support (where the integer-first model is too restrictive).
 - **`anagrams`**, **`life`** — example plugins demonstrating the contract.
+
+**A plugin gets a page of its own when it adds vocabulary a script author writes in an application** — not when it is an example, and not when a page already covers it. Four are excluded on that rule: `webson`'s `render` is part of the UI path in [Browser and Webson](browser-and-webson.md), `asviz`'s recorder is [Recordings](recordings.md), and `showdown` and `codemirror` are host and editor plumbing rather than application vocabulary. `codemirror-ecs` is a CodeMirror mode, not a domain at all.
+
+That leaves five that qualify and have no page yet — `svg`, `gmap`, `ui`, `vfx`, `float`. The bullets above name their vocabulary until they do, which is deliberate: **the curriculum must not grow one page per plugin**, because the audience leaves at the first steep step and every page is a step. A plugin that a reader actually needs is a plugin worth a page; the rest stay on this one.
+
+A plugin of more than a few hundred lines is usually split into the part that talks to the platform and the part that talks to AllSpeak — `idb` is the model: `idb-core.js` is a promise API over the browser's database and `idb.js` is the vocabulary that compiles to it. The split is what lets the first half be tested in Node, where a real database is cheap, and the second in a browser, where the runtime is.
 
 MQTT started life as a plugin and was later promoted to a bundled domain. The same path is available to any plugin that proves widely useful.
 

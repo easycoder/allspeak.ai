@@ -60,6 +60,8 @@ Il modello mentale è lo stesso — una mappa da chiavi a valori, che accetta st
 
 Su Python: scrivi `dictionary X; reset X; imposta voce K di X a V`. Su JS: scrivi `variabile X; imposta X a oggetto; imposta proprieta K di X a V`.
 
+Per eliminare una chiave, entrambi i dialetti accettano `elimina voce K di X`. In JS è la stessa operazione di `json elimina proprieta K di X`, che resta disponibile.
+
 Per iterare un dizionario, materializza prima le sue chiavi in una lista e percorri la lista. Non esiste un accesso `indice` diretto sui dizionari; vedi [iterare un dizionario](../idioms/03-looping-patterns.md#iterating-a-dictionary) per il modello canonico.
 
 ### 4. Sequenze ordinate (liste)
@@ -136,7 +138,9 @@ Una confusione comune: gli array di variabili sembrano liste ma non lo sono. Gli
 |----------|-----|--------|
 | Array di variabili | `variabile X` + `imposta gli elementi di X a N` | identico |
 | Dizionario | `variabile X` + `imposta X a oggetto`; `proprieta K di X` | `dictionary X`; `reset X`; `voce K di X` |
+| Eliminare una chiave | `elimina voce K di X`; anche `json elimina proprieta K di X` | `delete entry K of X` |
 | Lista | `variabile X` + `imposta X a vettore`; `elemento N di X` | `list X`; `reset X`; `elemento N di X` |
+| Eliminare una cella | `elimina elemento N di X`; anche `json elimina elemento N di X` | `delete item N of X` su una lista; `delete element N of X` su un array di variabili |
 | Proprietà di oggetto | `imposta proprieta K di X a V` — stesso meccanismo dell'accesso al dizionario; la variabile deve essere impostata come oggetto | `set property K of X to V` — un livello di metadati separato, indipendente da qualsiasi valore la variabile contenga |
 
 Python ha dichiarazioni di tipo più esplicite, una parola chiave `entry` dedicata all'accesso ai dizionari, e tratta le proprietà degli oggetti come un livello che coesiste con il valore della variabile. JS memorizza i contenuti di dizionari e liste come dati in forma JSON dentro una `variabile` e usa `proprieta` per l'accesso tramite chiave; in JS non c'è distinzione tra una voce di dizionario e una proprietà di oggetto. Entrambe le implementazioni supportano strutture arbitrariamente annidate.

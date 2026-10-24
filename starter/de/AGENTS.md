@@ -309,3 +309,9 @@ In allen Vorlagen ersetzen Sie `<projekt>` durch den Projektnamen (klein für Da
 ## Spracherweiterungsrichtlinie
 
 Wenn ein benötigtes Konstrukt in AllSpeak nicht existiert, **erfinden Sie keine Syntax**. Halten Sie stattdessen inne und schlagen Sie dem Benutzer einen neuen Befehl vor, der konsistent mit AllSpeaks natürlichsprachlichem Stil bleibt.
+
+## Funktionswünsche (REQUESTS.md)
+
+Wenn eine Aufgabe eine Funktion benötigt, die der AllSpeak-Dialekt oder die festgeschriebene JS-Laufzeit nicht bietet, umgehen Sie sie nicht nur. Fügen Sie einen Eintrag zu `REQUESTS.md` im Projektstamm hinzu — legen Sie die Datei an, falls sie noch nicht existiert —, sobald der Workaround gewählt ist: Datum, Bereich, Anfrage, Workaround, Status. Erwähnen Sie ihn in der Zusammenfassung am Sitzungsende. Die Liste ist die Übergabe, um die Funktion zu vereinbaren; eine gewünschte Funktion darf nicht nur im Gesprächsverlauf leben.
+
+Die `AGENTS.md` und `REQUESTS.md` des AllSpeak-Repositories sind die primäre Heimat für Sprach- und Laufzeitanfragen; diese Liste ist der eigene Nachweis des Projekts. Tragen Sie Anfragen an AllSpeak in einer auf AllSpeak verankerten Sitzung dorthin, statt eine gespiegelte Kopie zu bearbeiten.

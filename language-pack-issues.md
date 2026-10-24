@@ -95,6 +95,7 @@ fatal:
 | `set X to object` / `set X to array` | works |
 | `set property K of X to V` | works |
 | `put property K of X into V` | works |
+| `delete entry K of X` | **works** — compiles to `JSON_DELETE` (2026-10-20), the same command as `json delete property`; `delete item` / `delete element N of X` splice an array |
 | `X has entry K` / `X has no entry K` | **works** — `Core.js`'s `has` accepts `property`, `element` *and* `entry` |
 | `set entry K of X to V` | compile error: "I don't understand 'set'" |
 | `put entry K of X into V` | runtime error: "Undefined value: 'entry'" |
@@ -102,6 +103,8 @@ fatal:
 | `list X` | compile error: "I don't understand 'list'" |
 
 The `has` handler accepting `entry` while its neighbours do not looks accidental, not designed.
+
+**And one surface form can stand for two canonicals, so `reverseWord` is not always enough.** French `supprime` is both `delete` and `remove`, and the reverse map keeps the last one it built — `remove` — so `json supprime …` was refused at its `json` token even though the pack's pattern advertises it. `Json.compile` now asks `matchesWord(token, 'delete')` before falling back to `reverseWord` (2026-10-20). Any other handler that reverse-maps a shared form is still exposed; item 1 is the general class.
 
 **The cost, counted** — browser-relevant scripts, excluding `allspeak-py/` and `tools/`:
 

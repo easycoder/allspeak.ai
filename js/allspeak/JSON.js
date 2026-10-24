@@ -34,7 +34,15 @@ const AllSpeak_JSON = {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
-			const request = AllSpeak_Language.reverseWord(compiler.nextToken());
+			const token = compiler.nextToken();
+			// **`matchesWord` before `reverseWord`, because one surface form can belong to two
+			// canonicals.** French `supprime` is both `delete` and `remove`, and the reverse map
+			// keeps only the last one it saw (`remove`), so `json supprime …` was refused while
+			// the pattern advertised it. Asking the `delete` forms directly keeps the statement
+			// meaning what the pack says it means.
+			const request = AllSpeak_Language.matchesWord(token, `delete`)
+				? `delete`
+				: AllSpeak_Language.reverseWord(token);
 			let item;
 			switch (request) {
 			case `set`:
@@ -134,7 +142,7 @@ const AllSpeak_JSON = {
 				}
 				break;
 			case `delete`:
-				const what = compiler.nextToken();
+				const what = AllSpeak_Language.reverseWord(compiler.nextToken());
 				if ([`property`, `element`].includes(what)) {
 					const value = compiler.getNextValue();
 					if ([AllSpeak_Language.word(`from`), AllSpeak_Language.word(`of`)].includes(compiler.getToken())) {
@@ -531,10 +539,70 @@ const AllSpeak_JSON = {
 		}
 	},
 
+	// `delete entry <key> of <variable>` — the Python runtime's spelling, answered for the
+	// JavaScript dialect as well. It compiles to the same JSON_DELETE command as `json delete`,
+	// so there is one deletion path: `entry`/`property` remove a key, `item`/`element` remove a
+	// slot. The Python runtime also deletes files and directories; a browser has no file system,
+	// so those two forms say why rather than falling through to "I don't understand 'delete'".
+	Delete: {
+
+		compile: compiler => {
+			const lino = compiler.getLino();
+			const token = compiler.nextToken();
+			const what = token ? AllSpeak_Language.reverseWord(token) : null;
+			if (what === `file` || what === `directory`) {
+				compiler.warning(`The browser runtime has no file system; 'delete ${what}' is only available in the Python runtime`);
+				return false;
+			}
+			const kind = {
+				entry: `property`,
+				property: `property`,
+				item: `element`,
+				element: `element`
+			}[what];
+			if (!kind) {
+				return false;
+			}
+			let value;
+			try {
+				value = compiler.getNextValue();
+			} catch (err) {
+				return false;
+			}
+			if (compiler.isWord(`of`) || compiler.isWord(`from`)) {
+				compiler.next();
+				if (compiler.isSymbol()) {
+					const targetRecord = compiler.getSymbolRecord();
+					if (targetRecord.keyword === `variable`) {
+						compiler.next();
+						const pc = compiler.getPc();
+						compiler.addCommand({
+							domain: `json`,
+							keyword: `json`,
+							lino,
+							request: `delete`,
+							what: kind,
+							value,
+							target: targetRecord.name,
+							onError: 0
+						});
+						AllSpeak_JSON.addOrHandling(compiler, pc);
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+	},
+
 	getHandler: function(name) {
-		// JSON domain has one compile keyword: 'json' (language-aware)
+		// Two compile keywords share this domain: 'json' for the `json …` family and
+		// 'delete' for the Python-style form above.
 		if (name === AllSpeak_Language.word(`json`)) {
 			return this.Json;
+		}
+		if (AllSpeak_Language.matchesWord(name, `delete`)) {
+			return this.Delete;
 		}
 		return null;
 	},
