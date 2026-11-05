@@ -16,7 +16,7 @@ Siehe [README.md](../README.md) für die Nutzung dieses Kurses und das Hinzufüg
 3. [Variablen und Arrays](reference/03-variables-and-arrays.md) — das Cursor-Modell ; Arbeitsvariablen ; `variable` vs typisiert.
 4. [Sammlungen](reference/04-collections.md) — Arrays, Wörterbücher, Listen, Eigenschaften ; JS/Python-Abweichung.
 5. [Werte und Typen](reference/05-values-and-types.md) — Zahlen, Zeichenketten, Booleans ; automatische Konvertierung.
-6. [Bedingungen](reference/06-conditions.md) — Gleichheit, Vergleich, Vorhandensein ; Kombination mit `und` / `oder`.
+6. [Bedingungen](reference/06-conditions.md) — Gleichheit, Vergleich, Vorhandensein ; Geräte- und Bildschirmtests ; Kombination mit `und` / `oder`.
 7. [Arithmetik](reference/07-arithmetic.md) — das Ganzzahl-zuerst-Modell ; das skalierte-Ganzzahl-Muster ; Trigonometrie.
 8. [Zeichenketten und Text](reference/08-strings-and-text.md) — `länge von`, Schneiden, `position von`, `ersetze`.
 9. [Kontrollfluss](reference/09-control-flow.md) — `wenn`, `solange`, `gosub` mit Parametern, `lege parameter`, `stack`, `stoppe`, `beende`.

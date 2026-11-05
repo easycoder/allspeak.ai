@@ -14,7 +14,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 3. [Variables and arrays](reference/03-variables-and-arrays.md) — the cursor model; scratch variables; `variable` vs typed.
 4. [Collections](reference/04-collections.md) — arrays, dictionaries, lists, properties; `split` and `join`; JS/Python divergence.
 5. [Values and types](reference/05-values-and-types.md) — numbers, strings, booleans; automatic conversion.
-6. [Conditions](reference/06-conditions.md) — equality, comparison, presence; combining with `and` / `or`.
+6. [Conditions](reference/06-conditions.md) — equality, comparison, presence; device and screen tests; combining with `and` / `or`.
 7. [Arithmetic](reference/07-arithmetic.md) — integer-first model; scaled-integer pattern; trigonometry.
 8. [Strings and text](reference/08-strings-and-text.md) — `length of`, slicing, `position of`, `replace`.
 9. [Control flow](reference/09-control-flow.md) — `if`, `while`, `gosub` with parameters, `put parameter`, `stack`, `stop`, `exit`.
@@ -33,6 +33,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 22. [Attributes](reference/22-attributes.md) — `@`-notes a script carries for other tooling, and why they change nothing about a run.
 23. [Recordings](reference/23-recordings.md) — `viz start` / `viz stop`, `@show`, `@app`, how a recording is asked for, and the verdict it reports.
 24. [IndexedDB (`idb`)](reference/24-indexeddb.md) — the browser's own database: schema and upgrades, reading and writing, `where`, batches, cursors, blobs, the Storage API.
+25. [Photographs (`photo`)](reference/25-photo.md) — file, URL and canvas sources, resizing without upscaling, stripping EXIF, showing and saving, and the bridge to `idb`.
 
 ## Idioms
 

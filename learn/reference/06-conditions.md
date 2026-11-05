@@ -104,6 +104,22 @@ if Clicked is false ...
 
 For the full flag lifecycle — declare, initialize with `clear`, toggle with `set`/`clear`, test with bare `if` — see [boolean flags](../idioms/boolean-flags.md).
 
+## Device and screen conditions
+
+The browser supplies three booleans — `mobile`, `portrait` and `landscape` — so a layout can branch on the device before it is built. They are ordinary values, so `and` and `or` combine them:
+
+```as
+if mobile and portrait set Mobile
+if landscape ...
+if not mobile ...
+```
+
+`mobile` tests the **user agent**: true for Android, BlackBerry, iOS (iPhone, iPad, iPod), Opera Mini, IEMobile and WPDesktop. `portrait` and `landscape` test the **viewport's shape** — `portrait` is true when the document's client width is less than its client height, and `landscape` is the other case.
+
+Two consequences surprise people. `if mobile and portrait` means "a mobile browser in a portrait viewport", not "a narrow viewport": a narrow desktop window is not mobile, and an iPad asking for the desktop site reports a Macintosh user agent, so it is not mobile either. And these are tests, not listeners — the answer is read when the line runs, so a branch taken once at startup keeps the answer it got, and a rotation does not re-run it.
+
+The vocabulary is browser-only: the Python runtime has no viewport, so a script that uses it is a browser script. See [attributes](attributes.md) for `@js`, which is how a script says which runtime it is for.
+
 ## Type tests
 
 `is numeric` tests whether a value can be used as a number:
@@ -176,3 +192,4 @@ if Count is greater than 0
 - [values-and-types](values-and-types.md) — truthy/falsey rules, the numeric flag, `the value of`.
 - [strings-and-text](strings-and-text.md) — `includes`, `starts with`, `ends with`.
 - [control-flow](control-flow.md) — `if`, `while`, `begin`/`end`.
+- [browser and Webson](browser-and-webson.md) — the DOM these decisions usually build or style.

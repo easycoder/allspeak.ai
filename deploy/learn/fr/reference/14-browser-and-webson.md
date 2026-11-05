@@ -477,3 +477,4 @@ Le moteur de rendu Webson (qui transforme le JSON Webson en DOM) est un outil d'
 - [gestionnaires d'événements et index de tableau](../idioms/event-handlers-and-array-index.md) — `sur clic` et le modèle du curseur pour les tableaux d'éléments.
 - [séparation Webson et AS](../idioms/webson-and-as-separation.md) — quand utiliser Webson plutôt que la création en ligne.
 - [collections](collections.md) — les propriétés d'objet sur les éléments DOM.
+- [conditions](conditions.md) — `mobile`, `portrait` et `paysage` pour une mise en page selon l'appareil ou l'écran.

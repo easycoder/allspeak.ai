@@ -477,3 +477,4 @@ Der Webson-Renderer (der Webson-JSON in DOM verwandelt) ist ein Begleitwerkzeug 
 - [Ereignishandler und Array-Index](../idioms/event-handlers-and-array-index.md) — `bei klick` und das Cursor-Modell für Arrays von Elementen.
 - [Webson-und-AS-Trennung](../idioms/webson-and-as-separation.md) — wann Webson statt Inline-Erzeugung.
 - [Sammlungen](collections.md) — Objekt-Eigenschaften auf DOM-Elementen.
+- [Bedingungen](conditions.md) — `mobil`, `hochformat` und `querformat` für ein Layout, das vom Gerät oder Bildschirm abhängt.

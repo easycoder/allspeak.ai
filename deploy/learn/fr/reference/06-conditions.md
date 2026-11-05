@@ -91,6 +91,22 @@ si Clicked est vrai ...
 si Clicked est faux ...
 ```
 
+## Conditions d'appareil et d'écran
+
+Le navigateur fournit trois booléens — `mobile`, `portrait` et `paysage` — pour qu'une mise en page puisse choisir avant d'être construite. Ce sont des valeurs ordinaires, donc `et` et `ou` les combinent :
+
+```as
+si mobile et portrait définis Mobile
+si paysage ...
+si pas mobile ...
+```
+
+`mobile` teste l'**agent utilisateur** : vrai pour Android, BlackBerry, iOS (iPhone, iPad, iPod), Opera Mini, IEMobile et WPDesktop. `portrait` et `paysage` testent la **forme de la fenêtre d'affichage** — `portrait` est vrai quand la largeur cliente du document est inférieure à sa hauteur, et `paysage` est l'autre cas.
+
+Deux conséquences surprennent. `si mobile et portrait` signifie « un navigateur mobile en portrait », et non « une fenêtre étroite » : une fenêtre de bureau étroite n'est pas mobile, et un iPad qui demande le site de bureau annonce un agent utilisateur Macintosh, donc il n'est pas mobile non plus. Et ce sont des tests, pas des écouteurs — la réponse est lue quand la ligne s'exécute, donc un embranchement pris une fois au démarrage garde la réponse qu'il a obtenue, et une rotation ne le réexécute pas.
+
+Ce vocabulaire est réservé au navigateur : l'exécution Python n'a pas de fenêtre d'affichage, donc un script qui l'utilise est un script de navigateur.
+
 ## Tests de type
 
 `est numérique` teste si une valeur peut être utilisée comme nombre :
@@ -152,3 +168,4 @@ si Count est supérieur à 0
 - [valeurs et types](values-and-types.md) — règles de vérité, l'indicateur numérique, `la valeur de`.
 - [chaînes et texte](strings-and-text.md) — `contient`, `commence avec`, `termine avec`.
 - [flux de contrôle](control-flow.md) — `si`, `tant que`, `début`/`fin`.
+- [navigateur et Webson](browser-and-webson.md) — le DOM que ces décisions construisent ou stylent généralement.

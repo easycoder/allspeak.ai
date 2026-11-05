@@ -477,3 +477,4 @@ Il renderer Webson (che trasforma il JSON Webson in DOM) è uno strumento compag
 - [gestori di eventi e indice di array](../idioms/event-handlers-and-array-index.md) — `su clic` e il modello del cursore per gli array di elementi.
 - [separazione Webson e AS](../idioms/webson-and-as-separation.md) — quando usare Webson invece della creazione inline.
 - [collezioni](collections.md) — le proprietà oggetto sugli elementi DOM.
+- [condizioni](conditions.md) — `mobile`, `ritratto` e `paesaggio` per un layout che dipende dal dispositivo o dallo schermo.

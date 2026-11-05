@@ -70,6 +70,7 @@ The class derives from a `Handler` base and provides keyword methods with the st
 In `/js/plugins/`:
 
 - **`idb`** — IndexedDB: persistent, transactional storage, with declarative schema upgrades, atomic batches, cursors, blobs and the Storage API. [Its own page](indexeddb.md).
+- **`photo`** — photographs: a file, URL or canvas in, resized and EXIF-stripped bytes out, with display URLs, a download and a bridge to `idb`'s blob handle. [Its own page](photo.md).
 - **`svg`** — SVG drawing: shapes, paths, groups, text, events.
 - **`gmap`** — Google Maps: maps, markers, clicks, bounds. Needs a Google Maps API key.
 - **`ui`** — additional UI vocabulary (date pickers, panes, etc.).
@@ -81,7 +82,7 @@ In `/js/plugins/`:
 
 That leaves five that qualify and have no page yet — `svg`, `gmap`, `ui`, `vfx`, `float`. The bullets above name their vocabulary until they do, which is deliberate: **the curriculum must not grow one page per plugin**, because the audience leaves at the first steep step and every page is a step. A plugin that a reader actually needs is a plugin worth a page; the rest stay on this one.
 
-A plugin of more than a few hundred lines is usually split into the part that talks to the platform and the part that talks to AllSpeak — `idb` is the model: `idb-core.js` is a promise API over the browser's database and `idb.js` is the vocabulary that compiles to it. The split is what lets the first half be tested in Node, where a real database is cheap, and the second in a browser, where the runtime is.
+A plugin of more than a few hundred lines is usually split into the part that talks to the platform and the part that talks to AllSpeak — `idb` and `photo` are the models: `idb-core.js` is a promise API over the browser's database and `idb.js` is the vocabulary that compiles to it; `photo-core.js` is the image pipeline and `photo.js` the words. The split is what lets the first half be tested in Node, where a real database and a real canvas are cheap, and the second in a browser, where the runtime is.
 
 MQTT started life as a plugin and was later promoted to a bundled domain. The same path is available to any plugin that proves widely useful.
 

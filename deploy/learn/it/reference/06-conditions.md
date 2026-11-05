@@ -91,6 +91,22 @@ se Clicked è vero ...
 se Clicked è falso ...
 ```
 
+## Condizioni di dispositivo e schermo
+
+Il browser fornisce tre booleani — `mobile`, `ritratto` e `paesaggio` — così un layout può scegliere prima di essere costruito. Sono valori ordinari, quindi `e` e `o` li combinano:
+
+```as
+se mobile e ritratto imposta Mobile
+se paesaggio ...
+se non mobile ...
+```
+
+`mobile` verifica lo **user agent**: vero per Android, BlackBerry, iOS (iPhone, iPad, iPod), Opera Mini, IEMobile e WPDesktop. `ritratto` e `paesaggio` verificano la **forma del viewport** — `ritratto` è vero quando la larghezza client del documento è inferiore alla sua altezza, e `paesaggio` è l'altro caso.
+
+Due conseguenze sorprendono. `se mobile e ritratto` significa «un browser mobile in orientamento ritratto», non «una finestra stretta»: una finestra desktop stretta non è mobile, e un iPad che chiede il sito desktop dichiara uno user agent Macintosh, quindi non è mobile neanche lui. E questi sono test, non listener — la risposta viene letta quando la riga viene eseguita, quindi un ramo preso una volta all'avvio mantiene la risposta ottenuta, e una rotazione non lo riesegue.
+
+Questo vocabolario è solo per il browser: l'esecuzione Python non ha un viewport, quindi uno script che lo usa è uno script da browser.
+
 ## Test di tipo
 
 `è numerico` verifica se un valore può essere usato come numero:
@@ -152,3 +168,4 @@ se Count è maggiore di 0
 - [valori e tipi](values-and-types.md) — le regole di verità/falsità, il flag numerico, `il valore di`.
 - [stringhe e testo](strings-and-text.md) — `contiene`, `inizia con`, `finisce con`.
 - [controllo di flusso](control-flow.md) — `se`, `mentre`, `inizio`/`fine`.
+- [Browser e Webson](browser-and-webson.md) — il DOM che queste decisioni di solito costruiscono o stilano.

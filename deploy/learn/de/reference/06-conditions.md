@@ -91,6 +91,22 @@ wenn Clicked ist wahr ...
 wenn Clicked ist falsch ...
 ```
 
+## Geräte- und Bildschirmbedingungen
+
+Der Browser liefert drei Booleans — `mobil`, `hochformat` und `querformat` — damit ein Layout sich vor dem Aufbau nach dem Gerät richten kann. Es sind gewöhnliche Werte, also verbinden `und` und `oder` sie:
+
+```as
+wenn mobil und hochformat setze Mobile
+wenn querformat ...
+wenn nicht mobil ...
+```
+
+`mobil` testet den **User-Agent**: wahr für Android, BlackBerry, iOS (iPhone, iPad, iPod), Opera Mini, IEMobile und WPDesktop. `hochformat` und `querformat` testen die **Form des Viewports** — `hochformat` ist wahr, wenn die Client-Breite des Dokuments kleiner ist als seine Höhe, und `querformat` ist der andere Fall.
+
+Zwei Konsequenzen überraschen. `wenn mobil und hochformat` heißt „ein mobiler Browser im Hochformat“, nicht „ein schmales Fenster“: Ein schmales Desktop-Fenster ist nicht mobil, und ein iPad, das die Desktop-Seite anfordert, meldet einen Macintosh-User-Agent, ist also auch nicht mobil. Und das sind Tests, keine Listener — die Antwort wird gelesen, wenn die Zeile läuft, also behält eine beim Start getroffene Verzweigung ihre Antwort, und eine Drehung führt sie nicht erneut aus.
+
+Dieses Vokabular gibt es nur im Browser: Die Python-Laufzeit hat keinen Viewport, ein Skript, das es verwendet, ist ein Browser-Skript.
+
 ## Typ-Tests
 
 `ist numerisch` testet, ob ein Wert als Zahl verwendet werden kann:
@@ -152,3 +168,4 @@ wenn Count ist größer als 0
 - [Werte und Typen](values-and-types.md) — Wahrheit/Falschheit-Regeln, das numerische Flag, `der wert von`.
 - [Zeichenketten und Text](strings-and-text.md) — `enthält`, `beginnt mit`, `endet mit`.
 - [Kontrollfluss](control-flow.md) — `wenn`, `solange`, `beginn`/`ende`.
+- [Browser und Webson](browser-and-webson.md) — das DOM, das diese Entscheidungen meist aufbauen oder gestalten.

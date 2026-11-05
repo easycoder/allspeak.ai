@@ -16,7 +16,7 @@ Voir [README.md](../README.md) pour savoir comment consulter ce cursus et commen
 3. [Variables et tableaux](reference/03-variables-and-arrays.md) — le modèle du curseur ; les variables de travail ; `variable` vs typé.
 4. [Collections](reference/04-collections.md) — tableaux, dictionnaires, listes, propriétés ; divergence JS/Python.
 5. [Valeurs et types](reference/05-values-and-types.md) — nombres, chaînes, booléens ; conversion automatique.
-6. [Conditions](reference/06-conditions.md) — égalité, comparaison, présence ; combinaison avec `et` / `ou`.
+6. [Conditions](reference/06-conditions.md) — égalité, comparaison, présence ; tests d'appareil et d'écran ; combinaison avec `et` / `ou`.
 7. [Arithmétique](reference/07-arithmetic.md) — modèle entier d'abord ; motif des entiers mis à l'échelle ; trigonométrie.
 8. [Chaînes et texte](reference/08-strings-and-text.md) — `longueur de`, découpage, `position de`, `remplace`.
 9. [Flux de contrôle](reference/09-control-flow.md) — `si`, `tant que`, `vasous` avec paramètres, `mets paramètre`, `stack`, `arrête`, `quitte`.
