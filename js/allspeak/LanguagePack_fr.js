@@ -80,9 +80,12 @@ var AllSpeak_LanguagePack_fr = {
       ]
     },
     "COPY_TO_CLIPBOARD": {
-      "keyword": "copie",
+      "keyword": "copie|clipboard",
       "patterns": [
-        "copie {element}"
+        "copie {value}",
+        "copie {element}",
+        "clipboard copie {value}",
+        "clipboard paste into {variable}"
       ]
     },
     "CREATE_ELEMENT": {
@@ -1383,6 +1386,7 @@ var AllSpeak_LanguagePack_fr = {
     "divisionByZero": "Division par zéro à la ligne {line}.",
     "indexOutOfRange": "L'indice {index} est hors limites à la ligne {line}.",
     "moduleNotFound": "Module '{name}' introuvable.",
+    "clipboardPasteRefused": "Le contenu du presse-papiers ne peut pas être lu dans un navigateur, donc `clipboard paste` n'est pas disponible ici — c'est une commande du runtime Python (ligne {line}).",
     "syntaxError": "Erreur de syntaxe à la ligne {line} : {detail}.",
     "vizCouldNotRun": "exécution impossible : {reason}",
     "vizFlavourRefused": "ce script est pour le moteur {runtime} — {origin} — et celui-ci est le moteur {mine}",

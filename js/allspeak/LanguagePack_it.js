@@ -80,9 +80,12 @@ var AllSpeak_LanguagePack_it = {
       ]
     },
     "COPY_TO_CLIPBOARD": {
-      "keyword": "copia",
+      "keyword": "copia|clipboard",
       "patterns": [
-        "copia {element}"
+        "copia {value}",
+        "copia {element}",
+        "clipboard copia {value}",
+        "clipboard paste into {variable}"
       ]
     },
     "CREATE_ELEMENT": {
@@ -1386,6 +1389,7 @@ var AllSpeak_LanguagePack_it = {
     "divisionByZero": "Divisione per zero alla riga {line}.",
     "indexOutOfRange": "Indice {index} fuori intervallo alla riga {line}.",
     "moduleNotFound": "Modulo '{name}' non trovato.",
+    "clipboardPasteRefused": "Gli appunti non possono essere letti in un browser, quindi `clipboard paste` non è disponibile qui — è un comando del runtime Python (riga {line}).",
     "syntaxError": "Errore di sintassi alla riga {line}: {detail}.",
     "vizCouldNotRun": "esecuzione impossibile: {reason}",
     "vizFlavourRefused": "questo script è per il runtime {runtime} — {origin} — e questo è il runtime {mine}",

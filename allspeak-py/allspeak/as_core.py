@@ -24,6 +24,7 @@ from .as_classes import (
 
 from .as_handler import Handler
 from .as_language import language
+from .as_clipboard import ClipboardUnavailable, copy_text, paste_text
 
 class Core(Handler):
 
@@ -354,6 +355,60 @@ class Core(Handler):
                 target['ssh'] = None
             else:
                 self.putSymbolValue(target, ECValue(type=bool, content=False))
+        return self.nextPC()
+
+    # clipboard copy {value}
+    # clipboard paste into {variable}
+    #
+    # **Read ahead with `peek`, never with `nextToken`.** A statement that ends where its operand should
+    # be — `clipboard copy` on the last line, say — would otherwise walk off the end of the token stream,
+    # and the runtime reports that as `FatalError('Premature end of script')`, which itself fails while
+    # looking up the line number of the token that is not there. So every read is checked first, and the
+    # truncated form gets a sentence instead of a traceback.
+    def k_clipboard(self, command):
+        word = language.reverse_word(self.peek())
+        if word == 'copy':
+            self.nextToken()
+            if self.peek() == None:
+                FatalError(self.compiler, 'I can\'t copy this value to the clipboard')
+                return False
+            value = self.nextValue()
+            if value != None:
+                command['action'] = 'copy'
+                command['value'] = value
+                self.add(command)
+                return True
+            FatalError(self.compiler, 'I can\'t copy this value to the clipboard')
+            return False
+        if word == 'paste':
+            self.nextToken()
+            if self.peek() != None and self.nextIsWord('into'):
+                if self.peek() == None:
+                    FatalError(self.compiler, 'I can\'t paste into a variable that is not there')
+                    return False
+                if self.nextIsSymbol():
+                    record = self.getSymbolRecord()
+                    self.checkObjectType(self.getObject(record), ECVariable)
+                    command['action'] = 'paste'
+                    command['target'] = record['name']
+                    self.add(command)
+                    return True
+                FatalError(self.compiler, f'Symbol {self.getToken()} is not a variable')
+        return False
+
+    def r_clipboard(self, command):
+        if command['action'] == 'copy':
+            try:
+                copy_text(self.textify(command['value']))
+            except ClipboardUnavailable as error:
+                RuntimeError(self.program, str(error))
+        else:
+            try:
+                text = paste_text()
+            except ClipboardUnavailable as error:
+                RuntimeError(self.program, str(error))
+                return self.nextPC()
+            self.putSymbolValue(self.getVariable(command['target']), text)
         return self.nextPC()
 
     # Close a file

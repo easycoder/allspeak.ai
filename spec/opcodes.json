@@ -162,12 +162,12 @@
     "COPY_TO_CLIPBOARD": {
       "domain": "browser",
       "category": "navigation",
-      "description": "Copy an input element's content to clipboard",
+      "description": "Copy a value, or an input element's content, to the clipboard. Written `copy` or `clipboard copy`",
       "current": {
         "keyword": "copy"
       },
       "params": [
-        "name"
+        "value"
       ]
     },
     "CREATE_ELEMENT": {

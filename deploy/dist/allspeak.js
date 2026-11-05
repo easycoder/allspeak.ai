@@ -5531,10 +5531,43 @@ const AllSpeak_Browser = {
 		}
 	},
 
+	// Copy a value to the clipboard.
+	//
+	// **Three spellings, and the oldest one still means what it did.** `copy MyInput` selects an
+	// `input` element and copies it, exactly as before; anything else is read as a value, so
+	// `copy \`text\`` and `copy MyVariable` work. `clipboard copy X` is the spelling both flavours
+	// share, and it takes the same two forms. Nothing that compiled yesterday compiles differently,
+	// because an `input` symbol is matched first.
+	//
+	// **`document.execCommand('copy')` rather than `navigator.clipboard.writeText`**, and that is a
+	// measurement, not a preference. In a page with the clipboards denied outright — which is what an
+	// automated or locked-down browser profile looks like — `writeText` rejects with
+	// `NotAllowedError: Write permission denied` while `execCommand('copy')` on a selected textarea
+	// returns `true`, and the text is on the system clipboard afterwards (read back with `xsel -b -o`;
+	// measured 2026-11-05). `writeText` also needs a secure context and, in some browsers, a user
+	// gesture, and it is a promise where this command is a statement. One path, no permission, no
+	// continuation.
+	//
+	// **There is no `clipboard paste` here.** Reading the clipboard needs
+	// `navigator.clipboard.readText()`, which is permission-gated and refused unless the run began
+	// with a real user gesture (Firefox only allows it inside a paste event; the same probe got
+	// `NotAllowedError` even on a click). Promising `paste into X` and failing on some browsers would
+	// be worse than not having it, so the paste half lives in the Python runtime only and is refused
+	// here with a sentence that says so — see `learn/reference/27-clipboard.md`.
 	Copy: {
 
 		compile: (compiler) => {
 			const lino = compiler.getLino();
+			if (AllSpeak_Language.reverseWord(compiler.getToken()) === `clipboard`) {
+				compiler.next();
+				if (compiler.isWord(`paste`)) {
+					throw new Error(AllSpeak_Language.diagnostic(`clipboardPasteRefused`, { line: lino }));
+				}
+				if (!compiler.isWord(`copy`)) {
+					return false;
+				}
+			}
+			const mark = compiler.index;
 			if (compiler.nextIsSymbol()) {
 				const symbolRecord = compiler.getSymbolRecord();
 				if (symbolRecord.keyword === `input`) {
@@ -5548,11 +5581,45 @@ const AllSpeak_Browser = {
 					return true;
 				}
 			}
-			return false;
+			// Not an input element, so it is a value. `nextIsSymbol` consumed a token looking,
+			// which is why the token stream is rewound before it is read as one.
+			compiler.rewindTo(mark);
+			const value = compiler.getNextValue();
+			compiler.addCommand({
+				domain: `browser`,
+				keyword: `copy`,
+				lino,
+				value
+			});
+			return true;
 		},
 
 		run: (program) => {
 			const command = program[program.pc];
+			if (typeof command.name === `undefined`) {
+				const text = program.getFormattedValue(command.value);
+				const area = document.createElement(`textarea`);
+				area.value = text;
+				area.setAttribute(`readonly`, ``);
+				// Off-screen rather than hidden: a textarea with no box cannot be selected.
+				area.style.position = `fixed`;
+				area.style.top = `-1000px`;
+				area.style.opacity = `0`;
+				document.body.appendChild(area);
+				area.select();
+				area.setSelectionRange(0, 99999);
+				let copied = false;
+				try {
+					copied = document.execCommand(`copy`);
+				} finally {
+					document.body.removeChild(area);
+				}
+				if (!copied) {
+					program.runtimeError(command.lino, `The browser refused the clipboard write`);
+					return 0;
+				}
+				return command.pc + 1;
+			}
 			const targetRecord = program.getSymbolRecord(command.name);
 			const element = targetRecord.element[targetRecord.index];
 			element.select();
@@ -13417,9 +13484,12 @@ var AllSpeak_LanguagePack_en = {
       ]
     },
     "COPY_TO_CLIPBOARD": {
-      "keyword": "copy",
+      "keyword": "copy|clipboard",
       "patterns": [
-        "copy {element}"
+        "copy {value}",
+        "copy {element}",
+        "clipboard copy {value}",
+        "clipboard paste into {variable}"
       ]
     },
     "CREATE_ELEMENT": {
@@ -14413,6 +14483,7 @@ var AllSpeak_LanguagePack_en = {
     "divisionByZero": "Division by zero at line {line}.",
     "indexOutOfRange": "Index {index} is out of range at line {line}.",
     "moduleNotFound": "Module '{name}' not found.",
+    "clipboardPasteRefused": "The clipboard cannot be read in a browser, so `clipboard paste` is not available here — it is a Python-runtime command (line {line}).",
     "syntaxError": "Syntax error at line {line}: {detail}.",
     "vizCouldNotRun": "could not run: {reason}",
     "vizFlavourRefused": "this script is for the {runtime} runtime — {origin} — and this is the {mine} runtime",

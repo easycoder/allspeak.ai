@@ -11,7 +11,8 @@
 #   * `viz.allspeak`, `viz-graph.allspeak`, `viz-side.allspeak`, `viz.json` — in the page's
 #     payload (`dist/viz.js`, written by ./build-allspeak)
 #   * `asdoc-check.py`, `plotview-check.js`, `viz-align-measure.py`, `guard-check.js`, `capture-check.js`,
-#     `encoding-check.js`, `flush-check.js`, `attr-check.js`, `opcode-check.js`
+#     `encoding-check.js`, `flush-check.js`, `attr-check.js`, `opcode-check.js`, `clipboard-check.js`,
+#     `clipboard-check.py`
 #     — published at https://allspeak.ai/code/tools/ by the deploy, and fetched by whoever wants one
 #
 # Languages are auto-discovered from starter/*/ subdirectories. Run this after editing anything under
@@ -21,7 +22,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-for tool in tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js tools/capture-check.js tools/encoding-check.js tools/flush-check.js tools/attr-check.js tools/opcode-check.js; do
+for tool in tools/asdoc-check.py tools/plotview-check.js tools/viz-align-measure.py tools/guard-check.js tools/capture-check.js tools/encoding-check.js tools/flush-check.js tools/attr-check.js tools/opcode-check.js tools/clipboard-check.js tools/clipboard-check.py; do
     if [ ! -f "$tool" ]; then
         echo "Error: $tool not found — it is published by the deploy, not shipped in a pack." >&2
         exit 1

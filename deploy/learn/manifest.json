@@ -27,6 +27,7 @@
         { "slug": "indexeddb", "path": "reference/24-indexeddb.md", "title": "IndexedDB (idb)" },
         { "slug": "photo", "path": "reference/25-photo.md", "title": "Photographs (photo)" },
         { "slug": "processes", "path": "reference/26-processes.md", "title": "Child processes (process)" },
+        { "slug": "clipboard", "path": "reference/27-clipboard.md", "title": "The clipboard" },
         { "slug": "cat-and-string-building", "path": "idioms/01-cat-and-string-building.md", "title": "cat and string building" },
         { "slug": "event-handlers-and-array-index", "path": "idioms/02-event-handlers-and-array-index.md", "title": "Event handlers and array index" },
         { "slug": "looping-patterns", "path": "idioms/03-looping-patterns.md", "title": "Looping patterns" },

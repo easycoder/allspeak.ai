@@ -80,9 +80,12 @@ var AllSpeak_LanguagePack_de = {
       ]
     },
     "COPY_TO_CLIPBOARD": {
-      "keyword": "kopiere",
+      "keyword": "kopiere|clipboard",
       "patterns": [
-        "kopiere {element}"
+        "kopiere {value}",
+        "kopiere {element}",
+        "clipboard kopiere {value}",
+        "clipboard paste into {variable}"
       ]
     },
     "CREATE_ELEMENT": {
@@ -1381,6 +1384,7 @@ var AllSpeak_LanguagePack_de = {
     "divisionByZero": "Division durch Null in Zeile {line}.",
     "indexOutOfRange": "Index {index} ist außerhalb des Bereichs in Zeile {line}.",
     "moduleNotFound": "Modul '{name}' nicht gefunden.",
+    "clipboardPasteRefused": "Die Zwischenablage kann im Browser nicht gelesen werden, daher ist `clipboard paste` hier nicht verfügbar — es ist ein Befehl der Python-Laufzeit (Zeile {line}).",
     "syntaxError": "Syntaxfehler in Zeile {line}: {detail}.",
     "vizCouldNotRun": "Ausführung nicht möglich: {reason}",
     "vizFlavourRefused": "dieses Skript ist für die {runtime}-Laufzeit — {origin} — und dies ist die {mine}-Laufzeit",
