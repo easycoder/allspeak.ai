@@ -28,6 +28,29 @@ For the language itself, `learn/` holds the reference and idiom collections (per
 
 The user-facing half of the same direction is `why/intent.md`, the umbrella piece aimed at people who do not read code, with `why/article.md` kept as the visualiser deep-dive it already is. Both are drafts, and a checkable claim in either is expected to be listed in a review log against what would make it stale; `why/REVIEW-LOG.md` is the model.
 
+## Tooling evaluation: XERJ (optional, not adopted)
+
+[XERJ](https://github.com/xerj-org/xerj) is a local search engine and MCP server (Apache-2.0, one static binary). It is a plausible opt-in for searching *this* checkout, but it is not a dependency and it is not in any starter pack's onboarding.
+
+**Measured 2026-11-05, v1.0.0-rc.100.** `xerj autoindex .` indexed 1,067 files into 6,503 records in 35 s with 4 workers, and returned useful `file:line` passages for docs and code; `xerj mcp` answered `initialize` against the same node. The binary is ~143 MB installed (a ~33 MB download), and the default embedding backend is lexical.
+
+**The two limits that decide the fit.**
+
+- **`.allspeak` is not a tree-sitter language in XERJ.** It is indexed as text, so labels and subroutines are not symbols: `xerj def VizRequest` and `xerj def parseSymbols` both find nothing. `xerj search` still retrieves the text.
+- **The tracked `deploy/` mirrors rank alongside the canonical sources.** A query can return `deploy/learn/…` or `deploy/code/tools/…` where the source of truth is the root file; check the path before using a hit, or exclude `deploy/` from the index.
+
+**Why it is not in the onboarding.** An AllSpeak project is usually a handful of scripts and a Webson file — small enough for an agent to read — while XERJ wants a daemon, a data directory and a first index. That is a new install step and a new running service, against the "make complex things simple" and "the onboarding does not grow with the tooling" invariants (`STRATEGY.md`). It also ships a `xerj_field_report` MCP tool that sends a field report by default; set `XERJ_DISABLE_FEEDBACK=true` if you run it.
+
+**If you want it in a local checkout:**
+
+```sh
+xerj --insecure --data-dir ~/xerj-data &   # loopback only; --insecure is a trust boundary
+xerj autoindex . --state-dir /tmp/xerj-state
+xerj search "doc block verified hash"
+```
+
+`xerj init` registers the MCP server with the supported clients. None of this is required to work on AllSpeak.
+
 ## Primer Selection
 
 Use the primer that matches the user's intent:
