@@ -323,6 +323,69 @@ class ECComboBox(ECCoreWidget):
 
 
 ###############################################################################
+# A table variable
+class ECTable(ECCoreWidget):
+    def __init__(self):
+        super().__init__()
+
+    # This type of widget is mutable.
+    def isMutable(self):
+        return True
+
+    # This type of widget is clearable
+    def isClearable(self):
+         return True
+
+###############################################################################
+# A log pane variable — a read-only, append-only text view
+class ECLog(ECTextWidget):
+    def __init__(self):
+        super().__init__()
+
+    # This type of widget is clearable
+    def isClearable(self):
+         return True
+
+    def getContent(self):
+        value = self.getValue()
+        if value is None: return None
+        return value.toPlainText()
+
+    def getText(self):
+        return self.getContent()
+
+    def textify(self):
+        return self.getContent()
+
+###############################################################################
+# A panes variable — a splitter: resizable panes side by side or stacked
+class ECPanes(ECCoreWidget):
+    def __init__(self):
+        super().__init__()
+
+    # This type of widget is mutable.
+    def isMutable(self):
+        return True
+
+    # This type of widget is clearable
+    def isClearable(self):
+         return True
+
+###############################################################################
+# A tabs variable — one page visible at a time, each with a label
+class ECTabs(ECCoreWidget):
+    def __init__(self):
+        super().__init__()
+
+    # This type of widget is mutable.
+    def isMutable(self):
+        return True
+
+    # This type of widget is clearable
+    def isClearable(self):
+         return True
+
+###############################################################################
 # A window variable
 class ECWindow(ECGElement):
     def __init__(self):

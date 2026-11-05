@@ -34,6 +34,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 23. [Recordings](reference/23-recordings.md) — `viz start` / `viz stop`, `@show`, `@app`, how a recording is asked for, and the verdict it reports.
 24. [IndexedDB (`idb`)](reference/24-indexeddb.md) — the browser's own database: schema and upgrades, reading and writing, `where`, batches, cursors, blobs, the Storage API.
 25. [Photographs (`photo`)](reference/25-photo.md) — file, URL and canvas sources, resizing without upscaling, stripping EXIF, showing and saving, and the bridge to `idb`.
+26. [Child processes (`process`)](reference/26-processes.md) — `use process`, `start … command`, `on line` / `on stderr line` / `on exit`, writing to stdin, `stop Runner`, and the values a handler reads.
 
 ## Idioms
 

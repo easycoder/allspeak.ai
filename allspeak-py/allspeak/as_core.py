@@ -200,7 +200,18 @@ class Core(Handler):
                 return False
             if self.nextIsSymbol():
                 record = self.getSymbolRecord()
-                self.program.checkObjectType(self.getObject(record), (ECList, ECQueue))
+                object = self.getObject(record)
+                # A target belonging to another domain may have its own append — a log
+                # pane appends a line. Hand the statement over before the list/queue
+                # check, which would otherwise refuse it.
+                if not isinstance(object, (ECList, ECQueue)):
+                    domainName = record.get('domain')
+                    domain = self.program.domainIndex.get(domainName) if domainName else None
+                    handler = domain.keywordHandler('append') if domain and domainName != self.getName() else None
+                    if handler is not None:
+                        command['domain'] = domainName
+                        return handler(command)
+                self.program.checkObjectType(object, (ECList, ECQueue))
                 command['target'] = record['name']
                 self.add(command)
                 return True
@@ -2229,7 +2240,22 @@ class Core(Handler):
         return self.nextPC()
 
     # Stop the current execution thread
+    # stop {process} — a variable type that says it is stoppable is handed to its own
+    # domain before this handler consumes the keyword, because `stop` takes the whole
+    # statement and would otherwise leave the name to be compiled as a command.
     def k_stop(self, command):
+        name = self.peek()
+        if name is not None and name in self.symbols:
+            record = self.code[self.symbols[name]]
+            object = record.get('object')
+            if object is not None and getattr(object, 'isStoppable', lambda: False)():
+                domainName = record.get('domain')
+                domain = self.program.domainIndex.get(domainName) if domainName else None
+                handler = domain.keywordHandler('stop') if domain else None
+                if handler is not None:
+                    self.nextToken()  # step onto the variable
+                    command['domain'] = domainName
+                    return handler(command)
         self.add(command)
         return True
 
@@ -2410,6 +2436,8 @@ class Core(Handler):
                 return self.program.useServer()
             elif token == 'email':
                 return self.program.useEmail()
+            elif token == 'process':
+                return self.program.useProcess()
         return False
     
     # Unused

@@ -140,7 +140,11 @@ class Server(Handler):
     def k_start(self, command):
         if self.nextIsSymbol():
             record = self.getSymbolRecord()
-            self.checkObjectType(record, ECServer)
+            # Only a server, and refused without consuming the statement otherwise:
+            # `start Runner command ...` belongs to the process domain, and a handler
+            # that went on to read its port would compile that statement as a server.
+            if not self.isObjectType(record, ECServer):
+                return False
             command['server'] = record['name']
             self.skipWord('on')
             self.skipWord('port')

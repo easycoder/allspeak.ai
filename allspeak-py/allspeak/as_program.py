@@ -1,4 +1,4 @@
-import time, sys, json, traceback, threading, os, glob as globmod
+import time, sys, json, traceback, threading, os, glob as globmod, atexit
 from copy import deepcopy
 from collections import deque
 
@@ -28,14 +28,32 @@ flushes = 0
 def flush():
 	global queue, intent_queue, flushes
 #	print('Start flush',flushes)
-	# First process any pending intents from other threads
+	# First move any pending intents from other threads onto the main queue.
 	with intent_lock:
 		while len(intent_queue):
-			intent = intent_queue.popleft()
-			queue.append(intent)
+			queue.append(intent_queue.popleft())
 	# Then process the main queue
 	while len(queue):
 		item = queue.popleft()
+		# A program killed since this intent was queued stays killed: its window
+		# has gone and nothing may run against it.
+		if getattr(item.program, 'killed', False):
+			continue
+		# An intent may carry a `prepare` hook, which runs here — on the thread that
+		# drains the queue, never on the thread that posted it, and immediately before
+		# the handler it belongs to. It takes the event's payload and returns the pc to
+		# run, or None to drop the intent. Running it here rather than above is what
+		# keeps each handler seeing its own event: a batch of prepares would each set
+		# the same "current event" and every handler would then read the last one.
+		prepare = getattr(item, 'prepare', None)
+		if prepare is not None:
+			try:
+				item.pc = prepare()
+			except Exception as e:
+				item.pc = None
+				sys.stderr.write(f'Event intent dropped: {e}\n')
+			if item.pc is None:
+				continue
 		item.program.flush(item.pc)
 #	print('End flush',flushes)
 	flushes += 1
@@ -133,6 +151,12 @@ class Program:
 		self.psutil = None
 		self.server = None
 		self.email = None
+		self.process = None
+		self.processes = []  # `process` variables with a child behind them; stopped when the run ends
+		# A child process must not outlive the interpreter, including an `exit` command
+		# that leaves through sys.exit(). `stopProcesses` is idempotent, so this runs
+		# alongside the window-closed and exit paths rather than instead of them.
+		atexit.register(self.stopProcesses)
 		self.servers = []  # active HTTP server objects (as_server); keep the main loop alive while any is listening
 		self.pendingWakeups = 0  # timers scheduled by `wait`; a suspended script is not a finished one
 		self.useClass(Core)
@@ -141,6 +165,7 @@ class Program:
 		self.debugger = None
 		self.graphics_app = None
 		self.running = False
+		self.killed = False        # the app has ended; no timer or event may start it again
 		self.flush_depth = 0
 		self.parent = None
 		self.message = None
@@ -177,9 +202,15 @@ class Program:
 			},
 		}
 		self.currentTest = None
-	# Queue an intent to run at a given PC (thread-safe for MQTT callbacks)
-	def queueIntent(self, pc):
+	# Queue an intent to run at a given PC (thread-safe for MQTT callbacks and any
+	# other host thread). `prepare`, when given, is called on the draining thread and
+	# returns the pc to run (or None to drop the intent): that is the supported way
+	# for a plugin's thread to hand a payload to a handler without touching the
+	# program off its own thread.
+	def queueIntent(self, pc, prepare=None):
 		global intent_queue
+		if self.killed:
+			return
 		# Waking the program here (like run()) lets an idle program — e.g. a
 		# graphics app parked in its Qt event loop — process MQTT connect /
 		# message intents instead of silently dropping them when running=False.
@@ -188,6 +219,8 @@ class Program:
 			item = ECValue()
 			item.program = self # type: ignore
 			item.pc = pc # type: ignore
+			if prepare is not None:
+				item.prepare = prepare
 			intent_queue.append(item)
 	# This is called at 10msec intervals by the GUI code
 	def flushCB(self):
@@ -439,6 +472,25 @@ class Program:
 			self.email = Email
 			self.useClass(Email)
 		return True
+
+	# Use the process module
+	def useProcess(self):
+		if self.process == None:
+			print('Loading process module')
+			from .as_process import Process
+			self.process = Process
+			self.useClass(Process)
+		return True
+
+	# Stop every process this program is watching. Called where a run ends, so a child
+	# cannot outlive the window that started it.
+	def stopProcesses(self):
+		for process in list(self.processes):
+			try:
+				process.shutdown()
+			except Exception:
+				pass
+		self.processes = []
 
 	# Indicate that graphics are running
 	def startGraphics(self):
@@ -928,6 +980,8 @@ class Program:
 	# Run the script at a given PC value
 	def run(self, pc):
 		global queue
+		if self.killed:
+			return
 		item = ECValue()
 		item.program = self # type: ignore
 		item.pc = pc # type: ignore
@@ -942,6 +996,14 @@ class Program:
 
 	def kill(self):
 		self.running = False
+		# **A killed program stays killed.** The window-closed path runs while a `wait`
+		# timer may still be outstanding; without this the timer woke the program again,
+		# queued its continuation, and (in a host that runs another script afterwards)
+		# that continuation was drained by the next program's loop — the app came back
+		# to life after its window had gone. `run` and `queueIntent` honour it, so a
+		# late timer or event is a no-op rather than a resurrection.
+		self.killed = True
+		self.stopProcesses()
 		if self.parent != None: self.parent.program.kill()
 
 	def nonNumericValueError(self):

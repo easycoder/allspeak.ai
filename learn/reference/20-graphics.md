@@ -47,11 +47,17 @@ listbox DeviceList
 combobox SystemCombo
 panel Placeholder
 shape RoundCard
+table Steps
+logpane Log
+panes Work
+tabs Views
 dialog ConfirmDlg
 messagebox MessageBox
 ```
 
-Types: `window`, `layout`, `group`, `label`, `pushbutton`, `checkbox`, `lineinput`, `multiline` (editable text; add `readonly` for a plain-text view the user can't type into), `mdpanel` (read-only markdown preview), `listbox`, `combobox`, `panel`, `shape`, `dialog`, `messagebox`.
+Types: `window`, `layout`, `group`, `label`, `pushbutton`, `checkbox`, `lineinput`, `multiline` (editable text; add `readonly` for a plain-text view the user can't type into), `mdpanel` (read-only markdown preview), `listbox`, `combobox`, `panel`, `shape`, `table` (a read-only grid), `logpane` (a read-only, append-only log), `panes` (a splitter), `tabs` (a page set), `dialog`, `messagebox`.
+
+The log type is called `logpane`, not `log`, because `log` is the core print command — `log Journal` already means "print the variable Journal", and a declaration cannot share that word.
 
 ## Creating widgets
 
@@ -69,6 +75,10 @@ create Description cols 40 rows 6
 create SourceView readonly cols 40 rows 6
 create HelpPanel cols 40 rows 6
 create RoundCard type roundrect radius 16 fill `#FFFFFF` border `#ECECEC` borderwidth 1
+create Steps
+create Log
+create Work orientation horizontal
+create Views
 ```
 
 - **window**: `title`, `at X Y`, `size W H`, `layout`. Defaults: title `AllSpeak Main Window`, size 640×480, centered. The `layout` attribute attaches a layout to the window directly (the layout must exist already) — `set the layout of … to …` does the same thing at any time, and `set the title of … to …` renames the window at any time.
@@ -81,6 +91,10 @@ create RoundCard type roundrect radius 16 fill `#FFFFFF` border `#ECECEC` border
 - **multiline / mdpanel**: `cols`, `rows` (fixed character grid; without them the widget expands). `multiline` is editable; `create Description readonly` builds it as a plain-text view the user cannot type into — the plain-text counterpart of the always-read-only `mdpanel`. `set the text of` still writes to a read-only field, so it is the way to show a file's contents.
 - **shape**: `type rect|roundrect|ellipse|circle` (default `roundrect`), `radius` (corner radius, default 12; ignored for `rect`), `fill` (fill colour), `border` (border colour), `borderwidth` (border thickness). The border thickness is called `borderwidth` — plain `width` is the widget width elsewhere in the domain, so `create Card … width 1` would be ambiguous.
 - **listbox / combobox / panel**: no attributes.
+- **table**: no required attributes. `columns N` and `rows N` reserve the count before any data arrives; the usual way to fill it is `set columns of` and `set rows of` (below). Cells are never edited in the widget: the inspector edits one step at a time and writes the cell back.
+- **logpane**: `cols` and `rows` fix a character-grid size, as for `multiline`; without them it fills its container. It is read-only, monospace and does not wrap.
+- **panes**: `orientation horizontal|vertical` (default `horizontal`). The panes are the widgets or layouts added to it, each resizable by dragging the divider.
+- **tabs**: `cols` and `rows` as for `logpane`. Pages are added with `add … as` (below).
 
 A `window` is not a widget — it has no parent layout until you call `set the layout of`. `panel` is a plain `QWidget` you can hang a layout on.
 
@@ -100,6 +114,17 @@ add DeviceList at 0 1 in GridPanel     ! QGridLayout cells: column, row
 ```
 
 `add {value} to {listbox|combobox}` appends an item — a list value is spread into items (`add Devices to Combo` adds them all). Groups accept both a layout (`add Layout to Group` sets the group's layout — the rbrconf pattern) and widgets directly (`add Widget to Group` adds to the group's own layout, creating a plain `QVBoxLayout` on first use). Shapes are containers in the same way: `add Widget to Shape` puts the widget in the shape's own layout (auto-created on first use, with contents margins matching the shape's `radius` so children sit inside the rounded area); `add Layout to Shape` sets the shape's layout instead.
+
+`panes` and `tabs` are containers too, and take a widget or a layout — a layout handed to either is wrapped in a plain `QWidget`, which is what a pane or a page is:
+
+```as
+add LeftPanel to Work                  ! a splitter pane
+add RightPanel to Work
+add Steps to Views as `Steps`          ! a tab page and its label
+add Log to Views title `Console`       ! `title` is the same word
+```
+
+A tab added without `as`/`title` is labelled with the variable's own name.
 
 ## Shapes
 
@@ -150,6 +175,39 @@ set the spacing of MainPanel to 5
 set blocked true
 ```
 
+Tables have their own set of statements. The cursor reads them as a sentence — `set cell Steps 0 2 to …` — and the colour, tooltip and alignment are per cell:
+
+```as
+set columns of Steps to `["#","Time","Actor","Target","Action","Expectation","Result"]`
+set rows of Steps to ScenarioRows                       ! an array of rows, or an array variable holding one
+set cell Steps 0 2 to `Controller`
+set cell colour Steps 0 2 to `#2F75B5` `#E6EFF7`        ! foreground, then optional background
+set cell tooltip Steps 0 3 to `room.Office.advance`
+set cell alignment Steps 0 0 to center                  ! left | center | centre | right | justify
+set column widths of Steps to `[40,80,120,200,120,200,80]`
+set stretch column of Steps to 5                        ! the column that takes the spare width
+set row numbers of Steps to true                        ! the vertical header (hidden by default)
+clear Steps                                             ! removes the rows, keeps the columns
+```
+
+A row may also be an object keyed by column label — `{"Actor":"User"}` fills the named columns — which is how a scenario's step objects can be shown without first flattening them to arrays. Cells are read-only: the inspector edits one step at a time and writes the cell back.
+
+A log pane takes `append` with an optional colour, and the usual text and clear:
+
+```as
+append the line of Runner to Log
+append the text of ErrorText to Log with color `#B00020`
+set the text of Log to `starting`
+clear Log
+```
+
+A splitter and a page set take their own state:
+
+```as
+set sizes of Work to `[260,700]`
+set current tab of Views to 1
+```
+
 Targets are type-checked at runtime: `text` applies to label/pushbutton/lineinput/multiline/mdpanel (mdpanel interprets it as markdown), `title` to window/group/dialog (it sets a window's or dialog's window title, or a group box's caption — the counterpart of `create … title`), `state` to checkbox, `layout` to window/group/panel, `alignment` flags are `left hcenter right top vcenter bottom center` (any combination).
 
 ## Visibility and state
@@ -174,6 +232,9 @@ on click SaveButton go to SaveClick
 on tap SaveButton go to SaveClick       ! alias for click
 on select SystemCombo go to SystemChanged
 on select DeviceList go to DevicePicked
+on select Steps go to StepSelected       ! a table row selection
+on click Steps go to StepClicked         ! a table cell click
+on select Views go to ViewChanged        ! a tab set's current page
 on tick go to Tick                      ! every 250 ms while the program is idle
 on close MainWindow go to MainClose     ! as the window closes
 stop                                    ! end the main flow here
@@ -183,7 +244,7 @@ SaveClick:
     stop
 ```
 
-Only `pushbutton` takes `click`/`tap`; `combobox` and `listbox` take `select` (fired on `currentIndexChanged` / `itemClicked`). The tick handler is invoked by the flush timer whenever the program is not busy and not blocked.
+`click`/`tap` fire for `pushbutton` and for a table's `cellClicked`; `select` fires on a combo's `currentIndexChanged`, a listbox's `itemClicked`, a table's row selection, and a tab set's `currentChanged`. The tick handler is invoked by the flush timer whenever the program is not busy and not blocked.
 
 Because the handler is a single command, the idiomatic pattern is a label — usually ending in `stop`. The handler runs to completion; nothing waits on it. Widget variables follow the cursor model, and the `on` registration captures the array index of the element that fires, so one registration can serve an array of widgets (see [event handlers and array index](../idioms/event-handlers-and-array-index.md)).
 
@@ -230,6 +291,22 @@ put the height of MainWindow into N
 put the x of MainWindow into N
 put the y of MainWindow into N
 ```
+
+A table and the log pane read back through their own values:
+
+```as
+put the selected row of Steps into N          ! -1 when nothing is selected
+put the selected column of Steps into N
+put the clicked row of Steps into N            ! set by the last cell click
+put the clicked column of Steps into N
+put the cell 0 3 of Steps into V               ! row then column
+put the row count of Steps into N
+put the column count of Steps into N
+put the current tab of Views into N            ! -1 when there are no pages
+put the text of Log into V
+```
+
+`the clicked row`/`the clicked column` name the cell under the last click, while `the selected row` follows the selection — row selection and a cell click are different questions, which is why they have different values. `the current tab` is an index, not a label.
 
 `x`, `y`, `width` and `height` are window-only: for a widget, `set the width of` fixes a size and there is no matching read. The four use the same frame convention as `create {window} at X Y` — the window frame is excluded — so a position read here and handed back to `at` puts the window where it was, instead of walking it up and left by the border on each restart. Qt's own `x()`/`y()` include the frame, which is why the runtime reads `geometry()` instead.
 

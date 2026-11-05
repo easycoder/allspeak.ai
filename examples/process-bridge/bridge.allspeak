@@ -1,0 +1,183 @@
+!! Process bridge — a child process whose output reaches AllSpeak handlers.
+!!
+!! The shape Scenario Studio needs: a window whose Run button starts a Python child, whose stdout and stderr lines reach handlers while the AllSpeak flow is parked in its wait loop, and whose exit code — or terminating signal — is reported back. One run is cancelled through the child's stdin, and one is stopped with `stop Runner`. Nothing polls the child.
+!!
+!! Run it from this directory, either in a window or headless:
+!!
+!!     allspeak bridge.allspeak
+!!     QT_QPA_PLATFORM=offscreen python3 ../../tools/process-check.py
+script ProcessBridge
+
+use graphics
+use process
+
+window Win
+layout Root
+layout Panes
+layout Left
+layout Right
+label Heading
+label Status
+table Steps
+logpane Log
+process Runner
+variable Stage
+variable Rows
+variable Lines
+variable Warnings
+variable FirstCode
+variable SecondCode
+variable ThirdSignal
+!! @hash f773a186
+!! @verified
+!!!
+
+!! Build the window, seed the summary table, and start the first run.
+!!
+!! The layout is three regions — a heading, two panes and a status line — and the panes hold the step table and the log. The rows are seeded with `set rows of`, which takes an array of arrays; each handler narrows one row with `set cell` and tints it, which is the studio's own update pattern.
+!!
+!! The process is started after its handlers are registered, and the flow then parks in `Idle` rather than ending: an event arrives as an intent and the runtime drains it on the Qt thread, so nothing here has to poll.
+Setup: ! §1
+    init graphics
+    create Win title `Process bridge` size 960 640
+    create Root type QVBoxLayout
+    create Heading text `Ten lines, a cancelled run, then a terminated one` expand
+    create Panes type QHBoxLayout
+    create Left type QVBoxLayout
+    create Right type QVBoxLayout
+    create Steps
+    create Log
+    create Status text `starting`
+    set columns of Steps to `["#","Run","Result"]`
+    put `[["1","first run","waiting"],["2","cancel run","waiting"],["3","terminate","waiting"],["4","verdict","waiting"]]` into Rows
+    set rows of Steps to Rows
+    set column widths of Steps to `[40,140,280]`
+    set stretch column of Steps to 2
+    set cell tooltip Steps 3 1 to `the verdict row`
+    set cell alignment Steps 3 0 to center
+    add Heading to Root
+    add Panes to Root
+    add Left to Panes
+    add Right to Panes
+    add Steps to Left
+    add Log to Right
+    add Status to Root
+    set the layout of Win to Root
+    on select Steps go to StepSelected
+    on click Steps go to StepClicked
+    on line Runner go to RunnerLine
+    on stderr line Runner go to RunnerError
+    on exit Runner go to RunnerDone
+    show Win
+    put 0 into Lines
+    put 0 into Warnings
+    put 0 into FirstCode
+    put 0 into SecondCode
+    put 0 into ThirdSignal
+    set Stage to `first`
+    start Runner command `python3 linewriter.py ten`
+Idle:
+    wait 1 tick
+    go to Idle
+!! @hash 0d018158
+!! @verified
+!!!
+
+!! A stdout line, counted and shown.
+!!
+!! The count is what the verdict is made of, so it is kept in a variable rather than read back out of the pane: a log line arrives one at a time, and the handler must leave nothing to the widget's own state. Only the first run's lines are counted — the two later runs exist to be cancelled and stopped, not to be measured.
+RunnerLine: ! §2
+    if Stage is `first`
+    begin
+        add 1 to Lines
+    end
+    append the line of Runner to Log
+    return
+!! @hash 255c29a0
+!! @verified
+!!!
+
+!! A stderr line, in red.
+!!
+!! stderr is delivered as its own event, which is why it has its own handler: a child that reports a problem on stderr must not have that line counted as output, and a reader must be able to see it is a problem.
+RunnerError: ! §3
+    add 1 to Warnings
+    append the stderr line of Runner to Log with color `#B00020`
+    return
+!! @hash eed832eb
+!! @verified
+!!!
+
+!! When a run ends: record how, then start or finish the next run.
+!!
+!! The first exit starts the cancel run and writes the cancel line to its stdin straight away — the pipe buffers it, so no wait is needed. The second exit starts a third run and stops it at once, which is the `stop Runner` route and ends in a terminating signal rather than an exit code. The third exit checks what all three runs did, writes the verdict row, and closes the window: the runtime stops any child still running, and the Qt loop ends itself.
+RunnerDone: ! §4
+    if Stage is `first`
+    begin
+        put the exit code of Runner into FirstCode
+        set cell Steps 0 2 to `exit code ` cat FirstCode
+        set cell colour Steps 0 2 to `#1E6B2F` `#E4F2E8`
+        set the text of Status to `first run finished; cancelling a second`
+        set Stage to `cancel`
+        start Runner command `python3 linewriter.py wait`
+        write `{"command":"cancel"}` to Runner
+        return
+    end
+    if Stage is `cancel`
+    begin
+        put the exit code of Runner into SecondCode
+        set cell Steps 1 2 to `exit code ` cat SecondCode
+        set cell colour Steps 1 2 to `#8A5A00` `#F6EBD9`
+        set the text of Status to `cancel run finished; stopping a third`
+        set Stage to `stop`
+        start Runner command `python3 linewriter.py wait`
+        stop Runner
+        return
+    end
+    put the signal of Runner into ThirdSignal
+    set cell Steps 2 2 to `signal ` cat ThirdSignal
+    set cell colour Steps 2 2 to `#8A5A00` `#F6EBD9`
+    check Lines is 10
+    check Warnings is 1
+    check FirstCode is 0
+    check SecondCode is 3
+    check ThirdSignal is 15
+    check the row count of Steps is 4
+    check the cell 0 2 of Steps is `exit code 0`
+    check the position of `cancelled` in the text of Log is greater than 0
+    if Lines is 10 and FirstCode is 0 and SecondCode is 3 and ThirdSignal is 15
+    begin
+        set cell Steps 3 2 to `all checks passed`
+        set cell colour Steps 3 2 to `#1E6B2F` `#E4F2E8`
+        set the text of Status to `all checks passed`
+    end
+    else begin
+        set cell Steps 3 2 to `failed`
+        set cell colour Steps 3 2 to `#B00020` `#F8E4E4`
+        set the text of Status to `failed`
+    end
+    close Win
+    return
+!! @hash 718640c4
+!! @verified
+!!!
+
+!! Selecting a row reports it, so the selection route is exercised.
+!!
+!! The studio's inspector reads the selected row; this is the smallest form of that: the status line says which row the pointer is over, and the handler ends with `return` because a named event handler has nothing to go back to.
+StepSelected: ! §5
+    set the text of Status to `selected row ` cat the selected row of Steps
+    return
+!! @hash 17f82214
+!! @verified
+!!!
+
+!! A click reports the cell under the pointer.
+!!
+!! Row selection and cell clicking are different questions — the studio selects a row to inspect it, and clicks a cell to edit it — so they have different handlers and different values. `the clicked row` and `the clicked column` name the cell, not the selected row.
+StepClicked: ! §6
+    set the text of Status to `clicked row ` cat the clicked row of Steps cat ` column ` cat the clicked column of Steps
+    return
+!! @hash f6feaefc
+!! @verified
+!!!

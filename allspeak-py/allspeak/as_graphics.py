@@ -25,12 +25,16 @@ from .as_gclasses import (
     ECDialog,
     ECMessageBox,
     ECShape,
+    ECTable,
+    ECLog,
+    ECPanes,
+    ECTabs,
 )
 from .as_border import Border
 from .as_keyboard import Keyboard, TextReceiver
 from .debugger.as_debug import Debugger
 from PySide6.QtCore import Qt, QTimer, Signal, QRect
-from PySide6.QtGui import QPixmap, QPainter, QPen, QBrush, QColor, QTextDocument
+from PySide6.QtGui import QPixmap, QPainter, QPen, QBrush, QColor, QTextDocument, QFontDatabase, QTextCursor, QTextCharFormat
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -53,6 +57,12 @@ from PySide6.QtWidgets import (
     QSlider,
     QSpinBox,
     QTimeEdit,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QAbstractItemView,
+    QSplitter,
+    QTabWidget,
     QLayout,
     QVBoxLayout,
     QHBoxLayout,
@@ -265,6 +275,51 @@ class ECMDPanelWidget(QTextEdit):
         if self.container != None: self.container.setClickSource(self)
 
 #############################################################################
+# EC table widget class — a read-only grid with per-cell text, colour, tooltip and
+# alignment. Row selection is the default because the studio's step table selects a
+# step; the cell under a click is kept separately so a click handler can name it.
+class ECTableWidget(QTableWidget):
+
+    def __init__(self):
+        super().__init__()
+        self.clickedRow = -1
+        self.clickedColumn = -1
+        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.verticalHeader().setVisible(False)
+
+#############################################################################
+# EC log widget class — a read-only, no-wrap, monospace view that appends a line at a
+# time and follows the end. `appendLine` takes an optional foreground colour, which is
+# how a log line is tinted (an error in red) without a second widget.
+class ECLogWidget(QPlainTextEdit):
+
+    def __init__(self):
+        super().__init__()
+        self.setReadOnly(True)
+        self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        font.setPointSize(10)
+        self.setFont(font)
+
+    def appendLine(self, text, color=None):
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        # A line starts a new paragraph unless it is the first; inserting straight at
+        # the end of the last block would run the new line into it.
+        if not self.document().isEmpty():
+            cursor.insertBlock()
+        if color:
+            fmt = QTextCharFormat()
+            fmt.setForeground(QBrush(QColor(str(color))))
+            cursor.insertText(str(text), fmt)
+        else:
+            cursor.insertText(str(text))
+        self.setTextCursor(cursor)
+        self.ensureCursorVisible()
+
+#############################################################################
 # EC Listbox widget class
 class ECListBoxWidget(QListWidget):
     def __init__(self, text=None):
@@ -374,13 +429,18 @@ class Graphics(Handler):
     # (6) add {widget} at {col} {row} in {grid layout}
     def k_add(self, command):
 
-        # Add to a layout, group, shape, list or combo box
+        # Add to a layout, group, shape, pane set, tab set, list or combo box
         def addToLayout():
             if self.nextIsSymbol():
                 record = self.getSymbolRecord()
                 object = self.getObject(record)
-                self.checkObjectType(record, (ECLayout, ECGroup, ECShape, ECListBox, ECComboBox))
+                self.checkObjectType(record, (ECLayout, ECGroup, ECShape, ECListBox, ECComboBox, ECPanes, ECTabs))
                 command['target'] = record['name']
+                # A tab page carries its label: `add Steps to Views as `Steps``
+                if self.isObjectType(record, ECTabs):
+                    if language.reverse_word(self.peek() or '') in ('as', 'title'):
+                        self.nextToken()
+                        command['title'] = self.nextValue()
                 self.add(command)
                 return True
             return False
@@ -477,7 +537,17 @@ class Graphics(Handler):
                 widgetRecord = self.getVariable(widget)
                 self.checkObjectType(widgetRecord, ECCoreWidget)
                 stretch = 'stretch' in command
-                if self.isObjectType(targetRecord, ECGroup):
+                if self.isObjectType(targetRecord, ECPanes):
+                    # add {widget|layout} to {panes}: a splitter holds widgets; a
+                    # layout is wrapped in one, which is what a pane is.
+                    panes = self.getInnerObject(targetRecord)
+                    panes.addWidget(self.pageWidget(widgetRecord))  # type: ignore
+                elif self.isObjectType(targetRecord, ECTabs):
+                    # add {widget|layout} to {tabs} [as {title}]
+                    tabs = self.getInnerObject(targetRecord)
+                    title = self.textify(command['title']) if 'title' in command else widget
+                    tabs.addTab(self.pageWidget(widgetRecord), str(title))  # type: ignore
+                elif self.isObjectType(targetRecord, ECGroup):
                     # add {widget} to {group}: the widget goes into the
                     # group's own layout. A plain QVBoxLayout is created on
                     # first use. add {layout} to {group} sets the group's
@@ -517,6 +587,45 @@ class Graphics(Handler):
                     else:
                         if stretch: layout.addWidget(widget, stretch=1)  # type: ignore
                         else: layout.addWidget(widget)  # type: ignore
+        return self.nextPC()
+
+    # A splitter and a tab widget hold widgets, not layouts; a layout handed to one is
+    # wrapped in a plain QWidget, which is what a pane or a page is.
+    def pageWidget(self, record):
+        inner = self.getInnerObject(record)
+        if isinstance(inner, QLayout):
+            holder = QWidget()
+            holder.setLayout(inner)
+            return holder
+        return inner
+
+    # append {value} to {logpane} [with color {color}]
+    #
+    # Core's `append` hands a target that is not a list or queue to its own domain; by
+    # then the value is compiled and the cursor is on the log pane. The direct form is
+    # parsed here too, so the handler is complete on its own.
+    def k_append(self, command):
+        if 'value' not in command:
+            command['value'] = self.nextValue()
+            if not self.nextIsWord('to'):
+                return False
+            self.nextToken()
+        record = self.getSymbolRecord()
+        if not self.isObjectType(record, ECLog):
+            return False
+        command['target'] = record['name']
+        if language.reverse_word(self.peek() or '') == 'with':
+            self.nextToken()
+            self.skip(['colour', 'color', 'foreground'])
+            command['color'] = self.nextValue()
+        self.add(command)
+        return True
+
+    def r_append(self, command):
+        record = self.getVariable(command['target'])
+        widget = self.getInnerObject(record)
+        color = self.textify(command['color']) if 'color' in command else None
+        widget.appendLine(self.textify(command['value']), color)  # type: ignore
         return self.nextPC()
 
     # adjust {window}
@@ -616,6 +725,22 @@ class Graphics(Handler):
                         item_widget = widget.itemWidget(widget.item(i))
                         if item_widget:
                             item_widget.deleteLater()
+                widget.clear()
+                return
+            if isinstance(widget, QTableWidget):
+                # The columns stay: they are the table's shape, and `clear` is about
+                # the rows its data put there.
+                widget.setRowCount(0)
+                return
+            if isinstance(widget, QTabWidget):
+                while widget.count():
+                    widget.removeTab(0)
+                return
+            if isinstance(widget, QSplitter):
+                while widget.count():
+                    widget.widget(0).setParent(None)
+                return
+            if isinstance(widget, QPlainTextEdit):
                 widget.clear()
                 return
             layout = widget.layout()
@@ -846,6 +971,58 @@ class Graphics(Handler):
         self.add(command)
         return True
 
+    def k_createTable(self, command):
+        # The columns' labels come from `set columns of`; `columns` here just reserves
+        # the count, for a table whose headings are filled in later.
+        while True:
+            token = self.peek()
+            if token == 'columns':
+                self.nextToken()
+                command['columns'] = self.nextValue()
+            elif token == 'rows':
+                self.nextToken()
+                command['rows'] = self.nextValue()
+            else: break
+        self.add(command)
+        return True
+
+    def k_createLog(self, command):
+        # A log is read-only by construction; `cols`/`rows` fix its size the way they
+        # do for a multiline field, and without them it fills its container.
+        while True:
+            token = self.peek()
+            if token == 'cols':
+                self.nextToken()
+                command['cols'] = self.nextValue()
+            elif token == 'rows':
+                self.nextToken()
+                command['rows'] = self.nextValue()
+            else: break
+        self.add(command)
+        return True
+
+    def k_createPanes(self, command):
+        # create Work [orientation horizontal|vertical]
+        command['orientation'] = 'horizontal'
+        while True:
+            token = self.peek()
+            if token == 'orientation':
+                self.nextToken()
+                command['orientation'] = self.nextToken()
+            else: break
+        self.add(command)
+        return True
+
+    def k_createTabs(self, command):
+        while True:
+            token = self.peek()
+            if token in ('cols', 'rows'):
+                self.nextToken()
+                command[token] = self.nextValue()
+            else: break
+        self.add(command)
+        return True
+
     def k_createDialog(self, command):
         if language.reverse_word(self.peek()) == 'on':
             self.nextToken()
@@ -927,6 +1104,10 @@ class Graphics(Handler):
             elif keyword == 'combobox': return self.k_createComboBox(command)
             elif keyword == 'panel': return self.k_createPanel(command)
             elif keyword == 'shape': return self.k_createShape(command)
+            elif keyword == 'table': return self.k_createTable(command)
+            elif keyword == 'logpane': return self.k_createLog(command)
+            elif keyword == 'panes': return self.k_createPanes(command)
+            elif keyword == 'tabs': return self.k_createTabs(command)
             elif keyword == 'dialog': return self.k_createDialog(command)
             elif keyword == 'messagebox': return self.k_createMessageBox(command)
         return False
@@ -1095,6 +1276,48 @@ class Graphics(Handler):
         widget = ECShapeWidget(**kwargs)
         self.setGraphicElement(record, widget)
         return self.nextPC()
+
+    def r_createTable(self, command, record):
+        table = ECTableWidget()
+        if 'columns' in command:
+            table.setColumnCount(int(self.textify(command['columns'])))
+        if 'rows' in command:
+            table.setRowCount(int(self.textify(command['rows'])))
+        table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setGraphicElement(record, table)
+        return self.nextPC()
+
+    def r_createLog(self, command, record):
+        log = ECLogWidget()
+        if 'cols' in command and 'rows' in command:
+            fontMetrics = log.fontMetrics()
+            log.setFixedWidth(fontMetrics.horizontalAdvance('x') * self.textify(command['cols']))
+            log.setFixedHeight(fontMetrics.height() * self.textify(command['rows']))
+        else:
+            log.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setGraphicElement(record, log)
+        return self.nextPC()
+
+    def r_createPanes(self, command, record):
+        orientation = self.textify(command.get('orientation')) or 'horizontal'
+        if orientation == 'vertical':
+            splitter = QSplitter(Qt.Orientation.Vertical)
+        else:
+            splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setChildrenCollapsible(False)
+        self.setGraphicElement(record, splitter)
+        return self.nextPC()
+
+    def r_createTabs(self, command, record):
+        tabs = QTabWidget()
+        if 'cols' in command and 'rows' in command:
+            fontMetrics = tabs.fontMetrics()
+            tabs.setFixedWidth(fontMetrics.horizontalAdvance('x') * self.textify(command['cols']))
+            tabs.setFixedHeight(fontMetrics.height() * self.textify(command['rows']))
+        else:
+            tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setGraphicElement(record, tabs)
+        return self.nextPC()
     
     def r_createDialog(self, command, record):
 
@@ -1191,6 +1414,10 @@ class Graphics(Handler):
         elif keyword == 'combobox': return self.r_createComboBox(command, record)
         elif keyword == 'panel': return self.r_createPanel(command, record)
         elif keyword == 'shape': return self.r_createShape(command, record)
+        elif keyword == 'table': return self.r_createTable(command, record)
+        elif keyword == 'logpane': return self.r_createLog(command, record)
+        elif keyword == 'panes': return self.r_createPanes(command, record)
+        elif keyword == 'tabs': return self.r_createTabs(command, record)
         elif keyword == 'dialog': return self.r_createDialog(command, record)
         elif keyword == 'messagebox': return self.r_createMessageBox(command, record)
         return None
@@ -1380,10 +1607,21 @@ class Graphics(Handler):
     def r_mdpanel(self, command):
         return self.nextPC()
 
-    # on click/tap {pushbutton}/{lineinput}/{multiline}
-    # on select {combobox}/{listbox}
+    # on click/tap {pushbutton}/{lineinput}/{multiline}/{table}
+    # on select {combobox}/{listbox}/{table}
     # on tick
     # on close {window}
+    #
+    # Each may take `go to {label}` instead of an indented body. A named handler is
+    # resolved when the event fires, so it may sit below the registration; it ends with
+    # `return`, and the return address pushed for it is the end of the program.
+    def namedHandler(self):
+        if language.reverse_word(self.peek() or '') not in ('go', 'gosub'):
+            return None
+        self.nextToken()
+        self.skipWord('to')
+        return self.nextToken()
+
     def k_on(self, command):
         def setupOn():
             command['goto'] = self.getCodeSize() + 2
@@ -1417,6 +1655,11 @@ class Graphics(Handler):
                 if isinstance(self.getObject(record), ECWidget):
                     command['domain'] = record['domain']
                     command['name'] = record['name']
+                    label = self.namedHandler()
+                    if label is not None:
+                        command['label'] = label
+                        self.add(command)
+                        return True
                     setupOn()
                     return True
         elif token == 'select':
@@ -1424,6 +1667,11 @@ class Graphics(Handler):
                 record = self.getSymbolRecord()
                 if isinstance(self.getObject(record), ECCoreWidget):
                     command['name'] = record['name']
+                    label = self.namedHandler()
+                    if label is not None:
+                        command['label'] = label
+                        self.add(command)
+                        return True
                     setupOn()
                     return True
         elif token == 'close':
@@ -1432,6 +1680,11 @@ class Graphics(Handler):
                 if self.isObjectType(record, ECWindow):
                     command['domain'] = record['domain']
                     command['name'] = record['name']
+                    label = self.namedHandler()
+                    if label is not None:
+                        command['label'] = label
+                        self.add(command)
+                        return True
                     setupOn()
                     return True
         elif token == 'tick':
@@ -1461,13 +1714,25 @@ class Graphics(Handler):
             return True
         return False
     
+    # Run a handler label named by an `on ... go to {label}`. The label is resolved when
+    # the event fires so it may be written below the registration; the return address it
+    # pops is the end of the program, because an event handler has nothing to go back to.
+    def runNamedLabel(self, label):
+        pc = self.symbols.get(label + ':')
+        if pc is None:
+            print(f'There is no label "{label}:"')
+            return
+        self.stack.append(0)
+        self.run(pc)
+
     def r_on(self, command):
         if command['type'] == 'tick':
             self.runOnTick = command['runOnTick']
         elif command['type'] == 'close':
             record = self.getVariable(command['name'])
             window = self.getInnerObject(record)
-            goto = command['goto']
+            goto = command.get('goto')
+            label = command.get('label')
             # The handler runs here and now, inside the window's close event:
             # `run` queues it and the program's own `flushCB` drains the queue,
             # so it completes before Qt finishes closing the window — and, when
@@ -1477,13 +1742,16 @@ class Graphics(Handler):
             # allspeak.as_program` loads this file twice, and only the copy that
             # built the Program has a queue.
             def onClose():
-                self.run(goto)
+                if label is not None:
+                    self.runNamedLabel(label)
+                else:
+                    self.run(goto)
                 self.program.flushCB()
             window.setOnClose(onClose)
         else:
             record = self.getVariable(command['name'])
             object = self.getObject(record)
-            goto = command['goto']
+            goto = command.get('goto')
             
             # Connect the current element to a handler
             current_index = object.getIndex()
@@ -1498,13 +1766,32 @@ class Graphics(Handler):
                     flush()
                 return handler
             
+            if 'label' in command:
+                label = command['label']
+                def handler():
+                    self.runNamedLabel(label)
+                    flush()
+            else:
+                handler = make_handler(current_index)
+
             # Connect based on widget type
-            if self.isObjectType(record, ECPushButton):
-                widget.clicked.connect(make_handler(current_index))
+            if self.isObjectType(record, ECTable):
+                if command['type'] in ('click', 'tap'):
+                    def onCellClicked(row, column, widget=widget, handler=handler):
+                        widget.clickedRow = row
+                        widget.clickedColumn = column
+                        handler()
+                    widget.cellClicked.connect(onCellClicked)
+                else:
+                    widget.itemSelectionChanged.connect(handler)
+            elif self.isObjectType(record, ECTabs):
+                widget.currentChanged.connect(handler)
+            elif self.isObjectType(record, ECPushButton):
+                widget.clicked.connect(handler)
             elif self.isObjectType(record, ECComboBox):
-                widget.currentIndexChanged.connect(make_handler(current_index))
+                widget.currentIndexChanged.connect(handler)
             elif self.isObjectType(record, ECListBox):
-                widget.itemClicked.connect(make_handler(current_index))
+                widget.itemClicked.connect(handler)
         return self.nextPC()
 
     # Declare a simple panel variable
@@ -1521,6 +1808,40 @@ class Graphics(Handler):
         return self.compileVariable(command, 'ECShape')
 
     def r_shape(self, command):
+        return self.nextPC()
+
+    # Declare a table variable
+    def k_table(self, command):
+        self.compiler.addValueType()
+        return self.compileVariable(command, 'ECTable')
+
+    def r_table(self, command):
+        return self.nextPC()
+
+    # Declare a log pane variable. The type is `logpane` because `log` is already the
+    # core print command, and a declaration that printed its own name would be the
+    # wrong reading of `log Journal`.
+    def k_logpane(self, command):
+        self.compiler.addValueType()
+        return self.compileVariable(command, 'ECLog')
+
+    def r_logpane(self, command):
+        return self.nextPC()
+
+    # Declare a panes variable (a splitter)
+    def k_panes(self, command):
+        self.compiler.addValueType()
+        return self.compileVariable(command, 'ECPanes')
+
+    def r_panes(self, command):
+        return self.nextPC()
+
+    # Declare a tabs variable
+    def k_tabs(self, command):
+        self.compiler.addValueType()
+        return self.compileVariable(command, 'ECTabs')
+
+    def r_tabs(self, command):
         return self.nextPC()
 
     # Declare a pushbutton variable
@@ -1610,6 +1931,10 @@ class Graphics(Handler):
         self.skipArticles()  # Optional 'the', 'a', 'an' — syntactic sugar for readability
         token = self.nextToken()
         command['what'] = token
+        # The canonical spelling of the attribute. The branches above this one compare
+        # the English word (as they always have); the table forms below compare the
+        # canonical, so a pack that names `cellule` still reaches the cell branch.
+        canon = language.reverse_word(token)
         if token in ['width', 'height']:
             self.skipWord('of')
             if self.nextIsSymbol():
@@ -1671,7 +1996,7 @@ class Graphics(Handler):
             self.skipWord('of')
             if self.nextIsSymbol():
                 record = self.getSymbolRecord()
-                if self.isObjectType(record, (ECLabel, ECPushButton, ECLineInput, ECMultiline, ECMDPanel)):
+                if self.isObjectType(record, (ECLabel, ECPushButton, ECLineInput, ECMultiline, ECMDPanel, ECLog)):
                     command['name'] = record['name']
                     self.skipWord('to')
                     command['value'] = self.nextValue()
@@ -1762,6 +2087,129 @@ class Graphics(Handler):
                     command['value'] = self.nextValue()
                     self.add(command)
                     return True
+        elif canon == 'columns':
+            # set columns of {table} to {array-of-labels}
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECTable):
+                    command['what'] = 'columns'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'rows':
+            # set rows of {table} to {array-of-arrays}
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECTable):
+                    command['what'] = 'rows'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'row' and language.reverse_word(self.peek() or '') == 'numbers':
+            # set row numbers of {table} to true/false — the vertical header
+            self.nextToken()
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECTable):
+                    command['what'] = 'rownumbers'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'column' and language.reverse_word(self.peek() or '') == 'widths':
+            # set column widths of {table} to {array-of-widths}
+            self.nextToken()
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECTable):
+                    command['what'] = 'columnwidths'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'stretch' and language.reverse_word(self.peek() or '') == 'column':
+            # set stretch column of {table} to {index}
+            self.nextToken()
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECTable):
+                    command['what'] = 'stretchcolumn'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'sizes':
+            # set sizes of {panes} to {array-of-widths}
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECPanes):
+                    command['what'] = 'panesizes'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'current' and language.reverse_word(self.peek() or '') == 'tab':
+            # set current tab of {tabs} to {index}
+            self.nextToken()
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECTabs):
+                    command['what'] = 'tabindex'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'cell':
+            # set cell {table} {row} {column} to {text}
+            # set cell colour {table} {row} {column} to {foreground} [background]
+            # set cell tooltip {table} {row} {column} to {text}
+            # set cell alignment {table} {row} {column} to left|center|right
+            form = language.reverse_word(self.peek() or '')
+            if form in ('colour', 'color', 'tooltip', 'alignment'):
+                self.nextToken()
+            else:
+                form = 'text'
+            if not self.nextIsSymbol():
+                return False
+            record = self.getSymbolRecord()
+            if not self.isObjectType(record, ECTable):
+                return False
+            command['what'] = 'cell' + ('' if form == 'text' else form)
+            command['name'] = record['name']
+            self.nextToken()                    # onto the row
+            command['row'] = self.getValue()
+            self.nextToken()                    # onto the column
+            command['column'] = self.getValue()
+            self.skipWord('to')
+            if form == 'alignment':
+                # An alignment is a word, not a value: read it raw, and canonical.
+                command['value'] = language.reverse_word(self.nextToken())
+            else:
+                command['value'] = self.nextValue()
+                # A colour pair is `foreground` then, on the same line, `background`.
+                # The line test is what stops a one-colour form from taking the next
+                # statement's first token as its background.
+                if form in ('colour', 'color') and self.peek() is not None \
+                        and self.peekLino() == self.compiler.getLino():
+                    command['background'] = self.nextValue()
+            self.add(command)
+            return True
         elif self.isSymbol():
             record = self.getSymbolRecord()
             if self.isObjectType(record, ECListBox):
@@ -1809,6 +2257,8 @@ class Graphics(Handler):
             if self.isObjectType(record, (ECLabel, ECPushButton)):
                 widget.setText(str(text))  # type: ignore
             elif self.isObjectType(record, ECMultiline):
+                widget.setPlainText(str(text))  # type: ignore
+            elif self.isObjectType(record, ECLog):
                 widget.setPlainText(str(text))  # type: ignore
             elif self.isObjectType(record, ECMDPanel):
                 widget.setMarkdown(str(text))  # type: ignore
@@ -1871,7 +2321,113 @@ class Graphics(Handler):
             widget.clear()  # type: ignore
             for item in self.listItems(value):
                 widget.addItem(item)  # type: ignore
+        elif what == 'columns':
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            columns = [str(self.textify(c)) for c in self.tableValueList(command['value'])]
+            widget.setColumnCount(len(columns))  # type: ignore
+            widget.setHorizontalHeaderLabels(columns)  # type: ignore
+        elif what == 'rows':
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            self.setTableRows(widget, command['value'])
+        elif what == 'columnwidths':
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            for index, width in enumerate(self.tableValueList(command['value'])):
+                widget.setColumnWidth(index, int(self.textify(width)))  # type: ignore
+        elif what == 'stretchcolumn':
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            index = int(self.textify(command['value']))
+            if 0 <= index < widget.columnCount():  # type: ignore
+                widget.horizontalHeader().setSectionResizeMode(  # type: ignore
+                    index, QHeaderView.ResizeMode.Stretch)
+        elif what == 'rownumbers':
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            widget.verticalHeader().setVisible(bool(self.textify(command['value'])))  # type: ignore
+        elif what == 'panesizes':
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            sizes = [int(self.textify(size)) for size in self.tableValueList(command['value'])]
+            widget.setSizes(sizes)  # type: ignore
+        elif what == 'tabindex':
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            index = int(self.textify(command['value']))
+            if 0 <= index < widget.count():  # type: ignore
+                widget.setCurrentIndex(index)  # type: ignore
+        elif what in ('cell', 'cellcolour', 'cellcolor', 'celltooltip', 'cellalignment'):
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            row = int(self.textify(command['row']))
+            column = int(self.textify(command['column']))
+            if 0 <= row < widget.rowCount() and 0 <= column < widget.columnCount():  # type: ignore
+                item = self.tableItem(widget, row, column)
+                text = self.textify(command['value'])
+                if what == 'cell':
+                    item.setText('' if text is None else str(text))
+                elif what in ('cellcolour', 'cellcolor'):
+                    if text:
+                        item.setForeground(QBrush(QColor(str(text))))
+                    if 'background' in command:
+                        background = self.textify(command['background'])
+                        if background:
+                            item.setBackground(QBrush(QColor(str(background))))
+                elif what == 'celltooltip':
+                    item.setToolTip('' if text is None else str(text))
+                elif what == 'cellalignment':
+                    alignment = {
+                        'left': Qt.AlignmentFlag.AlignLeft,
+                        'center': Qt.AlignmentFlag.AlignHCenter,
+                        'centre': Qt.AlignmentFlag.AlignHCenter,
+                        'right': Qt.AlignmentFlag.AlignRight,
+                        'justify': Qt.AlignmentFlag.AlignJustify,
+                    }.get(str(text), Qt.AlignmentFlag.AlignLeft)
+                    item.setTextAlignment(alignment | Qt.AlignmentFlag.AlignVCenter)
         return self.nextPC()
+
+    # The value as a Python list, keeping nested rows. A list variable holds its content
+    # as JSON text; a literal is a JSON string; a scratch value is a single item.
+    def tableValueList(self, value):
+        value = self.evaluate(value)
+        if isinstance(value, ECValue):
+            content = value.getContent()
+            if isinstance(content, str):
+                try:
+                    content = json.loads(content)
+                except Exception:
+                    pass
+            if isinstance(content, list):
+                return content
+            return [content]
+        if isinstance(value, list):
+            return value
+        return [value]
+
+    # The item at a cell, created (empty) if the script is colouring or annotating a
+    # cell whose text has not been set yet.
+    def tableItem(self, widget, row, column):
+        item = widget.item(row, column)
+        if item is None:
+            item = QTableWidgetItem('')
+            widget.setItem(row, column, item)
+        return item
+
+    # Fill a table from an array of rows. A row is an array of cell texts, or an object
+    # whose keys are the column labels; a shorter row leaves the rest of the line empty.
+    def setTableRows(self, widget, value):
+        rows = self.tableValueList(value)
+        headers = []
+        for column in range(widget.columnCount()):
+            item = widget.horizontalHeaderItem(column)
+            headers.append(item.text() if item else '')
+        widget.setRowCount(len(rows))
+        for rowIndex, row in enumerate(rows):
+            if isinstance(row, dict):
+                cells = [row.get(header, '') for header in headers]
+            elif isinstance(row, (list, tuple)):
+                cells = list(row)
+            else:
+                cells = [row]
+            for column, cell in enumerate(cells):
+                if column >= widget.columnCount():
+                    break
+                text = self.textify(cell) if isinstance(cell, ECValue) else cell
+                self.tableItem(widget, rowIndex, column).setText('' if text is None else str(text))
 
     # show {window}
     # show {dialog}
@@ -2028,10 +2584,35 @@ class Graphics(Handler):
         else:
             if self.isWord('the'): token = self.nextToken()
             value.setType(token)
-            if token in ['count', 'current', 'selected']:
+            if token in ['count', 'current', 'selected', 'clicked']:
                 value.setType(token)
                 if token == 'count':
                     self.skipWord('of')
+                elif token in ['current', 'selected', 'clicked'] \
+                        and language.reverse_word(self.peek() or '') == 'tab' and token == 'current':
+                    # the current tab of {tabs}
+                    self.nextToken()
+                    self.skipWord('of')
+                    if self.nextIsSymbol():
+                        record = self.getSymbolRecord()
+                        if self.isObjectType(record, ECTabs):
+                            value.setType('currentTab')
+                            value.target = record['name']
+                            return value
+                    return None
+                elif token in ['current', 'selected', 'clicked'] \
+                        and language.reverse_word(self.peek() or '') in ('row', 'column'):
+                    # the selected row of {table} / the clicked column of {table}
+                    self.nextToken()
+                    which = language.reverse_word(self.getToken())
+                    self.skipWord('of')
+                    if self.nextIsSymbol():
+                        record = self.getSymbolRecord()
+                        if self.isObjectType(record, ECTable):
+                            value.setType(token + which.capitalize())
+                            value.target = record['name']
+                            return value
+                    return None
                 elif token in ['current', 'selected']:
                     token = self.nextToken()
                     value.option = token
@@ -2041,6 +2622,29 @@ class Graphics(Handler):
                     record = self.getSymbolRecord()
                     if self.isObjectType(record, ECListBox) or self.isObjectType(record, ECComboBox): # type: ignore
                         value.setContent(ECValue(domain=self.getName(), type='object', name=record['name']))
+                        return value
+            elif token in ['row', 'column'] and language.reverse_word(self.peek() or '') == 'count':
+                # the row count of {table} / the column count of {table}
+                self.nextToken()
+                self.skipWord('of')
+                if self.nextIsSymbol():
+                    record = self.getSymbolRecord()
+                    if self.isObjectType(record, ECTable):
+                        value.setType(token + 'Count')
+                        value.target = record['name']
+                        return value
+            elif token == 'cell':
+                # the cell {row} {column} of {table}
+                self.nextToken()
+                value.row = self.getValue()
+                self.nextToken()
+                value.column = self.getValue()
+                self.skipWord('of')
+                if self.nextIsSymbol():
+                    record = self.getSymbolRecord()
+                    if self.isObjectType(record, ECTable):
+                        value.setType('cell')
+                        value.target = record['name']
                         return value
             elif token == 'count':
                 self.skipWord('of')
@@ -2054,7 +2658,7 @@ class Graphics(Handler):
                 if self.nextIsSymbol():
                     record = self.getSymbolRecord()
                     if (
-                        self.isObjectType(record, (ECLabel, ECPushButton, ECMultiline, ECLineInput, ECListBox, ECComboBox))
+                        self.isObjectType(record, (ECLabel, ECPushButton, ECMultiline, ECLineInput, ECListBox, ECComboBox, ECLog))
                     ): # type: ignore
                         value.setContent(ECValue(domain=self.getName(), type='object', name=record['name']))
                         return value
@@ -2151,6 +2755,51 @@ class Graphics(Handler):
     
     def v_element(self, v):
         return v.getContent()
+
+    # A table's value handlers. The row and column are evaluated at the point of use, so
+    # `the cell Row Column of Steps` can name variables rather than literals.
+    def tableWidget(self, v):
+        record = self.getVariable(v.target)
+        return self.getInnerObject(record)
+
+    def v_selectedRow(self, v):
+        widget = self.tableWidget(v)
+        return ECValue(domain=self.getName(), type=int, content=widget.currentRow())
+
+    def v_selectedColumn(self, v):
+        widget = self.tableWidget(v)
+        return ECValue(domain=self.getName(), type=int, content=widget.currentColumn())
+
+    def v_clickedRow(self, v):
+        widget = self.tableWidget(v)
+        return ECValue(domain=self.getName(), type=int, content=widget.clickedRow)
+
+    def v_clickedColumn(self, v):
+        widget = self.tableWidget(v)
+        return ECValue(domain=self.getName(), type=int, content=widget.clickedColumn)
+
+    def v_cell(self, v):
+        widget = self.tableWidget(v)
+        row = int(self.textify(v.row))
+        column = int(self.textify(v.column))
+        if 0 <= row < widget.rowCount() and 0 <= column < widget.columnCount():
+            item = widget.item(row, column)
+            if item is not None:
+                return ECValue(domain=self.getName(), type=str, content=item.text())
+        return ECValue(domain=self.getName(), type=str, content='')
+
+    def v_rowCount(self, v):
+        widget = self.tableWidget(v)
+        return ECValue(domain=self.getName(), type=int, content=widget.rowCount())
+
+    def v_columnCount(self, v):
+        widget = self.tableWidget(v)
+        return ECValue(domain=self.getName(), type=int, content=widget.columnCount())
+
+    def v_currentTab(self, v):
+        record = self.getVariable(v.target)
+        widget = self.getInnerObject(record)
+        return ECValue(domain=self.getName(), type=int, content=widget.currentIndex())
     
     def v_empty(self, v):
         if v.type == 'object':
@@ -2240,5 +2889,11 @@ class Graphics(Handler):
     #############################################################################
     # Force the application to exit
     def force_exit(self):
+        # A child process started by `start` is this run's, so it goes with the run:
+        # QApplication.quit() ends the event loop but not the child.
+        try:
+            self.program.stopProcesses()
+        except Exception:
+            pass
         QApplication.quit()  # Gracefully close the application
         sys.exit(0)          # Force a complete system exit
