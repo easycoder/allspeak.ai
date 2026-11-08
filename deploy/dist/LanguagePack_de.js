@@ -1167,6 +1167,7 @@ var AllSpeak_LanguagePack_de = {
     "br": "br",
     "location": "ort",
     "key": "schlüssel|schluessel|taste",
+    "shortcut": "tastenkürzel|tastenkuerzel",
     "hostname": "hostname",
     "query": "abfrage|query",
     "browser": "browser",

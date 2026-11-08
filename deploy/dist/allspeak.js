@@ -14853,6 +14853,7 @@ var AllSpeak_LanguagePack_en = {
     "br": "br",
     "location": "location",
     "key": "key",
+    "shortcut": "shortcut",
     "hostname": "hostname",
     "query": "query",
     "browser": "browser",

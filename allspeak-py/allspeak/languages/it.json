@@ -1169,6 +1169,7 @@
     "br": "br",
     "location": "posizione",
     "key": "tasto",
+    "shortcut": "scorciatoia",
     "hostname": "hostname",
     "query": "query",
     "browser": "browser",

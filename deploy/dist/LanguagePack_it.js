@@ -1171,6 +1171,7 @@ var AllSpeak_LanguagePack_it = {
     "br": "br",
     "location": "posizione",
     "key": "tasto",
+    "shortcut": "scorciatoia",
     "hostname": "hostname",
     "query": "query",
     "browser": "browser",

@@ -34,7 +34,7 @@ from .as_border import Border
 from .as_keyboard import Keyboard, TextReceiver
 from .debugger.as_debug import Debugger
 from PySide6.QtCore import Qt, QTimer, Signal, QRect
-from PySide6.QtGui import QPixmap, QPainter, QPen, QBrush, QColor, QTextDocument, QFontDatabase, QTextCursor, QTextCharFormat
+from PySide6.QtGui import QPixmap, QPainter, QPen, QBrush, QColor, QTextDocument, QFontDatabase, QTextCursor, QTextCharFormat, QShortcut, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -54,6 +54,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QRadioButton,
+    QAbstractButton,
     QSlider,
     QSpinBox,
     QTimeEdit,
@@ -97,6 +98,53 @@ CURSORS = {
     'grab': Qt.CursorShape.OpenHandCursor,
     'grabbing': Qt.CursorShape.ClosedHandCursor,
     'none': Qt.CursorShape.BlankCursor,
+}
+
+# The key names a script can write, and the spelling `QKeySequence` parses. **Only the names that
+# differ from Qt's own spelling need an entry** — a letter, a digit and `F1` are recognised as they
+# are — and the entries here are the friendly forms people write (`PageUp`, `Escape`, `Enter`) rather
+# than Qt's short ones (`PgUp`, `Esc`, `Return`). A combined name such as `Ctrl+S` is split on `+`,
+# and each part is normalised before Qt sees it.
+KEYS = {
+    'space': 'Space',
+    'return': 'Return',
+    'enter': 'Return',
+    'escape': 'Escape',
+    'esc': 'Escape',
+    'tab': 'Tab',
+    'backspace': 'Backspace',
+    'delete': 'Delete',
+    'del': 'Delete',
+    'insert': 'Insert',
+    'ins': 'Insert',
+    'home': 'Home',
+    'end': 'End',
+    'pageup': 'PgUp',
+    'pgup': 'PgUp',
+    'pagedown': 'PgDown',
+    'pgdown': 'PgDown',
+    'left': 'Left',
+    'right': 'Right',
+    'up': 'Up',
+    'down': 'Down',
+    'comma': ',',
+    'period': '.',
+    'slash': '/',
+    'backslash': '\\',
+    'semicolon': ';',
+    'apostrophe': "'",
+    'quote': "'",
+    'bracketleft': '[',
+    'bracketright': ']',
+    'minus': '-',
+    'plus': '+',
+    'equal': '=',
+    'grave': '`',
+    'ctrl': 'Ctrl',
+    'control': 'Ctrl',
+    'alt': 'Alt',
+    'shift': 'Shift',
+    'meta': 'Meta',
 }
 
 class ECLabelWidget(QLabel):
@@ -1691,6 +1739,29 @@ class Graphics(Handler):
                         return True
                     setupOn()
                     return True
+        elif language.reverse_word(token) == 'key':
+            # on key {key} of {window|widget} go to {label}
+            # The key is a bare word (`Space`), a backticked string or a variable, and the target
+            # is a window or any widget. `setupOn` compiles an indented body the same way it does
+            # for a click, so the two forms of handler work here too.
+            command['type'] = 'key'
+            ahead = self.peek()
+            if ahead and (ahead[0] == '`' or ahead in self.symbols):
+                command['key'] = self.nextValue()
+            else:
+                command['key'] = self.compileConstant(self.nextToken())
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if isinstance(self.getObject(record), (ECWindow, ECWidget, ECDialog)):
+                    command['name'] = record['name']
+                    label = self.namedHandler()
+                    if label is not None:
+                        command['label'] = label
+                        self.add(command)
+                        return True
+                    setupOn()
+                    return True
         elif token == 'close':
             if self.nextIsSymbol():
                 record = self.getSymbolRecord()
@@ -1745,6 +1816,31 @@ class Graphics(Handler):
     def r_on(self, command):
         if command['type'] == 'tick':
             self.runOnTick = command['runOnTick']
+        elif command['type'] == 'key':
+            # The shortcut belongs to the target widget, so it is live while focus is in it or one
+            # of its children. A focused widget's own handling still wins: a button's Space is the
+            # button's own activation, and a line input's Space is a space.
+            record = self.getVariable(command['name'])
+            target = self.getInnerObject(record)
+            sequence = self.keySequence(self.textify(command['key']))
+            goto = command.get('goto')
+            label = command.get('label')
+            def onKey():
+                # **A focused widget's own activation wins.** Qt's shortcut map runs before a
+                # button's key handling, so a window's `on key Space` would otherwise swallow the
+                # Space that a focused button uses to click itself. The button is activated by
+                # `click()`, which is that same path: its `on click` handler runs, not the
+                # window's label. Text entry is already protected by Qt's `ShortcutOverride`.
+                focused = QApplication.focusWidget()
+                if isinstance(focused, QAbstractButton) and self.activatesOn(sequence):
+                    focused.click()
+                elif label is not None:
+                    self.runNamedLabel(label)
+                else:
+                    self.run(goto)
+                self.program.flushCB()
+            if sequence is not None:
+                self.addKeyShortcut(target, sequence, onKey)
         elif command['type'] == 'close':
             record = self.getVariable(command['name'])
             window = self.getInnerObject(record)
@@ -2106,6 +2202,23 @@ class Graphics(Handler):
                     command['value'] = self.nextValue()
                     self.add(command)
                     return True
+        elif canon == 'shortcut':
+            # set [the] shortcut of {widget} to Space|Return|Ctrl+S|…
+            # The key is a bare word, a backticked string or a variable, as a cursor name is.
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, (ECWidget, ECWindow, ECDialog)):
+                    command['what'] = 'shortcut'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    ahead = self.peek()
+                    if ahead and (ahead[0] == '`' or ahead in self.symbols):
+                        command['key'] = self.nextValue()
+                    else:
+                        command['key'] = self.compileConstant(self.nextToken())
+                    self.add(command)
+                    return True
         elif canon == 'tooltip':
             # set [the] tooltip of {widget} to {text}
             # The widget's own tooltip, as distinct from `set cell tooltip …`, which
@@ -2416,6 +2529,24 @@ class Graphics(Handler):
                 elif flag == 'bottom': alignment |= Qt.AlignmentFlag.AlignBottom
                 elif flag == 'center': alignment |= Qt.AlignmentFlag.AlignCenter
             widget.setAlignment(alignment)
+        elif what == 'shortcut':
+            # A widget's shortcut belongs to its window, so it is active whenever that window is —
+            # the scope a menu accelerator has. The activation is the widget's normal one, so a
+            # button's `on click` handler runs. A window or dialog takes the same scope.
+            record = self.getVariable(command['name'])
+            widget = self.getInnerObject(record)
+            sequence = self.keySequence(self.textify(command['key']))
+            context = (Qt.ShortcutContext.WidgetWithChildrenShortcut
+                       if self.isObjectType(record, (ECWindow, ECDialog))
+                       else Qt.ShortcutContext.WindowShortcut)
+            def activateShortcut(widget=widget):
+                if isinstance(widget, QAbstractButton):
+                    widget.click()
+                elif isinstance(widget, (QMainWindow, QDialog)):
+                    widget.activateWindow()
+                else:
+                    widget.setFocus()
+            self.setShortcut(widget, sequence, context, activateShortcut)
         elif what == 'tooltip':
             record = self.getVariable(command['name'])
             widget = self.getInnerObject(record)
@@ -2581,6 +2712,72 @@ class Graphics(Handler):
                     break
                 text = self.textify(cell) if isinstance(cell, ECValue) else cell
                 self.tableItem(widget, rowIndex, column).setText('' if text is None else str(text))
+
+    # The QKeySequence a script's key name means. A name is case-insensitive, `Ctrl+S` combines a
+    # modifier with a key, and the friendly spellings in `KEYS` are translated to the ones Qt parses.
+    # **An unknown name is refused** rather than becoming an empty sequence: `QKeySequence('wobble')`
+    # is not empty, it is a sequence Qt prints as nothing, so the check is on what it prints.
+    def keySequence(self, name):
+        text = '' if name is None else str(name).strip()
+        if text == '':
+            return None
+        # `Ctrl++` ends in the separator, so the final `+` is the key rather than an empty part.
+        parts = text[:-2].split('+') + ['+'] if text.endswith('++') else text.split('+')
+        normalized = []
+        for part in parts:
+            low = part.strip().lower()
+            if low in KEYS:
+                normalized.append(KEYS[low])
+            elif len(low) == 1 and (low.isalpha() or low.isdigit()):
+                normalized.append(low.upper())
+            elif low.startswith('f') and low[1:].isdigit() and 1 <= int(low[1:]) <= 24:
+                normalized.append('F' + low[1:])
+            else:
+                normalized.append(part.strip())
+        sequence = QKeySequence('+'.join(normalized))
+        if sequence.toString() == '':
+            raise RuntimeError(self.program,
+                f"'{text}' is not a key. Try Space, Return, Escape, Tab, F1, a letter, or Ctrl+S.")
+        return sequence
+
+    # Does this key activate a focused button? A button's own key is Space (and keypad Enter);
+    # Return is deliberately absent because QAbstractButton does not click on it.
+    def activatesOn(self, sequence):
+        if sequence is None or sequence.isEmpty():
+            return False
+        combination = sequence[0]
+        key = combination.key() if hasattr(combination, 'key') else combination
+        return key in (Qt.Key.Key_Space, Qt.Key.Key_Enter)
+
+    # A shortcut is owned by the widget it is attached to, not by this handler: Qt deletes it with
+    # the widget, and the Python wrapper is kept on the widget so it is not collected first.
+    def addShortcut(self, target, sequence, handler, context):
+        shortcut = QShortcut(sequence, target)
+        shortcut.setContext(context)
+        shortcut.activated.connect(handler)
+        return shortcut
+
+    # `set the shortcut of` is one shortcut per widget: a second statement replaces the first.
+    def setShortcut(self, target, sequence, context, handler):
+        old = getattr(target, '_ecShortcut', None)
+        if old is not None:
+            old.deleteLater()
+            target._ecShortcut = None
+        if sequence is None:
+            return
+        target._ecShortcut = self.addShortcut(target, sequence, handler, context)
+
+    # `on key` may register several keys on one window, so they are kept by sequence.
+    def addKeyShortcut(self, target, sequence, handler):
+        shortcuts = getattr(target, '_ecKeyShortcuts', None)
+        if shortcuts is None:
+            shortcuts = {}
+            target._ecKeyShortcuts = shortcuts
+        name = sequence.toString()
+        if name in shortcuts:
+            shortcuts[name].deleteLater()
+        shortcuts[name] = self.addShortcut(
+            target, sequence, handler, Qt.ShortcutContext.WidgetWithChildrenShortcut)
 
     # show {window}
     # show {dialog}

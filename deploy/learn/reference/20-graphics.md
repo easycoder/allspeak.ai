@@ -201,6 +201,22 @@ set the tooltip of SaveButton to ``                 ! no tooltip
 
 It is the widget's own tooltip, distinct from `set cell tooltip`, which annotates one cell of a table. A window, dialog or any widget takes it; a plain `variable` is refused. The text is shown as written — it is not markup.
 
+### Setting a shortcut
+
+`set the shortcut of <widget> to <key>` gives a widget a keyboard shortcut. The shortcut belongs to the widget's window, so it is active whenever that window is, like a menu accelerator, and it activates the widget the way a click would — a button's `on click` handler runs:
+
+```as
+set the shortcut of StepBtn to Space
+set the shortcut of SaveButton to Ctrl+S
+set the shortcut of StepBtn to ``                 ! remove it
+```
+
+The key is one of the names `Space`, `Return`, `Enter`, `Escape`/`Esc`, `Tab`, `Backspace`, `Delete`, `Insert`, `Home`, `End`, `PageUp`/`PgUp`, `PageDown`/`PgDown`, the four arrows, `F1`–`F24`, a letter or a digit, or a combination written with `+` such as `Ctrl+S` or `Shift+Tab`. A backticked name or a variable holding one works too. A window or dialog takes a shortcut as well. An unknown key name is a runtime error rather than a silently inactive binding, and an empty text removes the binding.
+
+A focused widget's own handling is kept: Space on a focused button is the button's click, and a text field keeps the keys it uses to type. The shortcut fills the gap when the widget does not have focus.
+
+Bind a key once. A `set the shortcut of` and an `on key … of <window>` for the same key in the same window compete for it, and which one wins is not worth relying on — choose the form that describes what the key does.
+
 Tables have their own set of statements. The cursor reads them as a sentence — `set cell Steps 0 2 to …` — and the colour, tooltip and alignment are per cell:
 
 ```as
@@ -289,6 +305,8 @@ on click Steps go to StepClicked         ! a table cell click
 on select Views go to ViewChanged        ! a tab set's current page
 on tick go to Tick                      ! every 250 ms while the program is idle
 on close MainWindow go to MainClose     ! as the window closes
+on key Space of MainWindow go to SpacePressed   ! while focus is in the window
+on key Ctrl+S of MainWindow go to SavePressed
 stop                                    ! end the main flow here
 
 SaveClick:
@@ -297,6 +315,8 @@ SaveClick:
 ```
 
 `click`/`tap` fire for `pushbutton` and for a table's `cellClicked`; `select` fires on a combo's `currentIndexChanged`, a listbox's `itemClicked`, a table's row selection, and a tab set's `currentChanged`. With multiple selection on a table, `click` fires for the row under the pointer and `select` fires on every change to the set; either handler can read `the selection of`. The tick handler is invoked by the flush timer whenever the program is not busy and not blocked.
+
+`key` is written `on key <key> of <window> go to <label>` and fires while focus is anywhere in that window. The key is the same vocabulary as `set the shortcut of` — `Space`, `Return`, `Ctrl+S` — and a widget may be named instead of a window, in which case the key is live while focus is inside that widget. A focused button's Space is left to the button, so its `on click` handler runs rather than the window's key handler; the window binding fills the gap when focus is elsewhere. An unknown key name is a runtime error.
 
 Because the handler is a single command, the idiomatic pattern is a label — usually ending in `stop`. The handler runs to completion; nothing waits on it. Widget variables follow the cursor model, and the `on` registration captures the array index of the element that fires, so one registration can serve an array of widgets (see [event handlers and array index](../idioms/event-handlers-and-array-index.md)).
 
