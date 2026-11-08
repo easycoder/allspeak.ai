@@ -101,6 +101,18 @@ Funziona anche un nome tra apici inversi o una variabile che lo contiene — `im
 
 Il bersaglio è un elemento dichiarato (`div`, `button`, `label`, …) o `corpo`; una semplice `variabile` viene rifiutata.
 
+### Impostare un suggerimento
+
+`imposta [il] suggerimento di <elemento> a <testo>` dà a un elemento un suggerimento — il messaggio che il browser mostra quando il puntatore vi si posa:
+
+```as
+imposta il suggerimento di Salva a `Salva questo file`
+imposta il suggerimento di Finestra a `Lascia qui un file`
+imposta il suggerimento di Salva a ``          ! rimuoverlo
+```
+
+Il suggerimento è l'attributo HTML `title` dell'elemento: le stesse parole si leggono con `imposta attributo \`title\` di X a …`, e questa istruzione è la forma leggibile che conosce anche il motore desktop. Un testo vuoto rimuove l'attributo invece di lasciare un `title` vuoto. Una semplice `variabile` viene rifiutata, esattamente come per un cursore.
+
 ### Leggere la selezione
 
 `il selezionato testo di <elemento>` restituisce la sottostringa evidenziata di una textarea o di un input (vuota quando non c'è selezione). Per un `<select>`, `il selezionato indice di <elemento>` dà la posizione dell'opzione scelta e `il selezionato elemento di <elemento>` il suo testo.

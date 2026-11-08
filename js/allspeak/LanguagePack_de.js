@@ -813,6 +813,12 @@ var AllSpeak_LanguagePack_de = {
         "setze [den] cursor von körper zu {value}"
       ]
     },
+    "SET_TOOLTIP": {
+      "keyword": "setze",
+      "patterns": [
+        "setze [den] tooltip von {element} zu {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "setze",
       "patterns": [
@@ -1177,6 +1183,8 @@ var AllSpeak_LanguagePack_de = {
     "height": "höhe|hoehe",
     "scroll": "scrolle",
     "cursor": "cursor",
+    "tooltip": "tooltip",
+    "row": "reihe",
     "parent": "elternteil",
     "history": "verlauf",
     "pick": "wähle|waehle",

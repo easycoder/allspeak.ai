@@ -828,6 +828,12 @@ var AllSpeak_LanguagePack_en = {
         "set [the] cursor of body to {value}"
       ]
     },
+    "SET_TOOLTIP": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] tooltip of {element} to {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "set",
       "patterns": [
@@ -1279,6 +1285,8 @@ var AllSpeak_LanguagePack_en = {
     "height": "height",
     "scroll": "scroll",
     "cursor": "cursor",
+    "tooltip": "tooltip",
+    "row": "row",
     "parent": "parent",
     "history": "history",
     "pick": "pick",

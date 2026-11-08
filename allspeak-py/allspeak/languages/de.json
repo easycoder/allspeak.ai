@@ -811,6 +811,12 @@
         "setze [den] cursor von körper zu {value}"
       ]
     },
+    "SET_TOOLTIP": {
+      "keyword": "setze",
+      "patterns": [
+        "setze [den] tooltip von {element} zu {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "setze",
       "patterns": [
@@ -1175,6 +1181,8 @@
     "height": "höhe|hoehe",
     "scroll": "scrolle",
     "cursor": "cursor",
+    "tooltip": "tooltip",
+    "row": "reihe",
     "parent": "elternteil",
     "history": "verlauf",
     "pick": "wähle|waehle",

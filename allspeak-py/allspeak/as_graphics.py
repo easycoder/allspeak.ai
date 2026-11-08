@@ -1908,10 +1908,25 @@ class Graphics(Handler):
 
     # select index {n} [of] {combobox]}
     # select {name} [in] {combobox}
+    # select row {n} of {table}
     def k_select(self, command):
         if self.nextIsWord('index'):
             command['index'] = self.nextValue()
             self.skipWord('of')
+        elif self.isWord('row'):
+            # The row is a value, not a literal, so a loop can follow a live run with
+            # `select row Step of Steps`. The table's name follows `of`.
+            self.nextToken()                    # onto the row
+            command['row'] = self.getValue()
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, ECTable):
+                    command['what'] = 'selectrow'
+                    command['name'] = record['name']
+                    self.add(command)
+                    return True
+            return False
         else:
             command['name'] = self.getValue()
             self.skipWord('in')
@@ -1924,6 +1939,17 @@ class Graphics(Handler):
         return False
     
     def r_select(self, command):
+        if command.get('what') == 'selectrow':
+            # A programmatic selection is a real one: the current cell moves, the row is
+            # selected, and any `on select` handler runs just as it would for a click. The
+            # current column is kept so a table narrowed to one column does not jump.
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            row = int(self.textify(command['row']))
+            if 0 <= row < widget.rowCount():  # type: ignore
+                column = widget.currentColumn()  # type: ignore
+                widget.setCurrentCell(row, column if column >= 0 else 0)  # type: ignore
+                widget.selectRow(row)  # type: ignore
+            return self.nextPC()
         widget = self.getInnerObject(self.getVariable(command['widget']))
         if 'index' in command:
             index = self.textify(command['index'])
@@ -1932,6 +1958,40 @@ class Graphics(Handler):
             index = widget.findText(name, Qt.MatchFlag.MatchFixedString)  # type: ignore
         if index >= 0:
             widget.setCurrentIndex(index)  # type: ignore
+        return self.nextPC()
+
+    # scroll to row {n} of {table}
+    #
+    # The selection is left alone: a view that follows a run often wants the row on screen
+    # without taking the reader's selection away from where they put it.
+    def k_scroll(self, command):
+        if not self.nextIsWord('to'):
+            return False
+        if not self.nextIsWord('row'):
+            return False
+        command['row'] = self.nextValue()
+        self.skipWord('of')
+        if self.nextIsSymbol():
+            record = self.getSymbolRecord()
+            if self.isObjectType(record, ECTable):
+                command['what'] = 'scrollrow'
+                command['name'] = record['name']
+                self.add(command)
+                return True
+        return False
+
+    def r_scroll(self, command):
+        if command.get('what') != 'scrollrow':
+            return self.nextPC()
+        widget = self.getInnerObject(self.getVariable(command['name']))
+        row = int(self.textify(command['row']))
+        # A table with no columns has no cell to scroll to, and a row outside the current
+        # data is ignored rather than refused: a live run can outrun the rows on screen.
+        if 0 <= row < widget.rowCount() and widget.columnCount() > 0:  # type: ignore
+            item = widget.item(row, 0)  # type: ignore
+            if item is None:
+                item = self.tableItem(widget, row, 0)
+            widget.scrollToItem(item, QAbstractItemView.ScrollHint.EnsureVisible)  # type: ignore
         return self.nextPC()
 
     # set [the] width/height [of] {widget} [to] {value}
@@ -2041,6 +2101,20 @@ class Graphics(Handler):
             if self.nextIsSymbol():
                 record = self.getSymbolRecord()
                 if self.isObjectType(record, ECWidget):
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'tooltip':
+            # set [the] tooltip of {widget} to {text}
+            # The widget's own tooltip, as distinct from `set cell tooltip …`, which
+            # annotates one cell of a table. Empty text takes the tooltip away.
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, (ECWidget, ECWindow, ECDialog)):
+                    command['what'] = 'tooltip'
                     command['name'] = record['name']
                     self.skipWord('to')
                     command['value'] = self.nextValue()
@@ -2342,6 +2416,11 @@ class Graphics(Handler):
                 elif flag == 'bottom': alignment |= Qt.AlignmentFlag.AlignBottom
                 elif flag == 'center': alignment |= Qt.AlignmentFlag.AlignCenter
             widget.setAlignment(alignment)
+        elif what == 'tooltip':
+            record = self.getVariable(command['name'])
+            widget = self.getInnerObject(record)
+            text = self.textify(command['value'])
+            widget.setToolTip('' if text is None else str(text))  # type: ignore
         elif what == 'cursor':
             record = self.getVariable(command['name'])
             widget = self.getInnerObject(record)

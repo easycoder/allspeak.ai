@@ -101,6 +101,18 @@ A backticked name or a variable holding one works too — `set the cursor of Win
 
 The target is an element the script has declared (`div`, `button`, `label`, …) or `body`; a plain `variable` is refused.
 
+### Setting a tooltip
+
+`set the tooltip of <element> to <text>` gives an element a tooltip — the message the browser shows when the pointer rests on it:
+
+```as
+set the tooltip of SaveButton to `Save this file`
+set the tooltip of Win to `Drop a file here`
+set the tooltip of SaveButton to ``          ! take it away
+```
+
+The tooltip is the element's HTML `title` attribute, so the same words are readable through `set attribute \`title\` of X to …`; this statement is the readable form and the same one the desktop runtime offers. An empty text removes the attribute rather than leaving an empty `title` behind. A plain `variable` is refused, exactly as it is for a cursor.
+
 ### Reading the selection
 
 `the selected text of <element>` returns the highlighted substring of a textarea or input (empty when nothing is selected). For a `<select>`, `the selected index of <element>` gives the chosen option's position and `the selected item of <element>` its text.

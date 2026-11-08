@@ -7809,6 +7809,31 @@ const AllSpeak_Browser = {
 							return true;
 						}
 					}
+				} else if (token === AllSpeak_Language.word(`tooltip`)) {
+					// `set the tooltip of Win to \`Save the file\`` — the browser's own tooltip,
+					// which is the element's `title` attribute. An empty text removes the
+					// attribute rather than leaving an empty `title`, so a tooltip taken away
+					// leaves no trace in the DOM.
+					if (compiler.nextIsWord(`of`)) {
+						if (compiler.nextIsSymbol()) {
+							const symbolRecord = compiler.getSymbolRecord();
+							if (symbolRecord.extra !== `dom`) {
+								throw new Error(`'${symbolRecord.name}' is not a DOM type`);
+							}
+							if (compiler.nextIsWord(`to`)) {
+								const value = compiler.getNextValue();
+								compiler.addCommand({
+									domain: `browser`,
+									keyword: `set`,
+									lino,
+									type: `setTooltip`,
+									symbolName: symbolRecord.name,
+									value
+								});
+								return true;
+							}
+						}
+					}
 				} else if (token === AllSpeak_Language.word(`default`)) {
 					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
@@ -7977,6 +8002,34 @@ const AllSpeak_Browser = {
 					return 0;
 				}
 				target.style.cursor = cursorCss;
+				break;
+			case `setTooltip`:
+				// The browser's own tooltip is the `title` attribute. An empty value removes
+				// it, so clearing a tooltip does not leave an empty attribute behind for
+				// another reader to mistake for a set one.
+				symbol = program.getSymbolRecord(command.symbolName);
+				target = symbol.element[symbol.index];
+				if (!target) {
+					const tooltipElement = symbol.value[symbol.index];
+					if (!tooltipElement.type) {
+						program.runtimeError(command.lino,
+							`Variable '${symbol.name}' is not attached to a DOM element.`);
+						return 0;
+					}
+					targetId = program.getValue(tooltipElement);
+					target = document.getElementById(targetId);
+				}
+				if (!target) {
+					program.runtimeError(command.lino,
+						`Variable '${symbol.name}' has no DOM element.`);
+					return 0;
+				}
+				value = program.getValue(command.value);
+				if (value === null || value === undefined || `${value}` === ``) {
+					target.removeAttribute(`title`);
+				} else {
+					target.setAttribute(`title`, `${value}`);
+				}
 				break;
 			case `setSelect`:
 				// The source is assumed to be an array
@@ -8453,6 +8506,7 @@ const AllSpeak_Browser = {
 			SET_STYLE: this.Set,
 			SET_STYLES: this.Set,
 			SET_CURSOR: this.Set,
+			SET_TOOLTIP: this.Set,
 			SET_BODY_STYLE: this.Set,
 			SET_HEAD_STYLE: this.Set,
 			SET_CLASS: this.Set,
@@ -13283,6 +13337,7 @@ const AllSpeak_Opcodes = {
 			case `setStyle`:      return `SET_STYLE`;
 			case `setStyles`:     return `SET_STYLES`;
 			case `setCursor`:     return `SET_CURSOR`;
+			case `setTooltip`:    return `SET_TOOLTIP`;
 			case `setBodyStyle`:  return `SET_BODY_STYLE`;
 			case `setHeadStyle`:  return `SET_HEAD_STYLE`;
 			case `setClass`:      return `SET_CLASS`;
@@ -14357,6 +14412,12 @@ var AllSpeak_LanguagePack_en = {
         "set [the] cursor of body to {value}"
       ]
     },
+    "SET_TOOLTIP": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] tooltip of {element} to {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "set",
       "patterns": [
@@ -14808,6 +14869,8 @@ var AllSpeak_LanguagePack_en = {
     "height": "height",
     "scroll": "scroll",
     "cursor": "cursor",
+    "tooltip": "tooltip",
+    "row": "row",
     "parent": "parent",
     "history": "history",
     "pick": "pick",

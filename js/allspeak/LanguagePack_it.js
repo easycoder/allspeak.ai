@@ -820,6 +820,12 @@ var AllSpeak_LanguagePack_it = {
         "imposta [il] cursore di corpo a {value}"
       ]
     },
+    "SET_TOOLTIP": {
+      "keyword": "imposta",
+      "patterns": [
+        "imposta [il] suggerimento di {element} a {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "imposta",
       "patterns": [
@@ -1181,6 +1187,8 @@ var AllSpeak_LanguagePack_it = {
     "height": "altezza",
     "scroll": "scorrimento",
     "cursor": "cursore",
+    "tooltip": "suggerimento",
+    "row": "fila",
     "parent": "genitore",
     "history": "cronologia",
     "pick": "scegli",

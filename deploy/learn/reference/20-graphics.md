@@ -189,6 +189,18 @@ The twelve names are the same ones the browser runtime accepts — `arrow`, `han
 
 A window, dialog or any widget takes it; a plain `variable` is refused.
 
+### Setting a tooltip
+
+`set the tooltip of <widget> to <text>` gives a widget the message that appears when the pointer rests on it, and an empty text takes it away:
+
+```as
+set the tooltip of SaveButton to `Save this file`
+set the tooltip of Steps to `the runs this app made`
+set the tooltip of SaveButton to ``                 ! no tooltip
+```
+
+It is the widget's own tooltip, distinct from `set cell tooltip`, which annotates one cell of a table. A window, dialog or any widget takes it; a plain `variable` is refused. The text is shown as written — it is not markup.
+
 Tables have their own set of statements. The cursor reads them as a sentence — `set cell Steps 0 2 to …` — and the colour, tooltip and alignment are per cell:
 
 ```as
@@ -202,10 +214,22 @@ set column widths of Steps to `[40,80,120,200,120,200,80]`
 set stretch column of Steps to 5                        ! the column that takes the spare width
 set row numbers of Steps to true                        ! the vertical header (hidden by default)
 set selection of Steps to multiple                      ! single | contiguous | multiple | none
+select row 12 of Steps                                  ! make row 12 the current, selected row
+scroll to row 35 of Steps                               ! bring row 35 into view
 clear Steps                                             ! removes the rows, keeps the columns
 ```
 
 `set selection of` also applies to a listbox. A table and a listbox are single-selection by default; `multiple` is Qt's `ExtendedSelection`, so a plain click selects one row and Ctrl/Shift add or range-select the rest. `contiguous` allows a range but no scattered rows, and `none` stops selection entirely — a click still fires `on click`, but `the selection of` stays empty. A typo in the mode is a runtime error rather than a silently unchanged widget.
+
+`select row N of` drives the selection from the script: it makes row N current and selected, so `the selected row of` follows it and `on select` runs just as it would after a click. `scroll to row N of` moves the table's scrollbar so that row is visible and leaves the selection where it was. Both take a value as well as a literal, which is how a table follows a live run even when the current row is off screen:
+
+```as
+put the current step into N
+select row N of Steps
+scroll to row N of Steps
+```
+
+Row indexes are 0-based, like `item N of`, and a row beyond the table's data is ignored rather than refused — a run can outrun the rows on screen.
 
 `the selection of` reads the whole set as a **list of row indexes**, ascending — the same value in every mode, so a script that handles one row already handles many. It works for a listbox as well as a table, and row indexes are 0-based, like `item N of`:
 

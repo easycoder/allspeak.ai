@@ -101,6 +101,18 @@ Ein Name in Backticks oder eine Variable, die ihn hält, funktioniert ebenso —
 
 Das Ziel ist ein deklariertes Element (`div`, `button`, `label`, …) oder `körper`; eine einfache `variable` wird abgelehnt.
 
+### Einen Tooltip setzen
+
+`setze [den] tooltip von <Element> zu <Text>` gibt einem Element einen Tooltip — die Meldung, die der Browser zeigt, wenn der Zeiger darauf ruht:
+
+```as
+setze den tooltip von Speichern zu `Diese Datei speichern`
+setze den tooltip von Fenster zu `Datei hier ablegen`
+setze den tooltip von Speichern zu ``          ! wieder entfernen
+```
+
+Der Tooltip ist das HTML-Attribut `title` des Elements: dieselben Worte liest man mit `setze attribut \`title\` von X zu …`, und diese Anweisung ist die lesbare Form, die auch die Desktop-Laufzeit kennt. Ein leerer Text entfernt das Attribut, statt ein leeres `title` zu hinterlassen. Eine einfache `variable` wird abgelehnt, genau wie bei einem Cursor.
+
 ### Die Auswahl lesen
 
 `der ausgewählt text von <element>` liefert den markierten Teil eines textfeld oder input zurück (leer, wenn nichts markiert ist). Für ein `<select>` liefert `der ausgewählt index von <element>` die Position der gewählten Option und `der ausgewählt element von <element>` deren Text.

@@ -101,6 +101,18 @@ Un nom entre accents graves ou une variable qui le contient marche aussi — `d�
 
 La cible est un élément déclaré (`div`, `button`, `label`, …) ou `corps` ; une simple `variable` est refusée.
 
+### Régler une infobulle
+
+`définis infobulle de <élément> à <texte>` donne à un élément une infobulle — le message que le navigateur montre quand le pointeur s'y repose :
+
+```as
+définis infobulle de BoutonEnregistrer à `Enregistrer ce fichier`
+définis infobulle de Fenetre à `Déposez un fichier ici`
+définis infobulle de BoutonEnregistrer à ``          ! la retirer
+```
+
+L'infobulle est l'attribut HTML `title` de l'élément : les mêmes mots se lisent avec `définis attribut \`title\` de X à …`, que cette instruction rend lisible et que l'autre moteur d'AllSpeak accepte aussi. Un texte vide retire l'attribut plutôt que de laisser un `title` vide derrière lui. Une simple `variable` est refusée, exactement comme pour un curseur. L'article est facultatif, et la forme sans article est celle à écrire : `la infobulle` ne se lit pas naturellement en français.
+
 ### Lire la sélection
 
 `le sélectionné texte de <élément>` renvoie la sous-chaîne surlignée d'une zonetexte ou d'un input (vide quand rien n'est sélectionné). Pour un `<select>`, `le sélectionné index de <élément>` donne la position de l'option choisie et `le sélectionné article de <élément>` son texte.

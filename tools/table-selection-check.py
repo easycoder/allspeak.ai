@@ -41,6 +41,7 @@ except ImportError as e:
     sys.exit(2)
 
 from allspeak.as_program import Program  # noqa: E402  — after the path is set
+from allspeak.as_language import Language  # noqa: E402
 
 failures = []
 
@@ -198,6 +199,79 @@ devices.item(2).setSelected(True)
 devices.itemClicked.emit(devices.item(0))
 check(value(program, 'DeviceSelection') == [0, 2],
       f'and reads its selected rows as indexes (got {value(program, "DeviceSelection")!r})')
+
+print()
+print('a program can select a row and bring it into view')
+FOLLOW_ROWS = ','.join(f'["{i}","row {i}"]' for i in range(40))
+FOLLOW_SOURCE = f"""
+script FollowProbe
+
+use graphics
+
+table Steps
+variable Rows
+variable Target
+variable FollowSelected
+list FollowSelection
+variable FollowNotified
+
+Main:
+    create Steps
+    set columns of Steps to `["step","what"]`
+    put `[{FOLLOW_ROWS}]` into Rows
+    set rows of Steps to Rows
+    on select Steps go to StepSelected
+    show Steps
+    put 12 into Target
+    select row Target of Steps
+    put the selection of Steps into FollowSelection
+    put the selected row of Steps into FollowSelected
+    put 35 into Target
+    scroll to row Target of Steps
+    put 99 into Target
+    select row Target of Steps
+    scroll to row Target of Steps
+    stop
+
+StepSelected:
+    put the selected row of Steps into FollowNotified
+    return
+"""
+follow = Program('followprobe.allspeak', testMode=True, source=FOLLOW_SOURCE)
+follow.start()
+app.processEvents()
+followTable = widget(follow, 'Steps')
+check(value(follow, 'FollowSelected') == 12,
+      f'`select row Target of Steps` makes row 12 the current row '
+      f'(got {value(follow, "FollowSelected")!r})')
+check(value(follow, 'FollowSelection') == [12],
+      f'and the selection is that one row (got {value(follow, "FollowSelection")!r})')
+check(value(follow, 'FollowNotified') == 12,
+      f'and it is a real selection change, so `on select` runs '
+      f'(got {value(follow, "FollowNotified")!r})')
+check(followTable.currentRow() == 12
+      and sorted({index.row() for index in followTable.selectionModel().selectedIndexes()}) == [12],
+      'a row outside the table is ignored rather than moving the selection '
+      f'(current row {followTable.currentRow()})')
+scrollBar = followTable.verticalScrollBar()
+rowTop = followTable.rowViewportPosition(35)
+check(scrollBar.value() > 0 and 0 <= rowTop < followTable.viewport().height(),
+      f'`scroll to row Target of Steps` brings row 35 into view '
+      f'(scroll {scrollBar.value()} of {scrollBar.maximum()}, row top {rowTop}, '
+      f'viewport {followTable.viewport().height()})')
+check(followTable.currentRow() == 12,
+      'and scrolling does not take the selection away from the row it was on')
+
+print()
+print('the words for a row and a scroll reach the commands in every pack')
+for lang, rowWord, scrollWord in (('en', 'row', 'scroll'), ('fr', 'rang', 'défile'),
+                                  ('de', 'reihe', 'scrolle'), ('it', 'fila', 'scorrimento')):
+    pack = Language()
+    pack.load_by_name(lang)
+    check(pack.reverse_word(rowWord) == 'row',
+          f'{lang}: {rowWord!r} reverse-maps to {pack.reverse_word(rowWord)!r}')
+    check(pack.reverse_word(scrollWord) == 'scroll',
+          f'{lang}: {scrollWord!r} reverse-maps to {pack.reverse_word(scrollWord)!r}')
 
 print()
 if failures:

@@ -813,6 +813,12 @@ var AllSpeak_LanguagePack_fr = {
         "définis [le] curseur de corps à {value}"
       ]
     },
+    "SET_TOOLTIP": {
+      "keyword": "définis|definis",
+      "patterns": [
+        "définis [la] infobulle de {element} à {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "définis|definis",
       "patterns": [
@@ -1180,6 +1186,8 @@ var AllSpeak_LanguagePack_fr = {
     "height": "hauteur",
     "scroll": "défile|defile",
     "cursor": "curseur",
+    "tooltip": "infobulle",
+    "row": "rang",
     "parent": "parent",
     "history": "historique",
     "pick": "choisi",

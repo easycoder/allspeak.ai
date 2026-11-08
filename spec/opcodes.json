@@ -1561,6 +1561,19 @@
         "cursor"
       ]
     },
+    "SET_TOOLTIP": {
+      "domain": "browser",
+      "category": "content",
+      "description": "Set an element's tooltip — the browser's own title attribute",
+      "current": {
+        "keyword": "set",
+        "subType": "setTooltip"
+      },
+      "params": [
+        "symbolName",
+        "value"
+      ]
+    },
     "SET_DEFAULT": {
       "domain": "browser",
       "category": "content",
