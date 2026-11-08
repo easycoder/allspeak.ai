@@ -753,7 +753,7 @@ class Core(Handler):
             command['forkExpr'] = self.getValue()
             self.nextToken()  # advance past the expression
         else:
-            command['fork'] = self.nextToken()
+            command['fork'] = self.compiler.nextRawToken()
         self.add(command)
         return True
 
@@ -847,7 +847,7 @@ class Core(Handler):
             command['gotoExpr'] = self.getValue()
             self.nextToken()  # advance past the expression
         else:
-            command['goto'] = self.nextToken()
+            command['goto'] = self.compiler.nextRawToken()
         self.add(command)
         return True
 
@@ -880,7 +880,7 @@ class Core(Handler):
             command['gosubExpr'] = self.getValue()
             # Don't advance here — the 'with' check below uses peek()
         else:
-            command['gosub'] = self.nextToken()
+            command['gosub'] = self.compiler.nextRawToken()
         # Parse optional with-args. The sequence matters: peek() sees one
         # token ahead without advancing, so we first advance onto the 'with'
         # connector, then nextValue() advances past it (and past each 'and')
@@ -2536,7 +2536,7 @@ class Core(Handler):
             option = language.reverse_word(self.peek())
             if option == 'on':
                 self.nextToken()
-                point = self.nextToken()
+                point = self.compiler.nextRawToken()
                 command['point'] = point[:-1] if point and point.endswith(':') else point
             elif option in ('once', 'every'):
                 command['mode'] = option
@@ -2677,6 +2677,148 @@ class Core(Handler):
         else:
             self.program.pc += 1
         return self.program.pc
+
+    # repeat {value} times as {index} <body>
+    #
+    # A counted loop whose index is local to the loop. The index is a symbol of the
+    # program, but one the script cannot name: it is registered under a key of its
+    # own (`i#0`) and the scope installed while the body compiles makes every `i` in
+    # that body — read or written — mean this record. Outside the body the name means
+    # the global again, or nothing at all. **A global called `i` is therefore left
+    # alone**, and no way out of the loop (`stop`, an error, a `go to`) can leave the
+    # local in place, because the scope ends with the compile, not with the run.
+    # The index is zero-based, matching the language's array and `index` convention.
+    def k_repeat(self, command):
+        command['value'] = self.nextValue()
+        if command['value'] == None: return False
+        if not language.matches_word(self.peek(), 'times'):
+            FatalError(self.compiler, "repeat: expected 'times' after the count")
+        self.nextToken()  # onto 'times'
+        if not language.matches_word(self.peek(), 'as'):
+            FatalError(self.compiler, "repeat: expected 'as <index>' after 'times'")
+        self.nextToken()  # onto 'as'
+        index = self.compiler.nextRawToken()  # onto the name
+        # A name the scope can safely hide: not a word of the pack (so `isWord` checks
+        # and command dispatch are unaffected), not a label, not a number or string
+        # literal, and not carrying `#`, which is how internal keys are made.
+        if (not index or index.endswith(':') or index[0].isdigit() or index[0] == '`'
+                or '#' in index or language.is_word_form(index)):
+            FatalError(self.compiler, f"repeat: 'as' needs a new variable name, not a "
+                f"keyword, label or literal (got '{index}')")
+        self.nextToken()  # onto the body's first token
+        # The hidden symbol the body will see. Its key is never the script's own name
+        # — `i#0` even when no global `i` exists — because the local must not be
+        # reachable from outside the body.
+        key = f'{index}#0'
+        n = 0
+        while key in self.symbols:
+            n += 1
+            key = f'{index}#{n}'
+        record = {}
+        record['domain'] = 'core'
+        record['keyword'] = 'variable'
+        record['lino'] = command['lino']
+        record['hidden'] = True
+        # The hidden declaration is a command like any other, so it would take the
+        # statement's attribute; hold it back so it rides on the `repeat` command.
+        saved = self.compiler.attrPending
+        self.compiler.attrPending = None
+        self.compileSymbol(record, key, 'ECVariable')
+        self.compiler.attrPending = saved
+        # init: evaluate the count once and enter the test
+        command['phase'] = 'init'
+        command['index'] = key
+        self.add(command)
+        # test: advance the index, and enter the body while it is within the count
+        testPC = self.getCodeSize()
+        cmd = {}
+        cmd['domain'] = 'core'
+        cmd['keyword'] = 'repeat'
+        cmd['lino'] = command['lino']
+        cmd['phase'] = 'test'
+        cmd['index'] = key
+        cmd['end'] = 0
+        self.add(cmd)
+        # Skip when the test fails
+        skip = self.getCodeSize()
+        cmd = {}
+        cmd['lino'] = command['lino']
+        cmd['domain'] = 'core'
+        cmd['keyword'] = 'gotoPC'
+        cmd['goto'] = 0
+        self.add(cmd)
+        # Compile the body in the index's scope
+        self.compiler.symbolScopes.append({index: key})
+        try:
+            if self.compileOne() == False:
+                return False
+        finally:
+            self.compiler.symbolScopes.pop()
+        # Repeat the test
+        cmd = {}
+        cmd['lino'] = command['lino']
+        cmd['domain'] = 'core'
+        cmd['keyword'] = 'gotoPC'
+        cmd['goto'] = testPC
+        self.add(cmd)
+        # The end runs once whether the body finished or the test failed, so a loop
+        # re-entered from inside itself restores the counter its caller was using.
+        endPC = self.getCodeSize()
+        cmd = {}
+        cmd['domain'] = 'core'
+        cmd['keyword'] = 'repeat'
+        cmd['lino'] = command['lino']
+        cmd['phase'] = 'end'
+        cmd['index'] = key
+        self.add(cmd)
+        # Fix up the links
+        self.getCommandAt(testPC)['end'] = endPC
+        self.getCommandAt(skip)['goto'] = endPC
+        return True
+
+    def r_repeat(self, command):
+        phase = command['phase']
+        record = self.program.getVariable(command['index'])
+        if not hasattr(self.program, 'repeatFrames'):
+            self.program.repeatFrames = {}
+        frames = self.program.repeatFrames.setdefault(command['index'], [])
+        object = self.getObject(record)
+        if phase == 'init':
+            # The count is read once, as a `for` loop's bound is: changing the
+            # variable it came from inside the body cannot move the finish line.
+            count = self.textify(command['value'])
+            try:
+                limit = int(count)
+            except (ValueError, TypeError):
+                RuntimeError(self.program, f"repeat needs a number of times, got '{count}'")
+                return None
+            frames.append({'limit': limit, 'index': object.getIndex(),
+                'value': object.getValue()})
+            object.setIndex(0)
+            self.program.putSymbolValue(record, ECValue(type=int, content=-1))
+            return self.nextPC()
+        if phase == 'test':
+            if not frames:
+                RuntimeError(self.program, 'repeat reached its test without starting')
+                return None
+            object.setIndex(0)
+            counter = object.getValue()
+            n = (int(counter.getContent()) if counter is not None else -1) + 1
+            self.program.putSymbolValue(record, ECValue(type=int, content=n))
+            # Zero-based: `repeat 4 times as i` gives i = 0, 1, 2, 3.
+            if n < frames[-1]['limit']:
+                self.program.pc += 2
+            else:
+                self.program.pc += 1
+            return self.program.pc
+        # phase == 'end'
+        if frames:
+            frame = frames.pop()
+            if frame['index'] is not None:
+                object.setIndex(frame['index'])
+            if frame['value'] is not None:
+                self.program.putSymbolValue(record, frame['value'])
+        return self.nextPC()
 
     # Write to a file
     def k_write(self, command):

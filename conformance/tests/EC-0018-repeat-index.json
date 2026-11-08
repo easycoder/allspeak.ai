@@ -1,0 +1,21 @@
+{
+  "id": "EC-0018",
+  "name": "repeat-index",
+  "specVersion": "0.1",
+  "required": true,
+  "requirements": [
+    "2.2",
+    "2.4"
+  ],
+  "script": "EC-0018-repeat-index.allspeak",
+  "expect": {
+    "logs": [
+      "6",
+      "99",
+      "3",
+      "0",
+      "0101"
+    ],
+    "error": null
+  }
+}

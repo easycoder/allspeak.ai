@@ -26,6 +26,20 @@ class Compiler:
 		# statement can compile another — a `begin` compiles its whole body.
 		self.attrPending = None
 		self.attrStamped = False
+		# Lexical scopes for block-local symbols — today the index of a `repeat`
+		# loop. Each entry maps a source name to the program's own key for the
+		# symbol that shadows it, so a body compiled inside the scope reads and
+		# writes the local while the same name outside still means the global (or
+		# nothing at all). Compile-time, not runtime: the scope ends when the body
+		# has finished compiling, so no execution path can leak it.
+		self.symbolScopes = []
+
+	def symbolKey(self, token):
+		for scope in reversed(self.symbolScopes):
+			key = scope.get(token)
+			if key is not None:
+				return key
+		return token
 
 	# Get the current code size. Used during compilation
 	def getCodeSize(self):
@@ -43,7 +57,22 @@ class Compiler:
 	def getToken(self):
 		if self.index >= len(self.tokens):
 			FatalError(self, 'Premature end of script')
+		# Read through the scope so every site that captures a symbol name gets
+		# the key of the local without having to know about scopes.
+		return self.symbolKey(self.tokens[self.index].token)
+
+	# The source token itself, before any loop scope renames it. Labels are the
+	# one thing a scope must not touch: `go to i` names a label, not the
+	# `repeat … as i` index that shadows a global inside the body.
+	def getRawToken(self):
+		if self.index >= len(self.tokens):
+			FatalError(self, 'Premature end of script')
 		return self.tokens[self.index].token
+
+	# Move the index along and return the unmapped token
+	def nextRawToken(self):
+		self.index += 1
+		return self.getRawToken()
 
 	# Get the next token
 	def nextToken(self):
@@ -249,7 +278,13 @@ class Compiler:
 
 	# Compile a variable
 	def compileVariable(self, command, classname):
-		return self.compileSymbol(command, self.nextToken(), classname)
+		name = self.nextToken()
+		if name != self.getRawToken():
+			# A declaration inside the body would land on the loop's own key and
+			# quietly replace its index; the script must use another name.
+			raise FatalError(self, f"'{self.getRawToken()}' is the index of an enclosing "
+				f"repeat loop, so it cannot be declared here")
+		return self.compileSymbol(command, name, classname)
 
 	# Compile a symbol
 	def compileSymbol(self, command, name, classname):

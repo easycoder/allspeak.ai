@@ -688,6 +688,12 @@ var AllSpeak_LanguagePack_it = {
         "renderizza {script} in {parent}"
       ]
     },
+    "REPEAT": {
+      "keyword": "ripeti",
+      "patterns": [
+        "ripeti {value} volte come {index}"
+      ]
+    },
     "REPLACE": {
       "keyword": "sostituisci",
       "patterns": [
@@ -1162,6 +1168,7 @@ var AllSpeak_LanguagePack_it = {
     "add": "aggiungi",
     "split": "dividi",
     "join": "unisci",
+    "repeat": "ripeti",
     "replace": "sostituisci",
     "count": "conteggio",
     "size": "dimensione",
@@ -1395,6 +1402,7 @@ var AllSpeak_LanguagePack_it = {
     "limit": "limite",
     "until": "fino-a",
     "thread": "discussione|thread",
+    "times": "volte",
     "via": "via",
     "memory": "memoria"
   },

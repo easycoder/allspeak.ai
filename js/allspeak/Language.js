@@ -115,6 +115,16 @@ const AllSpeak_Language = {
 		return this._reverseWords[token] || token;
 	},
 
+	// Is this token any form of any word the active pack declares? `reverseWord`
+	// cannot answer that, because it falls back to the token itself — so an unknown
+	// name and an English word whose form is its own canonical look the same.
+	isWordForm: function(token) {
+		if (!this._reverseWords) {
+			this._buildReverseWords();
+		}
+		return this._reverseWords[token] !== undefined;
+	},
+
 	// Reverse lookup for a word whose form spans more than one token — English `right click`,
 	// French `clic droit`, Italian `clic destro`, all forms of the one canonical `rightClick`.
 	//

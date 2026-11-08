@@ -68,6 +68,7 @@ const AllSpeak_Opcodes = {
 		// Control flow
 		case `if`:        return `IF`;
 		case `while`:     return `WHILE`;
+		case `repeat`:    return `REPEAT`;
 		case `goto`:      return `GOTO`;
 		case `go`:        return `GOTO`;
 		case `gosub`:     return `GOSUB`;

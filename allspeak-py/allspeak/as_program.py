@@ -246,7 +246,7 @@ class Program:
 					f'{round((finishCompile - startCompile) * 1000)} ms')
 				for name in self.symbols.keys():
 					record = self.code[self.symbols[name]]
-					if name[-1] != ':' and not record['used']:
+					if name[-1] != ':' and not record['used'] and not record.get('hidden'):
 						print(f'Variable "{name}" not used')
 				print(f'Run {self.name}')
 			if self.recordTo:

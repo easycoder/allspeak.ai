@@ -328,7 +328,7 @@ const AllSpeak_Core = {
 				const option = AllSpeak_Language.reverseWord(compiler.getToken());
 				if (option === `on`) {
 					compiler.next();
-					const point = compiler.getToken();
+					const point = compiler.getRawToken();
 					command.point = point && point.endsWith(`:`) ? point.slice(0, -1) : point;
 					compiler.next();
 				} else if (option === `once` || option === `every`) {
@@ -1020,7 +1020,7 @@ const AllSpeak_Core = {
 					gotoExpr: expr
 				});
 			} else {
-				const label = compiler.getToken();
+				const label = compiler.getRawToken();
 				compiler.next();
 				compiler.addCommand({
 					domain: `core`,
@@ -1078,7 +1078,7 @@ const AllSpeak_Core = {
 					gotoExpr: expr
 				});
 			} else {
-				const label = compiler.getToken();
+				const label = compiler.getRawToken();
 				compiler.next();
 				compiler.addCommand({
 					domain: `core`,
@@ -1139,7 +1139,7 @@ const AllSpeak_Core = {
 					gotoExpr: expr
 				};
 			} else {
-				const label = compiler.getToken();
+				const label = compiler.getRawToken();
 				compiler.next();
 				command = {
 					domain: `core`,
@@ -1838,6 +1838,186 @@ const AllSpeak_Core = {
 		}
 	},
 
+
+	// repeat <value> times as <index> <body>
+	//
+	// A counted loop whose index is local to the loop. The index is a symbol of the
+	// program, but one the script cannot name: it is registered under a key of its own
+	// (`i#0`) and the scope installed while the body compiles makes every `i` in that
+	// body — read or written — mean this record. Outside the body the name means the
+	// global again, or nothing at all. **A global called `i` is therefore left alone**,
+	// and no way out of the loop (`stop`, an error, a `go to`) can leave the local in
+	// place, because the scope ends with the compile, not with the run.
+	Repeat: {
+
+		compile: compiler => {
+			const lino = compiler.getLino();
+			compiler.next();
+			const value = compiler.getValue();
+			if (!value) {
+				throw new Error(`repeat: expected a count after 'repeat' (line ${lino + 1})`);
+			}
+			if (!compiler.isWord(`times`)) {
+				throw new Error(`repeat: expected 'times' after the count (line ${lino + 1})`);
+			}
+			compiler.next();
+			if (!compiler.isWord(`as`)) {
+				throw new Error(`repeat: expected 'as <index>' after 'times' (line ${lino + 1})`);
+			}
+			compiler.next();
+			const index = compiler.getRawToken();
+			// A name the scope can safely hide: not a word of the pack (so `isWord`
+			// checks and command dispatch are unaffected), not a label, not a number or
+			// string literal, and not carrying `#`, which is how internal keys are made.
+			if (!index || index.endsWith(`:`) || /^[0-9`]/.test(index) || index.includes(`#`)
+				|| AllSpeak_Language.isWordForm(index)) {
+				throw new Error(`repeat: 'as' needs a new variable name, not a keyword, ` +
+					`label or literal (got '${index}') (line ${lino + 1})`);
+			}
+			compiler.next();
+			// The hidden symbol the body will see. Its key is never the script's own name
+			// — `i#0` even when no global `i` exists — because the local must not be
+			// reachable from outside the body: with the plain name in the program's map,
+			// a statement after the loop would find it and compile.
+			let key = `${index}#0`;
+			let n = 0;
+			while (compiler.getSymbols()[key]) {
+				n++;
+				key = `${index}#${n}`;
+			}
+			compiler.addSymbol(key, compiler.getPc());
+			// The hidden declaration is a command like any other, so it would take
+			// the statement's attribute; hold the attribute back so it rides on the
+			// `repeat` command, which is the statement a tool is looking at.
+			const savedAttr = compiler.attrPending;
+			compiler.attrPending = null;
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `variable`,
+				lino,
+				isSymbol: true,
+				used: true,
+				hidden: true,
+				isVHolder: true,
+				name: key,
+				elements: 1,
+				index: 0,
+				value: [{ type: `constant`, numeric: true, content: 0 }],
+				element: []
+			});
+			compiler.attrPending = savedAttr;
+			// init: evaluate the count once and enter the test
+			const init = compiler.getPc();
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `repeat`,
+				lino,
+				phase: `init`,
+				value,
+				index: key,
+				test: 0
+			});
+			// test: advance the index, and enter the body while it is within the count
+			const test = compiler.getPc();
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `repeat`,
+				lino,
+				phase: `test`,
+				index: key,
+				end: 0
+			});
+			// Skip when the test fails
+			const skip = compiler.getPc();
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `goto`,
+				lino,
+				goto: 0
+			});
+			// Compile the body in the index's scope
+			compiler.symbolScopes.push({ [index]: key });
+			try {
+				compiler.compileOne();
+			} finally {
+				compiler.symbolScopes.pop();
+			}
+			// Repeat the test
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `goto`,
+				lino,
+				goto: test
+			});
+			// The end runs once whether the body finished or the test failed, so a loop
+			// re-entered from inside itself (a `gosub` back to it) restores the counter
+			// its caller was using.
+			const end = compiler.getPc();
+			compiler.addCommand({
+				domain: `core`,
+				keyword: `repeat`,
+				lino,
+				phase: `end`,
+				index: key
+			});
+			// Fix up the links
+			compiler.getCommandAt(init).test = test;
+			compiler.getCommandAt(test).end = end;
+			compiler.getCommandAt(skip).goto = end;
+			return true;
+		},
+
+		run: program => {
+			const command = program[program.pc];
+			const record = program.getSymbolRecord(command.index);
+			if (!program.repeatFrames) {
+				program.repeatFrames = {};
+			}
+			const frames = program.repeatFrames[command.index]
+				|| (program.repeatFrames[command.index] = []);
+			if (command.phase === `init`) {
+				const raw = program.getValue(command.value);
+				const limit = Number(raw);
+				if (Number.isNaN(limit)) {
+					program.runtimeError(command.lino,
+						`repeat needs a number of times, got '${raw}'`);
+					return 0;
+				}
+				// The count is read once, as a `for` loop's bound is: changing the
+				// variable it came from inside the body cannot move the finish line.
+				frames.push({
+					limit,
+					index: record.index,
+					values: record.value.slice()
+				});
+				record.index = 0;
+				record.value[0] = { type: `constant`, numeric: true, content: -1 };
+				return command.test;
+			}
+			if (command.phase === `test`) {
+				const frame = frames[frames.length - 1];
+				if (!frame) {
+					program.runtimeError(command.lino,
+						`repeat reached its test without starting`);
+					return 0;
+				}
+				record.index = 0;
+				const counter = record.value[0] || { content: -1 };
+				const n = Number(counter.content) + 1;
+				record.value[0] = { type: `constant`, numeric: true, content: n };
+				// Zero-based, matching the language's array and `index` convention:
+				// `repeat 4 times as i` gives i = 0, 1, 2, 3.
+				return n < frame.limit ? command.pc + 2 : command.pc + 1;
+			}
+			// phase === `end`
+			if (frames.length > 0) {
+				const frame = frames.pop();
+				record.index = frame.index;
+				record.value = frame.values;
+			}
+			return command.pc + 1;
+		}
+	},
 
 	Replace: {
 
@@ -3556,6 +3736,7 @@ const AllSpeak_Core = {
 			INDEX: this.Index,
 			IF: this.If,
 			WHILE: this.While,
+			REPEAT: this.Repeat,
 			GOTO: this.Go,
 			GOSUB: this.Gosub,
 			RETURN: this.Return,

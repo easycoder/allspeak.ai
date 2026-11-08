@@ -11,6 +11,7 @@ This contract currently covers:
 - Arithmetic expressions (`add`, `take`, `multiply`, `divide`) for numeric values.
 - Conditional branching (`if ... begin ... end`).
 - `while ... begin ... end` loops.
+- `repeat ... times as ... ... end` counted loops with a loop-local index.
 - String output behavior (`log`, and equivalent output commands where supported).
 - Attributes (`@`), and the promise that they change nothing about a run.
 
@@ -32,6 +33,7 @@ This contract does not yet standardize browser-only commands, DOM interactions, 
 12. An attribute written on the same line as a statement belongs to that statement, and the compiled element the statement becomes carries it in an `attr` field whose value is the attribute's text.
 13. A line holding only an attribute, and a statement that compiles to no element of its own (a label), carry their attribute in an element of their own, which the runtime steps over. Where a label has an element, the attribute is on the one the label addresses, so following the label finds it.
 14. Attributes do not affect behavior. Running a script and running the same script with its attributes removed must produce identical output, and a runtime must run an attributed script with no tool that reads attributes loaded.
+15. `repeat <count> times as <index> <body>` runs `<body>` `<count>` times, with `<index>` holding 0 on the first run and `<count> - 1` on the last. `<count>` is evaluated once, when the loop is entered. `<index>` is a variable of the body only: inside the body every reference to that name means the loop's index, even when a variable of the same name exists in the script, which is left unchanged; outside the body the name has whatever meaning it had there, and an undeclared name is an error as usual. The body is a single statement, normally `begin ... end`, and the loop closes with the body's own `end` (as `while` does).
 
 ## 3. Error Contract (Initial)
 

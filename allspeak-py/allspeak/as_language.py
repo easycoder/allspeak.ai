@@ -168,6 +168,17 @@ class Language:
             self._build_reverse_words()
         return self._reverse_words.get(token, token)
 
+    def is_word_form(self, token):
+        """Is this token any form of any word the active pack declares?
+
+        `reverse_word` cannot answer that, because it falls back to the token itself
+        — so an unknown name and an English word whose form is its own canonical
+        look the same.
+        """
+        if self._reverse_words is None:
+            self._build_reverse_words()
+        return token in self._reverse_words
+
     def canonicals_of(self, token):
         """Every canonical word this token is a form of, not only the one a reverse lookup keeps.
 

@@ -695,6 +695,12 @@ var AllSpeak_LanguagePack_en = {
         "render {script} in {parent}"
       ]
     },
+    "REPEAT": {
+      "keyword": "repeat",
+      "patterns": [
+        "repeat {value} times as {index}"
+      ]
+    },
     "REPLACE": {
       "keyword": "replace",
       "patterns": [
@@ -1260,6 +1266,7 @@ var AllSpeak_LanguagePack_en = {
     "add": "add",
     "split": "split",
     "join": "join",
+    "repeat": "repeat",
     "replace": "replace",
     "count": "count",
     "size": "size",
@@ -1494,6 +1501,7 @@ var AllSpeak_LanguagePack_en = {
     "limit": "limit",
     "once": "once",
     "thread": "thread",
+    "times": "times",
     "until": "until",
     "memory": "memory"
   }

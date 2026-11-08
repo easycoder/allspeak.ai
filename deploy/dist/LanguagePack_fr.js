@@ -680,6 +680,12 @@ var AllSpeak_LanguagePack_fr = {
         "rends {script} dans {parent}"
       ]
     },
+    "REPEAT": {
+      "keyword": "répète|repete",
+      "patterns": [
+        "répète {value} fois comme {index}"
+      ]
+    },
     "REPLACE": {
       "keyword": "remplace",
       "patterns": [
@@ -1161,6 +1167,7 @@ var AllSpeak_LanguagePack_fr = {
     "add": "ajoute",
     "split": "scinde",
     "join": "joins",
+    "repeat": "répète|repete",
     "replace": "remplace",
     "count": "compte",
     "size": "taille",
@@ -1392,6 +1399,7 @@ var AllSpeak_LanguagePack_fr = {
     "limit": "limite",
     "until": "jusqu'à|jusqu’à|jusqu'a|jusqu’a",
     "thread": "fil",
+    "times": "fois",
     "via": "via",
     "memory": "mémoire|memoire"
   },

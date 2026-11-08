@@ -1296,6 +1296,18 @@
         "script"
       ]
     },
+    "REPEAT": {
+      "domain": "core",
+      "category": "control_flow",
+      "description": "Counted loop — run a block a number of times, with a loop-local index",
+      "current": {
+        "keyword": "repeat"
+      },
+      "params": [
+        "value",
+        "index"
+      ]
+    },
     "REPLACE": {
       "domain": "core",
       "category": "collection",

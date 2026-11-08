@@ -24,8 +24,8 @@ Quick usage:
 - `python3 conformance/run_conformance.py --implementation js-browser --actuals conformance/actuals-js-browser.json`
 - `python3 conformance/run_conformance.py --implementation python-cli --actuals conformance/actuals-python-cli.json`
 
-Measured 2026-10-06, both records regenerated against the same 17 tests:
-**js-browser 17 pass, 0 fail; python-cli 16 pass, 1 fail** — `EC-0008`, and the failure is the
+Measured 2026-11-08, both records regenerated against the same 18 tests:
+**js-browser 18 pass, 0 fail; python-cli 17 pass, 1 fail** — `EC-0008`, and the failure is the
 runtime's, not the test's: `char N of` is a JavaScript-only value form. See that case's `note`.
 
 Actuals file format:

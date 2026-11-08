@@ -678,6 +678,12 @@
         "rendere {script} in {parent}"
       ]
     },
+    "REPEAT": {
+      "keyword": "wiederhole",
+      "patterns": [
+        "wiederhole {value} mal als {index}"
+      ]
+    },
     "REPLACE": {
       "keyword": "ersetze",
       "patterns": [
@@ -1156,6 +1162,7 @@
     "add": "addiere",
     "split": "trenne",
     "join": "vereinige",
+    "repeat": "wiederhole",
     "replace": "ersetze",
     "count": "anzahl",
     "size": "größe|groesse",
@@ -1388,6 +1395,7 @@
     "limit": "Limit|limit",
     "until": "bis",
     "thread": "Thread|thread",
+    "times": "mal",
     "via": "via",
     "memory": "speicher"
   },

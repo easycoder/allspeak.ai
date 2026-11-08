@@ -47,12 +47,48 @@ const AllSpeak_Compiler = {
 			return null;
 		}
 		const item = this.tokens[this.index];
-		return item ? this.tokens[this.index].token : null;
+		// Read through the scope so every existing site that captures a symbol name
+		// (`const target = compiler.getToken()`, `record.name`, the value compiler)
+		// gets the key of the local without each of them having to know about scopes.
+		return item ? this.symbolKey(item.token) : null;
 	},
 
 	nextToken: function() {
 		this.next();
 		return this.getToken();
+	},
+
+	// Lexical scopes for block-local symbols — today the index of a `repeat` loop.
+	// Each entry maps a source name to the program's own key for the symbol that
+	// shadows it, so a body compiled inside the scope reads and writes the local
+	// while the same name outside still means the global (or nothing at all).
+	//
+	// **Compile-time, not runtime, and that is what makes it watertight.** A runtime
+	// scope would have to be restored on every way out of the body — `stop`, an
+	// error, a `go to` — and would still shadow a global inside a `gosub` called
+	// from the body. Here the scope ends when the body has finished compiling, so
+	// no execution path can leak it.
+	symbolScopes: [],
+
+	symbolKey: function(token) {
+		for (let n = this.symbolScopes.length - 1; n >= 0; n--) {
+			const key = this.symbolScopes[n][token];
+			if (typeof key !== `undefined`) {
+				return key;
+			}
+		}
+		return token;
+	},
+
+	// The source token itself, before any loop scope renames it. Labels are the one
+	// thing a scope must not touch: `go to i` names a label, not the `repeat … as i`
+	// index that shadows a global inside the body.
+	getRawToken: function() {
+		if (this.index >= this.tokens.length) {
+			return null;
+		}
+		const item = this.tokens[this.index];
+		return item ? item.token : null;
 	},
 
 	tokenIs: function(token) {
@@ -114,7 +150,7 @@ const AllSpeak_Compiler = {
 	},
 
 	getTarget: function(index = this.index) {
-		return this.tokens[index].token;
+		return this.symbolKey(this.tokens[index].token);
 	},
 
 	getTargetPc: function(index = this.index) {
@@ -290,6 +326,13 @@ const AllSpeak_Compiler = {
 		this.next();
 		const lino = this.getLino();
 		const item = this.getTokens()[this.getIndex()];
+		if (this.symbolKey(item.token) !== item.token) {
+			// A declaration inside the body would land on the loop's own key and
+			// quietly replace its index; the script must use another name (or declare
+			// this one outside the loop, where it is the global it looks like).
+			throw new Error(`'${item.token}' is the index of an enclosing repeat loop, ` +
+				`so it cannot be declared here`);
+		}
 		if (this.symbols[item.token]) {
 			throw new Error(`Duplicate variable name '${item.token}'`);
 		}
@@ -495,6 +538,7 @@ const AllSpeak_Compiler = {
 		this.warnings = [];
 		this.attrPending = null;
 		this.attrStamped = false;
+		this.symbolScopes = [];
 		this.checkLanguageDirective();
 		this.compileFromHere([]);
 		this.addCommand({
@@ -513,7 +557,7 @@ const AllSpeak_Compiler = {
 		// regardless of shape.
 		for (const symbol in this.symbols) {
 			const record = this.program[this.symbols[symbol].pc];
-			if (!record.isSymbol || record.exporter) {
+			if (!record.isSymbol || record.exporter || record.hidden) {
 				continue;
 			}
 			let referenced = false;

@@ -1,0 +1,39 @@
+! EC-0018: repeat — a counted loop with a loop-local index
+
+variable Total
+variable i
+
+! The index runs 0..N-1; a global of the same name is shadowed and left alone.
+put 99 into i
+put 0 into Total
+repeat 4 times as i
+begin
+	add i to Total
+end
+log Total
+log i
+
+! The count is taken once, before the first iteration.
+variable N
+put 3 into N
+put 0 into Total
+repeat N times as k
+begin
+	add 1 to Total
+	put 0 into N
+end
+log Total
+log N
+
+! A nested loop of the same name has an index of its own.
+variable Seen
+put `` into Seen
+repeat 2 times as i
+begin
+	repeat 2 times as i
+	begin
+		put Seen cat i into Seen
+	end
+end
+log Seen
+stop

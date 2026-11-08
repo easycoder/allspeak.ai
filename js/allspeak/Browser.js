@@ -90,13 +90,13 @@ const AllSpeak_Browser = {
 			let noLabel = null;
 			if (AllSpeak_Language.reverseWord(compiler.getToken()) === `gosub`) {
 				compiler.next();
-				yesLabel = compiler.getToken();
+				yesLabel = compiler.getRawToken();
 				compiler.next();
 				if (AllSpeak_Language.reverseWord(compiler.getToken()) === `or`) {
 					compiler.next();
 					if (AllSpeak_Language.reverseWord(compiler.getToken()) === `gosub`) {
 						compiler.next();
-						noLabel = compiler.getToken();
+						noLabel = compiler.getRawToken();
 						compiler.next();
 					}
 				}

@@ -680,6 +680,12 @@ var AllSpeak_LanguagePack_de = {
         "rendere {script} in {parent}"
       ]
     },
+    "REPEAT": {
+      "keyword": "wiederhole",
+      "patterns": [
+        "wiederhole {value} mal als {index}"
+      ]
+    },
     "REPLACE": {
       "keyword": "ersetze",
       "patterns": [
@@ -1158,6 +1164,7 @@ var AllSpeak_LanguagePack_de = {
     "add": "addiere",
     "split": "trenne",
     "join": "vereinige",
+    "repeat": "wiederhole",
     "replace": "ersetze",
     "count": "anzahl",
     "size": "größe|groesse",
@@ -1390,6 +1397,7 @@ var AllSpeak_LanguagePack_de = {
     "limit": "Limit|limit",
     "until": "bis",
     "thread": "Thread|thread",
+    "times": "mal",
     "via": "via",
     "memory": "speicher"
   },
