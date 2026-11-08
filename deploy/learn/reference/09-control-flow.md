@@ -1,6 +1,6 @@
 # Control flow
 
-AllSpeak's control flow is built from a small set of constructs that compose freely: sequential statements grouped with `begin … end`, conditional `if … else`, the `while` loop, labels with `go to` and `gosub`, and thread-level `stop` and `exit`. AllSpeak mirrors natural language; the constructs are deliberately simple, and you are free to move around the code at your convenience.
+AllSpeak's control flow is built from a small set of constructs that compose freely: sequential statements grouped with `begin … end`, conditional `if … else`, the `while` loop, the counted `repeat` loop, labels with `go to` and `gosub`, and thread-level `stop` and `exit`. AllSpeak mirrors natural language; the constructs are deliberately simple, and you are free to move around the code at your convenience.
 
 There is no operator-style flow (no early-return-via-expression, no exceptions). Failure handling for specific commands is covered in [errors-and-recovery](errors-and-recovery.md); thread launching in [cooperative-multitasking](cooperative-multitasking.md).
 
@@ -83,6 +83,35 @@ end
 ```
 
 Termination: either let the condition fall false, or break out via `go to Label`, `stop`, `return`, or `exit`. There is no dedicated `break` or `continue` — pick the construct that matches what you want to do next. There are no stack implications from using `go to` to exit a loop; AllSpeak treats labels as free destinations.
+
+## `repeat`
+
+A counted loop, for when the number of passes is known before the first one. The body is one statement, normally a `begin … end` block, and the loop has no closing keyword of its own:
+
+```as
+repeat 4 times as i
+begin
+    print i
+end
+```
+
+The index is **zero-based**, matching the language's array and `index` convention: that prints `0`, `1`, `2`, `3`. Use it as the cursor for arrays and lists, where `index Cell to i` expects a slot number:
+
+```as
+repeat Count times as i
+begin
+    index Rows to i
+    print Rows
+end
+```
+
+The count is read once, when the loop is entered, so changing the variable it came from inside the body cannot move the finish line. A count of zero (or less) runs no passes.
+
+`<index>` is local to the body. Inside the body every reference to that name — reading it, writing it, using it in a condition — means the loop's index. Outside the body the name means whatever it meant there before, so a variable of the same name is shadowed rather than used or overwritten, and an undeclared name after the loop is an error as usual. Two loops may use the same index name without interfering, and a nested loop of the same name has an index of its own. The index cannot be declared again inside the body (`variable i` there is refused).
+
+The name must be a plain identifier that is **not a word of the active language** (nor a label or literal), because those tokens already have a grammar meaning the loop would displace. Italian, for example, spells the plural article `i`, so `ripeti 3 volte come i` is refused and the loop needs another name (`n`, `indice`, …).
+
+Assigning to the index changes the next value the loop tests, which is occasionally useful for skipping ahead; for the ordinary case, leave it alone.
 
 ## Labels and `go to`
 
@@ -262,6 +291,7 @@ Two ways to end something:
 
 - A single conditional action → `if`.
 - A repeating action → `while`.
+- A known number of passes, or a cursor over a collection → `repeat`.
 - A reusable block called from several places → `gosub` to a label.
 - A multi-way dispatch that would need a chain of `if … else` → **`go to label`** (computed goto). See [the computed-label section](#computed-label-go-to-label-expr).
 - A piece of logic large enough to need private state → a module ([modules](modules.md)).

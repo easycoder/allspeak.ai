@@ -73,7 +73,20 @@ Compared with `while`, this is more verbose for simple cases but more honest whe
 
 ## Counted iteration
 
-The canonical loop. Initialise counter, loop while in range, increment at the end:
+The shortest form, when the number of passes is known: `repeat`. The index is local to the loop, zero-based, and a variable of the same name outside is left alone:
+
+```as
+repeat Count times as N
+begin
+    ! ... work using N ...
+end
+```
+
+Use this where the only loop control is "a known number of times". Everything the `while` form below can do, `repeat` can do without the counter declaration, the starting value and the increment — and the counter cannot collide with a name elsewhere in the script.
+
+## Counted iteration with `while`
+
+The general form. Initialise counter, loop while in range, increment at the end:
 
 ```as
 set N to 0
@@ -85,7 +98,7 @@ end
 
 `Count` is whatever holds the size — typically a separate variable set earlier (e.g. when the array was sized). AllSpeak doesn't expose a built-in length for variable arrays at the read side; track the count yourself.
 
-Place the increment at the end of the body so every iteration both does its work and advances the counter.
+Place the increment at the end of the body so every iteration both does its work and advances the counter. Choose this form when the loop can also leave early on a condition the counter does not express.
 
 ## Iteration with the cursor model
 
