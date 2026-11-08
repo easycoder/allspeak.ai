@@ -277,6 +277,7 @@ const AllSpeak_Opcodes = {
 			case `setSelect`:     return `SET_SELECT`;
 			case `setStyle`:      return `SET_STYLE`;
 			case `setStyles`:     return `SET_STYLES`;
+			case `setCursor`:     return `SET_CURSOR`;
 			case `setBodyStyle`:  return `SET_BODY_STYLE`;
 			case `setHeadStyle`:  return `SET_HEAD_STYLE`;
 			case `setClass`:      return `SET_CLASS`;

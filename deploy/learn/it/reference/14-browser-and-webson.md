@@ -70,6 +70,37 @@ metti proprieta `color` di X in V             ! lettura di ritorno di una propri
 
 `imposta lo stile di X` è CSS inline in blocco; `imposta stile \`nome\` di X` scrive una singola proprietà CSS. `imposta attributo \`nome\` di X` scrive un attributo HTML sull'elemento DOM vivo chiamando `element.setAttribute(nome, valore)`.
 
+### Impostare il cursore
+
+`imposta il cursore di <elemento> a <nome>` imposta la forma del puntatore sopra quell'elemento, e `imposta il cursore di corpo a <nome>` la imposta su tutta la pagina — il puntatore di attesa che mostra un lavoro lungo:
+
+```as
+imposta il cursore di Finestra a wait        ! un puntatore di attesa mentre il lavoro gira
+imposta il cursore di Salva a hand           ! la mano che indicano le cose cliccabili
+imposta il cursore di Finestra a arrow       ! torna al puntatore normale
+imposta il cursore di corpo a wait           ! tutta la pagina, quando nessun elemento possiede il lavoro
+```
+
+I nomi sono gli stessi nei due motori di AllSpeak, quindi lo script gira identico sul desktop:
+
+| nome | che aspetto ha |
+|--|--|
+| `arrow` | il puntatore normale |
+| `hand` | la mano che indica, quella di link e pulsanti |
+| `wait` | il puntatore di attesa |
+| `progress` | un puntatore di attesa che lascia ancora cliccare |
+| `text` | la barra a I del testo modificabile |
+| `move` | il puntatore a quattro frecce |
+| `crosshair` | un mirino |
+| `help` | il puntatore con il punto interrogativo |
+| `not-allowed` | il cerchio barrato |
+| `grab` / `grabbing` | una mano aperta, e la mano chiusa durante il trascinamento |
+| `none` | nessun puntatore |
+
+Funziona anche un nome tra apici inversi o una variabile che lo contiene — `imposta il cursore di Finestra a \`wait\``, o `imposta il cursore di Finestra a Forma` — ed è così che uno script sceglie il cursore a runtime. Un nome fuori dalla tabella è un **errore a runtime**, non un no-op silenzioso: browser e toolkit ignorano un cursore che non conoscono, quindi un refuso lascerebbe il puntatore invariato senza dire nulla. I nomi solo CSS (`col-resize`, `zoom-in`, …) sono volutamente assenti, perché il motore desktop non li sa disegnare; una pagina solo browser può ancora arrivarci con `imposta stile`.
+
+Il bersaglio è un elemento dichiarato (`div`, `button`, `label`, …) o `corpo`; una semplice `variabile` viene rifiutata.
+
 ### Leggere la selezione
 
 `il selezionato testo di <elemento>` restituisce la sottostringa evidenziata di una textarea o di un input (vuota quando non c'è selezione). Per un `<select>`, `il selezionato indice di <elemento>` dà la posizione dell'opzione scelta e `il selezionato elemento di <elemento>` il suo testo.

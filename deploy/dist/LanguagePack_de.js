@@ -806,6 +806,13 @@ var AllSpeak_LanguagePack_de = {
         "setze {element} von {source}"
       ]
     },
+    "SET_CURSOR": {
+      "keyword": "setze",
+      "patterns": [
+        "setze [den] cursor von {element} zu {value}",
+        "setze [den] cursor von körper zu {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "setze",
       "patterns": [

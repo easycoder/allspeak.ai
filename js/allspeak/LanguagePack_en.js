@@ -821,6 +821,13 @@ var AllSpeak_LanguagePack_en = {
         "set {element} from {source}"
       ]
     },
+    "SET_CURSOR": {
+      "keyword": "set",
+      "patterns": [
+        "set [the] cursor of {element} to {value}",
+        "set [the] cursor of body to {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "set",
       "patterns": [

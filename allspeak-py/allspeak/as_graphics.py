@@ -80,8 +80,25 @@ from PySide6.QtWidgets import (
 )
 from allspeak.as_program import flush
 
-#############################################################################
-# EC Label widget class
+# The cursor names a script can write, and the Qt cursor each one sets. **The list is the same in
+# both flavours of AllSpeak** — js/allspeak/Browser.js holds the other copy — so a script that sets a
+# cursor runs on either without changing a word. `arrow` and `hand` are the words people reach for;
+# Qt, like CSS, spells those two `ArrowCursor` and `PointingHandCursor`.
+CURSORS = {
+    'arrow': Qt.CursorShape.ArrowCursor,
+    'hand': Qt.CursorShape.PointingHandCursor,
+    'wait': Qt.CursorShape.WaitCursor,
+    'progress': Qt.CursorShape.BusyCursor,
+    'text': Qt.CursorShape.IBeamCursor,
+    'move': Qt.CursorShape.SizeAllCursor,
+    'crosshair': Qt.CursorShape.CrossCursor,
+    'help': Qt.CursorShape.WhatsThisCursor,
+    'not-allowed': Qt.CursorShape.ForbiddenCursor,
+    'grab': Qt.CursorShape.OpenHandCursor,
+    'grabbing': Qt.CursorShape.ClosedHandCursor,
+    'none': Qt.CursorShape.BlankCursor,
+}
+
 class ECLabelWidget(QLabel):
     def __init__(self, text=None):
         super().__init__(text)
@@ -1925,6 +1942,7 @@ class Graphics(Handler):
     # set [the] color [of] {label}/{button}/{lineinput}/{multiline} [to] {color}
     # set [the] state [of] {checkbox} [to] {state}
     # set [the] style of {widget} to {style}
+    # set [the] cursor of {widget} to arrow|hand|wait|progress|text|move|crosshair|help|not-allowed|grab|grabbing|none
     # set {listbox} to {list}
     # set blocked true/false
     def k_set(self, command):
@@ -2026,6 +2044,25 @@ class Graphics(Handler):
                     command['name'] = record['name']
                     self.skipWord('to')
                     command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'cursor':
+            # set [the] cursor of {widget} to wait|arrow|hand|…
+            # The name is a bare word (the form people write), a backticked string or a variable,
+            # and the table is shared with the browser runtime so a script's words do not change
+            # between the two flavours.
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, (ECWidget, ECWindow, ECDialog)):
+                    command['what'] = 'cursor'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    ahead = self.peek()
+                    if ahead and (ahead[0] == '`' or ahead in self.symbols):
+                        command['value'] = self.nextValue()
+                    else:
+                        command['value'] = self.compileConstant(self.nextToken())
                     self.add(command)
                     return True
         elif token == 'alignment':
@@ -2148,6 +2185,19 @@ class Graphics(Handler):
                     command['name'] = record['name']
                     self.skipWord('to')
                     command['value'] = self.nextValue()
+                    self.add(command)
+                    return True
+        elif canon == 'selection':
+            # set selection of {table}/{listbox} to single|contiguous|multiple|none
+            # `multiple` is Qt's ExtendedSelection, so Ctrl and Shift both work.
+            self.skipWord('of')
+            if self.nextIsSymbol():
+                record = self.getSymbolRecord()
+                if self.isObjectType(record, (ECTable, ECListBox)):
+                    command['what'] = 'selection'
+                    command['name'] = record['name']
+                    self.skipWord('to')
+                    command['value'] = language.reverse_word(self.nextToken())
                     self.add(command)
                     return True
         elif canon == 'sizes':
@@ -2292,6 +2342,15 @@ class Graphics(Handler):
                 elif flag == 'bottom': alignment |= Qt.AlignmentFlag.AlignBottom
                 elif flag == 'center': alignment |= Qt.AlignmentFlag.AlignCenter
             widget.setAlignment(alignment)
+        elif what == 'cursor':
+            record = self.getVariable(command['name'])
+            widget = self.getInnerObject(record)
+            name = str(self.textify(command['value'])).strip().lower()
+            if name not in CURSORS:
+                raise RuntimeError(self.program,
+                    f"'{name}' is not a cursor. Try arrow, hand, wait, progress, text, move, "
+                    f"crosshair, help, grab, grabbing, not-allowed or none.")
+            widget.setCursor(CURSORS[name])  # type: ignore
         elif what == 'style':
             record = self.getVariable(command['name'])
             widget = self.getInnerObject(record)
@@ -2342,6 +2401,21 @@ class Graphics(Handler):
         elif what == 'rownumbers':
             widget = self.getInnerObject(self.getVariable(command['name']))
             widget.verticalHeader().setVisible(bool(self.textify(command['value'])))  # type: ignore
+        elif what == 'selection':
+            # The mode is a word, not a value, so a typo is a runtime error rather than a
+            # silently unchanged widget.
+            widget = self.getInnerObject(self.getVariable(command['name']))
+            mode = {
+                'single': QAbstractItemView.SelectionMode.SingleSelection,
+                'contiguous': QAbstractItemView.SelectionMode.ContiguousSelection,
+                'multiple': QAbstractItemView.SelectionMode.ExtendedSelection,
+                'none': QAbstractItemView.SelectionMode.NoSelection,
+            }.get(str(command['value']))
+            if mode is None:
+                raise RuntimeError(
+                    self.program,
+                    f"Unknown selection mode `{command['value']}`: single, contiguous, multiple or none")
+            widget.setSelectionMode(mode)  # type: ignore
         elif what == 'panesizes':
             widget = self.getInnerObject(self.getVariable(command['name']))
             sizes = [int(self.textify(size)) for size in self.tableValueList(command['value'])]
@@ -2633,6 +2707,15 @@ class Graphics(Handler):
                         value.setType(token + 'Count')
                         value.target = record['name']
                         return value
+            elif language.reverse_word(token) == 'selection':
+                # the selection of {table}/{listbox} — every selected row index, as a list
+                self.skipWord('of')
+                if self.nextIsSymbol():
+                    record = self.getSymbolRecord()
+                    if self.isObjectType(record, (ECTable, ECListBox)):
+                        value.setType('selection')
+                        value.target = record['name']
+                        return value
             elif token == 'cell':
                 # the cell {row} {column} of {table}
                 self.nextToken()
@@ -2773,6 +2856,15 @@ class Graphics(Handler):
     def v_clickedRow(self, v):
         widget = self.tableWidget(v)
         return ECValue(domain=self.getName(), type=int, content=widget.clickedRow)
+
+    # The selection of a table or a listbox, read as a list of row indexes. A single-row
+    # selection answers a one-item list and no selection an empty one, so one shape covers
+    # every mode — and `item N of` / `the count of` read it like any other list.
+    def v_selection(self, v):
+        record = self.getVariable(v.target)
+        widget = self.getInnerObject(record)
+        rows = {index.row() for index in widget.selectionModel().selectedIndexes()}
+        return ECValue(domain=self.getName(), type='list', content=sorted(rows))
 
     def v_clickedColumn(self, v):
         widget = self.tableWidget(v)

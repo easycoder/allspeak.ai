@@ -70,6 +70,37 @@ lege eigenschaft `color` von X in V           ! eine Eigenschaft zurücklesen
 
 `setze den stil von X` ist Bulk-Inline-CSS; `setze stil \`name\` von X` schreibt eine einzelne CSS-Eigenschaft. `setze attribut \`name\` von X` schreibt ein HTML-Attribut auf das lebende DOM-Element, indem es `element.setAttribute(name, value)` aufruft.
 
+### Den Cursor setzen
+
+`setze den cursor von <Element> zu <Name>` setzt die Form des Zeigers über diesem Element, und `setze den cursor von körper zu <Name>` setzt sie über der ganzen Seite — der Wartepfeil, den eine lange Arbeit zeigt:
+
+```as
+setze den cursor von Fenster zu wait        ! ein Wartepfeil, während die Arbeit läuft
+setze den cursor von Speichern zu hand      ! die zeigende Hand, die Klickbares trägt
+setze den cursor von Fenster zu arrow       ! zurück zum normalen Zeiger
+setze den cursor von körper zu wait         ! die ganze Seite, wenn kein Element die Arbeit besitzt
+```
+
+Die Namen sind in beiden AllSpeak-Laufzeiten dieselben, das Skript läuft also unverändert auf dem Desktop:
+
+| Name | Aussehen |
+|--|--|
+| `arrow` | der normale Zeiger |
+| `hand` | die zeigende Hand, die Links und Schaltflächen tragen |
+| `wait` | der Wartepfeil |
+| `progress` | ein Wartepfeil, der noch klicken lässt |
+| `text` | die I-förmige Einfügemarke für bearbeitbaren Text |
+| `move` | der Zeiger mit vier Pfeilen |
+| `crosshair` | ein Fadenkreuz |
+| `help` | der Zeiger mit dem Fragezeichen |
+| `not-allowed` | der durchgestrichene Kreis |
+| `grab` / `grabbing` | eine offene Hand und die geschlossene Hand beim Ziehen |
+| `none` | kein Zeiger |
+
+Ein Name in Backticks oder eine Variable, die ihn hält, funktioniert ebenso — `setze den cursor von Fenster zu \`wait\`` oder `setze den cursor von Fenster zu Form` — so wählt ein Skript den Cursor zur Laufzeit. Ein Name außerhalb der Tabelle ist ein **Laufzeitfehler**, kein stilles Nichts-Tun: Browser und Toolkit ignorieren einen Cursor, den sie nicht kennen, ein Tippfehler ließe den Zeiger also unverändert und sagte nichts. Die reinen CSS-Namen (`col-resize`, `zoom-in`, …) fehlen absichtlich, weil die Desktop-Laufzeit sie nicht zeichnen kann; eine reine Browser-Seite erreicht sie weiterhin über `setze stil`.
+
+Das Ziel ist ein deklariertes Element (`div`, `button`, `label`, …) oder `körper`; eine einfache `variable` wird abgelehnt.
+
 ### Die Auswahl lesen
 
 `der ausgewählt text von <element>` liefert den markierten Teil eines textfeld oder input zurück (leer, wenn nichts markiert ist). Für ein `<select>` liefert `der ausgewählt index von <element>` die Position der gewählten Option und `der ausgewählt element von <element>` deren Text.

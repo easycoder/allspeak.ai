@@ -1,3 +1,41 @@
+// The cursor names a script can write, and the CSS values they set. `arrow` and `hand` are the two
+// words people reach for that CSS does not use — it spells the same two cursors `default` and
+// `pointer` — and the rest are CSS's own names. **The names are not translated**, for the same reason
+// `set style \`cursor:pointer\` of X` is not: they are the browser's vocabulary, not the language's.
+const AllSpeak_BrowserCursors = {
+
+	// The published names and the CSS value each one sets. A name outside this table is refused at run
+	// time rather than passed through: the browser ignores a cursor it does not know, so a typo would
+	// leave the pointer unchanged and say nothing, which is the one outcome a reader cannot debug.
+	//
+	// **The table is deliberately small, and it is the same vocabulary the Python flavour accepts** —
+	// see `CURSORS` in allspeak-py/allspeak/as_graphics.py, which `tools/cursor-check.js` compares this
+	// against. A name both runtimes cannot render is not published, because a script that sets a cursor
+	// should run on either without changing a word. The CSS-only names (`col-resize`, `zoom-in`, …) are
+	// therefore not here: Qt has no cursor for them.
+	names: {
+		arrow: `default`,
+		hand: `pointer`,
+		wait: `wait`,
+		progress: `progress`,
+		text: `text`,
+		move: `move`,
+		crosshair: `crosshair`,
+		help: `help`,
+		"not-allowed": `not-allowed`,
+		grab: `grab`,
+		grabbing: `grabbing`,
+		none: `none`
+	},
+
+	// The CSS value for the name the script wrote, or null for a name no browser knows. Case and
+	// surrounding space are ignored, so a value that arrived from a variable still reads naturally.
+	resolve: function(name) {
+		const wanted = `${name == null ? `` : name}`.trim().toLowerCase();
+		return Object.prototype.hasOwnProperty.call(this.names, wanted) ? this.names[wanted] : null;
+	}
+};
+
 const AllSpeak_Browser = {
 
 	name: `AllSpeak_Browser`,
@@ -2688,6 +2726,50 @@ const AllSpeak_Browser = {
 							return true;
 						}
 					}
+				} else if (token === AllSpeak_Language.word(`cursor`)) {
+					// `set the cursor of Win to wait` — the name as a bare word, because that is how a
+					// person writes it and `wait` is already a keyword somewhere else in the language. A
+					// backticked name or a variable works too; the runtime maps `arrow`/`hand` and checks
+					// the name, so a typo is refused rather than silently leaving the pointer unchanged.
+					if (compiler.nextIsWord(`of`)) {
+						let cursorSymbol = null;
+						if (compiler.nextIsSymbol()) {
+							const symbolRecord = compiler.getSymbolRecord();
+							if (symbolRecord.extra !== `dom`) {
+								throw new Error(`'${symbolRecord.name}' is not a DOM type`);
+							}
+							cursorSymbol = symbolRecord.name;
+						} else if (!compiler.isWord(`body`)) {
+							throw new Error(`'${compiler.getToken()}' is not a DOM element`);
+						}
+						if (compiler.nextIsWord(`to`)) {
+							compiler.next();
+							const name = compiler.getToken();
+							if (!name) {
+								throw new Error(`Expected a cursor name after 'to'`);
+							}
+							let cursor;
+							if (compiler.isSymbol() || name.charAt(0) === `\``) {
+								cursor = compiler.getValue();
+							} else {
+								cursor = {
+									type: `constant`,
+									numeric: false,
+									content: name
+								};
+								compiler.next();
+							}
+							compiler.addCommand({
+								domain: `browser`,
+								keyword: `set`,
+								lino,
+								type: `setCursor`,
+								symbolName: cursorSymbol,
+								cursor
+							});
+							return true;
+						}
+					}
 				} else if (token === AllSpeak_Language.word(`default`)) {
 					if (compiler.nextIsWord(`of`)) {
 						if (compiler.nextIsSymbol()) {
@@ -2821,6 +2903,41 @@ const AllSpeak_Browser = {
 						target.scrollTop = Math.max(0, caretTop - 10);
 					}
 				}
+				break;
+			case `setCursor`:
+				// A cursor name is checked here rather than at compile time, because a variable can hold
+				// one. The error names the words that would have worked instead of leaving the pointer
+				// unchanged — see `AllSpeak_BrowserCursors` for why a silent name is the worst outcome.
+				const cursorName = program.getValue(command.cursor);
+				const cursorCss = AllSpeak_BrowserCursors.resolve(cursorName);
+				if (!cursorCss) {
+					program.runtimeError(command.lino,
+						`'${cursorName}' is not a cursor. Try arrow, hand, wait, progress, text, move, `
+						+ `crosshair, help, grab, grabbing or none.`);
+					return 0;
+				}
+				if (!command.symbolName) {
+					document.body.style.cursor = cursorCss;
+					break;
+				}
+				symbol = program.getSymbolRecord(command.symbolName);
+				target = symbol.element[symbol.index];
+				if (!target) {
+					const cursorElement = symbol.value[symbol.index];
+					if (!cursorElement.type) {
+						program.runtimeError(command.lino,
+							`Variable '${symbol.name}' is not attached to a DOM element.`);
+						return 0;
+					}
+					targetId = program.getValue(cursorElement);
+					target = document.getElementById(targetId);
+				}
+				if (!target) {
+					program.runtimeError(command.lino,
+						`Variable '${symbol.name}' has no DOM element.`);
+					return 0;
+				}
+				target.style.cursor = cursorCss;
 				break;
 			case `setSelect`:
 				// The source is assumed to be an array
@@ -3296,6 +3413,7 @@ const AllSpeak_Browser = {
 			SET_SELECT: this.Set,
 			SET_STYLE: this.Set,
 			SET_STYLES: this.Set,
+			SET_CURSOR: this.Set,
 			SET_BODY_STYLE: this.Set,
 			SET_HEAD_STYLE: this.Set,
 			SET_CLASS: this.Set,

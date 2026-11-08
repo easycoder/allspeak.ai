@@ -1548,6 +1548,19 @@
         "source"
       ]
     },
+    "SET_CURSOR": {
+      "domain": "browser",
+      "category": "dom",
+      "description": "Set the mouse cursor over an element, or over the page when no element is named",
+      "current": {
+        "keyword": "set",
+        "subType": "setCursor"
+      },
+      "params": [
+        "symbolName?",
+        "cursor"
+      ]
+    },
     "SET_DEFAULT": {
       "domain": "browser",
       "category": "content",

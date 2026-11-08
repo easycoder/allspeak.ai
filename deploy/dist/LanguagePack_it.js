@@ -813,6 +813,13 @@ var AllSpeak_LanguagePack_it = {
         "imposta {element} da {source}"
       ]
     },
+    "SET_CURSOR": {
+      "keyword": "imposta",
+      "patterns": [
+        "imposta [il] cursore di {element} a {value}",
+        "imposta [il] cursore di corpo a {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "imposta",
       "patterns": [

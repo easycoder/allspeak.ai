@@ -806,6 +806,13 @@ var AllSpeak_LanguagePack_fr = {
         "définis {element} depuis {source}"
       ]
     },
+    "SET_CURSOR": {
+      "keyword": "définis|definis",
+      "patterns": [
+        "définis [le] curseur de {element} à {value}",
+        "définis [le] curseur de corps à {value}"
+      ]
+    },
     "SET_DEFAULT": {
       "keyword": "définis|definis",
       "patterns": [

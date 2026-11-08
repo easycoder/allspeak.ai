@@ -70,6 +70,37 @@ put property `color` of X into V            ! read back a property
 
 `set the style of X` is bulk inline CSS; `set style \`name\` of X` writes a single CSS property. `set attribute \`name\` of X` writes an HTML attribute on the live DOM element by calling `element.setAttribute(name, value)`.
 
+### Setting the cursor
+
+`set the cursor of <element> to <name>` sets the pointer's shape over that element, and `set the cursor of body to <name>` sets it over the whole page — the busy pointer a long job shows:
+
+```as
+set the cursor of Win to wait          ! a busy pointer while the job runs
+set the cursor of SaveButton to hand   ! the pointing hand a clickable thing wears
+set the cursor of Win to arrow         ! back to the normal pointer
+set the cursor of body to wait         ! the whole page, when no one element owns the job
+```
+
+The names are the same in both AllSpeak runtimes, so the script runs on the desktop unchanged:
+
+| name | what it looks like |
+|--|--|
+| `arrow` | the normal pointer |
+| `hand` | the pointing hand used for links and buttons |
+| `wait` | the busy pointer |
+| `progress` | a busy pointer that still allows a click |
+| `text` | the I-beam for editable text |
+| `move` | the four-way move pointer |
+| `crosshair` | a crosshair |
+| `help` | the pointer with a question mark |
+| `not-allowed` | the crossed circle |
+| `grab` / `grabbing` | an open hand, and the closed hand while dragging |
+| `none` | no pointer at all |
+
+A backticked name or a variable holding one works too — `set the cursor of Win to \`wait\``, or `set the cursor of Win to Shape` — which is how a script chooses a cursor at run time. A name outside the table is a **runtime error**, not a silent no-op: both browsers and the desktop toolkit ignore a cursor they do not know, so a typo would leave the pointer unchanged and say nothing. The CSS-only names (`col-resize`, `zoom-in`, …) are deliberately not in the table, because the desktop runtime cannot render them; a browser-only page can still reach one through `set style`.
+
+The target is an element the script has declared (`div`, `button`, `label`, …) or `body`; a plain `variable` is refused.
+
 ### Reading the selection
 
 `the selected text of <element>` returns the highlighted substring of a textarea or input (empty when nothing is selected). For a `<select>`, `the selected index of <element>` gives the chosen option's position and `the selected item of <element>` its text.

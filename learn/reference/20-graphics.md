@@ -175,6 +175,20 @@ set the spacing of MainPanel to 5
 set blocked true
 ```
 
+### Setting the cursor
+
+`set the cursor of <widget> to <name>` sets the pointer's shape over a widget — the busy pointer while a long job runs, or the hand over something clickable:
+
+```as
+set the cursor of MainWindow to wait
+set the cursor of SaveButton to hand
+set the cursor of SaveButton to arrow        ! back to the normal pointer
+```
+
+The twelve names are the same ones the browser runtime accepts — `arrow`, `hand`, `wait`, `progress`, `text`, `move`, `crosshair`, `help`, `not-allowed`, `grab`, `grabbing`, `none` — so a script that sets a cursor runs on either flavour unchanged. A backticked name or a variable holding one works too, and a name outside the table is a runtime error rather than a silently unchanged pointer. [Browser and Webson](14-browser-and-webson.md#setting-the-cursor) has the table of what each name looks like.
+
+A window, dialog or any widget takes it; a plain `variable` is refused.
+
 Tables have their own set of statements. The cursor reads them as a sentence — `set cell Steps 0 2 to …` — and the colour, tooltip and alignment are per cell:
 
 ```as
@@ -187,8 +201,22 @@ set cell alignment Steps 0 0 to center                  ! left | center | centre
 set column widths of Steps to `[40,80,120,200,120,200,80]`
 set stretch column of Steps to 5                        ! the column that takes the spare width
 set row numbers of Steps to true                        ! the vertical header (hidden by default)
+set selection of Steps to multiple                      ! single | contiguous | multiple | none
 clear Steps                                             ! removes the rows, keeps the columns
 ```
+
+`set selection of` also applies to a listbox. A table and a listbox are single-selection by default; `multiple` is Qt's `ExtendedSelection`, so a plain click selects one row and Ctrl/Shift add or range-select the rest. `contiguous` allows a range but no scattered rows, and `none` stops selection entirely — a click still fires `on click`, but `the selection of` stays empty. A typo in the mode is a runtime error rather than a silently unchanged widget.
+
+`the selection of` reads the whole set as a **list of row indexes**, ascending — the same value in every mode, so a script that handles one row already handles many. It works for a listbox as well as a table, and row indexes are 0-based, like `item N of`:
+
+```as
+list Selection
+put the selection of Steps into Selection
+put the count of Selection into N               ! 0 when nothing is selected
+put the selected row of Steps into R            ! the cursor row, even with several selected
+```
+
+A selection can be empty (a Ctrl-click that deselects the last row, or `clear`), and that is why the read is a list rather than a number. Guard an index before using it — `if the count of Selection is greater than 0` — and loop over it with `item N of`. `on click` still fires for the row under the pointer in a multiple-selection table, and by the time the handler runs that row is in the selection, so `the clicked row` and `the selection of` answer the click and the set it changed.
 
 A row may also be an object keyed by column label — `{"Actor":"User"}` fills the named columns — which is how a scenario's step objects can be shown without first flattening them to arrays. Cells are read-only: the inspector edits one step at a time and writes the cell back.
 
@@ -208,7 +236,7 @@ set sizes of Work to `[260,700]`
 set current tab of Views to 1
 ```
 
-Targets are type-checked at runtime: `text` applies to label/pushbutton/lineinput/multiline/mdpanel (mdpanel interprets it as markdown), `title` to window/group/dialog (it sets a window's or dialog's window title, or a group box's caption — the counterpart of `create … title`), `state` to checkbox, `layout` to window/group/panel, `alignment` flags are `left hcenter right top vcenter bottom center` (any combination).
+Targets are type-checked at runtime: `text` applies to label/pushbutton/lineinput/multiline/mdpanel (mdpanel interprets it as markdown), `title` to window/group/dialog (it sets a window's or dialog's window title, or a group box's caption — the counterpart of `create … title`), `state` to checkbox, `layout` to window/group/panel, `selection` to table/listbox, and `alignment` flags are `left hcenter right top vcenter bottom center` (any combination).
 
 ## Visibility and state
 
@@ -244,7 +272,7 @@ SaveClick:
     stop
 ```
 
-`click`/`tap` fire for `pushbutton` and for a table's `cellClicked`; `select` fires on a combo's `currentIndexChanged`, a listbox's `itemClicked`, a table's row selection, and a tab set's `currentChanged`. The tick handler is invoked by the flush timer whenever the program is not busy and not blocked.
+`click`/`tap` fire for `pushbutton` and for a table's `cellClicked`; `select` fires on a combo's `currentIndexChanged`, a listbox's `itemClicked`, a table's row selection, and a tab set's `currentChanged`. With multiple selection on a table, `click` fires for the row under the pointer and `select` fires on every change to the set; either handler can read `the selection of`. The tick handler is invoked by the flush timer whenever the program is not busy and not blocked.
 
 Because the handler is a single command, the idiomatic pattern is a label — usually ending in `stop`. The handler runs to completion; nothing waits on it. Widget variables follow the cursor model, and the `on` registration captures the array index of the element that fires, so one registration can serve an array of widgets (see [event handlers and array index](../idioms/event-handlers-and-array-index.md)).
 
@@ -297,6 +325,7 @@ A table and the log pane read back through their own values:
 ```as
 put the selected row of Steps into N          ! -1 when nothing is selected
 put the selected column of Steps into N
+put the selection of Steps into Selection      ! a list of selected row indexes, ascending
 put the clicked row of Steps into N            ! set by the last cell click
 put the clicked column of Steps into N
 put the cell 0 3 of Steps into V               ! row then column

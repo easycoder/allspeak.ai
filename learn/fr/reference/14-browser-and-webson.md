@@ -70,6 +70,37 @@ mets propriété `color` de X dans V           ! lecture retour d'une propriét�
 
 `définis le style de X` applique du CSS en ligne en bloc ; `définis style \`name\` de X` écrit une propriété CSS unique. `définis attribut \`name\` de X` écrit un attribut HTML sur l'élément DOM vivant en appelant `element.setAttribute(name, value)`.
 
+### Régler le curseur
+
+`définis le curseur de <élément> à <nom>` règle la forme du pointeur au-dessus de cet élément, et `définis le curseur de corps à <nom>` la règle sur toute la page — le pointeur d'attente qu'affiche un long travail :
+
+```as
+définis le curseur de Fenetre à wait        ! un pointeur d'attente pendant que le travail tourne
+définis le curseur de BoutonEnregistrer à hand   ! la main que porte ce qui se clique
+définis le curseur de Fenetre à arrow       ! retour au pointeur normal
+définis le curseur de corps à wait          ! toute la page, quand aucun élément ne porte le travail
+```
+
+Les noms sont les mêmes dans les deux moteurs d'AllSpeak, donc le script tourne à l'identique sur le bureau :
+
+| nom | allure |
+|--|--|
+| `arrow` | le pointeur normal |
+| `hand` | la main qui pointe, celle des liens et des boutons |
+| `wait` | le pointeur d'attente |
+| `progress` | un pointeur d'attente qui laisse encore cliquer |
+| `text` | la barre en I du texte modifiable |
+| `move` | le pointeur à quatre flèches |
+| `crosshair` | un réticule |
+| `help` | le pointeur avec un point d'interrogation |
+| `not-allowed` | le cercle barré |
+| `grab` / `grabbing` | une main ouverte, et la main fermée pendant le glissement |
+| `none` | aucun pointeur |
+
+Un nom entre accents graves ou une variable qui le contient marche aussi — `définis le curseur de Fenetre à \`wait\``, ou `définis le curseur de Fenetre à Forme` — c'est ainsi qu'un script choisit un curseur à l'exécution. Un nom hors du tableau est une **erreur d'exécution**, pas un no-op silencieux : navigateurs et boîte à outils ignorent un curseur qu'ils ne connaissent pas, donc une faute de frappe laisserait le pointeur inchangé sans rien dire. Les noms propres au CSS (`col-resize`, `zoom-in`, …) sont volontairement absents, parce que le moteur de bureau ne sait pas les dessiner ; une page réservée au navigateur peut encore y arriver avec `définis style`.
+
+La cible est un élément déclaré (`div`, `button`, `label`, …) ou `corps` ; une simple `variable` est refusée.
+
 ### Lire la sélection
 
 `le sélectionné texte de <élément>` renvoie la sous-chaîne surlignée d'une zonetexte ou d'un input (vide quand rien n'est sélectionné). Pour un `<select>`, `le sélectionné index de <élément>` donne la position de l'option choisie et `le sélectionné article de <élément>` son texte.
