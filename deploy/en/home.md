@@ -18,6 +18,12 @@ they just express them differently.</p>
 <li>Create animations and visual effects</li>
 </ul>
 
+<h2>Why AllSpeak?</h2>
+
+<p>A common assumption is that one stack is always best: put everything in Python, or everything in JavaScript, and keep it simple. AllSpeak separates two jobs that pull in opposite directions. <strong>Policy</strong> &mdash; what the application decides, in what order, for whom &mdash; is the part a person has to read and review. <strong>Mechanism</strong> &mdash; protocol handling, hardware drivers, numerical kernels, rendering &mdash; is the part that needs native speed or a library.</p>
+
+<p>The policy stays in AllSpeak. The mechanism lives in JavaScript or Python behind a small plugin vocabulary. That is a mixed stack, and it is the design rather than a workaround: the readable layer stays small, and the mechanism layer runs at the speed of its own language. <a href="primer.html#start" style="color:#00d4ff;text-decoration:none">The Primer's Why tab</a> sets out the argument; the <a href="../learn/" style="color:#00d4ff;text-decoration:none">Learn</a> curriculum has the decision guide.</p>
+
 <h2>Frequently asked questions</h2>
 
 <h3>What is AllSpeak?</h3>
@@ -47,7 +53,7 @@ they just express them differently.</p>
 <p>Yes. AllSpeak is open source under the Apache 2.0 license. The full source is at <a href="https://github.com/easycoder/allspeak.ai" style="color:#00d4ff;text-decoration:none">github.com/easycoder/allspeak.ai</a>.</p>
 
 <h3>How does AllSpeak relate to JavaScript and Python?</h3>
-<p>AllSpeak runs on either a JavaScript runtime (in the browser) or a Python runtime (on the command line). It's not a replacement for those languages — it's a higher-level layer above them. Plugins are written in JavaScript or Python and AllSpeak gives them a script-friendly vocabulary in any human language.</p>
+<p>AllSpeak runs on either a JavaScript runtime (in the browser) or a Python runtime (on the command line). It's not a replacement for those languages — it's a higher-level layer above them. Plugins are written in JavaScript or Python and AllSpeak gives them a script-friendly vocabulary in any human language. The result is a mixed stack: the policy you review stays in AllSpeak, and the mechanism that needs native speed or a library stays in the parent language.</p>
 
 <h3>Where do I start?</h3>
 <p>Work through the <a href="primer.html" style="color:#00d4ff;text-decoration:none">Primer</a> for a guided introduction, browse the <a href="../learn/" style="color:#00d4ff;text-decoration:none">Learn</a> curriculum, or grab a starter pack to drive an AI coding assistant.</p>
@@ -64,7 +70,7 @@ they just express them differently.</p>
 {"@type":"Question","name":"What kinds of projects is AllSpeak for?","acceptedAnswer":{"@type":"Answer","text":"Web applications, dashboards, REST and MQTT integrations, SQLite-backed services, Google Maps mashups, mobile-first webapps. The AllSpeak code editor and the multilingual chat application bundled with the project are themselves written in AllSpeak."}},
 {"@type":"Question","name":"What if I don't understand the code the AI produces?","acceptedAnswer":{"@type":"Answer","text":"That's the case AllSpeak is designed to prevent. Scripts read close to natural language. If a specific construct is still unfamiliar, your AI agent has a quick reference loaded and can explain it inline."}},
 {"@type":"Question","name":"Is AllSpeak free?","acceptedAnswer":{"@type":"Answer","text":"Yes. AllSpeak is open source under the Apache 2.0 license. The full source is at github.com/easycoder/allspeak.ai."}},
-{"@type":"Question","name":"How does AllSpeak relate to JavaScript and Python?","acceptedAnswer":{"@type":"Answer","text":"AllSpeak runs on either a JavaScript runtime (in the browser) or a Python runtime (on the command line). It is not a replacement for those languages — it is a higher-level layer above them. Plugins are written in JavaScript or Python and AllSpeak gives them a script-friendly vocabulary in any human language."}},
+{"@type":"Question","name":"How does AllSpeak relate to JavaScript and Python?","acceptedAnswer":{"@type":"Answer","text":"AllSpeak runs on either a JavaScript runtime (in the browser) or a Python runtime (on the command line). It is not a replacement for those languages — it is a higher-level layer above them. Plugins are written in JavaScript or Python and AllSpeak gives them a script-friendly vocabulary in any human language. The result is a mixed stack: the policy you review stays in AllSpeak, and the mechanism that needs native speed or a library stays in the parent language."}},
 {"@type":"Question","name":"Where do I start?","acceptedAnswer":{"@type":"Answer","text":"Work through the Primer for a guided introduction, browse the Learn curriculum, or grab a starter pack to drive an AI coding assistant."}}
 ]}
 </script>

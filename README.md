@@ -43,6 +43,12 @@ Three ways in, depending on how much time you have:
 - **No build environment for browser apps.** Drop a `<script>` tag, write your script in a `<pre>`, refresh. Compilation is tens of milliseconds, even on a phone.
 - **Pluggable.** Anything wrappable in JavaScript or Python — Google Maps, Markdown, MQTT, REST, SVG, SQLite — becomes a plugin with a script-friendly vocabulary. See [`spec/allspeak-plugin-contract.md`](spec/allspeak-plugin-contract.md).
 
+## Hybrid by design
+
+AllSpeak is the orchestration layer, not the whole stack. The **policy** — what the application decides, in what order, for whom — stays in readable AllSpeak. The **mechanism** — protocol handling, hardware drivers, numerical kernels, rendering — lives in JavaScript, Python or a native plugin behind a small vocabulary. Room By Room is the worked example: its controller and PWA are AllSpeak, its Zigbee, MQTT and journal services are Python, and its Studio pairs a Python runner with an AllSpeak/PySide shell; each part is replaceable behind its contract.
+
+Use a plugin when a mechanism is repeated, measured hot, or needs a native library — not for every verbose block. The decision guide is in [`learn/reference/13-plugins.md`](learn/reference/13-plugins.md#deciding-to-extract), and the practical checklist is [`learn/idioms/16-extracting-a-plugin.md`](learn/idioms/16-extracting-a-plugin.md).
+
 ## Two implementations
 
 | | JavaScript (browser) | Python (CLI) |

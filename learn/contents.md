@@ -21,7 +21,7 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 10. [Errors and recovery](reference/10-errors-and-recovery.md) — `or` (stop) vs `on failure` (continue).
 11. [Cooperative multitasking](reference/11-cooperative-multitasking.md) — `fork`, `wait`, never-interrupted-mid-statement.
 12. [Modules](reference/12-modules.md) — `run`, `release parent`, message passing.
-13. [Plugins](reference/13-plugins.md) — the contract; the mixed-stack performance principle.
+13. [Plugins](reference/13-plugins.md) — the contract; the mixed-stack performance principle; when and how to extract one.
 14. [Browser and Webson](reference/14-browser-and-webson.md) — DOM types, `attach`, the Webson layout dialect.
 15. [Multilingual](reference/15-multilingual.md) — the `language` directive and the pack model.
 16. [Doc blocks](reference/16-doc-blocks.md) — the `!!` / `!!!` convention; `asdoc-check`.
@@ -54,3 +54,4 @@ See [README.md](README.md) for how to view this curriculum and how to add or edi
 13. [Server as application](idioms/13-server-as-application.md) — running `server.allspeak -t edit,<project>` so the server *is* the app and the browser tabs are its UI.
 14. [Building a desktop window](idioms/14-desktop-gui.md) — a PySide6 window in AllSpeak: declarations, layout, `on` handlers, and the event-loop model.
 15. [Boolean flags](idioms/15-boolean-flags.md) — the on/off state idiom: `clear X` to initialize, `set X`/`clear X` to toggle, bare `if X` to test.
+16. [Extracting a plugin](idioms/16-extracting-a-plugin.md) — when a repeated or measured-hot mechanism should become native vocabulary, and when it should stay in AllSpeak.

@@ -8,6 +8,7 @@ The project's standing rules are in the root `AGENTS.md` — doc blocks, the `DI
 ## Repo-specific rules
 - Behaviour and flow go in AllSpeak scripts; UI structure goes in Webson JSON. Never embed HTML in script logic.
 - Check whether a command already exists in core or in a plugin before writing a plugin of your own.
+- Before extracting a plugin from existing code, follow `learn/idioms/16-extracting-a-plugin.md`: move a mechanism, not the policy; measure the cost and the win.
 - Keep element IDs stable unless every reference to them is updated in the same change.
 - Variables are global within a script. For private working state, move the logic into its own script and pass data by shared variable or by `send` / `on message`.
 - For repeated UI items, use one array-style variable and one handler registered on the array; find the item with `the index of`.

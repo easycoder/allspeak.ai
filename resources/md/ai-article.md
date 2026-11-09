@@ -105,12 +105,14 @@ Beyond this, AllSpeak supports **plugins** — extension modules that add specia
 
 Plugins can be written by AI agents on an as-needed basis. They don't need central approval or registration — if your application needs a new capability, your agent can write a plugin for it and your scripts can load it immediately.
 
+**The hybrid split.** In a larger project, AllSpeak is the orchestration layer, not the whole stack. The **policy** — what the application decides, in what order, for whom — stays in readable AllSpeak. The **mechanism** — protocol handling, hardware drivers, numerical kernels, rendering — lives in JavaScript, Python or a plugin behind a small vocabulary. Room By Room, an open-source heating control system, is the worked example: its controller and PWA are AllSpeak, its Zigbee, MQTT and journal services are Python, and its Studio pairs a Python runner with an AllSpeak/PySide shell. Each part is replaceable behind its contract, and the code a person reviews stays small.
+
+A plugin is not only a speed-up. It is also a vocabulary and a review boundary: a repeated mechanism gets a name, the script that uses it gets shorter and cheaper in tokens, and the AI has fewer places to go wrong. The cost is a vocabulary the reader must learn and a component the project must ship and test, so extract a stable, repeated mechanism — not every verbose block. At the ridiculous extreme, an entire application could be reduced to a single command `doit`; in practice, keep the policy visible.
+
 **Less suitable for:**
 
-- Complex UI component trees (React/Vue-style architectures)
-- Applications requiring deep OS integration
-
-Note that performance-critical work can be handled by plugins. AllSpeak scripts manage the human-level logic — the flow, the decisions, the user interaction — while plugins encapsulate the messy detail in optimised native code. At the ridiculous extreme, an entire application could be reduced to a single command `doit`, but in practice the split falls naturally: readable scripts for the parts humans need to understand, plugins for the parts that need raw speed or complex low-level integration.
+- Complex UI component trees (React/Vue-style architectures) — use a UI library behind a plugin if you need one.
+- Deep OS integration in the script itself — put it in a native service or plugin and expose a small vocabulary.
 
 ---
 
@@ -188,7 +190,7 @@ Because AllSpeak scripts are short and readable, an agent can read the whole scr
 
 Claude Code is the example used throughout this article, but nothing here depends on it: any agent that can read and write files in a project directory works the same way. [Reasonix](https://reasonix.io) is one worth knowing about. It is a single local engine with several ways into it — a terminal command (`npm install -g reasonix`), a desktop app, a browser, or an editor plugin — and the front-ends share that engine and its configuration, so a session started in one can be picked up in another. It uses DeepSeek's models by default and can be pointed at any OpenAI-compatible endpoint instead.
 
-The desktop app is the part worth pausing on for this article's audience. Claude Code is a terminal tool, and the terminal is exactly where a reader who has never used one gets stuck — usually before the agent has done anything at all. Reasonix Desktop is the same engine and the same agent in an ordinary window, not a cut-down companion app: install it, click **Add new project**, point it at your project folder, and type what you want built. Given that the whole point of AllSpeak is to shorten the first step for people who are not programmers, an agent you can launch from a Start menu closes the loop.
+The desktop app is the part worth pausing on for this article's audience. Claude Code is a terminal tool, and the terminal is exactly where a reader who has never used one gets stuck — usually before the agent has done anything at all. Reasonix Studio is the same engine and the same agent in an ordinary window, not a cut-down companion app: install it, click **Add new project**, point it at your project folder, and type what you want built. Given that the whole point of AllSpeak is to shorten the first step for people who are not programmers, an agent you can launch from a Start menu closes the loop.
 
 ---
 

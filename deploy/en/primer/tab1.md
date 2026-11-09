@@ -24,6 +24,24 @@ AllSpeak builds real software. Web apps with interactive pages and styled layout
 
 The secret is that an AI does not care what language it writes in. Give it a capable high-level language and it delivers the same functionality as it would in JavaScript — but in a form you can actually read, check and modify.
 
+## A smaller surface for the AI to get wrong
+
+The other reason the language is small is the AI itself. A large language — with a huge standard library, several ways to do the same thing, and APIs that change between versions — gives the model many places to invent something that looks plausible and is not there. That is what people mean by hallucination, and it is worse when the code is long enough that nobody reads it.
+
+AllSpeak narrows that surface. The vocabulary is small and consistent; the grammar is regular; there are no brackets, semicolons or framework conventions to get subtly wrong. When the AI does make a mistake, the compiler usually catches it on the line where it happened, and the error is plain enough to fix in a sentence. The language does not make the AI correct — it cannot know what you meant — but it makes the common failure mode *visible and cheap*, instead of hiding it in code nobody can check.
+
+That is the honest claim: fewer places to go wrong, and a shorter distance from a wrong line to the fix. It does not remove the need to review what the AI produced; it makes that review possible.
+
+## Why not one language?
+
+The obvious objection is that a single stack is simpler: write everything in Python or everything in JavaScript, and there is one language to learn, one runtime, one build.
+
+It is simpler until the two jobs pull in opposite directions. Most of an application is **policy** — what it decides, in what order, for whom. That is the part a person has to read and check, and the part that changes when the requirements change. The **mechanism** — the protocol handler, the hardware driver, the numerical kernel, the renderer — is written once, tested once, and should then get out of the way.
+
+AllSpeak keeps the policy in the readable layer and lets the mechanism live in JavaScript or Python behind a small vocabulary. That is a mixed stack, and it is the design rather than a workaround: the code you review stays small, and the hot paths run at the speed of their own language. The rule is simple — if the code is policy, keep it in AllSpeak; if it is a mechanism that is repeated or measured hot, give it a plugin.
+
+A large application already makes this choice when it puts a database behind SQL or an image pipeline behind a library. AllSpeak makes the boundary explicit, and keeps the readable half in the language you review. The [Learn curriculum](../learn/) carries the decision guide.
+
 ## And there is a tool that already knows all of this
 
 This is the part other languages do not give you, and it is why we built **Viz** — the AllSpeak editor, which `allspeak viz` opens.

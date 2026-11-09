@@ -44,9 +44,15 @@ This is a live document and must be read by any agent preparing to work on AllSp
 ## Plugin strategy
 
 - Before adding custom functionality, check whether the behavior already exists in AllSpeak core commands or in an existing plugin.
-- Create a plugin when AllSpeak syntax is clumsy for a task, or when wrapping substantial external JavaScript functionality.
+- **Keep the policy in AllSpeak and move the mechanism to a plugin.** Business rules, flow and decisions stay in the script where a human reviews them; parsers, indexes, numeric kernels, protocol handling and rendering are plugin candidates when they are repeated, measured hot, or need a native library.
+- Create a plugin when AllSpeak syntax is clumsy for a task, or when wrapping substantial external JavaScript or Python functionality.
 - Follow established patterns in existing plugins (for example `plugins/gmap.js`).
 - If required functionality is missing from both core and existing plugins, prefer adding a new plugin over forcing complex script-level workarounds.
+- **Measure before extracting.** A plugin is a vocabulary commitment, not a free speed-up. Profile or record the run, count the repetitions, and weigh the onboarding, packaging and runtime-parity cost. Do not extract pure business logic, a one-off, or an unstable vocabulary.
+- **Review existing code occasionally.** At a release boundary, or when a recording or profile shows a hot path, run the extraction review in `learn/idioms/16-extracting-a-plugin.md`. Extract the top one or two candidates, not a rewrite programme.
+- Keep the platform half of a plugin separate from its vocabulary half, and test both. In Python, every registered domain must implement `modifyValue`.
+
+The full decision guide is `learn/reference/13-plugins.md#deciding-to-extract`; the practical checklist is `learn/idioms/16-extracting-a-plugin.md`.
 
 ## External service prerequisites
 

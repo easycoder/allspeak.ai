@@ -42,6 +42,7 @@
         { "slug": "working-with-ai", "path": "idioms/12-working-with-ai.md", "title": "Working with AI" },
         { "slug": "server-as-application", "path": "idioms/13-server-as-application.md", "title": "Server as application" },
         { "slug": "desktop-gui", "path": "idioms/14-desktop-gui.md", "title": "Building a desktop window" },
-        { "slug": "boolean-flags", "path": "idioms/15-boolean-flags.md", "title": "Boolean flags" }
+        { "slug": "boolean-flags", "path": "idioms/15-boolean-flags.md", "title": "Boolean flags" },
+        { "slug": "extracting-a-plugin", "path": "idioms/16-extracting-a-plugin.md", "title": "Extracting a plugin" }
     ]
 }
